@@ -1,0 +1,4 @@
+github.com/armon/go-metrics a54701ebec11868993bc198c3f315353e9de2ed6
+github.com/hashicorp/go-msgpack 71c2886f5a673a35f909803f38ece5810165097b
+github.com/hashicorp/memberlist dad1009e26ac60199c094f2e91cdd7769a7f46cc
+github.com/zenazn/goji 739f05c9497895aee8d398a8ff38fb0517c4d670

@@ -1,0 +1,8 @@
+{
+  "name": "prism",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "leaflet": "~0.7.7"
+  }
+}

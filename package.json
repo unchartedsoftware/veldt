@@ -1,0 +1,38 @@
+{
+  "name": "prism",
+  "version": "0.1.0",
+  "private": true,
+  "author": "Kevin Birk <kbirk@uncharted.software>",
+  "dependencies": {
+    "async": "1.4.2",
+    "body-parser": "1.14.1",
+    "browserify": "12.0.1",
+    "compression": "1.6.0",
+    "del": "2.0.2",
+    "express": "4.13.3",
+    "go-mon": "0.0.3",
+    "gulp": "3.9.0",
+    "gulp-concat": "2.6.0",
+    "gulp-csso": "1.0.1",
+    "gulp-filter": "3.0.1",
+    "gulp-go": "^1.1.0",
+    "gulp-jshint": "1.11.2",
+    "gulp-nodemon": "2.0.4",
+    "gulp-uglify": "1.4.2",
+    "jquery": "2.1.4",
+    "jshint-stylish": "2.0.1",
+    "leaflet": "0.7.7",
+    "lodash": "3.10.1",
+    "main-bower-files": "2.7.0",
+    "run-sequence": "1.1.4",
+    "vinyl-buffer": "1.0.0",
+    "vinyl-source-stream": "1.1.0",
+    "watchify": "3.6.0"
+  },
+  "scripts": {
+    "lint": "./node_modules/.bin/gulp lint",
+    "serve": "./node_modules/.bin/gulp serve",
+    "build": "./node_modules/.bin/gulp build",
+    "watch": "./node_modules/.bin/gulp watch"
+  }
+}
