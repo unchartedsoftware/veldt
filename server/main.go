@@ -1,17 +1,40 @@
 package main
 
 import (
-    "fmt"
-    "net/http"
+    "flag"
+	"log"
+	"runtime"
+	"syscall"
+
+	"github.com/zenazn/goji/graceful"
+
+    "github.com/unchartedsoftware/prism/server/conf"
+    "github.com/unchartedsoftware/prism/server/api"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "Hi there, get a fucking PS4 %s!", r.URL.Path[1:])
-}
+var (
+	port = flag.CommandLine.String( "port", "8080", "Port to bind HTTP server" )
+	prod = flag.CommandLine.Bool( "prod", false, "Production flag" )
+)
 
 func main() {
-    port := "8080"
-    fmt.Printf("Server started on port %s", port);
-    http.HandleFunc("/", handler)
-    http.ListenAndServe(":"+port, nil)
+
+    runtime.GOMAXPROCS( runtime.NumCPU() )
+
+    // Parse the flags and store them as a conf struct
+	configuration := conf.Conf{
+		Prod: *prod,
+        Port: *port,
+	}
+	conf.SaveConf( &configuration )
+
+    // Start the web server
+	graceful.AddSignal( syscall.SIGINT, syscall.SIGTERM )
+	app := api.New()
+	log.Println( "Prism server listening on port " + *port )
+	err := graceful.ListenAndServe( ":" + *port, app )
+	if err != nil {
+		log.Fatal( err )
+	}
+	graceful.Wait()
 }
