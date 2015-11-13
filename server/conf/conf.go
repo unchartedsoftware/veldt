@@ -4,6 +4,7 @@ package conf
 type Conf struct {
 	Prod bool
 	Port string
+	PublicDir string
 }
 
 var conf *Conf

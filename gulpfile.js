@@ -28,7 +28,8 @@
         styles: [  webappPath + 'styles/reset.css',  webappPath + 'styles/**/*.css' ],
         index: [  webappPath + 'index.html' ],
         resources: [
-            webappPath + 'index.html'
+            webappPath + 'index.html',
+            webappPath + 'favicons/*'
         ]
     };
 
@@ -140,7 +141,10 @@
     var go;
     gulp.task("serve", function() {
         var gulpgo = require( "gulp-go" );
-        go = gulpgo.run( serverPath + "main.go" );
+        go = gulpgo.run( serverPath + "main.go", [], {
+            cwd: __dirname,
+            stdio: 'inherit'
+        });
     });
 
     gulp.task('watch', [ 'build' ], function( done ) {

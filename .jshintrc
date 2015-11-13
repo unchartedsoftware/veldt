@@ -78,7 +78,6 @@
     "globals"       : {         // additional predefined global variables
         "require"   : false,
         "module"    : false,
-        "esper"     : false,
-        "rolypoly"  : false
+        "L"  : false
     }
 }
