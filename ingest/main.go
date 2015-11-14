@@ -1,10 +1,16 @@
 package main
 
 import (
+    "bufio"
     "flag"
     "fmt"
     "os"
+    "strings"
     "time"
+    "net/http"
+
+    "encoding/json"
+    "runtime/debug"
 
     "github.com/parnurzeal/gorequest"
     "github.com/colinmarc/hdfs"
@@ -17,6 +23,7 @@ var (
 	esClearExisting = flag.CommandLine.Bool( "es-clear-existing", true, "Clear index before ingest" )
 
     hdfsHost = flag.CommandLine.String( "hdfs-host", "", "HDFS host" )
+    hdfsPort = flag.CommandLine.String( "hdfs-port", "", "HDFS port" )
     hdfsPath = flag.CommandLine.String( "hdfs-path", "", "HDFS ingest source data path" )
 )
 
@@ -27,6 +34,8 @@ type Conf struct {
     esEndpoint string
     esClearExisting bool
     hdfsHost string
+    hdfsPort string
+    hdfsEndpoint string
     hdfsPath string
 }
 
@@ -50,14 +59,14 @@ func formatTime( totalSeconds uint64 ) Time {
 
 func printProgress( totalBytes int64, bytes int64, startTime uint64 ) {
     elapsed := uint64( time.Now().Unix() ) - startTime
-    percentComplete := 100 * ( bytes / totalBytes )
-    bytesPerSecond := float64( bytes ) / float64( elapsed )
-    if bytesPerSecond == 0 {
-        bytesPerSecond = 1
+    percentComplete := 100 * ( float64( bytes ) / float64( totalBytes ) )
+    bytesPerSecond := 1.0
+    if elapsed > 0 {
+        bytesPerSecond = float64( bytes ) / float64( elapsed )
     }
     estimatedSecondsRemaining := ( float64( totalBytes ) - float64( bytes ) ) / bytesPerSecond
     formattedTime := formatTime( uint64( estimatedSecondsRemaining ) )
-    fmt.Printf( "\rIndexed %d bytes at %d Bps, %d%% complete, estimated time remaining %d:%02d:%02d",
+    fmt.Printf( "\rIndexed %d bytes at %f Bps, %f%% complete, estimated time remaining %d:%02d:%02d",
         bytes,
         bytesPerSecond,
         percentComplete,
@@ -76,10 +85,10 @@ func printTimeout( duration uint32 ) {
 }
 
 var hdfsClient *hdfs.Client = nil
-func getHdfsClient( host string ) ( *hdfs.Client, error ) {
+func getHdfsClient() ( *hdfs.Client, error ) {
     if hdfsClient == nil {
-        fmt.Println( "Connecting to HDFS " + host )
-        client, err := hdfs.New( conf.hdfsHost )
+        fmt.Println( "Connecting to HDFS: " + conf.hdfsEndpoint )
+        client, err := hdfs.New( conf.hdfsEndpoint )
         hdfsClient = client
         return hdfsClient, err
     }
@@ -93,15 +102,17 @@ type IngestInfo struct {
 }
 
 func getFileInfo() *IngestInfo {
-    client, err := getHdfsClient( conf.hdfsHost )
+    client, err := getHdfsClient()
     if err != nil {
         fmt.Println( err )
+        debug.PrintStack()
         os.Exit(1)
     }
-    print( "Retreiving file information for " + conf.hdfsPath )
+    fmt.Println( "Retreiving ingest directory information from: " + conf.hdfsPath )
     files, err := client.ReadDir( conf.hdfsPath )
     if err != nil {
         fmt.Println( err )
+        debug.PrintStack()
         os.Exit(1)
     }
     var paths []string
@@ -125,32 +136,25 @@ func getFileInfo() *IngestInfo {
 }
 
 func ingestFiles( ingestInfo *IngestInfo ) {
-    fmt.Printf( "Indexing %d files containing %d bytes of data\n" )
+    fmt.Printf( "Indexing %d files containing %d bytes of data\n",
+        len( ingestInfo.Paths ),
+        ingestInfo.NumTotalBytes )
     startTime := uint64( time.Now().Unix() )
-    // endless loop of hell
-    for {
-        numIngestedBytes := 0
-        for i, path := range ingestInfo.Paths {
-            // print current progress
-            printProgress( ingestInfo.NumTotalBytes, numIngestedBytes, startTime )
-            // ingest the file
-            err := ingestFile( path )
-            if err != nil {
-                fmt.Println( err )
-                printTimeout( 5 )
-                continue
-            }
-            // increment ingested bytes
-            numIngestedBytes += ingestInfo.FileSizes[i]
-        }
-        // finished succesfully
-        formattedTime = formatTime( uint64( time.Now().Unix() ) - startTime )
-        fmt.Println( "\nIndexing completed in %d:%02d:%02d",
-            formattedTime.Hours,
-            formattedTime.Minutes,
-            formattedTime.Seconds )
-        break
+    numIngestedBytes := int64( 0 )
+    for i, path := range ingestInfo.Paths {
+        // print current progress
+        printProgress( ingestInfo.NumTotalBytes, numIngestedBytes, startTime )
+        // ingest the file
+        ingestFile( path )
+        // increment ingested bytes
+        numIngestedBytes += ingestInfo.FileSizes[i]
     }
+    // finished succesfully
+    formattedTime := formatTime( uint64( time.Now().Unix() ) - startTime )
+    fmt.Printf( "\nIndexing completed in %d:%02d:%02d\n",
+        formattedTime.Hours,
+        formattedTime.Minutes,
+        formattedTime.Seconds )
 }
 
 func tweetDateToISO( tweetDate string ) string {
@@ -164,34 +168,38 @@ func tweetDateToISO( tweetDate string ) string {
 }
 
 type TweetProperties struct {
-    Userid string `json:userid`
-    Username string `json:username`
-    Hashtags []string `json:hashtags`
+    Userid string `json:"userid"`
+    Username string `json:"username"`
+    Hashtags []string `json:"hashtags"`
 }
 
 type TweetLocality struct {
-    Timestamp string `json:timestamp`
-    Label *string `json:label`
-    Location *string `json:location`
+    Timestamp string `json:"timestamp"`
+    Label *string `json:"label"`
+    Location *string `json:"location"`
 }
 
 type TweetSource struct {
-    properties TweetProperties `json:properties`
-    locality TweetLocality `json:locality`
+    Properties TweetProperties `json:"properties"`
+    Locality TweetLocality `json:"locality"`
 }
 
-type TweetDocument struct {
-    Index string `json:_index`
-    Type string `json:_type`
-    Id string `json:_id`
-    Source TweetSource `json:_source`
+type TweetIndex struct {
+    Index string `json:"_index"`
+    Type string `json:"_type"`
+    Id string `json:"_id"`
 }
 
-type CreateDocument struct {
-    Create TweetDocument `json:create`
+type TweetIndexAction struct {
+    Index *TweetIndex `json:"index"`
 }
 
-func columnExists( string col ) bool {
+type IndexDocumentAction struct {
+    IndexAction *TweetIndexAction
+    Source *TweetSource
+}
+
+func columnExists( col string ) bool {
     if col != "" && col != "None" {
         return true
     }
@@ -213,11 +221,8 @@ func columnExists( string col ) bool {
         10:  'city',
         11:  'en'
 */
-func buildTweetDocument( tweetCsv ) {
+func buildIndexAction( tweetCsv []string ) *IndexDocumentAction {
     isoDate := tweetDateToISO( tweetCsv[0] )
-    if err != nil {
-        fmt.Println(err)
-    }
     locality := TweetLocality {
         Timestamp: isoDate,
     }
@@ -227,79 +232,92 @@ func buildTweetDocument( tweetCsv ) {
     }
     // long / lat may not exist
     if columnExists( tweetCsv[6] ) && columnExists( tweetCsv[7] ){
-        locality.Location = &( tweetCsv[7] + "," + tweetCsv[6] )
+        location := ( tweetCsv[7] + "," + tweetCsv[6] )
+        locality.Location = &location
     }
     properties := TweetProperties {
         Userid: tweetCsv[1],
         Username: tweetCsv[2],
-        Hashtags: strings.Split( strings.Trim( tweet[5] ), "#" ),
+        Hashtags: make([]string, 0),
+    }
+    // hashtags may not exist
+    if ( columnExists( tweetCsv[5] ) ) {
+        properties.Hashtags = strings.Split( strings.TrimSpace( tweetCsv[5] ), "#" )
     }
     // build source node
     source := TweetSource{
-        properties: properties,
-        locality: locality,
+        Properties: properties,
+        Locality: locality,
     }
-    // build document
-    document := TweetDocument{
+    // build index
+    index := TweetIndex{
         Index: conf.esIndex,
         Type: "datum",
         Id: tweetCsv[3],
-        Source: source,
+    }
+    // create index action
+    indexAction := TweetIndexAction{
+        Index: &index,
     }
     // return create bulk action
-    return CreateDocument {
-        Create: TweetDocument,
+    return &IndexDocumentAction{
+        IndexAction: &indexAction,
+        Source: &source,
     }
 }
 
 func bulkUpload( documents []string ) {
-    jsonLines := strings.join( documents, '\n' )
-    _, _, errs := request.
-        Post( conf.esHost + ":" + conf.esHost + "/_bulk" ).
-        Send( jsonLines ).
-        End()
-    if errs != nil {
-        fmt.Println( errs )
+    jsonLines := fmt.Sprintf( "%s\n", strings.Join( documents, "\n" ) )
+	response, err := http.Post( conf.esHost + ":" + conf.esPort + "/_bulk", "application/json", strings.NewReader( jsonLines ) )
+    if err != nil {
+        fmt.Println( err )
+        debug.PrintStack()
         os.Exit(1)
     }
+	response.Body.Close()
 }
 
-func ingestFile( filePath ) {
+func ingestFile( filePath string ) {
     const batchSize = 9999
     documents := make( []string, batchSize )
     documentIndex := 0
 
-    // endless loop of death
-    for {
-        // get hdfs client
-        client := getHdfsClient( conf.hdfsHost )
+    // get hdfs client
+    client, err := getHdfsClient()
+    if err != nil {
+        fmt.Println( err )
+        debug.PrintStack()
+        os.Exit(1)
+    }
+
+    reader, err := client.Open( filePath )
+    if err != nil {
+        fmt.Println( err )
+        debug.PrintStack()
+        os.Exit(1)
+    }
+
+    scanner := bufio.NewScanner( reader )
+    for scanner.Scan() {
+        line := strings.Split( scanner.Text(), "\t" )
+        action := buildIndexAction( line )
+        index, err := json.Marshal( action.IndexAction )
         if err != nil {
             fmt.Println( err )
-            printTimeout( 5 )
+            debug.PrintStack()
             continue
         }
+        source, err := json.Marshal( action.Source )
+        documents[ documentIndex ] = string( index ) + "\n" + string( source )
+        documentIndex++
 
-        reader, err := client.Open( filePath )
-        if err != nil {
-            fmt.Println( err )
-            printTimeout( 5 )
-            continue
-        }
-
-        scanner := bufio.NewScanner( reader )
-        for scanner.Scan() {
-            line := strings.split( scanner.Text(), '\t' )
-            document := buildTweetDocument( line )
-            documents[ documentIndex ] = json.Marshal( document )
-            documentIndex++
-        }
-
-        if i % batchSize == 0 {
+        if documentIndex % batchSize == 0 {
             // send bulk ingest request
             documentIndex = 0
             bulkUpload( documents[0:] )
         }
     }
+    reader.Close()
 
     // send remaining documents
     bulkUpload( documents[0:documentIndex] )
@@ -318,6 +336,10 @@ func parseArgs() Conf {
         fmt.Println("HDFS host is not specified, please provide CL arg '-hdfs-host'.")
         os.Exit(1)
     }
+    if *hdfsPort == "" {
+        fmt.Println("HDFS port is not specified, please provide CL arg '-hdfs-port'.")
+        os.Exit(1)
+    }
     if *hdfsPath == "" {
         fmt.Println("HDFS path is not specified, please provide CL arg '-hdfs-path'.")
         os.Exit(1)
@@ -329,6 +351,8 @@ func parseArgs() Conf {
         esEndpoint: *esHost + ":" + *esPort + "/" + *esIndex,
         esClearExisting: *esClearExisting,
         hdfsHost: *hdfsHost,
+        hdfsPort: *hdfsPort,
+        hdfsEndpoint: *hdfsHost + ":" + *hdfsPort,
         hdfsPath: *hdfsPath,
     }
 }
@@ -349,23 +373,25 @@ func main() {
 		End()
     if errs != nil {
         fmt.Println( errs )
+        debug.PrintStack()
         os.Exit(1)
     }
     indexExists := resp.StatusCode != 404
 
     // if index exists
-    if indexExists && esClearExisting {
+    if indexExists && conf.esClearExisting {
         fmt.Println( "Clearing index '" + conf.esIndex + "'." )
-        _, errs := request.
+        _, _, errs := request.
             Delete( conf.esEndpoint ).
             End()
         if errs != nil {
             fmt.Println("Failed to delete index, aborting.")
-            os.Exit()
+            debug.PrintStack()
+            os.Exit(1)
         }
     }
 
-    if !indexExists {
+    if !indexExists || conf.esClearExisting {
         fmt.Println( "Creating index '" + conf.esIndex + "'." )
         mappingsBody := `{
             "mappings": {
@@ -389,11 +415,11 @@ func main() {
     		End()
         if errs != nil {
             fmt.Println( errs )
+            debug.PrintStack()
             os.Exit(1)
         }
     }
 
     ingestInfo := getFileInfo()
     ingestFiles( ingestInfo )
-    fmt.Println()
 }
