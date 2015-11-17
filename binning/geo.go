@@ -6,33 +6,28 @@ import (
 
 // GeoBounds represents a geographical bounding box
 type GeoBounds struct {
-	BottomLeft *LonLat
-	TopRight *LonLat
+	TopLeft *LonLat
+	BottomRight *LonLat
 }
 
 // LonLat represents a geographic point
 type LonLat struct {
-	Lon float64
-	Lat float64
+	Lon float64 `json:"lon"`
+	Lat float64 `json:"lat"`
 }
 
 const degreesToRadians = math.Pi / 180.0 // Factor for changing degrees to radians
 const radiansToDegrees = 180.0 / math.Pi // Factor for changing radians to degrees
 
-func tileToLon( x uint32, level uint32 ) float64 {
+func tileToLon( x float64, level uint32 ) float64 {
 	pow2 := math.Pow( 2, float64( level ) )
-	return float64( x ) / pow2 * 360.0 - 180.0
+	return x / pow2 * 360.0 - 180.0
 }
 
-func tileToLat( y uint32, level uint32 ) float64 {
+func tileToLat( y float64, level uint32 ) float64 {
 	pow2 := math.Pow( 2, float64( level ) )
-	n := math.Pi - ( 2.0 * math.Pi * float64( y ) ) / pow2
+	n := math.Pi - ( 2.0 * math.Pi * y ) / pow2
 	return math.Atan( math.Sinh( n ) ) * radiansToDegrees
-	/*
-	pow2 := math.Pow( 2, float64( level ) )
-	n := -math.Pi + ( 2.0 * math.Pi * float64( y ) ) / pow2
-	return math.Atan( math.Sinh( n ) ) * radiansToDegrees
-	*/
 }
 
 func fract( value float64 ) float64 {
@@ -40,7 +35,7 @@ func fract( value float64 ) float64 {
 	return fract
 }
 
-// LonLatToFractionalTile converts a geograhic coordinate into a floating point tile coordinate
+// LonLatToFractionalTile converts a geographic coordinate into a floating point tile coordinate
 func LonLatToFractionalTile( lonLat *LonLat, level uint32 ) *FractionalTileCoord {
 	latR := lonLat.Lat * degreesToRadians
 	pow2 := math.Pow( 2, float64( level ) )
@@ -48,12 +43,12 @@ func LonLatToFractionalTile( lonLat *LonLat, level uint32 ) *FractionalTileCoord
 	y := ( pow2 * ( 1 - math.Log( math.Tan( latR ) + 1 / math.Cos( latR ) ) / math.Pi ) / 2 )
 	return &FractionalTileCoord{
 		X: x,
-		Y: y, //pow2 - y,
+		Y: y,
 		Z: level,
     }
 }
 
-// LonLatToTile converts a geograhic coordinate into tile coordinate
+// LonLatToTile converts a geographic coordinate into tile coordinate
 func LonLatToTile( lonlat *LonLat, level uint32 ) *TileCoord {
 	tile := LonLatToFractionalTile( lonlat, level )
 	return &TileCoord{
@@ -63,17 +58,17 @@ func LonLatToTile( lonlat *LonLat, level uint32 ) *TileCoord {
 	}
 }
 
-// LonLatToFractionalBin converts a geograhic coordinate into a floating point bin coordinate
+// LonLatToFractionalBin converts a geographic coordinate into a floating point bin coordinate
 func LonLatToFractionalBin( lonlat *LonLat, level uint32, numBins uint32 ) *FractionalBinCoord {
 	tile := LonLatToFractionalTile( lonlat, level )
 	fbins := float64( numBins )
     return &FractionalBinCoord{
         X: fract( tile.X ) * fbins,
-        Y: fract( tile.Y ) * fbins, //( fbins - 1 ) - fract( tile.Y ) * ( fbins - 1 ),
+        Y: fract( tile.Y ) * fbins,
     }
 }
 
-// LonLatToBin converts a geograhic coordinate into a bin coordinate
+// LonLatToBin converts a geographic coordinate into a bin coordinate
 func LonLatToBin( lonlat *LonLat, level uint32, numBins uint32 ) *BinCoord {
 	bin := LonLatToFractionalBin( lonlat, level, numBins )
 	return &BinCoord{
@@ -90,20 +85,18 @@ func LonLatToFlatBin( lonlat *LonLat, level uint32, numBins uint32 ) uint32 {
 
 // GetTileGeoBounds returns the geographic bounds of the tile coordinate
 func GetTileGeoBounds( tile *TileCoord ) *GeoBounds {
-	top := tileToLat( tile.Y, tile.Z )
-    bottom := tileToLat( tile.Y + 1, tile.Z )
-    // top := tileToLat( tile.Y + 1, tile.Z )
-    // bottom := tileToLat( tile.Y, tile.Z )
-    right := tileToLon( tile.X + 1, tile.Z )
-    left := tileToLon( tile.X, tile.Z )
+	top := tileToLat( float64( tile.Y ), tile.Z )
+    bottom := tileToLat( float64( tile.Y + 1 ), tile.Z )
+    right := tileToLon( float64( tile.X + 1 ), tile.Z )
+    left := tileToLon( float64( tile.X ), tile.Z )
     return &GeoBounds{
-		BottomLeft: &LonLat{
+		TopLeft: &LonLat{
 			Lon: left,
-			Lat: bottom,
-		},
-		TopRight: &LonLat{
-			Lon: right,
 			Lat: top,
+		},
+		BottomRight: &LonLat{
+			Lon: right,
+			Lat: bottom,
 		},
     }
 }
