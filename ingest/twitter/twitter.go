@@ -1,11 +1,20 @@
 package twitter
 
 import (
+    "bufio"
     "fmt"
+    "os"
     "strings"
     "strconv"
     "time"
     "encoding/json"
+    "runtime/debug"
+
+    "github.com/unchartedsoftware/prism/binning"
+
+    "github.com/unchartedsoftware/prism/ingest/conf"
+    "github.com/unchartedsoftware/prism/ingest/es"
+    "github.com/unchartedsoftware/prism/ingest/hdfs"
 )
 
 type TweetProperties struct {
@@ -14,21 +23,11 @@ type TweetProperties struct {
     Hashtags []string `json:"hashtags"`
 }
 
-type TweetLonLat struct {
-    Lon float64 `json:"lat"`
-    Lat float64 `json:"lon"`
-}
-
-type TweetXY struct {
-    X float64 `json:"x"`
-    Y float64 `json:"y"`
-}
-
 type TweetLocality struct {
     Timestamp string `json:"timestamp"`
     Label *string `json:"label"`
-    Location *TweetLonLat `json:"location"`
-    XY *TweetXY `json:"xy"`
+    Location *binning.LonLat `json:"location"`
+    Pixel *binning.PixelCoord `json:"pixel"`
 }
 
 type TweetSource struct {
@@ -62,6 +61,9 @@ func columnExists( col string ) bool {
     return false
 }
 
+const maxLevelSupported = 24
+const tileResolution = 256
+
 /*
     CSV line as array:
         0: 'Fri Jan 04 18:42:42 +0000 2013',
@@ -77,7 +79,7 @@ func columnExists( col string ) bool {
         10:  'city',
         11:  'en'
 */
-func CreateIndexAction( tweetCsv []string ) ( *string, error ) {
+func createIndexAction( tweetCsv []string ) ( *string, error ) {
     isoDate := tweetDateToISO( tweetCsv[0] )
     locality := TweetLocality {
         Timestamp: isoDate,
@@ -91,16 +93,13 @@ func CreateIndexAction( tweetCsv []string ) ( *string, error ) {
         lon, lonErr := strconv.ParseFloat( tweetCsv[6], 64 )
         lat, latErr := strconv.ParseFloat( tweetCsv[7], 64 )
         if lonErr == nil && latErr == nil {
-            location := &TweetLonLat{
+            lonLat := &binning.LonLat{
                 Lat: lat,
                 Lon: lon,
             }
-            xy := &TweetXY{
-                X: 0,
-                Y: 0,
-            }
-            locality.Location = location
-            locality.XY = xy
+            pixel := binning.LonLatToPixelCoord( lonLat, maxLevelSupported, tileResolution );
+            locality.Location = lonLat
+            locality.Pixel = pixel
         }
     }
     properties := TweetProperties {
@@ -136,4 +135,57 @@ func CreateIndexAction( tweetCsv []string ) ( *string, error ) {
     }
     jsonString := string( indexBytes ) + "\n" + string( sourceBytes )
     return &jsonString, nil
+}
+
+func TwitterWorker( file os.FileInfo ) {
+    config := conf.GetConf()
+    documents := make( []string, config.BatchSize )
+    documentIndex := 0
+
+    // get hdfs client
+    client, clientErr := hdfs.GetHdfsClient( config.HdfsHost, config.HdfsPort )
+    if clientErr != nil {
+        fmt.Println( clientErr )
+        debug.PrintStack()
+        return
+    }
+
+    // get hdfs file reader
+    reader, fileErr := client.Open( config.HdfsPath + "/" + file.Name() )
+    if fileErr != nil {
+        fmt.Println( fileErr )
+        debug.PrintStack()
+        return
+    }
+
+    scanner := bufio.NewScanner( reader )
+    for scanner.Scan() {
+        line := strings.Split( scanner.Text(), "\t" )
+        action, err := createIndexAction( line )
+        if err != nil {
+            fmt.Println( err )
+            debug.PrintStack()
+            continue
+        }
+        documents[ documentIndex ] = *action
+        documentIndex++
+        if documentIndex % config.BatchSize == 0 {
+            // send bulk ingest request
+            documentIndex = 0
+            err := es.Bulk( config.EsHost, config.EsPort, config.EsIndex, documents[0:] )
+            if err != nil {
+                fmt.Println( err )
+                debug.PrintStack()
+                continue
+            }
+        }
+    }
+    reader.Close()
+
+    // send remaining documents
+    err := es.Bulk( config.EsHost, config.EsPort, config.EsIndex, documents[0:documentIndex] )
+    if err != nil {
+        fmt.Println( err )
+        debug.PrintStack()
+    }
 }
