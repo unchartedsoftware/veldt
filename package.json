@@ -8,6 +8,8 @@
     "body-parser": "1.14.1",
     "browserify": "12.0.1",
     "compression": "1.6.0",
+    "d3": "^3.5.9",
+    "d3-cloud": "^1.2.1",
     "del": "2.0.2",
     "express": "4.13.3",
     "go-mon": "0.0.3",

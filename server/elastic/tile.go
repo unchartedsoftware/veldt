@@ -2,6 +2,7 @@ package elastic
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -44,7 +45,111 @@ func parseLonLat( location *string ) ( *binning.LonLat, error ) {
 	return nil, errors.New( "Unable to parse tile coordinate from URL" )
 }
 
-func GetTile( tile *binning.TileCoord ) ( []byte, error ) {
+var targetWords = [23]string{
+	"cool",
+	"awesome",
+	"amazing",
+	"badass",
+	"killer",
+	"dank",
+	"superfly",
+	"smooth",
+	"radical",
+	"wicked",
+	"neato",
+	"nifty",
+	"primo",
+	"gnarly",
+	"crazy",
+	"insane",
+	"sick",
+	"mint",
+	"nice",
+	"nasty",
+	"classic",
+	"tight",
+	"rancid",
+}
+
+func buildTermsFilter( terms []string ) string {
+	var filters []string
+	for _, term := range terms {
+		filters = append( filters, `
+			"` + term + `": {
+				"filter": {
+					"term": {
+						"text": "` + term + `"
+					}
+				}
+			}`)
+	}
+	return strings.Join( filters, "," )
+}
+
+func GetJSONTile( tile *binning.TileCoord ) ( []byte, error ) {
+	pixelBounds := binning.GetTilePixelBounds( tile, maxLevelSupported, tileResolution )
+	xMin := strconv.FormatUint( pixelBounds.TopLeft.X, 10 )
+	xMax := strconv.FormatUint( pixelBounds.BottomRight.X - 1, 10 )
+	yMin := strconv.FormatUint( pixelBounds.TopLeft.Y, 10 )
+	yMax := strconv.FormatUint( pixelBounds.BottomRight.Y - 1, 10 )
+	request := gorequest.New()
+	termsFilters := buildTermsFilter( targetWords[0:] )
+	query := `{
+		"query": {
+			"bool" : {
+		        "must" : [
+					{
+			            "range": {
+							"locality.pixel.x": {
+								"gte":` + xMin + `,
+								"lte":` + xMax + `
+							}
+						}
+					},
+					{
+			            "range": {
+							"locality.pixel.y": {
+								"gte":` + yMin + `,
+								"lte":` + yMax + `
+							}
+						}
+					}
+				]
+			}
+		},
+		"aggs": {` + termsFilters + `}
+	}`
+	searchSize := "size=0"
+	_, body, errs := request.
+		Post( esHost + "/" + esIndex + "/_search?" + searchSize ).
+		Send( query ).
+		End()
+	if errs != nil {
+		return nil, errors.New( "Unable to retrieve tile data" )
+	}
+	//
+	payload := &TopicPayload{}
+	err := json.Unmarshal( []byte(body), &payload )
+	if err != nil {
+		fmt.Println("err")
+	    return nil, err
+	}
+	// marshal into map then unmarshal again into string
+	topicCounts := make( map[string]uint64 )
+	for topic, value := range payload.Aggs {
+		if value.Count > 0 {
+			topicCounts[topic] = value.Count
+		}
+	}
+	result, err := json.Marshal( topicCounts )
+	if err != nil {
+		fmt.Println("err")
+	    return nil, err
+	}
+	return result, nil
+}
+
+func GetHeatmapTile( tile *binning.TileCoord ) ( []byte, error ) {
 	pixelBounds := binning.GetTilePixelBounds( tile, maxLevelSupported, tileResolution )
 	xBinSize := ( pixelBounds.BottomRight.X - pixelBounds.TopLeft.X ) / tileResolution
 	yBinSize := ( pixelBounds.BottomRight.Y - pixelBounds.TopLeft.Y ) / tileResolution
@@ -83,31 +188,22 @@ func GetTile( tile *binning.TileCoord ) ( []byte, error ) {
 	            "histogram": {
 	                "field": "locality.pixel.x",
 	                "interval":` + xInterval + `,
-	                "min_doc_count": 0,
-					"extended_bounds": {
-						"min":` + xMin + `,
-						"max":` + xMax + `
-                    }
+	                "min_doc_count": 1
 	            },
 	            "aggs": {
 	                "y": {
 	                    "histogram": {
 	                        "field": "locality.pixel.y",
 	                        "interval":` + yInterval + `,
-	                        "min_doc_count": 0,
-							"extended_bounds": {
-								"min":` + yMin + `,
-								"max":` + yMax + `
-                            }
+	                        "min_doc_count": 1
 	                    }
 	                }
 	            }
 	        }
 	    }
 	}`
-	//fmt.Println( query )
 	searchSize := "size=0"
-	filterPath := "filter_path=aggregations.x.buckets.y.buckets.doc_count"
+	filterPath := "filter_path=aggregations.x.buckets.key,aggregations.x.buckets.y.buckets.key,aggregations.x.buckets.y.buckets.doc_count"
 	_, body, errs := request.
 		Post( esHost + "/" + esIndex + "/_search?" + searchSize + "&" + filterPath ).
 		Send( query ).
@@ -116,24 +212,25 @@ func GetTile( tile *binning.TileCoord ) ( []byte, error ) {
 		return nil, errors.New( "Unable to retrieve tile data" )
 	}
 	//
-	payload := &Payload{}
+	payload := &HeatmapPayload{}
 	err := json.Unmarshal( []byte(body), &payload )
 	if err != nil {
+		fmt.Println("err")
 	    return nil, err
 	}
 	//
 	counts := make([]float64, tileResolution * tileResolution )
 	cols := payload.Aggs.X.Columns
-	for i := 0; i < tileResolution; i++ {
+	for i := 0; i < len( cols ); i++ {
+		x := cols[i].PixelX
+		xBin := ( x - pixelBounds.TopLeft.X ) / xBinSize
 		rows := cols[i].Y.Rows;
-		for j := 0; j < tileResolution; j++ {
-			counts[ i + tileResolution * j ] = float64( rows[j].Count )
+		for j := 0; j < len( rows ); j++ {
+			y := rows[j].PixelY
+			yBin := ( y - pixelBounds.TopLeft.Y ) / yBinSize
+			counts[ xBin + tileResolution * yBin ] = float64( rows[j].Count )
 		}
 	}
-	/*
-		ISSUE: EXTENDED_BOUNDS DOESN'T WORK IF THE BOUNDS IS OUTSIDE INDEX MIN / MAX,
-			CURRENTLY STATIC SIZING THE NUM BINS DOESN'T WORK CORRECTLY. FIX THIS.
-	*/
 	bytes := getByteArray( counts )
 	return bytes, nil
 }

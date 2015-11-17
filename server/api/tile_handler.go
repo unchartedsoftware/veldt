@@ -37,7 +37,7 @@ func handleTileErr( w http.ResponseWriter ) {
 	fmt.Fprint( w, `{"status": "error"}` )
 }
 
-func tileHandler( c web.C, w http.ResponseWriter, r *http.Request ) {
+func heatmapTileHandler( c web.C, w http.ResponseWriter, r *http.Request ) {
 	// set content type response header
 	w.Header().Set( "Content-Type", "application/octet-stream" )
 	// parse tile coord from URL
@@ -47,7 +47,7 @@ func tileHandler( c web.C, w http.ResponseWriter, r *http.Request ) {
 		return
 	}
 	// extract tile data
-	bins, tileErr := elastic.GetTile( tile )
+	bins, tileErr := elastic.GetHeatmapTile( tile )
 	if tileErr != nil {
 		handleTileErr( w )
 		return
@@ -55,4 +55,24 @@ func tileHandler( c web.C, w http.ResponseWriter, r *http.Request ) {
 	// send response
 	w.WriteHeader( 200 )
 	w.Write( bins )
+}
+
+func jsonTileHandler( c web.C, w http.ResponseWriter, r *http.Request ) {
+	// set content type response header
+	w.Header().Set( "Content-Type", "application/json" )
+	// parse tile coord from URL
+	tile, parseErr := parseTileCoord( c.URLParams )
+	if parseErr != nil {
+		handleTileErr( w )
+		return
+	}
+	// extract tile data
+	json, tileErr := elastic.GetJSONTile( tile )
+	if tileErr != nil {
+		handleTileErr( w )
+		return
+	}
+	// send response
+	w.WriteHeader( 200 )
+	w.Write( json )
 }

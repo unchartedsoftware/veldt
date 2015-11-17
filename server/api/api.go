@@ -19,8 +19,9 @@ func New() http.Handler {
 	// Get conf struct
 	conf := conf.GetConf()
 
-	// Mount request handlers
-	r.Get( "/tile/:z/:x/:y", tileHandler )
+	// Mount tile request handlers
+	r.Get( "/heatmap/:z/:x/:y", heatmapTileHandler )
+	r.Get( "/wordcloud/:z/:x/:y", jsonTileHandler )
 
 	// Greedy route last
 	r.Get( "/*", http.FileServer( http.Dir( conf.PublicDir ) ) )
