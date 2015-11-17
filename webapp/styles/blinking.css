@@ -1,0 +1,38 @@
+.blinking {
+
+    background-color: rgba( 0, 0, 0, 0.2 );
+    border: 1px solid rgba( 150, 150, 150, 0.1 );
+
+    -webkit-animation-name: blinker;
+    -webkit-animation-duration: 1.2s;
+    -webkit-animation-timing-function: ease-in-out;
+    -webkit-animation-iteration-count: infinite;
+
+    -moz-animation-name: blinker;
+    -moz-animation-duration: 1.2s;
+    -moz-animation-timing-function: ease-in-out;
+    -moz-animation-iteration-count: infinite;
+
+    animation-name: blinker;
+    animation-duration: 1.2s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+}
+
+@-moz-keyframes blinker {
+    0% { opacity: 1.0; }
+    50% { opacity: 0.2; }
+    100% { opacity: 1.0; }
+}
+
+@-webkit-keyframes blinker {
+    0% { opacity: 1.0; }
+    50% { opacity: 0.2; }
+    100% { opacity: 1.0; }
+}
+
+@keyframes blinker {
+    0% { opacity: 1.0; }
+    50% { opacity: 0.2; }
+    100% { opacity: 1.0; }
+}

@@ -2,16 +2,17 @@
 
     "use strict";
 
-    //var $ = require('jquery');
+    var $ = require('jquery');
     //var _ = require('lodash');
 
     window.startApp = function() {
+
         // Map control
         var map = new L.Map('map', {
             zoomControl: true,
             center: [40.7, -73.9],
             zoom: 11,
-            maxZoom: 14
+            maxZoom: 18
         });
 
         // Base map
@@ -75,6 +76,7 @@
         // if it exists, renders to the canvas element for the repsecive tile.
         heatmapLayer.drawTile = function(canvas, index, zoom) {
             var url = './tile/'+zoom+'/'+index.x+'/'+index.y;
+            $( canvas ).addClass( 'blinking' );
             getArrayBuffer( url, function( bins ) {
                 if (!bins) {
                     // Exit early if no data
@@ -97,6 +99,7 @@
                 });
                 // Overwrite original image
                 ctx.putImageData(imageData, 0, 0);
+                $( canvas ).removeClass( 'blinking' );
             });
         };
         // Add layer to the map
