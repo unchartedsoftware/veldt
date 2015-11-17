@@ -8,7 +8,7 @@ import (
 
 	"github.com/zenazn/goji/web"
 
-	"github.com/unchartedsoftware/prism/server/binning"
+	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/server/elastic"
 )
 
@@ -47,7 +47,7 @@ func tileHandler( c web.C, w http.ResponseWriter, r *http.Request ) {
 		return
 	}
 	// extract tile data
-	bins, tileErr := elastic.GetGeoTile( tile )
+	bins, tileErr := elastic.GetTile( tile )
 	if tileErr != nil {
 		handleTileErr( w )
 		return

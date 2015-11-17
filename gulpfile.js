@@ -20,10 +20,11 @@
 
     var webappPath = 'webapp/';
     var serverPath = 'server/';
+    var binningPath = 'binning/';
 
     var paths = {
         root: webappPath + '/app.js',
-        server: [ serverPath + '**/*.go' ],
+        server: [ serverPath + '**/*.go', binningPath + '**/*.go' ],
         scripts: [ webappPath + 'scripts/**/*.js',  webappPath + 'app.js' ],
         styles: [  webappPath + 'styles/reset.css',  webappPath + 'styles/**/*.css' ],
         index: [  webappPath + 'index.html' ],
