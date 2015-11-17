@@ -2,7 +2,6 @@ package elastic
 
 import (
 	"errors"
-	//"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -11,13 +10,13 @@ import (
 
 	"github.com/parnurzeal/gorequest"
 
-	"github.com/unchartedsoftware/prism/server/binning"
+	"github.com/unchartedsoftware/prism/binning"
 )
 
-const esHost = "http://memex3:9200"
-const esIndex = "nyc_twitter_july" //"isil_twitter_dec2may"
-
+const esHost = "http://10.64.16.120:9200"
+const esIndex = "nyc_twitter"
 const tileResolution = 256
+const maxLevelSupported = 24
 
 func float64ToBytes( bytes []byte, float float64 ) {
     bits := math.Float64bits(float)
@@ -45,74 +44,96 @@ func parseLonLat( location *string ) ( *binning.LonLat, error ) {
 	return nil, errors.New( "Unable to parse tile coordinate from URL" )
 }
 
-
-// GetTile takes a tile coord and returns data
-func GetGeoTile( tile *binning.TileCoord ) ( []byte, error ) {
-	bounds := binning.GetTileGeoBounds( tile )
+func GetTile( tile *binning.TileCoord ) ( []byte, error ) {
+	pixelBounds := binning.GetTilePixelBounds( tile, maxLevelSupported, tileResolution )
+	xBinSize := ( pixelBounds.BottomRight.X - pixelBounds.TopLeft.X ) / tileResolution
+	yBinSize := ( pixelBounds.BottomRight.Y - pixelBounds.TopLeft.Y ) / tileResolution
+	xMin := strconv.FormatUint( pixelBounds.TopLeft.X, 10 )
+	xMax := strconv.FormatUint( pixelBounds.BottomRight.X - 1, 10 )
+	yMin := strconv.FormatUint( pixelBounds.TopLeft.Y, 10 )
+	yMax := strconv.FormatUint( pixelBounds.BottomRight.Y - 1, 10 )
+	xInterval := strconv.FormatUint( xBinSize, 10 )
+	yInterval := strconv.FormatUint( yBinSize, 10 )
 	request := gorequest.New()
 	query := `{
-	    "_source": "locality.location",
-	    "query":{
-	        "filtered": {
-	            "filter": {
-	                "bool": {
-	                    "must": [
-	                        {
-	                            "exists" : {
-	                                "field" : "locality.location"
-	                            }
-	                        },
-	                        {
-	                            "geo_bounding_box": {
-	                                "locality.location": {
-	                                    "top_left" : {
-	                                        "lon" : ` + strconv.FormatFloat( bounds.BottomLeft.Lon, 'f', 6, 64 ) + `,
-	                                        "lat" : ` + strconv.FormatFloat( bounds.TopRight.Lat, 'f', 6, 64 ) + `
-	                                    },
-	                                    "bottom_right" : {
-	                                        "lon" : ` + strconv.FormatFloat( bounds.TopRight.Lon, 'f', 6, 64 ) + `,
-	                                        "lat" : ` + strconv.FormatFloat( bounds.BottomLeft.Lat, 'f', 6, 64 ) + `
-	                                    }
-	                                }
-	                            }
-	                        }
-	                    ]
+		"query": {
+			"bool" : {
+		        "must" : [
+					{
+			            "range": {
+							"locality.pixel.x": {
+								"gte":` + xMin + `,
+								"lte":` + xMax + `
+							}
+						}
+					},
+					{
+			            "range": {
+							"locality.pixel.y": {
+								"gte":` + yMin + `,
+								"lte":` + yMax + `
+							}
+						}
+					}
+				]
+			}
+		},
+		"aggs": {
+	        "x": {
+	            "histogram": {
+	                "field": "locality.pixel.x",
+	                "interval":` + xInterval + `,
+	                "min_doc_count": 0,
+					"extended_bounds": {
+						"min":` + xMin + `,
+						"max":` + xMax + `
+                    }
+	            },
+	            "aggs": {
+	                "y": {
+	                    "histogram": {
+	                        "field": "locality.pixel.y",
+	                        "interval":` + yInterval + `,
+	                        "min_doc_count": 0,
+							"extended_bounds": {
+								"min":` + yMin + `,
+								"max":` + yMax + `
+                            }
+	                    }
 	                }
 	            }
 	        }
 	    }
 	}`
+	//fmt.Println( query )
+	searchSize := "size=0"
+	filterPath := "filter_path=aggregations.x.buckets.y.buckets.doc_count"
 	_, body, errs := request.
-		Post( esHost + "/" + esIndex + "/_search?size=10000" ).
+		Post( esHost + "/" + esIndex + "/_search?" + searchSize + "&" + filterPath ).
 		Send( query ).
 		End()
 	if errs != nil {
 		return nil, errors.New( "Unable to retrieve tile data" )
 	}
 	//
-	payload := &JsonPayload{}
+	payload := &Payload{}
 	err := json.Unmarshal( []byte(body), &payload )
 	if err != nil {
 	    return nil, err
 	}
-
+	//
 	counts := make([]float64, tileResolution * tileResolution )
-	max := 0.0
-	for i := 0; i < len( payload.Hits.Bins ); i++ {
-		lonLat, err := parseLonLat( &payload.Hits.Bins[i].Source.Locality.Location )
-		if err == nil {
-			binIndex := binning.LonLatToFlatBin( lonLat, tile.Z, tileResolution )
-			counts[ binIndex ]++
-			if counts[ binIndex ] > max {
-				max = counts[ binIndex ]
-			}
+	cols := payload.Aggs.X.Columns
+	for i := 0; i < tileResolution; i++ {
+		rows := cols[i].Y.Rows;
+		for j := 0; j < tileResolution; j++ {
+			counts[ i + tileResolution * j ] = float64( rows[j].Count )
 		}
 	}
-	// for i := 0; i < len( counts ); i++ {
-	// 	if counts[i] > 0 {
-	// 		fmt.Printf("%f\n", counts[i])
-	// 	}
-	// }
+	/*
+		ISSUE: EXTENDED_BOUNDS DOESN'T WORK IF THE BOUNDS IS OUTSIDE INDEX MIN / MAX,
+			CURRENTLY STATIC SIZING THE NUM BINS DOESN'T WORK CORRECTLY. FIX THIS.
+	*/
 	bytes := getByteArray( counts )
 	return bytes, nil
 }

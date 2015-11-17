@@ -1,42 +1,45 @@
 package elastic
 
 /*
-"hits": {
-	"total": 5793,
-	"max_score": 1,
-	"hits": [
-		{
-			"_index": "isil_twitter_dec2may",
-			"_type": "datum",
-			"_id": "tweet561584461964668928",
-			"_score": 1,
-			"fields": {
-				"locality: {
-					location": "40.759831,-73.988277"
+"aggregations": {
+    "x": {
+    	"buckets": [
+        	{
+	        	"y": {
+		            "buckets": [
+		            	{
+			                "doc_count": 10
+			            },
+						...
+					]
 				}
-			}
-		}
-		...
-	]
+			},
+			...
+		]
+	}
 }
 */
 
-type JsonLocation struct {
-	Location string `json:"location"`
+type Row struct {
+	Count uint64 `json:"doc_count"`
 }
 
-type JsonFields struct {
-	Locality JsonLocation `json:"locality"`
+type YAgg struct {
+	Rows [256]Row `json:"buckets"`
 }
 
-type JsonBin struct {
-	Source JsonFields `json:"_source"`
+type Column struct {
+	Y YAgg `json:"y"`
 }
 
-type JsonBinSet struct {
-	Bins []JsonBin `json:"hits"`
+type XAgg struct {
+	Columns [256]Column `json:"buckets"`
 }
 
-type JsonPayload struct {
-	Hits JsonBinSet `json:"hits"`
+type Aggregation struct {
+	X XAgg `json:"x"`
+}
+
+type Payload struct {
+	Aggs Aggregation `json:"aggregations"`
 }
