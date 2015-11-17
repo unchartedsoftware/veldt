@@ -25,7 +25,6 @@ type TweetProperties struct {
 
 type TweetLocality struct {
     Timestamp string `json:"timestamp"`
-    Label *string `json:"label"`
     Location *binning.LonLat `json:"location"`
     Pixel *binning.PixelCoord `json:"pixel"`
 }
@@ -33,6 +32,7 @@ type TweetLocality struct {
 type TweetSource struct {
     Properties TweetProperties `json:"properties"`
     Locality TweetLocality `json:"locality"`
+    Text string `json:"text"`
 }
 
 type TweetIndex struct {
@@ -84,10 +84,6 @@ func createIndexAction( tweetCsv []string ) ( *string, error ) {
     locality := TweetLocality {
         Timestamp: isoDate,
     }
-    // state / province label may not exist
-    if columnExists( tweetCsv[9] ) {
-        locality.Label = &tweetCsv[9]
-    }
     // long / lat may not exist
     if columnExists( tweetCsv[6] ) && columnExists( tweetCsv[7] ) {
         lon, lonErr := strconv.ParseFloat( tweetCsv[6], 64 )
@@ -115,6 +111,7 @@ func createIndexAction( tweetCsv []string ) ( *string, error ) {
     source := TweetSource{
         Properties: properties,
         Locality: locality,
+        Text: tweetCsv[4],
     }
     // build index
     index := TweetIndex{
@@ -136,6 +133,34 @@ func createIndexAction( tweetCsv []string ) ( *string, error ) {
     jsonString := string( indexBytes ) + "\n" + string( sourceBytes )
     return &jsonString, nil
 }
+
+const Mappings =
+    `{
+        "datum": {
+            "properties": {
+                "locality": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "geo_point"
+                        },
+                        "hashtags" : {
+                          "type" : "string",
+                          "index" : "not_analyzed"
+                        },
+                        "userid" : {
+                          "type" : "string",
+                          "index" : "not_analyzed"
+                        },
+                        "username" : {
+                          "type" : "string",
+                          "index" : "not_analyzed"
+                        }
+                    }
+                }
+            }
+        }
+    }`
 
 func TwitterWorker( file os.FileInfo ) {
     config := conf.GetConf()

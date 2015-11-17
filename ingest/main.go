@@ -23,7 +23,7 @@ var (
     hdfsHost = flag.CommandLine.String( "hdfs-host", "", "HDFS host" )
     hdfsPort = flag.CommandLine.String( "hdfs-port", "", "HDFS port" )
     hdfsPath = flag.CommandLine.String( "hdfs-path", "", "HDFS ingest source data path" )
-    batchSize = flag.CommandLine.Int( "batch-size", 20000, "The bulk batch size in documents" )
+    batchSize = flag.CommandLine.Int( "batch-size", 16000, "The bulk batch size in documents" )
     poolSize = flag.CommandLine.Int( "pool-size", 4, "The worker pool size" )
 )
 
@@ -93,22 +93,13 @@ func main() {
 
     // if index does not exist at this point
     if !indexExists || config.EsClearExisting {
-        err = es.CreateIndex( config.EsHost, config.EsPort, config.EsIndex, `{
-            "mappings": {
-                "datum": {
-                    "properties": {
-                        "locality": {
-                            "type": "object",
-                            "properties": {
-                                "location": {
-                                    "type": "geo_point"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }`)
+        err = es.CreateIndex(
+            config.EsHost,
+            config.EsPort,
+            config.EsIndex,
+            `{
+                "mappings": ` + Twitter.Mappings + `
+            }`)
         if err != nil {
             fmt.Println( err )
             debug.PrintStack()
