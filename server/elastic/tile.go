@@ -45,7 +45,7 @@ func parseLonLat( location *string ) ( *binning.LonLat, error ) {
 	return nil, errors.New( "Unable to parse tile coordinate from URL" )
 }
 
-var targetWords = [23]string{
+var targetWords = []string{
 	"cool",
 	"awesome",
 	"amazing",
