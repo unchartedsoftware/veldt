@@ -98,7 +98,7 @@ func main() {
             config.EsPort,
             config.EsIndex,
             `{
-                "mappings": ` + Twitter.Mappings + `
+                "mappings": ` + twitter.GetMappings() + `
             }`)
         if err != nil {
             fmt.Println( err )

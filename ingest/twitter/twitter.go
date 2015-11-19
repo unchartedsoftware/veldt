@@ -5,8 +5,6 @@ import (
     "fmt"
     "os"
     "strings"
-    "strconv"
-    "time"
     "encoding/json"
     "runtime/debug"
 
@@ -18,7 +16,7 @@ import (
 )
 
 type TweetProperties struct {
-    Userid string `json:"userid"`
+    UserID string `json:"userid"`
     Username string `json:"username"`
     Hashtags []string `json:"hashtags"`
 }
@@ -37,86 +35,42 @@ type TweetSource struct {
 
 type TweetIndex struct {
     Type string `json:"_type"`
-    Id string `json:"_id"`
+    ID string `json:"_id"`
 }
 
 type TweetIndexAction struct {
     Index *TweetIndex `json:"index"`
 }
 
-func tweetDateToISO( tweetDate string ) string {
-    const layout = "Mon Jan 2 15:04:05 -0700 2006"
-    t, err := time.Parse( layout, tweetDate )
-    if err != nil {
-        fmt.Println( "Error parsing date: " + tweetDate )
-        return ""
-    }
-    return t.Format( time.RFC3339 )
-}
-
-func columnExists( col string ) bool {
-    if col != "" && col != "None" {
-        return true
-    }
-    return false
-}
-
 const maxLevelSupported = 24
 const tileResolution = 256
 
-/*
-    CSV line as array:
-        0: 'Fri Jan 04 18:42:42 +0000 2013',
-        1: '242573761',
-        2: 'AdioAsh5',
-        3:  '287267829735100416',
-        4:  "Blah blah blah blah blah",
-        5:  '',
-        6:  '-73.94068643', {lon}
-        7:  '40.66179087', {lat}
-        8:  'United States',
-        9:  'New York, NY',
-        10:  'city',
-        11:  'en'
-*/
-func createIndexAction( tweetCsv []string ) ( *string, error ) {
-    isoDate := tweetDateToISO( tweetCsv[0] )
+func createIndexAction( tweet *TweetData ) ( *string, error ) {
     locality := TweetLocality {
-        Timestamp: isoDate,
+        Timestamp: tweet.ISODate,
     }
     // long / lat may not exist
-    if columnExists( tweetCsv[6] ) && columnExists( tweetCsv[7] ) {
-        lon, lonErr := strconv.ParseFloat( tweetCsv[6], 64 )
-        lat, latErr := strconv.ParseFloat( tweetCsv[7], 64 )
-        if lonErr == nil && latErr == nil {
-            lonLat := &binning.LonLat{
-                Lat: lat,
-                Lon: lon,
-            }
-            pixel := binning.LonLatToPixelCoord( lonLat, maxLevelSupported, tileResolution );
-            locality.Location = lonLat
-            locality.Pixel = pixel
-        }
+    if tweet.LonLat != nil {
+        lonLat := tweet.LonLat
+        pixel := binning.LonLatToPixelCoord( lonLat, maxLevelSupported, tileResolution );
+        locality.Location = lonLat
+        locality.Pixel = pixel
     }
     properties := TweetProperties {
-        Userid: tweetCsv[1],
-        Username: tweetCsv[2],
-        Hashtags: make([]string, 0),
-    }
-    // hashtags may not exist
-    if ( columnExists( tweetCsv[5] ) ) {
-        properties.Hashtags = strings.Split( strings.TrimSpace( tweetCsv[5] ), "#" )
+        UserID: tweet.UserID,
+        Username: tweet.Username,
+        Hashtags: tweet.Hashtags,
     }
     // build source node
     source := TweetSource{
         Properties: properties,
         Locality: locality,
-        Text: tweetCsv[4],
+        Text: tweet.TweetText,
     }
     // build index
     index := TweetIndex{
         Type: "datum",
-        Id: tweetCsv[3],
+        ID: tweet.TweetID,
     }
     // create index action
     indexAction := TweetIndexAction{
@@ -134,51 +88,15 @@ func createIndexAction( tweetCsv []string ) ( *string, error ) {
     return &jsonString, nil
 }
 
-const Mappings =
-    `{
-        "datum": {
-            "properties": {
-                "locality": {
-                    "type": "object",
-                    "properties": {
-                        "location": {
-                            "type": "geo_point"
-                        },
-                        "hashtags" : {
-                          "type" : "string",
-                          "index" : "not_analyzed"
-                        },
-                        "userid" : {
-                          "type" : "string",
-                          "index" : "not_analyzed"
-                        },
-                        "username" : {
-                          "type" : "string",
-                          "index" : "not_analyzed"
-                        }
-                    }
-                }
-            }
-        }
-    }`
-
 func TwitterWorker( file os.FileInfo ) {
     config := conf.GetConf()
     documents := make( []string, config.BatchSize )
     documentIndex := 0
 
-    // get hdfs client
-    client, clientErr := hdfs.GetHdfsClient( config.HdfsHost, config.HdfsPort )
-    if clientErr != nil {
-        fmt.Println( clientErr )
-        debug.PrintStack()
-        return
-    }
-
     // get hdfs file reader
-    reader, fileErr := client.Open( config.HdfsPath + "/" + file.Name() )
-    if fileErr != nil {
-        fmt.Println( fileErr )
+    reader, err := hdfs.Open( config.HdfsHost, config.HdfsPort, config.HdfsPath + "/" + file.Name() )
+    if err != nil {
+        fmt.Println( err )
         debug.PrintStack()
         return
     }
@@ -186,7 +104,8 @@ func TwitterWorker( file os.FileInfo ) {
     scanner := bufio.NewScanner( reader )
     for scanner.Scan() {
         line := strings.Split( scanner.Text(), "\t" )
-        action, err := createIndexAction( line )
+        tweet := ParseTweetData( line )
+        action, err := createIndexAction( tweet )
         if err != nil {
             fmt.Println( err )
             debug.PrintStack()
@@ -208,7 +127,7 @@ func TwitterWorker( file os.FileInfo ) {
     reader.Close()
 
     // send remaining documents
-    err := es.Bulk( config.EsHost, config.EsPort, config.EsIndex, documents[0:documentIndex] )
+    err = es.Bulk( config.EsHost, config.EsPort, config.EsIndex, documents[0:documentIndex] )
     if err != nil {
         fmt.Println( err )
         debug.PrintStack()
