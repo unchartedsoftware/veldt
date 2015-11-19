@@ -2,6 +2,8 @@ package binning
 
 import (
 	"math"
+
+	"github.com/unchartedsoftware/prism/util"
 )
 
 // Bounds represents a bounding box
@@ -43,8 +45,8 @@ func CoordToFractionalBin( coord *Coord, level uint32, numBins uint32, bounds *B
 	tile := CoordToFractionalTile( coord, level, bounds )
 	fbins := float64( numBins )
     return &FractionalBinCoord{
-        X: fract( tile.X ) * fbins,
-        Y: fract( tile.Y ) * fbins,
+        X: util.Fract( tile.X ) * fbins,
+        Y: util.Fract( tile.Y ) * fbins,
     }
 }
 

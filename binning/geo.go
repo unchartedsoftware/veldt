@@ -2,6 +2,8 @@ package binning
 
 import (
 	"math"
+
+	"github.com/unchartedsoftware/prism/util"
 )
 
 // GeoBounds represents a geographical bounding box
@@ -28,11 +30,6 @@ func tileToLat( y float64, level uint32 ) float64 {
 	pow2 := math.Pow( 2, float64( level ) )
 	n := math.Pi - ( 2.0 * math.Pi * y ) / pow2
 	return math.Atan( math.Sinh( n ) ) * radiansToDegrees
-}
-
-func fract( value float64 ) float64 {
-	_, fract := math.Modf( value )
-	return fract
 }
 
 // LonLatToFractionalTile converts a geographic coordinate into a floating point tile coordinate
@@ -63,8 +60,8 @@ func LonLatToFractionalBin( lonlat *LonLat, level uint32, numBins uint32 ) *Frac
 	tile := LonLatToFractionalTile( lonlat, level )
 	fbins := float64( numBins )
     return &FractionalBinCoord{
-        X: fract( tile.X ) * fbins,
-        Y: fract( tile.Y ) * fbins,
+        X: util.Fract( tile.X ) * fbins,
+        Y: util.Fract( tile.Y ) * fbins,
     }
 }
 
