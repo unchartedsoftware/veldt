@@ -12,7 +12,7 @@ import (
     "github.com/unchartedsoftware/prism/ingest/info"
     "github.com/unchartedsoftware/prism/ingest/pool"
     "github.com/unchartedsoftware/prism/ingest/progress"
-    //"github.com/unchartedsoftware/prism/ingest/terms"
+    "github.com/unchartedsoftware/prism/ingest/terms"
     "github.com/unchartedsoftware/prism/ingest/twitter"
 
     "github.com/unchartedsoftware/prism/util"
@@ -28,7 +28,8 @@ var (
     hdfsPort = flag.CommandLine.String( "hdfs-port", "", "HDFS port" )
     hdfsPath = flag.CommandLine.String( "hdfs-path", "", "HDFS ingest source data path" )
     batchSize = flag.CommandLine.Int( "batch-size", 16000, "The bulk batch size in documents" )
-    poolSize = flag.CommandLine.Int( "pool-size", 4, "The worker pool size" )
+    poolSize = flag.CommandLine.Int( "pool-size", 8, "The worker pool size" )
+    numTopTerms = flag.CommandLine.Int( "num-top-terms", 200, "The number of top terms to store" )
 )
 
 func parseArgs() conf.Conf {
@@ -63,6 +64,7 @@ func parseArgs() conf.Conf {
         HdfsPath: *hdfsPath,
         BatchSize: *batchSize,
         PoolSize: *poolSize,
+        NumTopTerms: *numTopTerms,
     }
 	conf.SaveConf( &config )
     return config
@@ -122,13 +124,16 @@ func main() {
     fmt.Printf( "Processing %d files containing " + util.FormatBytes( float64( ingestInfo.NumTotalBytes ) ) + " of data\n",
         len( ingestInfo.Files ) )
 
-    // fmt.Println( "Determining top terms found in text" )
-    //
-    // // launch the top terms job
-    // pool.Execute( twitter.TwitterTopTermsWorker, ingestInfo )
-    //
-    // // finished succesfully
-    // progress.PrintTotalDuration()
+    fmt.Println( "Determining top terms found in text" )
+
+    // launch the top terms job
+    pool.Execute( twitter.TwitterTopTermsWorker, ingestInfo )
+
+    // finished succesfully
+    progress.PrintTotalDuration()
+
+    // save n current top term counts
+    terms.SaveTopTerms( uint64( config.NumTopTerms ) );
 
     fmt.Println( "Ingesting data into elasticsearch" )
 

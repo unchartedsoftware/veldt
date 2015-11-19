@@ -11,6 +11,7 @@ type Conf struct {
     HdfsPath string
     BatchSize int
     PoolSize int
+    NumTopTerms int
 }
 
 var config *Conf

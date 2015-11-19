@@ -20,6 +20,7 @@ type TweetProperties struct {
     UserID string `json:"userid"`
     Username string `json:"username"`
     Hashtags []string `json:"hashtags"`
+    TopTerms []string `json:"topterms"`
 }
 
 type TweetLocality struct {
@@ -60,6 +61,7 @@ func createIndexAction( tweet *TweetData ) ( *string, error ) {
         UserID: tweet.UserID,
         Username: tweet.Username,
         Hashtags: tweet.Hashtags,
+        TopTerms: terms.GetTopTerms( tweet.TweetText ),
     }
     // build source node
     source := TweetSource{
@@ -148,7 +150,7 @@ func TwitterTopTermsWorker( file os.FileInfo ) {
     for scanner.Scan() {
         line := strings.Split( scanner.Text(), "\t" )
         tweet := ParseTweetData( line )
-        terms.CountTerms( tweet.TweetText )
+        terms.AddTerms( tweet.TweetText )
     }
 
     reader.Close()
