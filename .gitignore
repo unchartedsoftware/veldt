@@ -4,3 +4,5 @@ node_modules
 build
 bin
 webapp/extern
+main
+main.exe
