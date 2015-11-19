@@ -33,7 +33,7 @@ func GetTermCounts( num uint64 ) []Term {
         i++
     }
     sort.Sort( sort.Reverse( terms ) )
-    numTerms := uint64(len(terms))
+    numTerms := uint64( len( terms ) )
     if num > numTerms {
         return terms[0:numTerms]
     }
@@ -43,12 +43,10 @@ func GetTermCounts( num uint64 ) []Term {
 func GetTopTermsSlice( num uint64 ) []string {
     terms := GetTermCounts( num )
     topTerms := make( []string, len( termCounts ) )
-    i := 0
-    for _, term := range terms {
+    for i, term := range terms {
         topTerms[i] = term.Text
-        i++
     }
-    return topTerms[0:]
+    return topTerms[0:num]
 }
 
 func GetTopTermsMap( num uint64 ) map[string]bool {
