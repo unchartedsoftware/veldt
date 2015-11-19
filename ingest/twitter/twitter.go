@@ -13,6 +13,7 @@ import (
     "github.com/unchartedsoftware/prism/ingest/conf"
     "github.com/unchartedsoftware/prism/ingest/es"
     "github.com/unchartedsoftware/prism/ingest/hdfs"
+    "github.com/unchartedsoftware/prism/ingest/terms"
 )
 
 type TweetProperties struct {
@@ -132,4 +133,25 @@ func TwitterWorker( file os.FileInfo ) {
         fmt.Println( err )
         debug.PrintStack()
     }
+}
+
+func TwitterTopTermsWorker( file os.FileInfo ) {
+    config := conf.GetConf()
+
+    // get hdfs file reader
+    reader, err := hdfs.Open( config.HdfsHost, config.HdfsPort, config.HdfsPath + "/" + file.Name() )
+    if err != nil {
+        fmt.Println( err )
+        debug.PrintStack()
+        return
+    }
+
+    scanner := bufio.NewScanner( reader )
+    for scanner.Scan() {
+        line := strings.Split( scanner.Text(), "\t" )
+        tweet := ParseTweetData( line )
+        terms.CountTerms( tweet.TweetText )
+    }
+
+    reader.Close()
 }
