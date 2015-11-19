@@ -3,6 +3,8 @@ package progress
 import (
     "fmt"
     "time"
+
+    "github.com/unchartedsoftware/prism/util"
 )
 
 type Time struct {
@@ -29,7 +31,7 @@ func getTimestamp() uint64 {
 
 var startTime uint64 = 0
 
-func PrintProgress( totalBytes int64, bytes int64 ) {
+func PrintProgress( totalBytes uint64, bytes uint64 ) {
     if startTime == 0 {
         startTime = getTimestamp()
     }
@@ -41,9 +43,9 @@ func PrintProgress( totalBytes int64, bytes int64 ) {
     }
     estimatedSecondsRemaining := ( float64( totalBytes ) - float64( bytes ) ) / bytesPerSecond
     formattedTime := formatTime( uint64( estimatedSecondsRemaining ) )
-    fmt.Printf( "\rProcessed %d bytes at %f Bps, %f%% complete, estimated time remaining %d:%02d:%02d",
-        bytes,
-        bytesPerSecond,
+    formattedBytes := util.FormatBytes( float64( bytes ) )
+    formattedBytesPerSecond := util.FormatBytes( bytesPerSecond )
+    fmt.Printf( "\rProcessed " + formattedBytes + " at " + formattedBytesPerSecond + "ps, %.2f%% complete, estimated time remaining %d:%02d:%02d",
         percentComplete,
         formattedTime.Hours,
         formattedTime.Minutes,

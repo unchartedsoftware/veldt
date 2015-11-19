@@ -35,7 +35,6 @@ type TweetSource struct {
 }
 
 type TweetIndex struct {
-    Type string `json:"_type"`
     ID string `json:"_id"`
 }
 
@@ -70,7 +69,6 @@ func createIndexAction( tweet *TweetData ) ( *string, error ) {
     }
     // build index
     index := TweetIndex{
-        Type: "datum",
         ID: tweet.TweetID,
     }
     // create index action
@@ -117,7 +115,7 @@ func TwitterWorker( file os.FileInfo ) {
         if documentIndex % config.BatchSize == 0 {
             // send bulk ingest request
             documentIndex = 0
-            err := es.Bulk( config.EsHost, config.EsPort, config.EsIndex, documents[0:] )
+            err := es.Bulk( config.EsHost, config.EsPort, config.EsIndex, config.EsType, documents[0:] )
             if err != nil {
                 fmt.Println( err )
                 debug.PrintStack()
@@ -128,7 +126,7 @@ func TwitterWorker( file os.FileInfo ) {
     reader.Close()
 
     // send remaining documents
-    err = es.Bulk( config.EsHost, config.EsPort, config.EsIndex, documents[0:documentIndex] )
+    err = es.Bulk( config.EsHost, config.EsPort, config.EsIndex, config.EsType, documents[0:documentIndex] )
     if err != nil {
         fmt.Println( err )
         debug.PrintStack()

@@ -12,13 +12,17 @@ import (
     "github.com/unchartedsoftware/prism/ingest/info"
     "github.com/unchartedsoftware/prism/ingest/pool"
     "github.com/unchartedsoftware/prism/ingest/progress"
+    //"github.com/unchartedsoftware/prism/ingest/terms"
     "github.com/unchartedsoftware/prism/ingest/twitter"
+
+    "github.com/unchartedsoftware/prism/util"
 )
 
 var (
 	esHost = flag.CommandLine.String( "es-host", "", "Elasticsearch host" )
     esPort = flag.CommandLine.String( "es-port", "9200", "Elasticsearch port" )
 	esIndex = flag.CommandLine.String( "es-index", "", "Elasticsearch index" )
+	esType = flag.CommandLine.String( "es-type", "datum", "Elasticsearch type" )
 	esClearExisting = flag.CommandLine.Bool( "es-clear-existing", true, "Clear index before ingest" )
     hdfsHost = flag.CommandLine.String( "hdfs-host", "", "HDFS host" )
     hdfsPort = flag.CommandLine.String( "hdfs-port", "", "HDFS port" )
@@ -52,6 +56,7 @@ func parseArgs() conf.Conf {
         EsHost: *esHost,
         EsPort: *esPort,
         EsIndex: *esIndex,
+        EsType: *esType,
         EsClearExisting: *esClearExisting,
         HdfsHost: *hdfsHost,
         HdfsPort: *hdfsPort,
@@ -114,19 +119,18 @@ func main() {
     pool := pool.New( config.PoolSize )
 
     // display some info of the pending ingest
-    fmt.Printf( "Processing %d files containing %d bytes of data\n",
-        len( ingestInfo.Files ),
-        ingestInfo.NumTotalBytes )
+    fmt.Printf( "Processing %d files containing " + util.FormatBytes( float64( ingestInfo.NumTotalBytes ) ) + " of data\n",
+        len( ingestInfo.Files ) )
 
-    fmt.Println( "Determining top terms found in text" )
+    // fmt.Println( "Determining top terms found in text" )
+    //
+    // // launch the top terms job
+    // pool.Execute( twitter.TwitterTopTermsWorker, ingestInfo )
+    //
+    // // finished succesfully
+    // progress.PrintTotalDuration()
 
-    // launch the top terms job
-    pool.Execute( twitter.TwitterTopTermsWorker, ingestInfo )
-
-    // finished succesfully
-    progress.PrintTotalDuration()
-
-    fmt.Println( "Injgesting data into elasticsearch" )
+    fmt.Println( "Ingesting data into elasticsearch" )
 
     // launch the ingest job
     pool.Execute( twitter.TwitterWorker, ingestInfo )
