@@ -80,42 +80,13 @@ func main() {
     // load args into configig struct
     config := parseArgs()
 
-    // check if index exists
-    indexExists, err := es.IndexExists( config.EsHost, config.EsPort, config.EsIndex )
+    // get ingest info
+    ingestInfo, err := info.GetIngestInfo( config.HdfsHost, config.HdfsPort, config.HdfsPath )
     if err != nil {
         fmt.Println( err )
         debug.PrintStack()
         os.Exit(1)
     }
-
-    // if index exists
-    if indexExists && config.EsClearExisting {
-        err = es.DeleteIndex( config.EsHost, config.EsPort, config.EsIndex )
-        if err != nil {
-            fmt.Println( err )
-            debug.PrintStack()
-            os.Exit(1)
-        }
-    }
-
-    // if index does not exist at this point
-    if !indexExists || config.EsClearExisting {
-        err = es.CreateIndex(
-            config.EsHost,
-            config.EsPort,
-            config.EsIndex,
-            `{
-                "mappings": ` + twitter.GetMappings() + `
-            }`)
-        if err != nil {
-            fmt.Println( err )
-            debug.PrintStack()
-            os.Exit(1)
-        }
-    }
-
-    // get ingest info
-    ingestInfo := info.GetIngestInfo( config.HdfsHost, config.HdfsPort, config.HdfsPath )
 
     // create pool of size N
     pool := pool.New( config.PoolSize )
@@ -133,7 +104,15 @@ func main() {
     progress.PrintTotalDuration()
 
     // save n current top term counts
-    terms.SaveTopTerms( uint64( config.NumTopTerms ) );
+    terms.SaveTopTerms( uint64( config.NumTopTerms ) )
+
+    // prepare elasticsearch index
+    err = es.PrepareIndex( config.EsHost, config.EsPort, config.EsIndex, twitter.GetMappings(), config.EsClearExisting )
+    if err != nil {
+        fmt.Println( err )
+        debug.PrintStack()
+        os.Exit(1)
+    }
 
     fmt.Println( "Ingesting data into elasticsearch" )
 
