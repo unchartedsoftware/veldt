@@ -31,7 +31,7 @@ func IndexExists( host string, port string, index string ) ( bool, error ) {
     return resp.StatusCode != 404, nil
 }
 
-func ClearIndex( host string, port string, index string ) error {
+func DeleteIndex( host string, port string, index string ) error {
     fmt.Println( "Clearing index '" +  index + "'" )
     _, _, errs := gorequest.New().
         Delete( host + ":" + port + "/" + index ).

@@ -83,9 +83,9 @@ func main() {
 
     // if index exists
     if indexExists && config.EsClearExisting {
-        err = es.ClearIndex( config.EsHost, config.EsPort, config.EsIndex )
+        err = es.DeleteIndex( config.EsHost, config.EsPort, config.EsIndex )
         if err != nil {
-            fmt.Println("Failed to delete index, aborting.")
+            fmt.Println( err )
             debug.PrintStack()
             os.Exit(1)
         }
@@ -114,9 +114,19 @@ func main() {
     pool := pool.New( config.PoolSize )
 
     // display some info of the pending ingest
-    fmt.Printf( "Indexing %d files containing %d bytes of data\n",
+    fmt.Printf( "Processing %d files containing %d bytes of data\n",
         len( ingestInfo.Files ),
         ingestInfo.NumTotalBytes )
+
+    fmt.Println( "Determining top terms found in text" )
+
+    // launch the top terms job
+    pool.Execute( twitter.TwitterTopTermsWorker, ingestInfo )
+
+    // finished succesfully
+    progress.PrintTotalDuration()
+
+    fmt.Println( "Injgesting data into elasticsearch" )
 
     // launch the ingest job
     pool.Execute( twitter.TwitterWorker, ingestInfo )

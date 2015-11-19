@@ -41,7 +41,7 @@ func PrintProgress( totalBytes int64, bytes int64 ) {
     }
     estimatedSecondsRemaining := ( float64( totalBytes ) - float64( bytes ) ) / bytesPerSecond
     formattedTime := formatTime( uint64( estimatedSecondsRemaining ) )
-    fmt.Printf( "\rIndexed %d bytes at %f Bps, %f%% complete, estimated time remaining %d:%02d:%02d",
+    fmt.Printf( "\rProcessed %d bytes at %f Bps, %f%% complete, estimated time remaining %d:%02d:%02d",
         bytes,
         bytesPerSecond,
         percentComplete,
@@ -53,7 +53,7 @@ func PrintProgress( totalBytes int64, bytes int64 ) {
 func PrintTotalDuration() {
     // finished succesfully
     formattedTime := formatTime( getTimestamp() - startTime )
-    fmt.Printf( "\nIndexing completed in %d:%02d:%02d\n",
+    fmt.Printf( "\nTask completed in %d:%02d:%02d\n",
         formattedTime.Hours,
         formattedTime.Minutes,
         formattedTime.Seconds )
