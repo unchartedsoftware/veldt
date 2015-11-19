@@ -55,3 +55,32 @@ func CreateIndex( host string, port string, index string, body string ) error {
     }
     return nil
 }
+
+func PrepareIndex( host string, port string, index string, mappings string, clearExisting bool ) error {
+    // check if index exists
+    indexExists, err := IndexExists( host, port, index )
+    if err != nil {
+        return err
+    }
+    // if index exists
+    if indexExists && clearExisting {
+        err = DeleteIndex( host, port, index )
+        if err != nil {
+            return err
+        }
+    }
+    // if index does not exist at this point
+    if !indexExists || clearExisting {
+        err = CreateIndex(
+            host,
+            port,
+            index,
+            `{
+                "mappings": ` + mappings + `
+            }`)
+        if err != nil {
+            return err
+        }
+    }
+    return nil
+}

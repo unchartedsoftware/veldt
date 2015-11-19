@@ -1,9 +1,7 @@
 package info
 
 import (
-    "fmt"
     "os"
-    "runtime/debug"
 
     "github.com/unchartedsoftware/prism/ingest/hdfs"
 )
@@ -13,12 +11,10 @@ type IngestInfo struct {
     NumTotalBytes uint64
 }
 
-func GetIngestInfo( host string, port string, path string ) *IngestInfo {
+func GetIngestInfo( host string, port string, path string ) ( *IngestInfo, error ) {
     files, err := hdfs.ReadDir( host, port, path )
     if err != nil {
-        fmt.Println( err )
-        debug.PrintStack()
-        os.Exit(1)
+        return nil, err
     }
     var fileInfos []os.FileInfo
     var numTotalBytes int64 = 0
@@ -33,5 +29,5 @@ func GetIngestInfo( host string, port string, path string ) *IngestInfo {
     return &IngestInfo{
         Files: fileInfos,
         NumTotalBytes: uint64( numTotalBytes ),
-    }
+    }, nil
 }
