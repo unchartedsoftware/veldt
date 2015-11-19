@@ -4,6 +4,7 @@
 
     var $ = require('jquery');
     //var _ = require('lodash');
+    var d3 = require('d3');
 
     window.startApp = function() {
 
@@ -11,7 +12,7 @@
         var map = new L.Map('map', {
             zoomControl: true,
             center: [40.7, -73.9],
-            zoom: 11,
+            zoom: 14,
             maxZoom: 18
         });
 
@@ -71,11 +72,10 @@
 
         // Create the canvas tile layer
         var heatmapLayer = new L.tileLayer.canvas();
-
         // Override 'drawTile' method. Requests the bin data for the tile, and
         // if it exists, renders to the canvas element for the repsecive tile.
         heatmapLayer.drawTile = function(canvas, index, zoom) {
-            var url = './tile/'+zoom+'/'+index.x+'/'+index.y;
+            var url = './heatmap/'+zoom+'/'+index.x+'/'+index.y;
             $( canvas ).addClass( 'blinking' );
             getArrayBuffer( url, function( bins ) {
                 if (!bins) {
@@ -103,7 +103,87 @@
             });
         };
         // Add layer to the map
-        heatmapLayer.addTo(map);
+        heatmapLayer.addTo( map );
+
+        // Create the canvas tile layer
+        var wordCloudLayer = new L.tileLayer.canvas();
+        // Override 'drawTile' method. Requests the bin data for the tile, and
+        // if it exists, renders to the canvas element for the repsective tile.
+        var layout = function( words, renderInfo, width, height ) {
+            var that = this;
+            var startX = width/2;
+            var startY = height/2;
+            var maxRadius = Math.min(width,height) * 0.5;
+            words.forEach( function( word ) {
+                var placed = false;
+                for (var i = 10; i > 0 && !placed; i--) {
+                    var minRadius = maxRadius * (1/i);
+                    for (var t = 0; t <= 1 && !placed; t+= (1/50)) {
+                        var searchRadius = minRadius + (maxRadius-minRadius)*t;
+                        var theta = Math.random() * Math.PI * 2;
+                        var r = Math.random() * searchRadius;
+                        // Apply a shift no more than the width of word to avoid bunching on the right
+                        var shiftX = -(Math.random() * renderInfo[word].bb.width);
+                        var shiftY = -(Math.random() * renderInfo[word].bb.height);
+                        renderInfo[word].x = startX + r * Math.sin(theta) + shiftX;
+                        renderInfo[word].y = startY + r * Math.cos(theta) + shiftY;
+                        if (that.fits(renderInfo[word])) {
+                            placed = true;
+                            that.place(word,renderInfo[word]);
+                        }
+                    }
+                }
+                if (!placed) {
+                    renderInfo[word].x = -1;
+                    renderInfo[word].y = -1;
+                }
+            });
+        };
+
+        var colorRamp = d3.scale.sqrt()
+            .range([ '#c77c11', '#f8d9ac' ])
+            .domain([0, 1]);
+
+        wordCloudLayer.drawTile = function(canvas, index, zoom) {
+            var url = './wordcloud/'+zoom+'/'+index.x+'/'+index.y;
+            $( canvas ).addClass( 'blinking' );
+            $.getJSON( url, function( wordCounts ) {
+                if ( !wordCounts ) {
+                    // Exit early if no data
+                    return;
+                }
+                new Cloud5()
+                    .canvas( canvas )
+                    .width( 256 )
+                    .height( 256 )
+                    .font( 'Helvetica' )
+                    .minFontSize( 10 )
+                    .maxFontSize( 30 )
+                    .wordMap( wordCounts )
+                    .color( function( info ) {
+                        return colorRamp( ( info.count - info.minCount ) / ( info.maxCount - info.minCount ) );
+                    })
+                    .onWordOver( function() {
+                        // handle mousing over a word
+                        $( canvas ).css( 'cursor', 'pointer' );
+                        //cloud.highlight( word, "ff0000" );
+                    })
+                    .onWordOut( function() {
+                        // handle mousing out of a word
+                        $( canvas ).css( 'cursor', 'auto' );
+                        //cloud.unhighlight( word );
+                    })
+                    .onWordClick( function( word ) {
+                        // handle clicking a word
+                        console.log( word );
+                    })
+                    .layout( layout )
+                    .generate();
+                $( canvas ).removeClass( 'blinking' );
+            });
+        };
+        // Add layer to the map
+        wordCloudLayer.addTo( map );
     };
 
 }());
