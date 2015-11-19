@@ -10,11 +10,10 @@ import (
 
 type IngestInfo struct {
     Files []os.FileInfo
-    NumTotalBytes int64
+    NumTotalBytes uint64
 }
 
 func GetIngestInfo( host string, port string, path string ) *IngestInfo {
-    fmt.Println( "Retreiving ingest directory information from: " + path )
     files, err := hdfs.ReadDir( host, port, path )
     if err != nil {
         fmt.Println( err )
@@ -33,6 +32,6 @@ func GetIngestInfo( host string, port string, path string ) *IngestInfo {
     }
     return &IngestInfo{
         Files: fileInfos,
-        NumTotalBytes: numTotalBytes,
+        NumTotalBytes: uint64( numTotalBytes ),
     }
 }

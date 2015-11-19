@@ -26,7 +26,7 @@ func New( size int ) Pool {
 }
 
 // Track how many bytes of data has been processed
-var numProcessedBytes = int64( 0 )
+var numProcessedBytes = uint64( 0 )
 
 func workerWrapper( linkChan chan os.FileInfo, waitGroup *sync.WaitGroup, worker Worker, ingestInfo *info.IngestInfo ) {
     // Decrease internal counter for wait-group as soon as goroutine finishes
@@ -35,7 +35,7 @@ func workerWrapper( linkChan chan os.FileInfo, waitGroup *sync.WaitGroup, worker
         // Print current progress
         worker( file )
         // Increment processed bytes
-        numProcessedBytes += file.Size()
+        numProcessedBytes += uint64( file.Size() )
         // Print current progress
         progress.PrintProgress( ingestInfo.NumTotalBytes, numProcessedBytes )
 	}

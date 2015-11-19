@@ -9,9 +9,9 @@ import (
     "github.com/parnurzeal/gorequest"
 )
 
-func Bulk( host string, port string, index string, actions []string ) error {
+func Bulk( host string, port string, index string, datatype string, actions []string ) error {
     jsonLines := fmt.Sprintf( "%s\n", strings.Join( actions, "\n" ) )
-	response, err := http.Post( host + ":" + port + "/" + index + "/_bulk", "application/json", strings.NewReader( jsonLines ) )
+	response, err := http.Post( host + ":" + port + "/" + index + "/" + datatype + "/_bulk", "application/json", strings.NewReader( jsonLines ) )
     if err != nil {
         fmt.Println( err )
         return errors.New("Bulk request failed")

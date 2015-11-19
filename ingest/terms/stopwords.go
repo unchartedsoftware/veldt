@@ -1,6 +1,6 @@
-package stopwords
+package terms
 
-const stopWords = []string{
+var stopWords = []string{
     "a",
     "about",
     "above",
@@ -323,11 +323,18 @@ const stopWords = []string{
 }
 
 // convert the list of stopwords into a hashmap for querying
-var stopWordMap = make( map[string]bool )
-for _, word := range stopWords {
-    stopWordMap[ word ] = true
+var stopWordMap map[string]bool
+
+func getStopWordMap() map[string]bool {
+    if stopWordMap == nil {
+        stopWordMap = make( map[string]bool  )
+        for _, word := range stopWords {
+            stopWordMap[ word ] = true
+        }
+    }
+    return stopWordMap
 }
 
 func IsStopWord( word string ) bool {
-    return stopWordMap[ word ]
+    return getStopWordMap()[ word ]
 }

@@ -1,8 +1,10 @@
 package terms
 
 import (
+    "regexp"
     "sort"
     "strings"
+    "sync"
 )
 
 // Term class to store a term and the occurance count
@@ -23,17 +25,27 @@ func (terms Terms) Swap(i, j int) {
     terms[i], terms[j] = terms[j], terms[i]
 }
 
+var mutex = sync.Mutex{}
 var termCounts = make( map[string]uint64 )
 
 func ClearTerms() {
     termCounts = make( map[string]uint64 )
 }
 
+func RemovePunctuation( text string ) string {
+    reg, _ := regexp.Compile("[.,-/#!$%^&*;:{}=-_`~()]")
+    return reg.ReplaceAllString( text, "" )
+}
+
 func CountTerms( text string ) {
-    words := strings.Fields( text )
+    words := strings.Fields( RemovePunctuation( text ) )
+    mutex.Lock()
     for _, word := range words {
-        termCounts[ word ]++
+        if !IsStopWord( word ) {
+            termCounts[ word ]++
+        }
     }
+    mutex.Unlock()
 }
 
 func GetTermCounts( num uint64 ) []Term {
@@ -47,6 +59,10 @@ func GetTermCounts( num uint64 ) []Term {
         i++
     }
     sort.Sort( sort.Reverse( terms ) )
+    numTerms := uint64(len(terms))
+    if num > numTerms {
+        return terms[0:numTerms]
+    }
     return terms[0:num]
 }
 
