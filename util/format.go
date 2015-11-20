@@ -22,6 +22,7 @@ func formatRecursive( size float64, powerOfThousand uint8 ) string {
     return fmt.Sprintf( "%.2f " + suffixes[powerOfThousand], size )
 }
 
+// FormatBytes formats a number of bytes into a string with the appropriate suffix.
 func FormatBytes( bytes float64 ) string {
     return formatRecursive( bytes, 0 )
 }

@@ -6,19 +6,19 @@ import (
 	"github.com/unchartedsoftware/prism/util"
 )
 
-// Bounds represents a bounding box
+// Bounds represents a bounding box.
 type Bounds struct {
 	TopLeft *Coord
 	BottomRight *Coord
 }
 
-// Coord represents a point
+// Coord represents a point.
 type Coord struct {
 	X float64 `json:"x"`
 	Y float64 `json:"y"`
 }
 
-// CoordToFractionalTile converts a data coordniate to a floating point tile coordinate
+// CoordToFractionalTile converts a data coordniate to a floating point tile coordinate.
 func CoordToFractionalTile( coord *Coord, level uint32, bounds *Bounds ) *FractionalTileCoord {
     pow2 := math.Pow( 2, float64( level ) )
     x := pow2 * ( coord.X - bounds.TopLeft.X ) / ( bounds.BottomRight.X - bounds.TopLeft.X )
@@ -30,7 +30,7 @@ func CoordToFractionalTile( coord *Coord, level uint32, bounds *Bounds ) *Fracti
     }
 }
 
-// CoordToTile converts a data coordniate to a tile coordinate
+// CoordToTile converts a data coordniate to a tile coordinate.
 func CoordToTile( coord *Coord, level uint32, bounds *Bounds ) *TileCoord {
 	tile := CoordToFractionalTile( coord, level, bounds )
 	return &TileCoord{
@@ -40,7 +40,7 @@ func CoordToTile( coord *Coord, level uint32, bounds *Bounds ) *TileCoord {
 	}
 }
 
-// CoordToFractionalBin converts a data coordniate to a floating point bin coordinate
+// CoordToFractionalBin converts a data coordniate to a floating point bin coordinate.
 func CoordToFractionalBin( coord *Coord, level uint32, numBins uint32, bounds *Bounds ) *FractionalBinCoord {
 	tile := CoordToFractionalTile( coord, level, bounds )
 	fbins := float64( numBins )
@@ -50,7 +50,7 @@ func CoordToFractionalBin( coord *Coord, level uint32, numBins uint32, bounds *B
     }
 }
 
-// CoordToBin converts a data coordniate to a bin coordinate
+// CoordToBin converts a data coordniate to a bin coordinate.
 func CoordToBin( coord *Coord, level uint32, numBins uint32, bounds *Bounds ) *BinCoord {
 	bin := CoordToFractionalBin( coord, level, numBins, bounds )
 	return &BinCoord{
@@ -59,7 +59,7 @@ func CoordToBin( coord *Coord, level uint32, numBins uint32, bounds *Bounds ) *B
 	}
 }
 
-// GetTileBounds returns the data coordniate bounds of the tile coordinate
+// GetTileBounds returns the data coordniate bounds of the tile coordinate.
 func GetTileBounds( tile *TileCoord, bounds *Bounds ) *Bounds {
     pow2 := math.Pow( 2, float64( tile.Z ) )
     tileXSize := ( bounds.BottomRight.X - bounds.TopLeft.X ) / pow2

@@ -2,7 +2,7 @@
 
 HDFS_HOST="uscc0-master0.uncharted.software"
 HDFS_POST="8020"
-HDFS_NYC_PATH="/xdata/data/SummerCamp2015/JulyData-processed/nyc_twitter_merged"
+HDFS_NYC_PATH="/xdata/data/SummerCamp2015/JulyData-processed/nyc_twitter_new"
 
 ES_HOST="http://10.64.16.120"
 ES_PORT="9200"

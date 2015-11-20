@@ -20,6 +20,7 @@ func getHdfsClient( host string, port string ) ( *hdfs.Client, error ) {
     return hdfsClient, nil
 }
 
+// Open will connect to HDFS, open a file, and return a file reader.
 func Open( host string, port string, filePath string ) ( *hdfs.FileReader, error ) {
     // get hdfs client
     client, err := getHdfsClient( host, port )
@@ -30,6 +31,7 @@ func Open( host string, port string, filePath string ) ( *hdfs.FileReader, error
     return client.Open( filePath )
 }
 
+// ReadDir will connect to HDFS and return an array containing file information.
 func ReadDir( host string, port string, path string ) ( []os.FileInfo, error ) {
     // get hdfs client
     client, err := getHdfsClient( host, port )

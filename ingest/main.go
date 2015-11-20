@@ -98,7 +98,7 @@ func main() {
     fmt.Println( "Determining top terms found in text" )
 
     // launch the top terms job
-    pool.Execute( twitter.TwitterTopTermsWorker, ingestInfo )
+    pool.Execute( twitter.TopTermsWorker, ingestInfo )
 
     // finished succesfully
     progress.PrintTotalDuration()
@@ -117,7 +117,7 @@ func main() {
     fmt.Println( "Ingesting data into elasticsearch" )
 
     // launch the ingest job
-    pool.Execute( twitter.TwitterWorker, ingestInfo )
+    pool.Execute( twitter.IngestWorker, ingestInfo )
 
     // finished succesfully
     progress.PrintTotalDuration()

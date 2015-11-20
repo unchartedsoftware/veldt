@@ -21,7 +21,7 @@ func New() http.Handler {
 
 	// Mount tile request handlers
 	r.Get( "/heatmap/:z/:x/:y", heatmapTileHandler )
-	r.Get( "/wordcloud/:z/:x/:y", jsonTileHandler )
+	r.Get( "/topiccount/:z/:x/:y", topicCountTileHandler )
 
 	// Greedy route last
 	r.Get( "/*", http.FileServer( http.Dir( conf.PublicDir ) ) )

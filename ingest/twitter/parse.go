@@ -9,6 +9,7 @@ import (
     "github.com/unchartedsoftware/prism/binning"
 )
 
+// TweetData represents a single row of twitter TSV data.
 type TweetData struct {
     ISODate string
     UserID string
@@ -40,22 +41,21 @@ func columnExists( col string ) bool {
     return false
 }
 
-/*
-    CSV line as array:
-        0: 'Fri Jan 04 18:42:42 +0000 2013',
-        1: '242573761',
-        2: 'AdioAsh5',
-        3:  '287267829735100416',
-        4:  "Blah blah blah blah blah",
-        5:  '',
-        6:  '-73.94068643', {lon}
-        7:  '40.66179087', {lat}
-        8:  'United States',
-        9:  'New York, NY',
-        10:  'city',
-        11:  'en'
-*/
+// ParseTweetData transforms a csv string into a tweet data struct.
 func ParseTweetData( tweetCsv []string ) *TweetData {
+    // CSV line as array:
+    //     0: 'Fri Jan 04 18:42:42 +0000 2013',
+    //     1: '242573761',
+    //     2: 'AdioAsh5',
+    //     3:  '287267829735100416',
+    //     4:  "Blah blah blah blah blah",
+    //     5:  '',
+    //     6:  '-73.94068643', {lon}
+    //     7:  '40.66179087', {lat}
+    //     8:  'United States',
+    //     9:  'New York, NY',
+    //     10:  'city',
+    //     11:  'en'
     tweet := TweetData{
         ISODate: tweetDateToISO( tweetCsv[0] ),
         UserID: tweetCsv[1],

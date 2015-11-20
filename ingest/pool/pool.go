@@ -8,8 +8,10 @@ import (
     "github.com/unchartedsoftware/prism/ingest/progress"
 )
 
+// Worker represents a designated worker function to batch in a pool.
 type Worker func( file os.FileInfo )
 
+// Pool represents a single goroutine pool for batching workers.
 type Pool struct {
     Channel chan os.FileInfo
     WaitGroup *sync.WaitGroup
@@ -41,6 +43,7 @@ func workerWrapper( linkChan chan os.FileInfo, waitGroup *sync.WaitGroup, worker
 	}
 }
 
+// Execute launches a batch of ingest workers with the provided ingest information.
 func (p *Pool) Execute( worker Worker, ingestInfo *info.IngestInfo ) {
     // Adding routines to workgroup and running then
     for i := 0; i<p.Size; i++ {

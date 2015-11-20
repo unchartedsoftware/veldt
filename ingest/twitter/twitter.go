@@ -16,6 +16,7 @@ import (
     "github.com/unchartedsoftware/prism/ingest/terms"
 )
 
+// TweetProperties represents the 'properties' node of a tweet document.
 type TweetProperties struct {
     UserID string `json:"userid"`
     Username string `json:"username"`
@@ -23,22 +24,26 @@ type TweetProperties struct {
     TopTerms []string `json:"topterms"`
 }
 
+// TweetLocality represents the 'locality' node of a tweet document.
 type TweetLocality struct {
     Timestamp string `json:"timestamp"`
     Location *binning.LonLat `json:"location"`
     Pixel *binning.PixelCoord `json:"pixel"`
 }
 
+// TweetSource represents the 'source' node of a tweet document.
 type TweetSource struct {
     Properties TweetProperties `json:"properties"`
     Locality TweetLocality `json:"locality"`
     Text string `json:"text"`
 }
 
+// TweetIndex represents the 'index' property of an index action.
 type TweetIndex struct {
     ID string `json:"_id"`
 }
 
+// TweetIndexAction represents the 'index' action type for a bulk ingest.
 type TweetIndexAction struct {
     Index *TweetIndex `json:"index"`
 }
@@ -89,7 +94,8 @@ func createIndexAction( tweet *TweetData ) ( *string, error ) {
     return &jsonString, nil
 }
 
-func TwitterWorker( file os.FileInfo ) {
+// IngestWorker is a worker to ingest twitter data into elasticsearch.
+func IngestWorker( file os.FileInfo ) {
     config := conf.GetConf()
     documents := make( []string, config.BatchSize )
     documentIndex := 0
@@ -135,7 +141,8 @@ func TwitterWorker( file os.FileInfo ) {
     }
 }
 
-func TwitterTopTermsWorker( file os.FileInfo ) {
+// TopTermsWorker is a worker to calculate the top terms found in tweet text.
+func TopTermsWorker( file os.FileInfo ) {
     config := conf.GetConf()
 
     // get hdfs file reader

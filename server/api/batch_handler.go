@@ -1,6 +1,6 @@
-/*
 package api
 
+/*
 import (
 	"errors"
 	"fmt"

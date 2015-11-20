@@ -57,7 +57,7 @@ func heatmapTileHandler( c web.C, w http.ResponseWriter, r *http.Request ) {
 	w.Write( bins )
 }
 
-func jsonTileHandler( c web.C, w http.ResponseWriter, r *http.Request ) {
+func topicCountTileHandler( c web.C, w http.ResponseWriter, r *http.Request ) {
 	// set content type response header
 	w.Header().Set( "Content-Type", "application/json" )
 	// parse tile coord from URL
@@ -67,7 +67,7 @@ func jsonTileHandler( c web.C, w http.ResponseWriter, r *http.Request ) {
 		return
 	}
 	// extract tile data
-	json, tileErr := elastic.GetJSONTile( tile )
+	json, tileErr := elastic.GetTopicCountTile( tile )
 	if tileErr != nil {
 		handleTileErr( w )
 		return

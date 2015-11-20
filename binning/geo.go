@@ -6,13 +6,13 @@ import (
 	"github.com/unchartedsoftware/prism/util"
 )
 
-// GeoBounds represents a geographical bounding box
+// GeoBounds represents a geographical bounding box.
 type GeoBounds struct {
 	TopLeft *LonLat
 	BottomRight *LonLat
 }
 
-// LonLat represents a geographic point
+// LonLat represents a geographic point.
 type LonLat struct {
 	Lon float64 `json:"lon"`
 	Lat float64 `json:"lat"`
@@ -32,7 +32,7 @@ func tileToLat( y float64, level uint32 ) float64 {
 	return math.Atan( math.Sinh( n ) ) * radiansToDegrees
 }
 
-// LonLatToFractionalTile converts a geographic coordinate into a floating point tile coordinate
+// LonLatToFractionalTile converts a geographic coordinate into a floating point tile coordinate.
 func LonLatToFractionalTile( lonLat *LonLat, level uint32 ) *FractionalTileCoord {
 	latR := lonLat.Lat * degreesToRadians
 	pow2 := math.Pow( 2, float64( level ) )
@@ -45,7 +45,7 @@ func LonLatToFractionalTile( lonLat *LonLat, level uint32 ) *FractionalTileCoord
     }
 }
 
-// LonLatToTile converts a geographic coordinate into tile coordinate
+// LonLatToTile converts a geographic coordinate into tile coordinate.
 func LonLatToTile( lonlat *LonLat, level uint32 ) *TileCoord {
 	tile := LonLatToFractionalTile( lonlat, level )
 	return &TileCoord{
@@ -55,7 +55,7 @@ func LonLatToTile( lonlat *LonLat, level uint32 ) *TileCoord {
 	}
 }
 
-// LonLatToFractionalBin converts a geographic coordinate into a floating point bin coordinate
+// LonLatToFractionalBin converts a geographic coordinate into a floating point bin coordinate.
 func LonLatToFractionalBin( lonlat *LonLat, level uint32, numBins uint32 ) *FractionalBinCoord {
 	tile := LonLatToFractionalTile( lonlat, level )
 	fbins := float64( numBins )
@@ -65,7 +65,7 @@ func LonLatToFractionalBin( lonlat *LonLat, level uint32, numBins uint32 ) *Frac
     }
 }
 
-// LonLatToBin converts a geographic coordinate into a bin coordinate
+// LonLatToBin converts a geographic coordinate into a bin coordinate.
 func LonLatToBin( lonlat *LonLat, level uint32, numBins uint32 ) *BinCoord {
 	bin := LonLatToFractionalBin( lonlat, level, numBins )
 	return &BinCoord{
@@ -74,13 +74,7 @@ func LonLatToBin( lonlat *LonLat, level uint32, numBins uint32 ) *BinCoord {
 	}
 }
 
-func LonLatToFlatBin( lonlat *LonLat, level uint32, numBins uint32 ) uint32 {
-	bin := LonLatToFractionalBin( lonlat, level, numBins )
-	return uint32( math.Floor( bin.X ) ) +
-		uint32( math.Floor( bin.Y ) ) * numBins
-}
-
-// GetTileGeoBounds returns the geographic bounds of the tile coordinate
+// GetTileGeoBounds returns the geographic bounds of the tile coordinate.
 func GetTileGeoBounds( tile *TileCoord ) *GeoBounds {
 	top := tileToLat( float64( tile.Y ), tile.Z )
     bottom := tileToLat( float64( tile.Y + 1 ), tile.Z )

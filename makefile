@@ -7,6 +7,7 @@ all:
 	@echo ""
 	@echo "commands:"
 	@echo "  build         - build the dist binary"
+	@echo "  lint          - lint the source code"
 	@echo "  clean         - clean the dist build"
 	@echo ""
 	@echo "  tools         - go gets a bunch of tools for dev"
@@ -16,9 +17,11 @@ all:
 clean:
 	@rm -rf ./bin
 
-build: clean
+lint:
 	@go vet ./...
 	@golint ./...
+
+build: clean lint
 	@go build -o ./bin/prism.bin server/main.go
 
 deps:

@@ -22,6 +22,7 @@ func (terms Terms) Swap(i, j int) {
     terms[i], terms[j] = terms[j], terms[i]
 }
 
+// GetTermCounts returns a desc sorted array of term structs of size N.
 func GetTermCounts( num uint64 ) []Term {
     terms := make( Terms, len( termCounts ) )
     i := 0
@@ -40,6 +41,7 @@ func GetTermCounts( num uint64 ) []Term {
     return terms[0:num]
 }
 
+// GetTopTermsSlice returns a desc sorted array of N top terms.
 func GetTopTermsSlice( num uint64 ) []string {
     terms := GetTermCounts( num )
     topTerms := make( []string, len( termCounts ) )
@@ -49,6 +51,7 @@ func GetTopTermsSlice( num uint64 ) []string {
     return topTerms[0:num]
 }
 
+// GetTopTermsMap returns a map of N top terms, terms as keys, true as values.
 func GetTopTermsMap( num uint64 ) map[string]bool {
     terms := GetTermCounts( num )
     topTerms := make( map[string]bool )

@@ -2,25 +2,23 @@ package binning
 
 import (
 	"math"
+
+	"github.com/unchartedsoftware/prism/util"
 )
 
-// PixelBounds represents a bounding box in pixel coordinates
+// PixelBounds represents a bounding box in pixel coordinates.
 type PixelBounds struct {
 	TopLeft *PixelCoord
 	BottomRight *PixelCoord
 }
 
-// PixelCoord represents a point in pixel coordinates
+// PixelCoord represents a point in pixel coordinates.
 type PixelCoord struct {
 	X uint64 `json:"x"`
 	Y uint64 `json:"y"`
 }
 
-func Round( f float64 ) float64 {
-    return math.Floor( f + 0.5 )
-}
-
-// LonLatToPixelCoord translates a geographic coordinate to a pixel coordinate
+// LonLatToPixelCoord translates a geographic coordinate to a pixel coordinate.
 func LonLatToPixelCoord( lonLat *LonLat, level uint32, tileResolution uint32 ) *PixelCoord {
     pow2 := math.Pow( 2, float64( level ) )
     // Converting to range from [0:1] where 0,0 is top left
@@ -35,7 +33,7 @@ func LonLatToPixelCoord( lonLat *LonLat, level uint32, tileResolution uint32 ) *
     }
 }
 
-// CoordToPixelCoord translates a coordinate to a pixel coordinate
+// CoordToPixelCoord translates a coordinate to a pixel coordinate.
 func CoordToPixelCoord( coord *Coord, level uint32, bounds *Bounds, tileResolution uint32 ) *PixelCoord {
     pow2 := math.Pow( 2, float64( level ) )
     // Converting to range from [0:1] where 0,0 is top left
@@ -50,7 +48,7 @@ func CoordToPixelCoord( coord *Coord, level uint32, bounds *Bounds, tileResoluti
     }
 }
 
-// GetTileBounds returns the data coordniate bounds of the tile coordinate
+// GetTilePixelBounds returns the pixel coordniate bounds of the tile coordinate.
 func GetTilePixelBounds( tile *TileCoord, level uint32, tileResolution uint32 ) *PixelBounds {
 	sourcePow2 := math.Pow( 2, float64( tile.Z ) )
 	// Converting to range from [0:1] where 0,0 is top left
@@ -59,15 +57,15 @@ func GetTilePixelBounds( tile *TileCoord, level uint32, tileResolution uint32 ) 
 	yMin := float64( tile.Y ) / sourcePow2
 	yMax := float64( tile.Y + 1 ) / sourcePow2
 	// Projecting to pixel coords
-	destPow2 := Round( math.Pow( 2, float64( level ) ) * float64( tileResolution ) )
+	destPow2 := util.Round( math.Pow( 2, float64( level ) ) * float64( tileResolution ) )
 	return &PixelBounds{
 		TopLeft: &PixelCoord{
-			X: uint64( Round( xMin * destPow2 ) ),
-			Y: uint64( Round( yMin * destPow2 ) ),
+			X: uint64( util.Round( xMin * destPow2 ) ),
+			Y: uint64( util.Round( yMin * destPow2 ) ),
 		},
 		BottomRight: &PixelCoord{
-			X: uint64( Round( xMax * destPow2 ) ),
-			Y: uint64( Round( yMax * destPow2 ) ),
+			X: uint64( util.Round( xMax * destPow2 ) ),
+			Y: uint64( util.Round( yMax * destPow2 ) ),
 		},
 	}
 }

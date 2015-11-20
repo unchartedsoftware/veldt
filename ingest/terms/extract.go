@@ -5,25 +5,25 @@ import (
     "strings"
 )
 
-var PunctRegex, _ = regexp.Compile(`[^\w\s]`)
-var URLRegex, _ = regexp.Compile(`(^|\s)((https?:\/\/)?[\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?)`)
-var MentionRegex, _ = regexp.Compile(`(@[a-z\d_]+)`)
-var HashtagRegex, _ = regexp.Compile(`(#[\S\W]+)`)
+var punctRegex, _ = regexp.Compile(`[^\w\s]`)
+var urlRegex, _ = regexp.Compile(`(^|\s)((https?:\/\/)?[\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?)`)
+var mentionRegex, _ = regexp.Compile(`(@[a-z\d_]+)`)
+var hashtagRegex, _ = regexp.Compile(`(#[\S\W]+)`)
 
 func removePunctuation( text string ) string {
-    return PunctRegex.ReplaceAllString( text, "" )
+    return punctRegex.ReplaceAllString( text, "" )
 }
 
 func removeURLs( text string ) string {
-    return URLRegex.ReplaceAllString( text, "" )
+    return urlRegex.ReplaceAllString( text, "" )
 }
 
 func removeMentions( text string ) string {
-    return MentionRegex.ReplaceAllString( text, "" )
+    return mentionRegex.ReplaceAllString( text, "" )
 }
 
 func removeHashtags( text string ) string {
-    return HashtagRegex.ReplaceAllString( text, "" )
+    return hashtagRegex.ReplaceAllString( text, "" )
 }
 
 func removeStopWords( words []string ) []string {
@@ -38,6 +38,7 @@ func removeStopWords( words []string ) []string {
     return validWords[0:i]
 }
 
+// ExtractTerms will extract meaningful terms from a string of text.
 func ExtractTerms( text string ) []string {
     text = removeURLs( text ) // remove urls first
     text = removeMentions( text ) // then hashtags

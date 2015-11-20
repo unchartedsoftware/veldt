@@ -9,6 +9,7 @@ import (
     "github.com/parnurzeal/gorequest"
 )
 
+// Bulk sends a bulk request to elasticsearch with the provided payload.
 func Bulk( host string, port string, index string, datatype string, actions []string ) error {
     jsonLines := fmt.Sprintf( "%s\n", strings.Join( actions, "\n" ) )
 	response, err := http.Post( host + ":" + port + "/" + index + "/" + datatype + "/_bulk", "application/json", strings.NewReader( jsonLines ) )
@@ -20,6 +21,7 @@ func Bulk( host string, port string, index string, datatype string, actions []st
     return nil
 }
 
+// IndexExists returns whether or not the provided index exists in elasticsearch.
 func IndexExists( host string, port string, index string ) ( bool, error ) {
     resp, _, errs := gorequest.New().
 		Head( host + ":" + port + "/" + index ).
@@ -31,6 +33,7 @@ func IndexExists( host string, port string, index string ) ( bool, error ) {
     return resp.StatusCode != 404, nil
 }
 
+// DeleteIndex deletes the provided index in elasticsearch.
 func DeleteIndex( host string, port string, index string ) error {
     fmt.Println( "Clearing index '" +  index + "'" )
     _, _, errs := gorequest.New().
@@ -43,6 +46,7 @@ func DeleteIndex( host string, port string, index string ) error {
     return nil
 }
 
+// CreateIndex creates the provided index in elasticsearch.
 func CreateIndex( host string, port string, index string, body string ) error {
     fmt.Println( "Creating index '" + index + "'" )
     _, _, errs := gorequest.New().
@@ -56,6 +60,7 @@ func CreateIndex( host string, port string, index string, body string ) error {
     return nil
 }
 
+// PrepareIndex will ensure the provided index exists, and will optionally clear it.
 func PrepareIndex( host string, port string, index string, mappings string, clearExisting bool ) error {
     // check if index exists
     indexExists, err := IndexExists( host, port, index )

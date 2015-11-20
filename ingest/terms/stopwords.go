@@ -348,6 +348,7 @@ func getStopWordMap() map[string]bool {
     return stopWordMap
 }
 
+// IsStopWord returns true if the term matches a stopword.
 func IsStopWord( word string ) bool {
     return getStopWordMap()[ word ]
 }

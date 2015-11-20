@@ -145,7 +145,7 @@
             .domain([0, 1]);
 
         wordCloudLayer.drawTile = function(canvas, index, zoom) {
-            var url = './wordcloud/'+zoom+'/'+index.x+'/'+index.y;
+            var url = './topiccount/'+zoom+'/'+index.x+'/'+index.y;
             $( canvas ).addClass( 'blinking' );
             $.getJSON( url, function( wordCounts ) {
                 if ( !wordCounts ) {
