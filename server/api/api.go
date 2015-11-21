@@ -14,19 +14,19 @@ func New() http.Handler {
 	r := web.New()
 
 	// Mount middleware
-	r.Use( middleware.EnvInit )
+	r.Use(middleware.EnvInit)
 
 	// Get conf struct
 	conf := conf.GetConf()
 
 	// Batcher websocket handler
-	r.Get( "/batch", batchHandler )
+	r.Get("/batch", batchHandler)
 
 	// Mount tile request handler
-	r.Get( "/:type/:z/:x/:y", tileHandler )
+	r.Get("/:type/:z/:x/:y", tileHandler)
 
 	// Greedy route last
-	r.Get( "/*", http.FileServer( http.Dir( conf.PublicDir ) ) )
+	r.Get("/*", http.FileServer(http.Dir(conf.Public)))
 
 	return r
 }

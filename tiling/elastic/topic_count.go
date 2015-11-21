@@ -1,11 +1,11 @@
 package elastic
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
-	"encoding/json"
 
 	"github.com/parnurzeal/gorequest"
 
@@ -61,30 +61,30 @@ var targetWords = []string{
 	"rancid",
 }
 
-func buildTermsFilter( terms []string ) string {
+func buildTermsFilter(terms []string) string {
 	var filters []string
 	for _, term := range terms {
-		filters = append( filters, `
-			"` + term + `": {
+		filters = append(filters, `
+			"`+term+`": {
 				"filter": {
 					"term": {
-						"text": "` + term + `"
+						"text": "`+term+`"
 					}
 				}
 			}`)
 	}
-	return strings.Join( filters, "," )
+	return strings.Join(filters, ",")
 }
 
 // GetTopicCountTile returns a marshalled tile containing topics and their counts.
-func GetTopicCountTile( tile *binning.TileCoord ) ( []byte, error ) {
-	pixelBounds := binning.GetTilePixelBounds( tile )
-	xMin := strconv.FormatUint( pixelBounds.TopLeft.X, 10 )
-	xMax := strconv.FormatUint( pixelBounds.BottomRight.X - 1, 10 )
-	yMin := strconv.FormatUint( pixelBounds.TopLeft.Y, 10 )
-	yMax := strconv.FormatUint( pixelBounds.BottomRight.Y - 1, 10 )
+func GetTopicCountTile(tile *binning.TileCoord) ([]byte, error) {
+	pixelBounds := binning.GetTilePixelBounds(tile)
+	xMin := strconv.FormatUint(pixelBounds.TopLeft.X, 10)
+	xMax := strconv.FormatUint(pixelBounds.BottomRight.X-1, 10)
+	yMin := strconv.FormatUint(pixelBounds.TopLeft.Y, 10)
+	yMax := strconv.FormatUint(pixelBounds.BottomRight.Y-1, 10)
 	request := gorequest.New()
-	termsFilters := buildTermsFilter( targetWords[0:] )
+	termsFilters := buildTermsFilter(targetWords[0:])
 	query := `{
 		"query": {
 			"bool" : {
@@ -113,30 +113,30 @@ func GetTopicCountTile( tile *binning.TileCoord ) ( []byte, error ) {
 	searchSize := "size=0"
 	filterPath := "filter_path=aggregations"
 	_, body, errs := request.
-		Post( esHost + "/" + esIndex + "/_search?" + searchSize + "&" + filterPath ).
-		Send( query ).
+		Post(esHost + "/" + esIndex + "/_search?" + searchSize + "&" + filterPath).
+		Send(query).
 		End()
 	if errs != nil {
-		return nil, errors.New( "Unable to retrieve tile data" )
+		return nil, errors.New("Unable to retrieve tile data")
 	}
 	// unmarshal payload
 	payload := &TopicPayload{}
-	err := json.Unmarshal( []byte(body), &payload )
+	err := json.Unmarshal([]byte(body), &payload)
 	if err != nil {
 		fmt.Println("err")
-	    return nil, err
+		return nil, err
 	}
 	// build map of topics and their counts
-	topicCounts := make( map[string]uint64 )
+	topicCounts := make(map[string]uint64)
 	for topic, value := range payload.Aggs {
 		if value.Count > 0 {
 			topicCounts[topic] = value.Count
 		}
 	}
-	result, err := json.Marshal( topicCounts )
+	result, err := json.Marshal(topicCounts)
 	if err != nil {
 		fmt.Println("err")
-	    return nil, err
+		return nil, err
 	}
 	return result, nil
 }

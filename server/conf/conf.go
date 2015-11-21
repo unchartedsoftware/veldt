@@ -2,9 +2,9 @@ package conf
 
 // Conf represents all the runtime flags passed to the binary.
 type Conf struct {
-	Prod bool
-	Port string
-	PublicDir string
+	Prod   bool
+	Port   string
+	Public string
 }
 
 var conf *Conf

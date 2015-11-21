@@ -1,8 +1,8 @@
 package store
 
-type setInStore func( key string, value []byte ) error
-type getFromStore func( key string ) ( []byte, error )
-type existsInStore func( key string ) ( bool, error )
+type setInStore func(key string, value []byte) error
+type getFromStore func(key string) ([]byte, error)
+type existsInStore func(key string) (bool, error)
 
 // Get returns a value from the store for a given string key.
 var Get getFromStore = RedisGet

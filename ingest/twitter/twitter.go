@@ -1,161 +1,161 @@
 package twitter
 
 import (
-    "bufio"
-    "fmt"
-    "os"
-    "strings"
-    "encoding/json"
-    "runtime/debug"
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"os"
+	"runtime/debug"
+	"strings"
 
-    "github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/binning"
 
-    "github.com/unchartedsoftware/prism/ingest/conf"
-    "github.com/unchartedsoftware/prism/ingest/es"
-    "github.com/unchartedsoftware/prism/ingest/hdfs"
-    "github.com/unchartedsoftware/prism/ingest/terms"
+	"github.com/unchartedsoftware/prism/ingest/conf"
+	"github.com/unchartedsoftware/prism/ingest/es"
+	"github.com/unchartedsoftware/prism/ingest/hdfs"
+	"github.com/unchartedsoftware/prism/ingest/terms"
 )
 
 // TweetProperties represents the 'properties' node of a tweet document.
 type TweetProperties struct {
-    UserID string `json:"userid"`
-    Username string `json:"username"`
-    Hashtags []string `json:"hashtags"`
-    TopTerms []string `json:"topterms"`
+	UserID   string   `json:"userid"`
+	Username string   `json:"username"`
+	Hashtags []string `json:"hashtags"`
+	TopTerms []string `json:"topterms"`
 }
 
 // TweetLocality represents the 'locality' node of a tweet document.
 type TweetLocality struct {
-    Timestamp string `json:"timestamp"`
-    Location *binning.LonLat `json:"location"`
-    Pixel *binning.PixelCoord `json:"pixel"`
+	Timestamp string              `json:"timestamp"`
+	Location  *binning.LonLat     `json:"location"`
+	Pixel     *binning.PixelCoord `json:"pixel"`
 }
 
 // TweetSource represents the 'source' node of a tweet document.
 type TweetSource struct {
-    Properties TweetProperties `json:"properties"`
-    Locality TweetLocality `json:"locality"`
-    Text string `json:"text"`
+	Properties TweetProperties `json:"properties"`
+	Locality   TweetLocality   `json:"locality"`
+	Text       string          `json:"text"`
 }
 
 // TweetIndex represents the 'index' property of an index action.
 type TweetIndex struct {
-    ID string `json:"_id"`
+	ID string `json:"_id"`
 }
 
 // TweetIndexAction represents the 'index' action type for a bulk ingest.
 type TweetIndexAction struct {
-    Index *TweetIndex `json:"index"`
+	Index *TweetIndex `json:"index"`
 }
 
-func createIndexAction( tweet *TweetData ) ( *string, error ) {
-    locality := TweetLocality {
-        Timestamp: tweet.ISODate,
-    }
-    // long / lat may not exist
-    if tweet.LonLat != nil {
-        lonLat := tweet.LonLat
-        pixel := binning.LonLatToPixelCoord( lonLat );
-        locality.Location = lonLat
-        locality.Pixel = pixel
-    }
-    properties := TweetProperties {
-        UserID: tweet.UserID,
-        Username: tweet.Username,
-        Hashtags: tweet.Hashtags,
-        TopTerms: terms.GetTopTerms( tweet.TweetText ),
-    }
-    // build source node
-    source := TweetSource{
-        Properties: properties,
-        Locality: locality,
-        Text: tweet.TweetText,
-    }
-    // build index
-    index := TweetIndex{
-        ID: tweet.TweetID,
-    }
-    // create index action
-    indexAction := TweetIndexAction{
-        Index: &index,
-    }
-    indexBytes, indexErr := json.Marshal( indexAction )
-    if indexErr != nil {
-        return nil, indexErr
-    }
-    sourceBytes, sourceErr := json.Marshal( source )
-    if sourceErr != nil {
-        return nil, sourceErr
-    }
-    jsonString := string( indexBytes ) + "\n" + string( sourceBytes )
-    return &jsonString, nil
+func createIndexAction(tweet *TweetData) (*string, error) {
+	locality := TweetLocality{
+		Timestamp: tweet.ISODate,
+	}
+	// long / lat may not exist
+	if tweet.LonLat != nil {
+		lonLat := tweet.LonLat
+		pixel := binning.LonLatToPixelCoord(lonLat)
+		locality.Location = lonLat
+		locality.Pixel = pixel
+	}
+	properties := TweetProperties{
+		UserID:   tweet.UserID,
+		Username: tweet.Username,
+		Hashtags: tweet.Hashtags,
+		TopTerms: terms.GetTopTerms(tweet.TweetText),
+	}
+	// build source node
+	source := TweetSource{
+		Properties: properties,
+		Locality:   locality,
+		Text:       tweet.TweetText,
+	}
+	// build index
+	index := TweetIndex{
+		ID: tweet.TweetID,
+	}
+	// create index action
+	indexAction := TweetIndexAction{
+		Index: &index,
+	}
+	indexBytes, indexErr := json.Marshal(indexAction)
+	if indexErr != nil {
+		return nil, indexErr
+	}
+	sourceBytes, sourceErr := json.Marshal(source)
+	if sourceErr != nil {
+		return nil, sourceErr
+	}
+	jsonString := string(indexBytes) + "\n" + string(sourceBytes)
+	return &jsonString, nil
 }
 
 // IngestWorker is a worker to ingest twitter data into elasticsearch.
-func IngestWorker( file os.FileInfo ) {
-    config := conf.GetConf()
-    documents := make( []string, config.BatchSize )
-    documentIndex := 0
+func IngestWorker(file os.FileInfo) {
+	config := conf.GetConf()
+	documents := make([]string, config.BatchSize)
+	documentIndex := 0
 
-    // get hdfs file reader
-    reader, err := hdfs.Open( config.HdfsHost, config.HdfsPort, config.HdfsPath + "/" + file.Name() )
-    if err != nil {
-        fmt.Println( err )
-        debug.PrintStack()
-        return
-    }
+	// get hdfs file reader
+	reader, err := hdfs.Open(config.HdfsHost, config.HdfsPort, config.HdfsPath+"/"+file.Name())
+	if err != nil {
+		fmt.Println(err)
+		debug.PrintStack()
+		return
+	}
 
-    scanner := bufio.NewScanner( reader )
-    for scanner.Scan() {
-        line := strings.Split( scanner.Text(), "\t" )
-        tweet := ParseTweetData( line )
-        action, err := createIndexAction( tweet )
-        if err != nil {
-            fmt.Println( err )
-            debug.PrintStack()
-            continue
-        }
-        documents[ documentIndex ] = *action
-        documentIndex++
-        if documentIndex % config.BatchSize == 0 {
-            // send bulk ingest request
-            documentIndex = 0
-            err := es.Bulk( config.EsHost, config.EsPort, config.EsIndex, config.EsType, documents[0:] )
-            if err != nil {
-                fmt.Println( err )
-                debug.PrintStack()
-                continue
-            }
-        }
-    }
-    reader.Close()
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := strings.Split(scanner.Text(), "\t")
+		tweet := ParseTweetData(line)
+		action, err := createIndexAction(tweet)
+		if err != nil {
+			fmt.Println(err)
+			debug.PrintStack()
+			continue
+		}
+		documents[documentIndex] = *action
+		documentIndex++
+		if documentIndex%config.BatchSize == 0 {
+			// send bulk ingest request
+			documentIndex = 0
+			err := es.Bulk(config.EsHost, config.EsPort, config.EsIndex, config.EsType, documents[0:])
+			if err != nil {
+				fmt.Println(err)
+				debug.PrintStack()
+				continue
+			}
+		}
+	}
+	reader.Close()
 
-    // send remaining documents
-    err = es.Bulk( config.EsHost, config.EsPort, config.EsIndex, config.EsType, documents[0:documentIndex] )
-    if err != nil {
-        fmt.Println( err )
-        debug.PrintStack()
-    }
+	// send remaining documents
+	err = es.Bulk(config.EsHost, config.EsPort, config.EsIndex, config.EsType, documents[0:documentIndex])
+	if err != nil {
+		fmt.Println(err)
+		debug.PrintStack()
+	}
 }
 
 // TopTermsWorker is a worker to calculate the top terms found in tweet text.
-func TopTermsWorker( file os.FileInfo ) {
-    config := conf.GetConf()
+func TopTermsWorker(file os.FileInfo) {
+	config := conf.GetConf()
 
-    // get hdfs file reader
-    reader, err := hdfs.Open( config.HdfsHost, config.HdfsPort, config.HdfsPath + "/" + file.Name() )
-    if err != nil {
-        fmt.Println( err )
-        debug.PrintStack()
-        return
-    }
+	// get hdfs file reader
+	reader, err := hdfs.Open(config.HdfsHost, config.HdfsPort, config.HdfsPath+"/"+file.Name())
+	if err != nil {
+		fmt.Println(err)
+		debug.PrintStack()
+		return
+	}
 
-    scanner := bufio.NewScanner( reader )
-    for scanner.Scan() {
-        line := strings.Split( scanner.Text(), "\t" )
-        tweet := ParseTweetData( line )
-        terms.AddTerms( tweet.TweetText )
-    }
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := strings.Split(scanner.Text(), "\t")
+		tweet := ParseTweetData(line)
+		terms.AddTerms(tweet.TweetText)
+	}
 
-    reader.Close()
+	reader.Close()
 }

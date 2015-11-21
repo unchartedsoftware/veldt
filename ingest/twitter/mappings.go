@@ -1,13 +1,13 @@
 package twitter
 
 import (
-    "github.com/unchartedsoftware/prism/ingest/conf"
+	"github.com/unchartedsoftware/prism/ingest/conf"
 )
 
 // GetMappings returns the mappings object for twitter elasticsearch data.
 func GetMappings() string {
-    config := conf.GetConf()
-    return `{
+	config := conf.GetConf()
+	return `{
         "` + config.EsType + `": {
             "properties": {
                 "locality": {

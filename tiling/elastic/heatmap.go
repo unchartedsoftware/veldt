@@ -1,12 +1,12 @@
 package elastic
 
 import (
+	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"strconv"
-	"encoding/binary"
-	"encoding/json"
 
 	"github.com/parnurzeal/gorequest"
 
@@ -37,7 +37,7 @@ import (
 
 // Row represents a row value in the y axis aggregations.
 type Row struct {
-	Count uint64 `json:"doc_count"`
+	Count  uint64 `json:"doc_count"`
 	PixelY uint64 `json:"key"`
 }
 
@@ -48,7 +48,7 @@ type YAgg struct {
 
 // Column represents a column of values in an x aggregation.
 type Column struct {
-	Y YAgg `json:"y"`
+	Y      YAgg   `json:"y"`
 	PixelX uint64 `json:"key"`
 }
 
@@ -67,31 +67,31 @@ type HeatmapPayload struct {
 	Aggs Aggregation `json:"aggregations"`
 }
 
-func float64ToBytes( bytes []byte, float float64 ) {
-    bits := math.Float64bits(float)
-    binary.LittleEndian.PutUint64(bytes, bits)
+func float64ToBytes(bytes []byte, float float64) {
+	bits := math.Float64bits(float)
+	binary.LittleEndian.PutUint64(bytes, bits)
 }
 
-func getByteArray( data []float64 ) []byte {
-	buf := make([]byte, len( data ) * 8 )
-	for i := 0; i < len( data ); i++ {
-		float64ToBytes( buf[ i*8 : i*8+8 ], data[i] )
+func getByteArray(data []float64) []byte {
+	buf := make([]byte, len(data)*8)
+	for i := 0; i < len(data); i++ {
+		float64ToBytes(buf[i*8:i*8+8], data[i])
 	}
 	return buf
 }
 
 // GetHeatmapTile returns a marshalled tile containing a flat array of bins.
-func GetHeatmapTile( tile *binning.TileCoord ) ( []byte, error ) {
+func GetHeatmapTile(tile *binning.TileCoord) ([]byte, error) {
 	tileResolution := binning.MaxTileResolution // TEMP
-	pixelBounds := binning.GetTilePixelBounds( tile )
-	xBinSize := ( pixelBounds.BottomRight.X - pixelBounds.TopLeft.X ) / tileResolution
-	yBinSize := ( pixelBounds.BottomRight.Y - pixelBounds.TopLeft.Y ) / tileResolution
-	xMin := strconv.FormatUint( pixelBounds.TopLeft.X, 10 )
-	xMax := strconv.FormatUint( pixelBounds.BottomRight.X - 1, 10 )
-	yMin := strconv.FormatUint( pixelBounds.TopLeft.Y, 10 )
-	yMax := strconv.FormatUint( pixelBounds.BottomRight.Y - 1, 10 )
-	xInterval := strconv.FormatUint( xBinSize, 10 )
-	yInterval := strconv.FormatUint( yBinSize, 10 )
+	pixelBounds := binning.GetTilePixelBounds(tile)
+	xBinSize := (pixelBounds.BottomRight.X - pixelBounds.TopLeft.X) / tileResolution
+	yBinSize := (pixelBounds.BottomRight.Y - pixelBounds.TopLeft.Y) / tileResolution
+	xMin := strconv.FormatUint(pixelBounds.TopLeft.X, 10)
+	xMax := strconv.FormatUint(pixelBounds.BottomRight.X-1, 10)
+	yMin := strconv.FormatUint(pixelBounds.TopLeft.Y, 10)
+	yMax := strconv.FormatUint(pixelBounds.BottomRight.Y-1, 10)
+	xInterval := strconv.FormatUint(xBinSize, 10)
+	yInterval := strconv.FormatUint(yBinSize, 10)
 	request := gorequest.New()
 	query := `{
 		"query": {
@@ -138,32 +138,32 @@ func GetHeatmapTile( tile *binning.TileCoord ) ( []byte, error ) {
 	searchSize := "size=0"
 	filterPath := "filter_path=aggregations.x.buckets.key,aggregations.x.buckets.y.buckets.key,aggregations.x.buckets.y.buckets.doc_count"
 	_, body, errs := request.
-		Post( esHost + "/" + esIndex + "/_search?" + searchSize + "&" + filterPath ).
-		Send( query ).
+		Post(esHost + "/" + esIndex + "/_search?" + searchSize + "&" + filterPath).
+		Send(query).
 		End()
 	if errs != nil {
-		return nil, errors.New( "Unable to retrieve tile data" )
+		return nil, errors.New("Unable to retrieve tile data")
 	}
 	// unmarshal payload
 	payload := &HeatmapPayload{}
-	err := json.Unmarshal( []byte(body), &payload )
+	err := json.Unmarshal([]byte(body), &payload)
 	if err != nil {
 		fmt.Println("err")
-	    return nil, err
+		return nil, err
 	}
 	// build array of counts
-	counts := make([]float64, tileResolution * tileResolution )
+	counts := make([]float64, tileResolution*tileResolution)
 	cols := payload.Aggs.X.Columns
-	for i := 0; i < len( cols ); i++ {
+	for i := 0; i < len(cols); i++ {
 		x := cols[i].PixelX
-		xBin := ( x - pixelBounds.TopLeft.X ) / xBinSize
-		rows := cols[i].Y.Rows;
-		for j := 0; j < len( rows ); j++ {
+		xBin := (x - pixelBounds.TopLeft.X) / xBinSize
+		rows := cols[i].Y.Rows
+		for j := 0; j < len(rows); j++ {
 			y := rows[j].PixelY
-			yBin := ( y - pixelBounds.TopLeft.Y ) / yBinSize
-			counts[ xBin + tileResolution * yBin ] = float64( rows[j].Count )
+			yBin := (y - pixelBounds.TopLeft.Y) / yBinSize
+			counts[xBin+tileResolution*yBin] = float64(rows[j].Count)
 		}
 	}
-	bytes := getByteArray( counts )
+	bytes := getByteArray(counts)
 	return bytes, nil
 }

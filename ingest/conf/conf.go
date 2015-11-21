@@ -2,17 +2,17 @@ package conf
 
 // Conf represents all the ingest runtime flags passed to the binary.
 type Conf struct {
-    EsHost string
-    EsPort string
-    EsIndex string
-    EsType string
-    EsClearExisting bool
-    HdfsHost string
-    HdfsPort string
-    HdfsPath string
-    BatchSize int
-    PoolSize int
-    NumTopTerms int
+	EsHost          string
+	EsPort          string
+	EsIndex         string
+	EsType          string
+	EsClearExisting bool
+	HdfsHost        string
+	HdfsPort        string
+	HdfsPath        string
+	BatchSize       int
+	PoolSize        int
+	NumTopTerms     int
 }
 
 var config *Conf
