@@ -48,9 +48,6 @@ type TweetIndexAction struct {
     Index *TweetIndex `json:"index"`
 }
 
-const maxLevelSupported = 24
-const tileResolution = 256
-
 func createIndexAction( tweet *TweetData ) ( *string, error ) {
     locality := TweetLocality {
         Timestamp: tweet.ISODate,
@@ -58,7 +55,7 @@ func createIndexAction( tweet *TweetData ) ( *string, error ) {
     // long / lat may not exist
     if tweet.LonLat != nil {
         lonLat := tweet.LonLat
-        pixel := binning.LonLatToPixelCoord( lonLat, maxLevelSupported, tileResolution );
+        pixel := binning.LonLatToPixelCoord( lonLat );
         locality.Location = lonLat
         locality.Pixel = pixel
     }

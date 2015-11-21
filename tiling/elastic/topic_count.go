@@ -78,7 +78,7 @@ func buildTermsFilter( terms []string ) string {
 
 // GetTopicCountTile returns a marshalled tile containing topics and their counts.
 func GetTopicCountTile( tile *binning.TileCoord ) ( []byte, error ) {
-	pixelBounds := binning.GetTilePixelBounds( tile, maxLevelSupported, tileResolution )
+	pixelBounds := binning.GetTilePixelBounds( tile )
 	xMin := strconv.FormatUint( pixelBounds.TopLeft.X, 10 )
 	xMax := strconv.FormatUint( pixelBounds.BottomRight.X - 1, 10 )
 	yMin := strconv.FormatUint( pixelBounds.TopLeft.Y, 10 )

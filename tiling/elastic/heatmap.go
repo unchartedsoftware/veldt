@@ -73,7 +73,7 @@ func float64ToBytes( bytes []byte, float float64 ) {
 }
 
 func getByteArray( data []float64 ) []byte {
-	buf := make([]byte, tileResolution * tileResolution * 8 )
+	buf := make([]byte, len( data ) * 8 )
 	for i := 0; i < len( data ); i++ {
 		float64ToBytes( buf[ i*8 : i*8+8 ], data[i] )
 	}
@@ -82,7 +82,8 @@ func getByteArray( data []float64 ) []byte {
 
 // GetHeatmapTile returns a marshalled tile containing a flat array of bins.
 func GetHeatmapTile( tile *binning.TileCoord ) ( []byte, error ) {
-	pixelBounds := binning.GetTilePixelBounds( tile, maxLevelSupported, tileResolution )
+	tileResolution := binning.MaxTileResolution
+	pixelBounds := binning.GetTilePixelBounds( tile )
 	xBinSize := ( pixelBounds.BottomRight.X - pixelBounds.TopLeft.X ) / tileResolution
 	yBinSize := ( pixelBounds.BottomRight.Y - pixelBounds.TopLeft.Y ) / tileResolution
 	xMin := strconv.FormatUint( pixelBounds.TopLeft.X, 10 )

@@ -19,9 +19,11 @@ func New() http.Handler {
 	// Get conf struct
 	conf := conf.GetConf()
 
-	// Mount tile request handlers
-	r.Get( "/heatmap/:z/:x/:y", heatmapTileHandler )
-	r.Get( "/topiccount/:z/:x/:y", topicCountTileHandler )
+	// Batcher websocket handler
+	//r.Get( "/batcher", batchHandler )
+
+	// Mount tile request handler
+	r.Get( "/:type/:z/:x/:y", tileHandler )
 
 	// Greedy route last
 	r.Get( "/*", http.FileServer( http.Dir( conf.PublicDir ) ) )

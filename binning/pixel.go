@@ -18,9 +18,17 @@ type PixelCoord struct {
 	Y uint64 `json:"y"`
 }
 
+// MaxLevelSupported represents the maximum zoom level supported by the pixel coordinate system.
+const MaxLevelSupported = uint64( 24 );
+
+// MaxTileResolution represents the maximum bin resolution of a tile
+const MaxTileResolution = uint64( 256 );
+
+// number of pixels across the x / y dimensions at maximum zoom level
+var maxPixels = float64( MaxTileResolution ) * math.Pow( 2, float64( MaxLevelSupported ) )
+
 // LonLatToPixelCoord translates a geographic coordinate to a pixel coordinate.
-func LonLatToPixelCoord( lonLat *LonLat, level uint32, tileResolution uint32 ) *PixelCoord {
-    pow2 := math.Pow( 2, float64( level ) )
+func LonLatToPixelCoord( lonLat *LonLat ) *PixelCoord {
     // Converting to range from [0:1] where 0,0 is top left
     normalizedTile := LonLatToFractionalTile( lonLat, 0 )
     normalizedCoord := &Coord{
@@ -28,44 +36,41 @@ func LonLatToPixelCoord( lonLat *LonLat, level uint32, tileResolution uint32 ) *
         Y: normalizedTile.Y,
     }
     return &PixelCoord{
-        X: uint64( math.Floor( normalizedCoord.X * float64( tileResolution ) * pow2 ) ),
-        Y: uint64( math.Floor( normalizedCoord.Y * float64( tileResolution ) * pow2 ) ),
+        X: uint64( math.Floor( normalizedCoord.X * maxPixels ) ),
+        Y: uint64( math.Floor( normalizedCoord.Y * maxPixels ) ),
     }
 }
 
 // CoordToPixelCoord translates a coordinate to a pixel coordinate.
-func CoordToPixelCoord( coord *Coord, level uint32, bounds *Bounds, tileResolution uint32 ) *PixelCoord {
-    pow2 := math.Pow( 2, float64( level ) )
+func CoordToPixelCoord( coord *Coord, bounds *Bounds ) *PixelCoord {
     // Converting to range from [0:1] where 0,0 is top left
     normalizedTile := CoordToFractionalTile( coord, 0, bounds )
     normalizedCoord := &Coord{
         X: normalizedTile.X,
         Y: normalizedTile.Y,
-    }
+	}
     return &PixelCoord{
-        X: uint64( math.Floor( normalizedCoord.X * float64( tileResolution ) * pow2 ) ),
-        Y: uint64( math.Floor( normalizedCoord.Y * float64( tileResolution ) * pow2 ) ),
+        X: uint64( math.Floor( normalizedCoord.X * maxPixels ) ),
+        Y: uint64( math.Floor( normalizedCoord.Y * maxPixels ) ),
     }
 }
 
 // GetTilePixelBounds returns the pixel coordniate bounds of the tile coordinate.
-func GetTilePixelBounds( tile *TileCoord, level uint32, tileResolution uint32 ) *PixelBounds {
-	sourcePow2 := math.Pow( 2, float64( tile.Z ) )
+func GetTilePixelBounds( tile *TileCoord ) *PixelBounds {
+	pow2 := math.Pow( 2, float64( tile.Z ) )
 	// Converting to range from [0:1] where 0,0 is top left
-	xMin := float64( tile.X ) / sourcePow2
-	xMax := float64( tile.X + 1 ) / sourcePow2
-	yMin := float64( tile.Y ) / sourcePow2
-	yMax := float64( tile.Y + 1 ) / sourcePow2
-	// Projecting to pixel coords
-	destPow2 := util.Round( math.Pow( 2, float64( level ) ) * float64( tileResolution ) )
+	xMin := float64( tile.X ) / pow2
+	xMax := float64( tile.X + 1 ) / pow2
+	yMin := float64( tile.Y ) / pow2
+	yMax := float64( tile.Y + 1 ) / pow2
 	return &PixelBounds{
 		TopLeft: &PixelCoord{
-			X: uint64( util.Round( xMin * destPow2 ) ),
-			Y: uint64( util.Round( yMin * destPow2 ) ),
+			X: uint64( util.Round( xMin * maxPixels ) ),
+			Y: uint64( util.Round( yMin * maxPixels ) ),
 		},
 		BottomRight: &PixelCoord{
-			X: uint64( util.Round( xMax * destPow2 ) ),
-			Y: uint64( util.Round( yMax * destPow2 ) ),
+			X: uint64( util.Round( xMax * maxPixels ) ),
+			Y: uint64( util.Round( yMax * maxPixels ) ),
 		},
 	}
 }

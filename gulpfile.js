@@ -20,11 +20,11 @@
 
     var webappPath = 'webapp/';
     var serverPath = 'server/';
-    var binningPath = 'binning/';
 
     var paths = {
-        root: webappPath + '/app.js',
-        server: [ serverPath + '**/*.go', binningPath + '**/*.go' ],
+        serverRoot: serverPath + '/main.go',
+        webappRoot: webappPath + '/app.js',
+        go: [ './**/*.go' ],
         scripts: [ webappPath + 'scripts/**/*.js',  webappPath + 'app.js' ],
         styles: [  webappPath + 'styles/reset.css',  webappPath + 'styles/**/*.css' ],
         index: [  webappPath + 'index.html' ],
@@ -80,7 +80,7 @@
 
     gulp.task('build-scripts', function() {
         var browserify = require('browserify'),
-            bundler = browserify( paths.root, {
+            bundler = browserify( paths.webappRoot, {
                 debug: true,
                 standalone: projectName
             });
@@ -142,14 +142,14 @@
     var go;
     gulp.task("serve", function() {
         var gulpgo = require( "gulp-go" );
-        go = gulpgo.run( serverPath + "main.go", [], {
+        go = gulpgo.run( paths.serverRoot, [], {
             cwd: __dirname,
             stdio: 'inherit'
         });
     });
 
     gulp.task('watch', [ 'build' ], function( done ) {
-        gulp.watch( paths.server ).on('change', function() {
+        gulp.watch( paths.go ).on('change', function() {
             go.restart();
         });
         gulp.watch( paths.styles, [ 'build-styles' ] );

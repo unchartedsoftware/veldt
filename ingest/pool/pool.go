@@ -30,10 +30,10 @@ func New( size int ) Pool {
 // Track how many bytes of data has been processed
 var numProcessedBytes = uint64( 0 )
 
-func workerWrapper( linkChan chan os.FileInfo, waitGroup *sync.WaitGroup, worker Worker, ingestInfo *info.IngestInfo ) {
+func workerWrapper( fileChan chan os.FileInfo, waitGroup *sync.WaitGroup, worker Worker, ingestInfo *info.IngestInfo ) {
     // Decrease internal counter for wait-group as soon as goroutine finishes
     defer waitGroup.Done()
-	for file := range linkChan {
+	for file := range fileChan {
         // Print current progress
         worker( file )
         // Increment processed bytes
