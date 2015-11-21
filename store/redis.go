@@ -7,7 +7,7 @@ import (
 var redisPool *redis.Pool
 var redisHost = "localhost"
 var redisPort = "6379"
-var maxConnections = 32
+var maxConnections = 64
 
 func getConnection() redis.Conn {
     if redisPool == nil {

@@ -64,14 +64,6 @@ func generateTile( tileHash string, tileReq *TileRequest ) TileResponse {
 	return getSuccessResponse( tileReq )
 }
 
-func getTileHash( tileReq *TileRequest ) string {
-	return fmt.Sprintf( "%s-%d-%d-%d-",
-		tileReq.Type,
-		tileReq.TileCoord.X,
-		tileReq.TileCoord.Y,
-		tileReq.TileCoord.Z )
-}
-
 func getTilePromise( tileHash string, tileReq *TileRequest ) chan TileResponse {
     promise := make( chan TileResponse )
     go func () {
@@ -96,10 +88,20 @@ func getFailurePromise( tileReq *TileRequest ) chan TileResponse {
     return promise
 }
 
+
+// GetTileHash returns a unique hash string for the given tile and type.
+func GetTileHash( tileReq *TileRequest ) string {
+	return fmt.Sprintf( "%s-%d-%d-%d-",
+		tileReq.Type,
+		tileReq.TileCoord.X,
+		tileReq.TileCoord.Y,
+		tileReq.TileCoord.Z )
+}
+
 // GetTile will return a tile response channel that can be used to determine when a tile is ready.
 func GetTile( tileReq *TileRequest ) chan TileResponse {
 	// get hash for tile
-	tileHash := getTileHash( tileReq )
+	tileHash := GetTileHash( tileReq )
 	// check if tile exists in store
 	exists, err := store.Exists( tileHash )
 	if err != nil {

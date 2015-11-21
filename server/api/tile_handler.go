@@ -9,14 +9,9 @@ import (
 	"github.com/zenazn/goji/web"
 
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/store"
 	"github.com/unchartedsoftware/prism/tiling"
-	"github.com/unchartedsoftware/prism/tiling/elastic"
 )
-
-type tileRes struct {
-	Bins []byte `json:"bins"`
-	Status string `json:"status"`
-}
 
 func parseTileParams( params map[string]string ) ( *tiling.TileRequest, error ) {
 	tileType := params["type"]
@@ -51,14 +46,10 @@ func tileHandler( c web.C, w http.ResponseWriter, r *http.Request ) {
 		handleTileErr( w )
 		return
 	}
-	var tileData []byte
-	var tileErr error
-	// get tile based on type
-	if tileReq.Type == "topiccount" {
-		tileData, tileErr = elastic.GetTopicCountTile( &tileReq.TileCoord )
-	} else {
-		tileData, tileErr = elastic.GetHeatmapTile( &tileReq.TileCoord )
-	}
+	// get tile hash
+	tileHash := tiling.GetTileHash( tileReq )
+	// get tile data from store
+	tileData, tileErr := store.Get( tileHash )
 	if tileErr != nil {
 		handleTileErr( w )
 		return

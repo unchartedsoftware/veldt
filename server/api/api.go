@@ -20,7 +20,7 @@ func New() http.Handler {
 	conf := conf.GetConf()
 
 	// Batcher websocket handler
-	//r.Get( "/batcher", batchHandler )
+	r.Get( "/batch", batchHandler )
 
 	// Mount tile request handler
 	r.Get( "/:type/:z/:x/:y", tileHandler )
