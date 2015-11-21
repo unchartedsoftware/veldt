@@ -1,0 +1,69 @@
+# $ vagrant up --no-parallel
+Vagrant.configure("2") do |config|
+
+  # config.vm.define "mysql" do |a|
+  #   a.vm.provider "docker" do |d|
+  #     d.name = "mysql"
+  #     d.image = "mysql:5.7"
+  #     d.ports = [ "3306:3306" ]
+  #     d.env = {
+  #       "MYSQL_ROOT_PASSWORD" => "password",
+  #       "MYSQL_DATABASE" => "prism",
+  #       "MYSQL_USER" => "prism",
+  #       "MYSQL_PASSWORD" => "password"
+  #     }
+  #
+  #     # Explicit host vm to manage port forwarding
+  #     d.vagrant_vagrantfile = "./host/Vagrantfile"
+  #   end
+  # end
+
+  config.vm.define "redis" do |a|
+    a.vm.provider "docker" do |d|
+      d.name = "redis"
+      d.image = "redis:2.8"
+      d.ports = [ "6379:6379" ]
+      d.create_args = ["-v", "/home/vagrant/redis/redis.conf:/usr/local/etc/redis/redis.conf"]
+      d.cmd = ["redis-server", "/usr/local/etc/redis/redis.conf"]
+
+      # Explicit host vm to manage port forwarding
+      d.vagrant_vagrantfile = "./host/Vagrantfile"
+    end
+  end
+
+  # config.vm.define "db-init" do |a|
+  #   a.vm.provider "docker" do |d|
+  #     d.name = "db-init"
+  #     d.build_dir = "../db"
+  #     d.env = {
+  #       "MYSQL_USER" => "prism",
+  #       "MYSQL_PASSWORD" => "password",
+  #       "MYSQL_DATABASE" => "prism"
+  #     }
+  #     d.link("mysql:mysql")
+  #
+  #     # Explicit host vm to manage port forwarding
+  #     d.vagrant_vagrantfile = "./host/Vagrantfile"
+  #   end
+  # end
+
+  # config.vm.define "prism-export-service" do |a|
+  #   a.vm.provider "docker" do |d|
+  #     d.name = "prism-export-service"
+  #     d.build_dir = "../app"
+  #     d.ports = [ "8081:8080" ]
+  #     d.env = {
+  #       "MYSQL_USER" => "prism",
+  #       "MYSQL_PASSWORD" => "password",
+  #       "MYSQL_DATABASE" => "prism",
+  #       "SESSION_SECRET" => "qF025jqsCqm15xp0pADX"
+  #     }
+  #     d.link("redis:redis")
+  #     d.link("mysql:mysql")
+  #
+  #     # Explicit host vm to manage port forwarding
+  #     d.vagrant_vagrantfile = "./host/Vagrantfile"
+  #   end
+  # end
+
+end
