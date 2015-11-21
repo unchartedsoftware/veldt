@@ -111,21 +111,22 @@ func GetTopicCountTile( tile *binning.TileCoord ) ( []byte, error ) {
 		"aggs": {` + termsFilters + `}
 	}`
 	searchSize := "size=0"
+	filterPath := "filter_path=aggregations"
 	_, body, errs := request.
-		Post( esHost + "/" + esIndex + "/_search?" + searchSize ).
+		Post( esHost + "/" + esIndex + "/_search?" + searchSize + "&" + filterPath ).
 		Send( query ).
 		End()
 	if errs != nil {
 		return nil, errors.New( "Unable to retrieve tile data" )
 	}
-	//
+	// unmarshal payload
 	payload := &TopicPayload{}
 	err := json.Unmarshal( []byte(body), &payload )
 	if err != nil {
 		fmt.Println("err")
 	    return nil, err
 	}
-	// marshal into map then unmarshal again into string
+	// build map of topics and their counts
 	topicCounts := make( map[string]uint64 )
 	for topic, value := range payload.Aggs {
 		if value.Count > 0 {

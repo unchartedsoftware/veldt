@@ -82,7 +82,7 @@ func getByteArray( data []float64 ) []byte {
 
 // GetHeatmapTile returns a marshalled tile containing a flat array of bins.
 func GetHeatmapTile( tile *binning.TileCoord ) ( []byte, error ) {
-	tileResolution := binning.MaxTileResolution
+	tileResolution := binning.MaxTileResolution // TEMP
 	pixelBounds := binning.GetTilePixelBounds( tile )
 	xBinSize := ( pixelBounds.BottomRight.X - pixelBounds.TopLeft.X ) / tileResolution
 	yBinSize := ( pixelBounds.BottomRight.Y - pixelBounds.TopLeft.Y ) / tileResolution
@@ -144,14 +144,14 @@ func GetHeatmapTile( tile *binning.TileCoord ) ( []byte, error ) {
 	if errs != nil {
 		return nil, errors.New( "Unable to retrieve tile data" )
 	}
-	//
+	// unmarshal payload
 	payload := &HeatmapPayload{}
 	err := json.Unmarshal( []byte(body), &payload )
 	if err != nil {
 		fmt.Println("err")
 	    return nil, err
 	}
-	//
+	// build array of counts
 	counts := make([]float64, tileResolution * tileResolution )
 	cols := payload.Aggs.X.Columns
 	for i := 0; i < len( cols ); i++ {
