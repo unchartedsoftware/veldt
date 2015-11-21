@@ -1,10 +1,11 @@
 (function() {
 
-    "use strict";
+    'use strict';
 
     var $ = require('jquery');
-    //var _ = require('lodash');
+    var _ = require('lodash');
     var d3 = require('d3');
+    var TileRequester = require('./scripts/TileRequester');
 
     window.startApp = function() {
 
@@ -75,35 +76,36 @@
         // Override 'drawTile' method. Requests the bin data for the tile, and
         // if it exists, renders to the canvas element for the repsecive tile.
         heatmapLayer.drawTile = function(canvas, index, zoom) {
-            var url = './heatmap/'+zoom+'/'+index.x+'/'+index.y;
             $( canvas ).addClass( 'blinking' );
-            getArrayBuffer( url, function( bins ) {
-                if (!bins) {
-                    // Exit early if no data
-                    return;
-                }
-                var ctx = canvas.getContext("2d");
-                var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                var data = imageData.data;
-                var minMax =  {
-                    min: 0,
-                    max: 1000
-                };
-                bins.forEach(function(bin,index) {
-                    // Interpolate bin value to get rgba
-                    var rgba = interpolateColor(bin, minMax.min, minMax.max);
-                    data[index*4] = rgba.r;
-                    data[index*4+1] = rgba.g;
-                    data[index*4+2] = rgba.b;
-                    data[index*4+3] = rgba.a;
+            requester
+                .get( 'heatmap', index.x, index.y, zoom )
+                .done( function() {
+                    var url = './heatmap/'+zoom+'/'+index.x+'/'+index.y;
+                    getArrayBuffer( url, function( bins ) {
+                        var ctx = canvas.getContext('2d');
+                        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        var data = imageData.data;
+                        var minMax =  {
+                            min: 0,
+                            max: 1000
+                        };
+                        bins.forEach(function(bin,index) {
+                            // Interpolate bin value to get rgba
+                            var rgba = interpolateColor(bin, minMax.min, minMax.max);
+                            data[index*4] = rgba.r;
+                            data[index*4+1] = rgba.g;
+                            data[index*4+2] = rgba.b;
+                            data[index*4+3] = rgba.a;
+                        });
+                        // Overwrite original image
+                        ctx.putImageData(imageData, 0, 0);
+                        $( canvas ).removeClass( 'blinking' );
+                    });
+                })
+                .fail( function() {
+                    console.error( 'Could not generate tile.' );
                 });
-                // Overwrite original image
-                ctx.putImageData(imageData, 0, 0);
-                $( canvas ).removeClass( 'blinking' );
-            });
         };
-        // Add layer to the map
-        heatmapLayer.addTo( map );
 
         // Create the canvas tile layer
         var wordCloudLayer = new L.tileLayer.canvas();
@@ -145,45 +147,59 @@
             .domain([0, 1]);
 
         wordCloudLayer.drawTile = function(canvas, index, zoom) {
-            var url = './topiccount/'+zoom+'/'+index.x+'/'+index.y;
             $( canvas ).addClass( 'blinking' );
-            $.getJSON( url, function( wordCounts ) {
-                if ( !wordCounts ) {
-                    // Exit early if no data
-                    return;
-                }
-                new Cloud5()
-                    .canvas( canvas )
-                    .width( 256 )
-                    .height( 256 )
-                    .font( 'Helvetica' )
-                    .minFontSize( 10 )
-                    .maxFontSize( 30 )
-                    .wordMap( wordCounts )
-                    .color( function( info ) {
-                        return colorRamp( ( info.count - info.minCount ) / ( info.maxCount - info.minCount ) );
-                    })
-                    .onWordOver( function() {
-                        // handle mousing over a word
-                        $( canvas ).css( 'cursor', 'pointer' );
-                        //cloud.highlight( word, "ff0000" );
-                    })
-                    .onWordOut( function() {
-                        // handle mousing out of a word
-                        $( canvas ).css( 'cursor', 'auto' );
-                        //cloud.unhighlight( word );
-                    })
-                    .onWordClick( function( word ) {
-                        // handle clicking a word
-                        console.log( word );
-                    })
-                    .layout( layout )
-                    .generate();
-                $( canvas ).removeClass( 'blinking' );
-            });
+            requester
+                .get( 'topiccount', index.x, index.y, zoom )
+                .done( function() {
+                    var url = './topiccount/'+zoom+'/'+index.x+'/'+index.y;
+                    $.getJSON( url, function( wordCounts ) {
+                        if ( _.isEmpty( wordCounts ) ) {
+                            // Exit early if no data
+                            $( canvas ).removeClass( 'blinking' );
+                            return;
+                        }
+                        new Cloud5()
+                            .canvas( canvas )
+                            .width( 256 )
+                            .height( 256 )
+                            .font( 'Helvetica' )
+                            .minFontSize( 10 )
+                            .maxFontSize( 30 )
+                            .wordMap( wordCounts )
+                            .color( function( info ) {
+                                return colorRamp( ( info.count - info.minCount ) / ( info.maxCount - info.minCount ) );
+                            })
+                            .onWordOver( function() {
+                                // handle mousing over a word
+                                $( canvas ).css( 'cursor', 'pointer' );
+                                //cloud.highlight( word, "ff0000" );
+                            })
+                            .onWordOut( function() {
+                                // handle mousing out of a word
+                                $( canvas ).css( 'cursor', 'auto' );
+                                //cloud.unhighlight( word );
+                            })
+                            .onWordClick( function( word ) {
+                                // handle clicking a word
+                                console.log( word );
+                            })
+                            .layout( layout )
+                            .generate();
+                        $( canvas ).removeClass( 'blinking' );
+                    });
+                })
+                .fail( function() {
+                    console.error( 'Could not generate tile.' );
+                });
         };
-        // Add layer to the map
-        wordCloudLayer.addTo( map );
+
+        var requester = new TileRequester( 'ws://localhost:8080/batch', function() {
+            console.log( 'web socket connection successful' );
+            // Add layer to the map
+            heatmapLayer.addTo( map );
+            // Add layer to the map
+            //wordCloudLayer.addTo( map );
+        });
     };
 
 }());

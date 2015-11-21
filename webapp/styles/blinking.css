@@ -1,6 +1,6 @@
 .blinking {
 
-    background-color: rgba( 0, 0, 0, 0.2 );
+    background-color: rgba( 150, 150, 150, 0.3 );
     border: 1px solid rgba( 150, 150, 150, 0.1 );
 
     -webkit-animation-name: blinker;
