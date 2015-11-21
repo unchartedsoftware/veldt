@@ -9,6 +9,7 @@ import (
 	"github.com/zenazn/goji/web"
 
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/tiling"
 	"github.com/unchartedsoftware/prism/tiling/elastic"
 )
 
@@ -17,19 +18,13 @@ type tileRes struct {
 	Status string `json:"status"`
 }
 
-// TileRequest represents the tile type and tile coord
-type TileRequest struct {
-	TileCoord binning.TileCoord
-	Type string
-}
-
-func parseTileParams( params map[string]string ) ( *TileRequest, error ) {
+func parseTileParams( params map[string]string ) ( *tiling.TileRequest, error ) {
 	tileType := params["type"]
 	x, ex := strconv.ParseUint( params["x"], 10, 32 )
 	y, ey := strconv.ParseUint( params["y"], 10, 32 )
 	z, ez := strconv.ParseUint( params["z"], 10, 32 )
 	if ex == nil || ey == nil || ez == nil {
-		return &TileRequest {
+		return &tiling.TileRequest {
 			TileCoord: binning.TileCoord{
 				X: uint32( x ),
 				Y: uint32( y ),
