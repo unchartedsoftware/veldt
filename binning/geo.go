@@ -6,6 +6,11 @@ import (
 	"github.com/unchartedsoftware/prism/util"
 )
 
+const (
+	degreesToRadians = math.Pi / 180.0 // Factor for changing degrees to radians
+	radiansToDegrees = 180.0 / math.Pi // Factor for changing radians to degrees
+)
+
 // GeoBounds represents a geographical bounding box.
 type GeoBounds struct {
 	TopLeft     *LonLat
@@ -17,9 +22,6 @@ type LonLat struct {
 	Lon float64 `json:"lon"`
 	Lat float64 `json:"lat"`
 }
-
-const degreesToRadians = math.Pi / 180.0 // Factor for changing degrees to radians
-const radiansToDegrees = 180.0 / math.Pi // Factor for changing radians to degrees
 
 func tileToLon(x float64, level uint32) float64 {
 	pow2 := math.Pow(2, float64(level))

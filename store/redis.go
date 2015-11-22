@@ -1,24 +1,41 @@
 package store
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/garyburd/redigo/redis"
 )
 
-var redisPool *redis.Pool
-var redisHost = "localhost"
-var redisPort = "6379"
-var maxConnections = 64
+const (
+	redisHost   = "localhost"
+	redisPort   = "6379"
+	maxIdle     = 8
+	idleTimeout = 30 * time.Second
+)
 
-func getConnection() redis.Conn {
-	if redisPool == nil {
-		redisPool = redis.NewPool(func() (redis.Conn, error) {
-			conn, err := redis.Dial("tcp", redisHost+":"+redisPort)
+var redisPool = getPool(redisHost + ":" + redisPort)
+
+func getPool(server string) *redis.Pool {
+	fmt.Printf("Connecting to redis server: %s:%s\n", redisHost, redisPort)
+	return &redis.Pool{
+		MaxIdle:     maxIdle,
+		IdleTimeout: idleTimeout,
+		Dial: func() (redis.Conn, error) {
+			conn, err := redis.Dial("tcp", server)
 			if err != nil {
 				return nil, err
 			}
 			return conn, err
-		}, maxConnections)
+		},
+		TestOnBorrow: func(conn redis.Conn, t time.Time) error {
+			_, err := conn.Do("PING")
+			return err
+		},
 	}
+}
+
+func getConnection() redis.Conn {
 	return redisPool.Get()
 }
 

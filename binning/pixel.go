@@ -6,6 +6,13 @@ import (
 	"github.com/unchartedsoftware/prism/util"
 )
 
+const (
+	// MaxLevelSupported represents the maximum zoom level supported by the pixel coordinate system.
+	MaxLevelSupported = uint64(24)
+	// MaxTileResolution represents the maximum bin resolution of a tile
+	MaxTileResolution = uint64(256)
+)
+
 // PixelBounds represents a bounding box in pixel coordinates.
 type PixelBounds struct {
 	TopLeft     *PixelCoord
@@ -17,12 +24,6 @@ type PixelCoord struct {
 	X uint64 `json:"x"`
 	Y uint64 `json:"y"`
 }
-
-// MaxLevelSupported represents the maximum zoom level supported by the pixel coordinate system.
-const MaxLevelSupported = uint64(24)
-
-// MaxTileResolution represents the maximum bin resolution of a tile
-const MaxTileResolution = uint64(256)
 
 // number of pixels across the x / y dimensions at maximum zoom level
 var maxPixels = float64(MaxTileResolution) * math.Pow(2, float64(MaxLevelSupported))

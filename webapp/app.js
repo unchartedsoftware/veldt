@@ -204,11 +204,10 @@
         };
 
         var requester = new TileRequester('ws://localhost:8080/batch', function() {
-            console.log('web socket connection successful');
             // Add layer to the map
             heatmapLayer.addTo(map);
-        // Add layer to the map
-        //wordCloudLayer.addTo( map );
+            // Add layer to the map
+            //wordCloudLayer.addTo(map);
         });
     };
 

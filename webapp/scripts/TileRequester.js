@@ -9,45 +9,39 @@
     }
 
     function TileRequester(url, callback) {
-        var that = this;
-        this.url = url;
+        var requests = this.requests = {};
         this.socket = new WebSocket(url);
         this.socket.onopen = callback;
         this.socket.onmessage = function(event) {
             var tileRes = JSON.parse(event.data);
             var tileCoord = tileRes.tilecoord;
             var tileHash = getTileHash(tileRes.type, tileCoord.x, tileCoord.y, tileCoord.z);
-            var request = that.requests[tileHash];
-            delete that.requests[tileHash];
-            if (!request) {
-                console.log('Rejecting: ' + JSON.stringify(tileRes));
-            } else {
-                console.log('Resolving: ' + JSON.stringify(tileRes));
-            }
+            var request = requests[tileHash];
+            delete requests[tileHash];
             if (tileRes.success) {
                 request.resolve(tileRes);
             } else {
                 request.reject(tileRes);
             }
         };
-        this.requests = {};
     }
 
     TileRequester.prototype.get = function(type, x, y, z) {
         var tileHash = getTileHash(type, x, y, z);
         var request = this.requests[tileHash];
         if (request) {
-            return request;
+            return request.promise();
         }
         request = this.requests[tileHash] = $.Deferred();
-        this.socket.send(JSON.stringify({
+        var msg = {
             tilecoord: {
                 x: x,
                 y: y,
                 z: z
             },
             type: type
-        }));
+        };
+        this.socket.send(JSON.stringify(msg));
         return request.promise();
     };
 

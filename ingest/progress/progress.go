@@ -27,7 +27,7 @@ func formatTime(totalSeconds uint64) Time {
 }
 
 func getTimestamp() uint64 {
-	return uint64(time.Now().Unix())
+	return uint64(time.Now().UnixNano() / int64(time.Millisecond))
 }
 
 var startTime uint64

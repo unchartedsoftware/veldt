@@ -21,24 +21,26 @@ type TileResponse struct {
 	TileCoord binning.TileCoord `json:"tilecoord"`
 	Type      string            `json:"type"`
 	Success   bool              `json:"success"`
+	Error     error             `json:"-"`
 }
 
 var mutex = sync.Mutex{}
-var promiseMap = make(map[string]chan TileResponse)
 
-func getFailureResponse(tileReq *TileRequest) TileResponse {
-	return TileResponse{
+func getFailureResponse(tileReq *TileRequest, err error) *TileResponse {
+	return &TileResponse{
 		TileCoord: tileReq.TileCoord,
 		Type:      tileReq.Type,
 		Success:   false,
+		Error:     err,
 	}
 }
 
-func getSuccessResponse(tileReq *TileRequest) TileResponse {
-	return TileResponse{
+func getSuccessResponse(tileReq *TileRequest) *TileResponse {
+	return &TileResponse{
 		TileCoord: tileReq.TileCoord,
 		Type:      tileReq.Type,
 		Success:   true,
+		Error:     nil,
 	}
 }
 
@@ -53,44 +55,20 @@ func generateTileByType(tileReq *TileRequest) ([]byte, error) {
 	}
 }
 
-func generateTile(tileHash string, tileReq *TileRequest) TileResponse {
+func generateTile(tileHash string, tileReq *TileRequest) *TileResponse {
 	// generate tile by type
 	tileData, err := generateTileByType(tileReq)
 	if err != nil {
-		return getFailureResponse(tileReq)
+		return getFailureResponse(tileReq, err)
 	}
 	// add tile to store
 	store.Set(tileHash, tileData)
 	return getSuccessResponse(tileReq)
 }
 
-func getTilePromise(tileHash string, tileReq *TileRequest) chan TileResponse {
-	promise := make(chan TileResponse)
-	go func() {
-		promise <- generateTile(tileHash, tileReq)
-	}()
-	return promise
-}
-
-func getSuccessPromise(tileReq *TileRequest) chan TileResponse {
-	promise := make(chan TileResponse)
-	go func() {
-		promise <- getSuccessResponse(tileReq)
-	}()
-	return promise
-}
-
-func getFailurePromise(tileReq *TileRequest) chan TileResponse {
-	promise := make(chan TileResponse)
-	go func() {
-		promise <- getFailureResponse(tileReq)
-	}()
-	return promise
-}
-
 // GetTileHash returns a unique hash string for the given tile and type.
 func GetTileHash(tileReq *TileRequest) string {
-	return fmt.Sprintf("%s-%d-%d-%d-",
+	return fmt.Sprintf("%s-%d-%d-%d",
 		tileReq.Type,
 		tileReq.TileCoord.X,
 		tileReq.TileCoord.Y,
@@ -98,24 +76,18 @@ func GetTileHash(tileReq *TileRequest) string {
 }
 
 // GetTile will return a tile response channel that can be used to determine when a tile is ready.
-func GetTile(tileReq *TileRequest) chan TileResponse {
+func GetTile(tileReq *TileRequest) *TileResponse {
 	// get hash for tile
 	tileHash := GetTileHash(tileReq)
 	// check if tile exists in store
 	exists, err := store.Exists(tileHash)
 	if err != nil {
-		// on error return failure promise
-		return getFailurePromise(tileReq)
+		fmt.Println(err)
 	}
 	// if it exists, return success promise
 	if exists {
-		return getSuccessPromise(tileReq)
+		return getSuccessResponse(tileReq)
 	}
 	// otherwise, initiate the tiling job
-	mutex.Lock()
-	if promiseMap[tileHash] == nil {
-		promiseMap[tileHash] = getTilePromise(tileHash, tileReq)
-	}
-	mutex.Unlock()
-	return promiseMap[tileHash]
+	return generateTile(tileHash, tileReq)
 }

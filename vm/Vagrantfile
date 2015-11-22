@@ -21,7 +21,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "redis" do |a|
     a.vm.provider "docker" do |d|
       d.name = "redis"
-      d.image = "redis:2.8"
+      d.image = "redis:3.0"
       d.ports = [ "6379:6379" ]
       d.create_args = ["-v", "/home/vagrant/redis/redis.conf:/usr/local/etc/redis/redis.conf"]
       d.cmd = ["redis-server", "/usr/local/etc/redis/redis.conf"]
