@@ -4,13 +4,13 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"math"
 	"strconv"
 
 	"github.com/parnurzeal/gorequest"
 
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 /*
@@ -92,7 +92,6 @@ func GetHeatmapTile(tile *binning.TileCoord) ([]byte, error) {
 	yMax := strconv.FormatUint(pixelBounds.BottomRight.Y-1, 10)
 	xInterval := strconv.FormatUint(xBinSize, 10)
 	yInterval := strconv.FormatUint(yBinSize, 10)
-	request := gorequest.New()
 	query := `{
 		"query": {
 			"bool" : {
@@ -137,7 +136,8 @@ func GetHeatmapTile(tile *binning.TileCoord) ([]byte, error) {
 	}`
 	searchSize := "size=0"
 	filterPath := "filter_path=aggregations.x.buckets.key,aggregations.x.buckets.y.buckets.key,aggregations.x.buckets.y.buckets.doc_count"
-	_, body, errs := request.
+	_, body, errs := gorequest.
+		New().
 		Post(esHost + "/" + esIndex + "/_search?" + searchSize + "&" + filterPath).
 		Send(query).
 		End()
@@ -148,7 +148,7 @@ func GetHeatmapTile(tile *binning.TileCoord) ([]byte, error) {
 	payload := &HeatmapPayload{}
 	err := json.Unmarshal([]byte(body), &payload)
 	if err != nil {
-		fmt.Println("err")
+		log.Warn(err)
 		return nil, err
 	}
 	// build array of counts

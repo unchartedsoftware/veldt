@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
 	"runtime"
 	"syscall"
 
@@ -10,6 +9,7 @@ import (
 
 	"github.com/unchartedsoftware/prism/server/api"
 	"github.com/unchartedsoftware/prism/server/conf"
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 var (
@@ -24,20 +24,20 @@ func main() {
 
 	// Parse the flags and store them as a conf struct
 	flag.Parse()
-	configuration := conf.Conf{
+	config := conf.Conf{
 		Prod:   *prod,
 		Port:   *port,
 		Public: *public,
 	}
-	conf.SaveConf(&configuration)
+	conf.SaveConf(&config)
 
 	// Start the web server
 	graceful.AddSignal(syscall.SIGINT, syscall.SIGTERM)
 	app := api.New()
-	log.Println("Prism server listening on port " + *port)
-	err := graceful.ListenAndServe(":"+*port, app)
+	log.Debug("Prism server listening on port " + config.Port)
+	err := graceful.ListenAndServe(":"+config.Port, app)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 	graceful.Wait()
 }

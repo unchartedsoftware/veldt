@@ -1,23 +1,24 @@
 package store
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 const (
 	redisHost   = "localhost"
 	redisPort   = "6379"
 	maxIdle     = 8
-	idleTimeout = 30 * time.Second
+	idleTimeout = 10 * time.Second
 )
 
 var redisPool = getPool(redisHost + ":" + redisPort)
 
 func getPool(server string) *redis.Pool {
-	fmt.Printf("Connecting to redis server: %s:%s\n", redisHost, redisPort)
+	log.Debugf("Connecting to redis server: %s:%s", redisHost, redisPort)
 	return &redis.Pool{
 		MaxIdle:     maxIdle,
 		IdleTimeout: idleTimeout,

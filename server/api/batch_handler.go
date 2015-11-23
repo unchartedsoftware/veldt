@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -9,11 +8,12 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/unchartedsoftware/prism/tiling"
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 const (
 	writeWait      = 10 * time.Second
-	maxMessageSize = 1024 * 1024
+	maxMessageSize = 256 * 256
 )
 
 var upgrader = websocket.Upgrader{
@@ -21,36 +21,25 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: maxMessageSize,
 }
 
-func getTimestamp() uint64 {
-	return uint64(time.Now().UnixNano() / int64(time.Millisecond))
-}
-
 func writeMessage(conn *websocket.Conn, mutex *sync.Mutex, tileReq *tiling.TileRequest) {
-	// wait on tile response promise
-	timestamp := getTimestamp()
-	tileRes := tiling.GetTile(tileReq)
-	if tileRes.Error != nil {
-		fmt.Println(tileRes.Error)
+	tileRes, err := tiling.GetTile(tileReq)
+	if err != nil {
+		log.Warn(err)
 	}
-	fmt.Printf("Tiling request: /%s/%d/%d/%d - %dms\n",
-		tileRes.Type,
-		tileRes.TileCoord.Z,
-		tileRes.TileCoord.X,
-		tileRes.TileCoord.Y,
-		getTimestamp()-timestamp)
+	// writes are not thread-safe
 	mutex.Lock()
 	conn.SetWriteDeadline(time.Now().Add(writeWait))
-	err := conn.WriteJSON(tileRes)
+	err = conn.WriteJSON(tileRes)
 	mutex.Unlock()
 	if err != nil {
-		fmt.Println(err)
+		log.Warn(err)
 	}
 }
 
 func batchHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Warn(err)
 		return
 	}
 	defer conn.Close()
@@ -62,7 +51,7 @@ func batchHandler(w http.ResponseWriter, r *http.Request) {
 		// wait on read
 		err := conn.ReadJSON(&tileReq)
 		if err != nil {
-			fmt.Println(err)
+			log.Debug(err)
 			break
 		}
 		// execute tile request

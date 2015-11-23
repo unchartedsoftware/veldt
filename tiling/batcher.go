@@ -3,11 +3,11 @@ package tiling
 import (
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/store"
 	"github.com/unchartedsoftware/prism/tiling/elastic"
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 // TileRequest represents the tile type and tile coord
@@ -21,17 +21,13 @@ type TileResponse struct {
 	TileCoord binning.TileCoord `json:"tilecoord"`
 	Type      string            `json:"type"`
 	Success   bool              `json:"success"`
-	Error     error             `json:"-"`
 }
 
-var mutex = sync.Mutex{}
-
-func getFailureResponse(tileReq *TileRequest, err error) *TileResponse {
+func getFailureResponse(tileReq *TileRequest) *TileResponse {
 	return &TileResponse{
 		TileCoord: tileReq.TileCoord,
 		Type:      tileReq.Type,
 		Success:   false,
-		Error:     err,
 	}
 }
 
@@ -40,7 +36,6 @@ func getSuccessResponse(tileReq *TileRequest) *TileResponse {
 		TileCoord: tileReq.TileCoord,
 		Type:      tileReq.Type,
 		Success:   true,
-		Error:     nil,
 	}
 }
 
@@ -55,15 +50,15 @@ func generateTileByType(tileReq *TileRequest) ([]byte, error) {
 	}
 }
 
-func generateTile(tileHash string, tileReq *TileRequest) *TileResponse {
+func generateTile(tileHash string, tileReq *TileRequest) (*TileResponse, error) {
 	// generate tile by type
 	tileData, err := generateTileByType(tileReq)
 	if err != nil {
-		return getFailureResponse(tileReq, err)
+		return getFailureResponse(tileReq), err
 	}
 	// add tile to store
 	store.Set(tileHash, tileData)
-	return getSuccessResponse(tileReq)
+	return getSuccessResponse(tileReq), nil
 }
 
 // GetTileHash returns a unique hash string for the given tile and type.
@@ -76,17 +71,17 @@ func GetTileHash(tileReq *TileRequest) string {
 }
 
 // GetTile will return a tile response channel that can be used to determine when a tile is ready.
-func GetTile(tileReq *TileRequest) *TileResponse {
+func GetTile(tileReq *TileRequest) (*TileResponse, error) {
 	// get hash for tile
 	tileHash := GetTileHash(tileReq)
 	// check if tile exists in store
 	exists, err := store.Exists(tileHash)
 	if err != nil {
-		fmt.Println(err)
+		log.Warn(err)
 	}
 	// if it exists, return success promise
 	if exists {
-		return getSuccessResponse(tileReq)
+		return getSuccessResponse(tileReq), nil
 	}
 	// otherwise, initiate the tiling job
 	return generateTile(tileHash, tileReq)

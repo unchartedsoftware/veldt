@@ -3,13 +3,13 @@ package elastic
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/parnurzeal/gorequest"
 
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 // "aggregations": {
@@ -83,7 +83,6 @@ func GetTopicCountTile(tile *binning.TileCoord) ([]byte, error) {
 	xMax := strconv.FormatUint(pixelBounds.BottomRight.X-1, 10)
 	yMin := strconv.FormatUint(pixelBounds.TopLeft.Y, 10)
 	yMax := strconv.FormatUint(pixelBounds.BottomRight.Y-1, 10)
-	request := gorequest.New()
 	termsFilters := buildTermsFilter(targetWords[0:])
 	query := `{
 		"query": {
@@ -112,7 +111,8 @@ func GetTopicCountTile(tile *binning.TileCoord) ([]byte, error) {
 	}`
 	searchSize := "size=0"
 	filterPath := "filter_path=aggregations"
-	_, body, errs := request.
+	_, body, errs := gorequest.
+		New().
 		Post(esHost + "/" + esIndex + "/_search?" + searchSize + "&" + filterPath).
 		Send(query).
 		End()
@@ -123,7 +123,7 @@ func GetTopicCountTile(tile *binning.TileCoord) ([]byte, error) {
 	payload := &TopicPayload{}
 	err := json.Unmarshal([]byte(body), &payload)
 	if err != nil {
-		fmt.Println("err")
+		log.Warn(err)
 		return nil, err
 	}
 	// build map of topics and their counts
@@ -135,7 +135,7 @@ func GetTopicCountTile(tile *binning.TileCoord) ([]byte, error) {
 	}
 	result, err := json.Marshal(topicCounts)
 	if err != nil {
-		fmt.Println("err")
+		log.Warn(err)
 		return nil, err
 	}
 	return result, nil

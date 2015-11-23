@@ -1,7 +1,9 @@
+github.com/Sirupsen/logrus a22723f16efea2e89b7bd67d10ed077c47c14eb4
 github.com/colinmarc/hdfs f4331194e33b2cbc3f9bc59f71a8567cac76f5ce
 github.com/garyburd/redigo 6ece6e0a09f28cc399b21550cbf37ab39ba63cce
 github.com/golang/protobuf d3d78384b82d449651d2435ed329d70f7c48aa56
 github.com/gorilla/websocket 361d4c0ffd78338ebe0a9e6320cdbe115d7dc026
+github.com/mgutz/ansi c286dcecd19ff979eeb73ea444e479b903f2cfcb
 github.com/parnurzeal/gorequest 8fe8e16b3c50b6cc37399ee385b15f62a20bf584
 github.com/zenazn/goji 739f05c9497895aee8d398a8ff38fb0517c4d670
 golang.org/x/net 042ba42fa6633b34205efc66ba5719cd3afd8d38

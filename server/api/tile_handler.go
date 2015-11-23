@@ -11,6 +11,7 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/store"
 	"github.com/unchartedsoftware/prism/tiling"
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 func parseTileParams(params map[string]string) (*tiling.TileRequest, error) {
@@ -43,6 +44,7 @@ func tileHandler(c web.C, w http.ResponseWriter, r *http.Request) {
 	// parse tile coord from URL
 	tileReq, parseErr := parseTileParams(c.URLParams)
 	if parseErr != nil {
+		log.Warn(parseErr)
 		handleTileErr(w)
 		return
 	}
@@ -50,7 +52,8 @@ func tileHandler(c web.C, w http.ResponseWriter, r *http.Request) {
 	tileHash := tiling.GetTileHash(tileReq)
 	// get tile data from store
 	tileData, tileErr := store.Get(tileHash)
-	if tileErr != nil {
+	if tileData == nil || tileErr != nil {
+		log.Warn(tileErr)
 		handleTileErr(w)
 		return
 	}

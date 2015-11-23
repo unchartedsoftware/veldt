@@ -14,7 +14,9 @@
             zoomControl: true,
             center: [40.7, -73.9],
             zoom: 14,
-            maxZoom: 18
+            maxZoom: 18,
+            fadeAnimation: true,
+            zoomAnimation: true
         });
 
         // Base map
@@ -206,8 +208,8 @@
         var requester = new TileRequester('ws://localhost:8080/batch', function() {
             // Add layer to the map
             heatmapLayer.addTo(map);
-            // Add layer to the map
-            //wordCloudLayer.addTo(map);
+        // Add layer to the map
+        //wordCloudLayer.addTo(map);
         });
     };
 
