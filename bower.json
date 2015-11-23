@@ -3,12 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "leaflet": "0.7.7",
-    "Cloud5": "chris-dickson/Cloud5"
-  },
-  "overrides": {
-    "Cloud5": {
-      "main": [ "./dist/Cloud5.min.js"]
-    }
+    "leaflet": "0.7.7"
   }
 }
