@@ -27,7 +27,7 @@ func formatTime(totalSeconds uint64) Time {
 }
 
 func getTimestamp() uint64 {
-	return uint64(time.Now().UnixNano() / int64(time.Millisecond))
+	return uint64(time.Now().Unix())
 }
 
 var startTime uint64
@@ -47,9 +47,11 @@ func PrintProgress(totalBytes uint64, bytes uint64) {
 	formattedTime := formatTime(uint64(estimatedSecondsRemaining))
 	formattedBytes := util.FormatBytes(float64(bytes))
 	formattedBytesPerSecond := util.FormatBytes(bytesPerSecond)
-	fmt.Printf("\rProcessed "+formattedBytes+" at "+formattedBytesPerSecond+"ps, %.2f%% complete, estimated time remaining %d:%02d:%02d",
+	fmt.Printf("\rProcessed %+9s at %+9sps, %6.2f%% complete, estimated time remaining: %2d:%02d:%02d",
+		formattedBytes,
+		formattedBytesPerSecond,
 		percentComplete,
-		formattedTime.Hours,
+		formattedTime.Hours%100,
 		formattedTime.Minutes,
 		formattedTime.Seconds)
 }

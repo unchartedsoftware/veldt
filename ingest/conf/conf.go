@@ -5,7 +5,7 @@ type Conf struct {
 	EsHost          string
 	EsPort          string
 	EsIndex         string
-	EsType          string
+	EsDocType       string
 	EsClearExisting bool
 	HdfsHost        string
 	HdfsPort        string

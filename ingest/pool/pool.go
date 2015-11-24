@@ -9,7 +9,7 @@ import (
 )
 
 // Worker represents a designated worker function to batch in a pool.
-type Worker func(file os.FileInfo)
+type Worker func(os.FileInfo)
 
 // Pool represents a single goroutine pool for batching workers.
 type Pool struct {

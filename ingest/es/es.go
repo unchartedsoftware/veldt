@@ -61,7 +61,7 @@ func CreateIndex(host string, port string, index string, body string) error {
 }
 
 // PrepareIndex will ensure the provided index exists, and will optionally clear it.
-func PrepareIndex(host string, port string, index string, mappings string, clearExisting bool) error {
+func PrepareIndex(host string, port string, index string, documentTypeID string, clearExisting bool) error {
 	// check if index exists
 	indexExists, err := IndexExists(host, port, index)
 	if err != nil {
@@ -74,6 +74,8 @@ func PrepareIndex(host string, port string, index string, mappings string, clear
 			return err
 		}
 	}
+	// get document struct by type id
+	mappings := GetDocumentByType(documentTypeId).GetMappings()
 	// if index does not exist at this point
 	if !indexExists || clearExisting {
 		err = CreateIndex(

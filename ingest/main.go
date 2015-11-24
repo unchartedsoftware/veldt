@@ -12,8 +12,7 @@ import (
 	"github.com/unchartedsoftware/prism/ingest/info"
 	"github.com/unchartedsoftware/prism/ingest/pool"
 	"github.com/unchartedsoftware/prism/ingest/progress"
-	"github.com/unchartedsoftware/prism/ingest/terms"
-	"github.com/unchartedsoftware/prism/ingest/twitter"
+	//"github.com/unchartedsoftware/prism/ingest/terms"
 
 	"github.com/unchartedsoftware/prism/util"
 )
@@ -22,12 +21,12 @@ var (
 	esHost          = flag.CommandLine.String("es-host", "", "Elasticsearch host")
 	esPort          = flag.CommandLine.String("es-port", "9200", "Elasticsearch port")
 	esIndex         = flag.CommandLine.String("es-index", "", "Elasticsearch index")
-	esType          = flag.CommandLine.String("es-type", "datum", "Elasticsearch type")
+	esDocType       = flag.CommandLine.String("es-doc-type", "", "Elasticsearch type")
 	esClearExisting = flag.CommandLine.Bool("es-clear-existing", true, "Clear index before ingest")
 	hdfsHost        = flag.CommandLine.String("hdfs-host", "", "HDFS host")
 	hdfsPort        = flag.CommandLine.String("hdfs-port", "", "HDFS port")
 	hdfsPath        = flag.CommandLine.String("hdfs-path", "", "HDFS ingest source data path")
-	batchSize       = flag.CommandLine.Int("batch-size", 16000, "The bulk batch size in documents")
+	batchSize       = flag.CommandLine.Int("batch-size", 24000, "The bulk batch size in documents")
 	poolSize        = flag.CommandLine.Int("pool-size", 8, "The worker pool size")
 	numTopTerms     = flag.CommandLine.Int("num-top-terms", 200, "The number of top terms to store")
 )
@@ -39,6 +38,10 @@ func parseArgs() conf.Conf {
 	}
 	if *esIndex == "" {
 		fmt.Println("ElasticSearch index is not specified, please provide CL arg '-es-index'.")
+		os.Exit(1)
+	}
+	if *esDocType == "" {
+		fmt.Println("ElasticSearch document type is not specified, please provide CL arg '-es-doc-type'.")
 		os.Exit(1)
 	}
 	if *hdfsHost == "" {
@@ -57,7 +60,7 @@ func parseArgs() conf.Conf {
 		EsHost:          *esHost,
 		EsPort:          *esPort,
 		EsIndex:         *esIndex,
-		EsType:          *esType,
+		EsDocType:       *esDocType,
 		EsClearExisting: *esClearExisting,
 		HdfsHost:        *hdfsHost,
 		HdfsPort:        *hdfsPort,
@@ -95,19 +98,19 @@ func main() {
 	fmt.Printf("Processing %d files containing "+util.FormatBytes(float64(ingestInfo.NumTotalBytes))+" of data\n",
 		len(ingestInfo.Files))
 
-	fmt.Println("Determining top terms found in text")
-
-	// launch the top terms job
-	pool.Execute(twitter.TopTermsWorker, ingestInfo)
-
-	// finished succesfully
-	progress.PrintTotalDuration()
-
-	// save n current top term counts
-	terms.SaveTopTerms(uint64(config.NumTopTerms))
+	// fmt.Println("Determining top terms found in text")
+	//
+	// // launch the top terms job
+	// pool.Execute(twitter.TopTermsWorker, ingestInfo)
+	//
+	// // finished succesfully
+	// progress.PrintTotalDuration()
+	//
+	// // save n current top term counts
+	// terms.SaveTopTerms(uint64(config.NumTopTerms))
 
 	// prepare elasticsearch index
-	err = es.PrepareIndex(config.EsHost, config.EsPort, config.EsIndex, twitter.GetMappings(), config.EsClearExisting)
+	err = es.PrepareIndex(config.EsHost, config.EsPort, config.EsIndex, config.EsDocType, config.EsClearExisting)
 	if err != nil {
 		fmt.Println(err)
 		debug.PrintStack()
@@ -117,7 +120,7 @@ func main() {
 	fmt.Println("Ingesting data into elasticsearch")
 
 	// launch the ingest job
-	pool.Execute(twitter.IngestWorker, ingestInfo)
+	pool.Execute(es.IngestWorker, ingestInfo)
 
 	// finished succesfully
 	progress.PrintTotalDuration()
