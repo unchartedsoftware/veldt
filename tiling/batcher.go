@@ -57,7 +57,7 @@ func generateTile(tileHash string, tileReq *TileRequest) (*TileResponse, error) 
 		return getFailureResponse(tileReq), err
 	}
 	// add tile to store
-	store.Set(tileHash, tileData)
+	store.Set(tileHash, tileData[0:])
 	return getSuccessResponse(tileReq), nil
 }
 

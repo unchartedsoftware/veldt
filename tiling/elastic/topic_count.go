@@ -90,7 +90,7 @@ func GetTopicCountTile(tile *binning.TileCoord) ([]byte, error) {
 		        "must" : [
 					{
 			            "range": {
-							"locality.pixel.x": {
+							"pixel.x": {
 								"gte":` + xMin + `,
 								"lte":` + xMax + `
 							}
@@ -98,7 +98,7 @@ func GetTopicCountTile(tile *binning.TileCoord) ([]byte, error) {
 					},
 					{
 			            "range": {
-							"locality.pixel.y": {
+							"pixel.y": {
 								"gte":` + yMin + `,
 								"lte":` + yMax + `
 							}

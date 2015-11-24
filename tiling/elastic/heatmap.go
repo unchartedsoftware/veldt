@@ -77,7 +77,7 @@ func getByteArray(data []float64) []byte {
 	for i := 0; i < len(data); i++ {
 		float64ToBytes(buf[i*8:i*8+8], data[i])
 	}
-	return buf
+	return buf[0:]
 }
 
 // GetHeatmapTile returns a marshalled tile containing a flat array of bins.
@@ -98,7 +98,7 @@ func GetHeatmapTile(tile *binning.TileCoord) ([]byte, error) {
 		        "must" : [
 					{
 			            "range": {
-							"locality.pixel.x": {
+							"pixel.x": {
 								"gte":` + xMin + `,
 								"lte":` + xMax + `
 							}
@@ -106,7 +106,7 @@ func GetHeatmapTile(tile *binning.TileCoord) ([]byte, error) {
 					},
 					{
 			            "range": {
-							"locality.pixel.y": {
+							"pixel.y": {
 								"gte":` + yMin + `,
 								"lte":` + yMax + `
 							}
@@ -118,14 +118,14 @@ func GetHeatmapTile(tile *binning.TileCoord) ([]byte, error) {
 		"aggs": {
 	        "x": {
 	            "histogram": {
-	                "field": "locality.pixel.x",
+	                "field": "pixel.x",
 	                "interval":` + xInterval + `,
 	                "min_doc_count": 1
 	            },
 	            "aggs": {
 	                "y": {
 	                    "histogram": {
-	                        "field": "locality.pixel.y",
+	                        "field": "pixel.y",
 	                        "interval":` + yInterval + `,
 	                        "min_doc_count": 1
 	                    }
