@@ -55,7 +55,7 @@ func GetIngestInfo(host string, port string, path string) (*IngestInfo, error) {
 				return nil, err
 			}
 			fmt.Printf("Retreiving ingest information from: %s, %d files containing %s\n",
-				path,
+				path+"/"+file.Name(),
 				len(subInfo.Files),
 				util.FormatBytes(float64(subInfo.NumTotalBytes)))
 		} else if isValidFile(file) {

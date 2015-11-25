@@ -20,7 +20,7 @@ func (d *ISILTweetDocument) SetData(cols []string) {
 
 // GetID returns the document id.
 func (d ISILTweetDocument) GetID() string {
-	return d.Cols[3]
+	return d.Cols[0]
 }
 
 // GetType returns the document type.
@@ -49,7 +49,7 @@ func (d ISILTweetDocument) GetMappings() string {
 
 // ISILSource is the source structure for this document.
 type ISILSource struct {
-	UserID    string              `json:"userid"`
+	UserID    *string             `json:"userid"`
 	Username  string              `json:"username"`
 	Hashtags  []string            `json:"hashtags"`
 	URLs      []string            `json:"hashtags"`
@@ -106,13 +106,16 @@ func (d ISILTweetDocument) GetSource() ([]byte, error) {
 		return nil, err
 	}
 	source := &ISILSource{
-		UserID:    cols[23],
 		Username:  cols[2],
 		Hashtags:  make([]string, 0),
 		URLs:      make([]string, 0),
 		Timestamp: timestamp,
 		Text:      cols[6],
 		Rankings:  make(map[string]uint64),
+	}
+	// user id may not exist
+	if columnExists(cols[23]) {
+		source.UserID = &cols[23]
 	}
 	// lon / lat data may not exist
 	if columnExists(cols[4]) && columnExists(cols[5]) {

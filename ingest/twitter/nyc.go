@@ -74,7 +74,7 @@ func (d NYCTweetDocument) GetSource() ([]byte, error) {
 	//     10:  'city',
 	//     11:  'en'
 	cols := d.Cols
-	timestamp, err := tweetDateToISO(cols[1])
+	timestamp, err := tweetDateToISO(cols[0])
 	if err != nil {
 		return nil, err
 	}

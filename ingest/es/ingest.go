@@ -52,12 +52,7 @@ func getIndexAction(document Document) (*string, error) {
 	return &jsonString, nil
 }
 
-func getFileReader(host string, port string, filepath string, compression string) (io.Reader, error) {
-	// get hdfs file reader
-	reader, err := hdfs.Open(host, port, filepath)
-	if err != nil {
-		return nil, err
-	}
+func getDecompressReader(reader io.Reader, compression string) (io.Reader, error) {
 	// use compression based reader if specified
 	switch compression {
 	case "gzip":
@@ -75,8 +70,18 @@ func IngestWorker(file info.IngestFile) {
 	documents := make([]string, config.BatchSize)
 	documentIndex := 0
 
+	// get hdfs file reader
+	hdfsReader, err := hdfs.Open(config.HdfsHost, config.HdfsPort, file.Path+"/"+file.Name)
+	if err != nil {
+		fmt.Println(err)
+		debug.PrintStack()
+		return
+	}
+	// defer close reader
+	defer hdfsReader.Close()
+
 	// get file reader
-	reader, err := getFileReader(config.HdfsHost, config.HdfsPort, file.Path+"/"+file.Name, config.HdfsCompression)
+	reader, err := getDecompressReader(hdfsReader, config.HdfsCompression)
 	if err != nil {
 		fmt.Println(err)
 		debug.PrintStack()
@@ -86,11 +91,10 @@ func IngestWorker(file info.IngestFile) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := strings.Split(scanner.Text(), "\t")
-		// document := twitter.NYCTweetDocument{
-		// 	Cols: line,
-		// }
+		// get document struct by type string
 		document := GetDocumentByType(documentTypeID)
-		document.SetData(line)
+		// set data for documents internal store
+		document.SetData(line[0:])
 		action, err := getIndexAction(document)
 		if err != nil {
 			fmt.Println(err)
@@ -110,7 +114,6 @@ func IngestWorker(file info.IngestFile) {
 			}
 		}
 	}
-	//reader.Close()
 
 	// send remaining documents
 	err = Bulk(config.EsHost, config.EsPort, config.EsIndex, indexType, documents[0:documentIndex])
