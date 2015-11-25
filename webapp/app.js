@@ -121,7 +121,7 @@
                         dataType: 'arraybuffer',
                         timeout: AJAX_TIMEOUT
                     }).done(function(buffer) {
-                        var bins = new Float64Array( buffer );
+                        var bins = new Float64Array(buffer);
                         var ctx = canvas.getContext('2d');
                         var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                         var data = imageData.data;
@@ -149,7 +149,7 @@
         };
 
         // Create the canvas tile layer
-        var wordCloudLayer = new WordCloudLayer( null, {
+        var wordCloudLayer = new WordCloudLayer(null, {
             unloadInvisibleTiles: true
         });
         wordCloudLayer.drawTile = function(tile, index, zoom) {

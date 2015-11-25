@@ -84,11 +84,11 @@
     /**
      * Returns the word counts along with font-size, scale percent, height, and width.
      */
-    var measureWords = function( wordCounts, min, max, sizeFunction ) {
+    var measureWords = function(wordCounts, min, max, sizeFunction) {
         // sort words by frequency
         wordCounts = wordCounts.sort(function(a, b) {
             return b.count - a.count;
-        }).slice(0,MAX_NUM_WORDS);
+        }).slice(0, MAX_NUM_WORDS);
         // build measurement html
         var html = '<div style="height:256px; width:256px;">';
         wordCounts.forEach(function(word) {
@@ -133,9 +133,9 @@
         };
         var cloud = [];
         // sort words by frequency
-        wordCounts = measureWords( wordCounts, min, max, SIZE_FUNCTION );
+        wordCounts = measureWords(wordCounts, min, max, SIZE_FUNCTION);
         // assemble word cloud
-        wordCounts.forEach( function( wordCount ) {
+        wordCounts.forEach(function(wordCount) {
             // starting spiral position
             var pos = {
                 radius: 1,
@@ -155,7 +155,7 @@
                     cloud.push({
                         text: wordCount.text,
                         fontSize: wordCount.fontSize,
-                        percent: Math.round((wordCount.percent*100) / 10) * 10, // round to nearest 10
+                        percent: Math.round((wordCount.percent * 100) / 10) * 10, // round to nearest 10
                         x: pos.x,
                         y: pos.y,
                         width: wordCount.width,
@@ -199,11 +199,10 @@
                 'height:' + word.height + 'px',
             ].join(';');
             // create html for entry
-            html +=
-                '<div class="' + classNames + '"' +
-                    'style="' + styles + '"' +
-                    'data-word="' + word.text + '">' +
-                    word.text +
+            html += '<div class="' + classNames + '"' +
+                'style="' + styles + '"' +
+                'data-word="' + word.text + '">' +
+                word.text +
                 '</div>';
         });
         container.html(html);

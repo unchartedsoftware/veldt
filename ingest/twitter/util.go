@@ -1,18 +1,23 @@
 package twitter
 
 import (
-	"fmt"
 	"time"
 )
 
-func tweetDateToISO(tweetDate string) string {
-	const layout = "Mon Jan 2 15:04:05 -0700 2006"
-	t, err := time.Parse(layout, tweetDate)
-	if err != nil {
-		fmt.Println("Error parsing date: " + tweetDate)
-		return ""
+func tweetDateToISO(tweetDate string) (string, error) {
+	// attempt using this layout
+	const layoutA = "Mon Jan 2 15:04:05 -0700 2006"
+	tA, errA := time.Parse(layoutA, tweetDate)
+	if errA == nil {
+		return tA.Format(time.RFC3339), nil
 	}
-	return t.Format(time.RFC3339)
+	// if it fails, attempt this layout
+	const layoutB = "Mon Jan 2 15:04:05 MST 2006"
+	tB, errB := time.Parse(layoutB, tweetDate)
+	if errB != nil {
+		return "", errB
+	}
+	return tB.Format(time.RFC3339), nil
 }
 
 func columnExists(col string) bool {

@@ -74,11 +74,15 @@ func (d NYCTweetDocument) GetSource() ([]byte, error) {
 	//     10:  'city',
 	//     11:  'en'
 	cols := d.Cols
+	timestamp, err := tweetDateToISO(cols[1])
+	if err != nil {
+		return nil, err
+	}
 	source := &NYCSource{
 		UserID:    cols[1],
 		Username:  cols[2],
 		Hashtags:  make([]string, 0),
-		Timestamp: tweetDateToISO(cols[0]),
+		Timestamp: timestamp,
 		Text:      cols[4],
 	}
 	// lon / lat data may not exist

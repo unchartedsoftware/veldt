@@ -26,6 +26,7 @@ var (
 	hdfsHost        = flag.CommandLine.String("hdfs-host", "", "HDFS host")
 	hdfsPort        = flag.CommandLine.String("hdfs-port", "", "HDFS port")
 	hdfsPath        = flag.CommandLine.String("hdfs-path", "", "HDFS ingest source data path")
+	hdfsCompression = flag.CommandLine.String("hdfs-compression", "", "HDFS file compression used")
 	batchSize       = flag.CommandLine.Int("batch-size", 24000, "The bulk batch size in documents")
 	poolSize        = flag.CommandLine.Int("pool-size", 8, "The worker pool size")
 	numTopTerms     = flag.CommandLine.Int("num-top-terms", 200, "The number of top terms to store")
@@ -65,6 +66,7 @@ func parseArgs() conf.Conf {
 		HdfsHost:        *hdfsHost,
 		HdfsPort:        *hdfsPort,
 		HdfsPath:        *hdfsPath,
+		HdfsCompression: *hdfsCompression,
 		BatchSize:       *batchSize,
 		PoolSize:        *poolSize,
 		NumTopTerms:     *numTopTerms,
@@ -84,9 +86,9 @@ func main() {
 	config := parseArgs()
 
 	// get ingest info
-	ingestInfo, err := info.GetIngestInfo(config.HdfsHost, config.HdfsPort, config.HdfsPath)
-	if err != nil {
-		fmt.Println(err)
+	ingestInfo, errs := info.GetIngestInfo(config.HdfsHost, config.HdfsPort, config.HdfsPath)
+	if errs != nil {
+		fmt.Println(errs)
 		debug.PrintStack()
 		os.Exit(1)
 	}
@@ -110,7 +112,7 @@ func main() {
 	// terms.SaveTopTerms(uint64(config.NumTopTerms))
 
 	// prepare elasticsearch index
-	err = es.PrepareIndex(config.EsHost, config.EsPort, config.EsIndex, config.EsDocType, config.EsClearExisting)
+	err := es.PrepareIndex(config.EsHost, config.EsPort, config.EsIndex, config.EsDocType, config.EsClearExisting)
 	if err != nil {
 		fmt.Println(err)
 		debug.PrintStack()

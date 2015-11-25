@@ -10,6 +10,7 @@ type Conf struct {
 	HdfsHost        string
 	HdfsPort        string
 	HdfsPath        string
+	HdfsCompression string
 	BatchSize       int
 	PoolSize        int
 	NumTopTerms     int

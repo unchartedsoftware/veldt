@@ -38,6 +38,5 @@ func ReadDir(host string, port string, path string) ([]os.FileInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Retreiving directory information from: " + path)
 	return client.ReadDir(path)
 }

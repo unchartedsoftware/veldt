@@ -101,12 +101,16 @@ func (d ISILTweetDocument) GetSource() ([]byte, error) {
 	//	  35: has account been verified by Twitter
 	//	  36: the 'real' name given by the user
 	cols := d.Cols
+	timestamp, err := tweetDateToISO(cols[1])
+	if err != nil {
+		return nil, err
+	}
 	source := &ISILSource{
 		UserID:    cols[23],
 		Username:  cols[2],
 		Hashtags:  make([]string, 0),
 		URLs:      make([]string, 0),
-		Timestamp: tweetDateToISO(cols[1]),
+		Timestamp: timestamp,
 		Text:      cols[6],
 		Rankings:  make(map[string]uint64),
 	}

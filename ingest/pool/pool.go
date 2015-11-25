@@ -1,7 +1,6 @@
 package pool
 
 import (
-	"os"
 	"sync"
 
 	"github.com/unchartedsoftware/prism/ingest/info"
@@ -9,11 +8,11 @@ import (
 )
 
 // Worker represents a designated worker function to batch in a pool.
-type Worker func(os.FileInfo)
+type Worker func(info.IngestFile)
 
 // Pool represents a single goroutine pool for batching workers.
 type Pool struct {
-	Channel   chan os.FileInfo
+	Channel   chan info.IngestFile
 	WaitGroup *sync.WaitGroup
 	Size      int
 }
@@ -21,7 +20,7 @@ type Pool struct {
 // New returns a new pool object with the given worker size
 func New(size int) Pool {
 	return Pool{
-		Channel:   make(chan os.FileInfo),
+		Channel:   make(chan info.IngestFile),
 		WaitGroup: new(sync.WaitGroup),
 		Size:      size,
 	}
@@ -30,14 +29,14 @@ func New(size int) Pool {
 // Track how many bytes of data has been processed
 var numProcessedBytes = uint64(0)
 
-func workerWrapper(fileChan chan os.FileInfo, waitGroup *sync.WaitGroup, worker Worker, ingestInfo *info.IngestInfo) {
+func workerWrapper(fileChan chan info.IngestFile, waitGroup *sync.WaitGroup, worker Worker, ingestInfo *info.IngestInfo) {
 	// Decrease internal counter for wait-group as soon as goroutine finishes
 	defer waitGroup.Done()
 	for file := range fileChan {
 		// Print current progress
 		worker(file)
 		// Increment processed bytes
-		numProcessedBytes += uint64(file.Size())
+		numProcessedBytes += file.Size
 		// Print current progress
 		progress.PrintProgress(ingestInfo.NumTotalBytes, numProcessedBytes)
 	}

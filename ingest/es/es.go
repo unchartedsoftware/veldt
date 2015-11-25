@@ -75,7 +75,7 @@ func PrepareIndex(host string, port string, index string, documentTypeID string,
 		}
 	}
 	// get document struct by type id
-	mappings := GetDocumentByType(documentTypeId).GetMappings()
+	mappings := GetDocumentByType(documentTypeID).GetMappings()
 	// if index does not exist at this point
 	if !indexExists || clearExisting {
 		err = CreateIndex(
