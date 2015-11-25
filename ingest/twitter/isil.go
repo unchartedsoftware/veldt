@@ -57,7 +57,7 @@ type ISILSource struct {
 	Text      string              `json:"text"`
 	LonLat    *binning.LonLat     `json:"lonlat"`
 	Pixel     *binning.PixelCoord `json:"pixel"`
-	Rankings  map[string]uint64   `josn:"rankings"`
+	Rankings  map[string]uint64   `json:"rankings"`
 }
 
 // GetSource returns the marshalled source portion of the document.

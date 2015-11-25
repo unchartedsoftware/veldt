@@ -35,14 +35,14 @@ func isValidFile(file os.FileInfo) bool {
 
 // GetIngestInfo returns an array of os.FileInfo and the total number of bytes in the provided directory.
 func GetIngestInfo(host string, port string, path string) (*IngestInfo, error) {
-	// data to populate
-	ingestFiles := make([]IngestFile, 0)
-	numTotalBytes := uint64(0)
 	// create empty slice of fileinfos to populate
 	files, err := hdfs.ReadDir(host, port, path)
 	if err != nil {
 		return nil, err
 	}
+	// data to populate
+	var ingestFiles []IngestFile
+	numTotalBytes := uint64(0)
 	// for each file / dir
 	for _, file := range files {
 		if isValidDir(file) {

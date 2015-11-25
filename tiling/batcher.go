@@ -1,12 +1,12 @@
 package tiling
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/fanliao/go-promise"
 
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/store"
-	"github.com/unchartedsoftware/prism/tiling/elastic"
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
@@ -39,28 +39,6 @@ func getSuccessResponse(tileReq *TileRequest) *TileResponse {
 	}
 }
 
-func generateTileByType(tileReq *TileRequest) ([]byte, error) {
-	switch tileReq.Type {
-	case "topiccount":
-		return elastic.GetTopicCountTile(&tileReq.TileCoord)
-	case "heatmap":
-		return elastic.GetHeatmapTile(&tileReq.TileCoord)
-	default:
-		return nil, errors.New("Tiling type not recognized")
-	}
-}
-
-func generateTile(tileHash string, tileReq *TileRequest) (*TileResponse, error) {
-	// generate tile by type
-	tileData, err := generateTileByType(tileReq)
-	if err != nil {
-		return getFailureResponse(tileReq), err
-	}
-	// add tile to store
-	store.Set(tileHash, tileData[0:])
-	return getSuccessResponse(tileReq), nil
-}
-
 // GetTileHash returns a unique hash string for the given tile and type.
 func GetTileHash(tileReq *TileRequest) string {
 	return fmt.Sprintf("%s-%d-%d-%d",
@@ -71,7 +49,7 @@ func GetTileHash(tileReq *TileRequest) string {
 }
 
 // GetTile will return a tile response channel that can be used to determine when a tile is ready.
-func GetTile(tileReq *TileRequest) (*TileResponse, error) {
+func GetTile(tileReq *TileRequest) (*promise.Promise, error) {
 	// get hash for tile
 	tileHash := GetTileHash(tileReq)
 	// check if tile exists in store
@@ -81,8 +59,8 @@ func GetTile(tileReq *TileRequest) (*TileResponse, error) {
 	}
 	// if it exists, return success promise
 	if exists {
-		return getSuccessResponse(tileReq), nil
+		return GetSuccessPromise(tileReq), nil
 	}
-	// otherwise, initiate the tiling job
-	return generateTile(tileHash, tileReq)
+	// otherwise, initiate the tiling job and return promise
+	return GetTilePromise(tileHash, tileReq), nil
 }

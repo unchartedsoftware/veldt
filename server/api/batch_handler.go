@@ -22,18 +22,22 @@ var upgrader = websocket.Upgrader{
 }
 
 func writeMessage(conn *websocket.Conn, mutex *sync.Mutex, tileReq *tiling.TileRequest) {
-	tileRes, err := tiling.GetTile(tileReq)
+	p, err := tiling.GetTile(tileReq)
 	if err != nil {
 		log.Warn(err)
 	}
-	// writes are not thread-safe
-	mutex.Lock()
-	conn.SetWriteDeadline(time.Now().Add(writeWait))
-	err = conn.WriteJSON(tileRes)
-	mutex.Unlock()
-	if err != nil {
-		log.Warn(err)
-	}
+	p.OnComplete(func(v interface{}) {
+		// cast to tile response
+		tileRes := v.(*tiling.TileResponse)
+		// writes are not thread-safe
+		mutex.Lock()
+		conn.SetWriteDeadline(time.Now().Add(writeWait))
+		err = conn.WriteJSON(tileRes)
+		mutex.Unlock()
+		if err != nil {
+			log.Warn(err)
+		}
+	})
 }
 
 func batchHandler(w http.ResponseWriter, r *http.Request) {
