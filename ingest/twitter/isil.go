@@ -2,12 +2,12 @@ package twitter
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/ingest/conf"
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 // ISILTweetDocument represents a single TSV row of isil keyword twitter data.
@@ -28,7 +28,7 @@ func (d ISILTweetDocument) Setup() error {
 		"usersByTime_5_OrMoreKeywords.txt",
 	}
 	for _, ranking := range rankings {
-		fmt.Printf("Loading ranks from %s\n", ranking)
+		log.Debugf("Loading ranks from %s", ranking)
 		err := LoadRanking(host, port, path, ranking)
 		if err != nil {
 			return err

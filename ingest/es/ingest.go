@@ -64,18 +64,21 @@ func getDecompressReader(reader io.Reader, compression string) (io.Reader, error
 }
 
 // IngestWorker is a worker to ingest twitter data into elasticsearch.
-func IngestWorker(file info.IngestFile) {
+func IngestWorker(file info.IngestFile) error {
+	// get the config struct
 	config := conf.GetConf()
-	documentTypeID := config.EsDocType
-	indexType := GetDocumentByType(documentTypeID).GetType()
-	documents := make([]string, config.BatchSize)
-	documentIndex := 0
+	// get document struct by type string
+	document, err := GetDocumentByType(config.EsDocType)
+	if err != nil {
+		return err
+	}
+	// get data type
+	dataType := document.GetType()
 
 	// get hdfs file reader
 	hdfsReader, err := hdfs.Open(config.HdfsHost, config.HdfsPort, file.Path+"/"+file.Name)
 	if err != nil {
-		log.Error(err)
-		return
+		return err
 	}
 	// defer close reader
 	defer hdfsReader.Close()
@@ -83,40 +86,41 @@ func IngestWorker(file info.IngestFile) {
 	// get file reader
 	reader, err := getDecompressReader(hdfsReader, config.HdfsCompression)
 	if err != nil {
-		log.Error(err)
-		return
+		return err
 	}
 
+	// create bulk actions slice
+	actions := make([]string, config.BatchSize)
+	actionIndex := 0
+
+	// scan file line by line
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := strings.Split(scanner.Text(), "\t")
-		// get document struct by type string
-		document := GetDocumentByType(documentTypeID)
-		// set data for documents internal store
+		// set data for document
 		document.SetData(line[0:])
 		action, err := getIndexAction(document)
 		if err != nil {
 			log.Error(err)
 			continue
 		}
-		documents[documentIndex] = *action
-		documentIndex++
-		if documentIndex%config.BatchSize == 0 {
+		actions[actionIndex] = *action
+		actionIndex++
+		if actionIndex%config.BatchSize == 0 {
 			// send bulk ingest request
-			documentIndex = 0
-			err := Bulk(config.EsHost, config.EsPort, config.EsIndex, indexType, documents[0:])
+			actionIndex = 0
+			err := Bulk(config.EsHost, config.EsPort, config.EsIndex, dataType, actions[0:])
 			if err != nil {
-				log.Error(err)
-				continue
+				return err
 			}
 		}
 	}
-
 	// send remaining documents
-	if documentIndex > 0 {
-		err = Bulk(config.EsHost, config.EsPort, config.EsIndex, indexType, documents[0:documentIndex])
+	if actionIndex > 0 {
+		err = Bulk(config.EsHost, config.EsPort, config.EsIndex, dataType, actions[0:actionIndex])
 		if err != nil {
-			log.Error(err)
+			return err
 		}
 	}
+	return nil
 }

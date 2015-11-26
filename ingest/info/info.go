@@ -1,11 +1,11 @@
 package info
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/unchartedsoftware/prism/ingest/hdfs"
 	"github.com/unchartedsoftware/prism/util"
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 // IngestInfo represents a directory worth of ingestible data.
@@ -65,7 +65,7 @@ func GetIngestInfo(host string, port string, path string) (*IngestInfo, error) {
 			})
 		}
 	}
-	fmt.Printf("Retreiving ingest information from: %s, %d files containing %s\n",
+	log.Debugf("Retreiving ingest info from: %s, %d files containing %s",
 		path,
 		len(ingestFiles),
 		util.FormatBytes(float64(numTotalBytes)))

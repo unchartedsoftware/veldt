@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/unchartedsoftware/prism/util"
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 // Time represents the hour, minutes, and seconds of a given time.
@@ -59,7 +60,7 @@ func PrintProgress(totalBytes uint64, bytes uint64) {
 // PrintTotalDuration prints the total duration of the processed task.
 func PrintTotalDuration() {
 	formattedTime := formatTime(getTimestamp() - startTime)
-	fmt.Printf("\nTask completed in %d:%02d:%02d\n",
+	log.Debugf("\nTask completed in %d:%02d:%02d",
 		formattedTime.Hours,
 		formattedTime.Minutes,
 		formattedTime.Seconds)
@@ -70,9 +71,8 @@ func PrintTotalDuration() {
 // PrintTimeout will print a timeout message for n seconds.
 func PrintTimeout(duration uint32) {
 	for duration >= 0 {
-		fmt.Printf("\rRetrying in " + string(duration) + " seconds...")
+		log.Debug("\rRetrying in " + string(duration) + " seconds...")
 		time.Sleep(time.Second)
 		duration--
 	}
-	fmt.Println()
 }

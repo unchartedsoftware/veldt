@@ -8,11 +8,12 @@ import (
 )
 
 // Worker represents a designated worker function to batch in a pool.
-type Worker func(info.IngestFile)
+type Worker func(info.IngestFile) error
 
 // Pool represents a single goroutine pool for batching workers.
 type Pool struct {
-	Channel   chan info.IngestFile
+	FileChan  chan info.IngestFile
+	ErrChan   chan error
 	WaitGroup *sync.WaitGroup
 	Size      int
 }
@@ -20,7 +21,8 @@ type Pool struct {
 // New returns a new pool object with the given worker size
 func New(size int) Pool {
 	return Pool{
-		Channel:   make(chan info.IngestFile),
+		FileChan:  make(chan info.IngestFile),
+		ErrChan:   make(chan error),
 		WaitGroup: new(sync.WaitGroup),
 		Size:      size,
 	}
@@ -29,12 +31,24 @@ func New(size int) Pool {
 // Track how many bytes of data has been processed
 var numProcessedBytes = uint64(0)
 
-func workerWrapper(fileChan chan info.IngestFile, waitGroup *sync.WaitGroup, worker Worker, ingestInfo *info.IngestInfo) {
+func sendError(errChan chan error, err error) {
+	errChan <- err
+}
+
+func workerWrapper(p *Pool, worker Worker, ingestInfo *info.IngestInfo) {
 	// Decrease internal counter for wait-group as soon as goroutine finishes
-	defer waitGroup.Done()
-	for file := range fileChan {
-		// Print current progress
-		worker(file)
+	defer p.WaitGroup.Done()
+	for file := range p.FileChan {
+		// do work
+		err := worker(file)
+		// if error, broadcast to pool
+		if err != nil {
+			// broadcast error message and continue grabbing from pool
+			// we don't just return because the pool will be blocked on a pending
+			// file and we need another worker to grab it
+			go sendError(p.ErrChan, err)
+			continue
+		}
 		// Increment processed bytes
 		numProcessedBytes += file.Size
 		// Print current progress
@@ -43,18 +57,30 @@ func workerWrapper(fileChan chan info.IngestFile, waitGroup *sync.WaitGroup, wor
 }
 
 // Execute launches a batch of ingest workers with the provided ingest information.
-func (p *Pool) Execute(worker Worker, ingestInfo *info.IngestInfo) {
-	// Adding routines to workgroup and running then
+func (p *Pool) Execute(worker Worker, ingestInfo *info.IngestInfo) error {
+	// for each worker in pool
 	for i := 0; i < p.Size; i++ {
+		// increase wait group size
 		p.WaitGroup.Add(1)
-		go workerWrapper(p.Channel, p.WaitGroup, worker, ingestInfo)
+		// dispatch the workers, they will wait until the input channel is closed
+		go workerWrapper(p, worker, ingestInfo)
 	}
-	// Processing all links by spreading them to `free` goroutines
+	// close channels when the function exists, this will allow the worker goroutines to end
+	defer close(p.FileChan)
+	defer close(p.ErrChan)
+	// process all files by spreading them to free workers, this blocks until
+	// a worker is available, or exits if there is an error
 	for _, file := range ingestInfo.Files {
-		p.Channel <- file
+		select {
+		case err := <-p.ErrChan:
+			// if error has occured, exit with error
+			return err
+		default:
+			// if not, continue passing files to workers
+			p.FileChan <- file
+		}
 	}
-	// Closing channel (waiting in goroutines won't continue any more)
-	close(p.Channel)
-	// Waiting for all goroutines to finish (otherwise they die as main routine dies)
+	// wait for all workers to finish (otherwise they die as main routine dies)
 	p.WaitGroup.Wait()
+	return nil
 }

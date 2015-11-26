@@ -1,10 +1,11 @@
 package hdfs
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/colinmarc/hdfs"
+
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 var hdfsClient *hdfs.Client
@@ -12,7 +13,7 @@ var hdfsClient *hdfs.Client
 func getHdfsClient(host string, port string) (*hdfs.Client, error) {
 	endpoint := host + ":" + port
 	if hdfsClient == nil {
-		fmt.Println("Connecting to HDFS: " + endpoint)
+		log.Debug("Connecting to HDFS: " + endpoint)
 		client, err := hdfs.New(endpoint)
 		hdfsClient = client
 		return hdfsClient, err

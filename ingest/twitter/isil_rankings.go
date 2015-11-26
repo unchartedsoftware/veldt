@@ -11,6 +11,7 @@ import (
 	"github.com/unchartedsoftware/prism/ingest/hdfs"
 )
 
+// RankingsMap represents a single rankings type, keyed by username.
 type RankingsMap map[string]uint64
 
 var rankings = make(map[string]RankingsMap)
@@ -21,7 +22,7 @@ func isRankingFile(file os.FileInfo) bool {
 		file.Size() > 0
 }
 
-func loadRankingFile(host string, port string, filepath string, rankingsId string) error {
+func loadRankingFile(host string, port string, filepath string, rankingsID string) error {
 	// get hdfs file reader
 	reader, err := hdfs.Open(host, port, filepath)
 	if err != nil {
@@ -40,7 +41,7 @@ func loadRankingFile(host string, port string, filepath string, rankingsId strin
 			return nil
 		}
 		// add user and rank to map
-		rankings[rankingsId][username] = rank
+		rankings[rankingsID][username] = rank
 	}
 	return nil
 }
@@ -48,9 +49,9 @@ func loadRankingFile(host string, port string, filepath string, rankingsId strin
 // LoadRanking loads user rankings under the provided directory.
 func LoadRanking(host string, port string, path string, rankingsDir string) error {
 	// get rankings id by stripping any extensions off the name
-	rankingsId := strings.TrimSuffix(rankingsDir, filepath.Ext(rankingsDir))
+	rankingsID := strings.TrimSuffix(rankingsDir, filepath.Ext(rankingsDir))
 	// add rankings file to map
-	rankings[rankingsId] = make(RankingsMap)
+	rankings[rankingsID] = make(RankingsMap)
 	// read directory
 	files, err := hdfs.ReadDir(host, port, path+"/"+rankingsDir)
 	if err != nil {
@@ -59,7 +60,7 @@ func LoadRanking(host string, port string, path string, rankingsDir string) erro
 	// load individual ranking files
 	for _, file := range files {
 		if isRankingFile(file) {
-			err := loadRankingFile(host, port, path+"/"+rankingsDir+"/"+file.Name(), rankingsId)
+			err := loadRankingFile(host, port, path+"/"+rankingsDir+"/"+file.Name(), rankingsID)
 			if err != nil {
 				return err
 			}
@@ -72,12 +73,12 @@ func LoadRanking(host string, port string, path string, rankingsDir string) erro
 // GetUserRankings returns map containing the ranks for a particular username.
 func GetUserRankings(username string) (map[string]uint64, error) {
 	ranks := make(map[string]uint64)
-	for rankingId, ranking := range rankings {
+	for rankingsID, ranking := range rankings {
 		rank, ok := ranking[username]
 		if !ok {
 			//return nil, errors.New("User has not been assigned a rank.")
 		}
-		ranks[rankingId] = rank
+		ranks[rankingsID] = rank
 	}
 	return ranks, nil
 }

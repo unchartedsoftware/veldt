@@ -28,6 +28,7 @@ fmt:
 
 build: clean lint
 	@go build -o ./bin/prism.bin server/main.go
+	@go build -o ./bin/ingest.bin ingest/main.go
 
 deps:
 	@npm install

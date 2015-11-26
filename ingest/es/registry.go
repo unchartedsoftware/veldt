@@ -1,8 +1,7 @@
 package es
 
 import (
-	"fmt"
-	"os"
+	"errors"
 	"reflect"
 
 	"github.com/unchartedsoftware/prism/ingest/twitter"
@@ -18,12 +17,14 @@ func init() {
 }
 
 // GetDocumentByType when given a document id will return the document struct type.
-func GetDocumentByType(typeID string) Document {
+func GetDocumentByType(typeID string) (Document, error) {
 	docType, ok := registry[typeID]
-	if ok {
-		return reflect.New(docType).Interface().(Document)
+	if !ok {
+		return nil, errors.New("Document type '" + typeID + "' has not been registered.")
 	}
-	fmt.Println("Document type '" + typeID + "' has not been registered.")
-	defer os.Exit(1)
-	return nil
+	doc, ok := reflect.New(docType).Interface().(Document)
+	if !ok {
+		return nil, errors.New("Document type '" + typeID + "' does not implement the Document interface.")
+	}
+	return doc, nil
 }

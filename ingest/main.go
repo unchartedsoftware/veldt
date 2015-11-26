@@ -1,8 +1,8 @@
 package main
 
 import (
+	"errors"
 	"flag"
-	"fmt"
 	"os"
 	"runtime"
 
@@ -11,7 +11,6 @@ import (
 	"github.com/unchartedsoftware/prism/ingest/info"
 	"github.com/unchartedsoftware/prism/ingest/pool"
 	"github.com/unchartedsoftware/prism/ingest/progress"
-	//"github.com/unchartedsoftware/prism/ingest/terms"
 
 	"github.com/unchartedsoftware/prism/util"
 	"github.com/unchartedsoftware/prism/util/log"
@@ -28,36 +27,30 @@ var (
 	hdfsPath        = flag.CommandLine.String("hdfs-path", "", "HDFS ingest source data path")
 	hdfsCompression = flag.CommandLine.String("hdfs-compression", "", "HDFS file compression used")
 	batchSize       = flag.CommandLine.Int("batch-size", 24000, "The bulk batch size in documents")
-	poolSize        = flag.CommandLine.Int("pool-size", 8, "The worker pool size")
+	poolSize        = flag.CommandLine.Int("pool-size", 4, "The worker pool size")
 	numTopTerms     = flag.CommandLine.Int("num-top-terms", 200, "The number of top terms to store")
 )
 
-func parseArgs() conf.Conf {
+func parseArgs() (*conf.Conf, error) {
 	if *esHost == "" {
-		fmt.Println("ElasticSearch host is not specified, please provide CL arg '-es-host'.")
-		os.Exit(1)
+		return nil, errors.New("ElasticSearch host is not specified, please provide CL arg '-es-host'")
 	}
 	if *esIndex == "" {
-		fmt.Println("ElasticSearch index is not specified, please provide CL arg '-es-index'.")
-		os.Exit(1)
+		return nil, errors.New("ElasticSearch index is not specified, please provide CL arg '-es-index'")
 	}
 	if *esDocType == "" {
-		fmt.Println("ElasticSearch document type is not specified, please provide CL arg '-es-doc-type'.")
-		os.Exit(1)
+		return nil, errors.New("ElasticSearch document type is not specified, please provide CL arg '-es-doc-type'")
 	}
 	if *hdfsHost == "" {
-		fmt.Println("HDFS host is not specified, please provide CL arg '-hdfs-host'.")
-		os.Exit(1)
+		return nil, errors.New("HDFS host is not specified, please provide CL arg '-hdfs-host'")
 	}
 	if *hdfsPort == "" {
-		fmt.Println("HDFS port is not specified, please provide CL arg '-hdfs-port'.")
-		os.Exit(1)
+		return nil, errors.New("HDFS port is not specified, please provide CL arg '-hdfs-port'")
 	}
 	if *hdfsPath == "" {
-		fmt.Println("HDFS path is not specified, please provide CL arg '-hdfs-path'.")
-		os.Exit(1)
+		return nil, errors.New("HDFS path is not specified, please provide CL arg '-hdfs-path'")
 	}
-	config := conf.Conf{
+	config := &conf.Conf{
 		EsHost:          *esHost,
 		EsPort:          *esPort,
 		EsIndex:         *esIndex,
@@ -71,8 +64,8 @@ func parseArgs() conf.Conf {
 		PoolSize:        *poolSize,
 		NumTopTerms:     *numTopTerms,
 	}
-	conf.SaveConf(&config)
-	return config
+	conf.SaveConf(config)
+	return config, nil
 }
 
 func main() {
@@ -83,7 +76,18 @@ func main() {
 	flag.Parse()
 
 	// load args into configig struct
-	config := parseArgs()
+	config, err := parseArgs()
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+
+	// check document type id and implementation
+	document, err := es.GetDocumentByType(config.EsDocType)
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
 
 	// get ingest info
 	ingestInfo, errs := info.GetIngestInfo(config.HdfsHost, config.HdfsPort, config.HdfsPath)
@@ -96,45 +100,28 @@ func main() {
 	pool := pool.New(config.PoolSize)
 
 	// display some info of the pending ingest
-	fmt.Printf("Processing %d files containing "+util.FormatBytes(float64(ingestInfo.NumTotalBytes))+" of data\n",
+	log.Debugf("Processing %d files containing "+util.FormatBytes(float64(ingestInfo.NumTotalBytes))+" of data",
 		len(ingestInfo.Files))
 
-	// fmt.Println("Determining top terms found in text")
-	//
-	// // launch the top terms job
-	// pool.Execute(twitter.TopTermsWorker, ingestInfo)
-	//
-	// // finished succesfully
-	// progress.PrintTotalDuration()
-	//
-	// // save n current top term counts
-	// terms.SaveTopTerms(uint64(config.NumTopTerms))
-
 	// prepare elasticsearch index
-	err := es.PrepareIndex(config.EsHost, config.EsPort, config.EsIndex, config.EsDocType, config.EsClearExisting)
+	err = es.PrepareIndex(config.EsHost, config.EsPort, config.EsIndex, document.GetMappings(), config.EsClearExisting)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
-
-	fmt.Println("Ingesting data into elasticsearch")
 
 	// setup for ingest
-	err = es.GetDocumentByType(config.EsDocType).Setup()
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
+	document.Setup()
 
 	// launch the ingest job
-	pool.Execute(es.IngestWorker, ingestInfo)
-
-	// teardown after ingest
-	err = es.GetDocumentByType(config.EsDocType).Teardown()
+	err = pool.Execute(es.IngestWorker, ingestInfo)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
+
+	// teardown after ingest
+	document.Teardown()
 
 	// finished succesfully
 	progress.PrintTotalDuration()

@@ -13,19 +13,23 @@ import (
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
-type ESError struct {
+// Error represents the error node of an elasticsearch json response.
+type Error struct {
 	Type   string `json:"type"`
 	Reason string `json:"reason"`
 }
 
-type ESItemIndex struct {
-	Error ESError `json:"error"`
+// ItemIndex represents the index node of an elasticsearch item attribute.
+type ItemIndex struct {
+	Error Error `json:"error"`
 }
 
-type ESItem struct {
-	Index ESItemIndex `json:"index"`
+// Item represents an item element of an elasticsearch items array.
+type Item struct {
+	Index ItemIndex `json:"index"`
 }
 
+// Response represents the json response from a valid elasticsearch action.
 // {
 //     "took": 5,
 //     "errors": true,
@@ -48,11 +52,12 @@ type ESItem struct {
 //         }
 //     ]
 // }
-type ESResponse struct {
-	Errors bool     `json:"errors"`
-	Items  []ESItem `json:"items"`
+type Response struct {
+	Errors bool   `json:"errors"`
+	Items  []Item `json:"items"`
 }
 
+// BadRequest represents the json response from an invalid elasticsearch action.
 // {
 //     "error": {
 // 	        "root_cause": [
@@ -66,9 +71,9 @@ type ESResponse struct {
 // 	   },
 //     "status": 400
 // }
-type ESBadRequest struct {
-	Status uint    `json:"status"`
-	Error  ESError `json:"error"`
+type BadRequest struct {
+	Status uint  `json:"status"`
+	Error  Error `json:"error"`
 }
 
 func getResponseString(resp *http.Response) (string, error) {
@@ -86,26 +91,25 @@ func parseResponse(r *http.Response) error {
 		return err
 	}
 	// first check if the request itself was malformed
-	if r.StatusCode == 400 {
-		log.Error("1")
-		badReq := &ESBadRequest{}
+	if r.StatusCode >= 400 && r.StatusCode < 500 {
+		badReq := &BadRequest{}
 		err := json.Unmarshal([]byte(respText), &badReq)
 		if err != nil {
 			return err
 		}
-		return errors.New(badReq.Error.Type + ":" + badReq.Error.Reason)
+		return fmt.Errorf("Error %d: %s, %s", r.StatusCode, badReq.Error.Type, badReq.Error.Reason)
 	}
 	// then check elasticsearch response json
 	// unmarshal payload
-	esResp := &ESResponse{}
+	esResp := &Response{}
 	err = json.Unmarshal([]byte(respText), &esResp)
 	if err != nil {
 		return err
 	}
 	if esResp.Errors {
-		log.Error("2")
 		item := esResp.Items[0]
-		return errors.New(item.Index.Error.Type + ":" + item.Index.Error.Reason)
+		log.Error(respText)
+		return errors.New(item.Index.Error.Type + ": " + item.Index.Error.Reason)
 	}
 	return nil
 }
@@ -138,7 +142,7 @@ func IndexExists(host string, port string, index string) (bool, error) {
 
 // DeleteIndex deletes the provided index in elasticsearch.
 func DeleteIndex(host string, port string, index string) error {
-	fmt.Println("Clearing index '" + index + "'")
+	log.Debug("Clearing index '" + index + "'")
 	_, _, errs := gorequest.New().
 		Delete(host + ":" + port + "/" + index).
 		End()
@@ -151,7 +155,7 @@ func DeleteIndex(host string, port string, index string) error {
 
 // CreateIndex creates the provided index in elasticsearch.
 func CreateIndex(host string, port string, index string, body string) error {
-	fmt.Println("Creating index '" + index + "'")
+	log.Debug("Creating index '" + index + "'")
 	_, _, errs := gorequest.New().
 		Put(host + ":" + port + "/" + index).
 		Send(body).
@@ -164,7 +168,7 @@ func CreateIndex(host string, port string, index string, body string) error {
 }
 
 // PrepareIndex will ensure the provided index exists, and will optionally clear it.
-func PrepareIndex(host string, port string, index string, documentTypeID string, clearExisting bool) error {
+func PrepareIndex(host string, port string, index string, mappings string, clearExisting bool) error {
 	// check if index exists
 	indexExists, err := IndexExists(host, port, index)
 	if err != nil {
@@ -177,8 +181,6 @@ func PrepareIndex(host string, port string, index string, documentTypeID string,
 			return err
 		}
 	}
-	// get document struct by type id
-	mappings := GetDocumentByType(documentTypeID).GetMappings()
 	// if index does not exist at this point
 	if !indexExists || clearExisting {
 		err = CreateIndex(
