@@ -13,7 +13,6 @@ import (
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
-/*
 // "aggregations": {
 //     "x": {
 //         "buckets": [
@@ -33,7 +32,6 @@ import (
 // 		   ]
 // 	   }
 // }
-*/
 
 // Row represents a row value in the y axis aggregations.
 type Row struct {

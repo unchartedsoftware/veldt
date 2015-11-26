@@ -26,9 +26,9 @@ func writeMessage(conn *websocket.Conn, mutex *sync.Mutex, tileReq *tiling.TileR
 	if err != nil {
 		log.Warn(err)
 	}
-	p.OnComplete(func(v interface{}) {
+	p.OnComplete(func(res interface{}) {
 		// cast to tile response
-		tileRes := v.(*tiling.TileResponse)
+		tileRes := res.(*tiling.TileResponse)
 		// writes are not thread-safe
 		mutex.Lock()
 		conn.SetWriteDeadline(time.Now().Add(writeWait))

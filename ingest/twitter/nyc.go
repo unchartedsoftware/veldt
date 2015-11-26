@@ -13,6 +13,16 @@ type NYCTweetDocument struct {
 	Cols []string
 }
 
+// Setup initialized and required state prior to ingestion.
+func (d NYCTweetDocument) Setup() error {
+	return nil
+}
+
+// Teardown cleans up any state after ingestion.
+func (d NYCTweetDocument) Teardown() error {
+	return nil
+}
+
 // SetData sets the internal TSV column.
 func (d *NYCTweetDocument) SetData(cols []string) {
 	d.Cols = cols

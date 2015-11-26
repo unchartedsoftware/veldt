@@ -2,15 +2,44 @@ package twitter
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/ingest/conf"
 )
 
 // ISILTweetDocument represents a single TSV row of isil keyword twitter data.
 type ISILTweetDocument struct {
 	Cols []string
+}
+
+// Setup initialized and required state prior to ingestion.
+func (d ISILTweetDocument) Setup() error {
+	config := conf.GetConf()
+	host := config.HdfsHost
+	port := config.HdfsPort
+	path := "/xdata/data/twitter/isil-keywords/es-mapping-files/weekly"
+	rankings := []string{
+		"usersByCount_1_OrMoreKeywords.txt",
+		"usersByCount_5_OrMoreKeywords.txt",
+		"usersByTime_1_OrMoreKeywords.txt",
+		"usersByTime_5_OrMoreKeywords.txt",
+	}
+	for _, ranking := range rankings {
+		fmt.Printf("Loading ranks from %s\n", ranking)
+		err := LoadRanking(host, port, path, ranking)
+		if err != nil {
+			return nil
+		}
+	}
+	return nil
+}
+
+// Teardown cleans up any state after ingestion.
+func (d ISILTweetDocument) Teardown() error {
+	return nil
 }
 
 // SetData sets the internal TSV column.
@@ -52,7 +81,7 @@ type ISILSource struct {
 	UserID    *string             `json:"userid"`
 	Username  string              `json:"username"`
 	Hashtags  []string            `json:"hashtags"`
-	URLs      []string            `json:"hashtags"`
+	URLs      []string            `json:"urls"`
 	Timestamp string              `json:"timestamp"`
 	Text      string              `json:"text"`
 	LonLat    *binning.LonLat     `json:"lonlat"`
@@ -105,13 +134,18 @@ func (d ISILTweetDocument) GetSource() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	username := cols[2]
+	rankings, err := GetUserRankings(username)
+	if err != nil {
+		return nil, err
+	}
 	source := &ISILSource{
-		Username:  cols[2],
+		Username:  username,
 		Hashtags:  make([]string, 0),
 		URLs:      make([]string, 0),
 		Timestamp: timestamp,
 		Text:      cols[6],
-		Rankings:  make(map[string]uint64),
+		Rankings:  rankings,
 	}
 	// user id may not exist
 	if columnExists(cols[23]) {

@@ -1,23 +1,126 @@
 package es
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/parnurzeal/gorequest"
+
+	"github.com/unchartedsoftware/prism/util/log"
 )
+
+type ESError struct {
+	Type   string `json:"type"`
+	Reason string `json:"reason"`
+}
+
+type ESItemIndex struct {
+	Error ESError `json:"error"`
+}
+
+type ESItem struct {
+	Index ESItemIndex `json:"index"`
+}
+
+// {
+//     "took": 5,
+//     "errors": true,
+//     "items": [
+//         {
+//             "index": {
+//                 "_index": "isil_twitter",
+//                 "_type": "datum",
+//                 "_id": "287366349146181633",
+//                 "status": 400,
+//                 "error": {
+//                     "type": "mapper_parsing_exception",
+//                     "reason": "failed to parse",
+//           		   "caused_by": {
+//                         "type": "json_parse_exception",
+//                         "reason": "..."
+//                     }
+//                 }
+//             }
+//         }
+//     ]
+// }
+type ESResponse struct {
+	Errors bool     `json:"errors"`
+	Items  []ESItem `json:"items"`
+}
+
+// {
+//     "error": {
+// 	        "root_cause": [
+// 	            {
+// 	        	    "type": "action_request_validation_exception",
+// 	            	"reason": "Validation Failed: 1: no requests added;"
+// 	            }
+// 	        ],
+// 	        "type": "action_request_validation_exception",
+// 	        "reason": "Validation Failed: 1: no requests added;"
+// 	   },
+//     "status": 400
+// }
+type ESBadRequest struct {
+	Status uint    `json:"status"`
+	Error  ESError `json:"error"`
+}
+
+func getResponseString(resp *http.Response) (string, error) {
+	defer resp.Body.Close()
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(contents), nil
+}
+
+func parseResponse(r *http.Response) error {
+	respText, err := getResponseString(r)
+	if err != nil {
+		return err
+	}
+	// first check if the request itself was malformed
+	if r.StatusCode == 400 {
+		log.Error("1")
+		badReq := &ESBadRequest{}
+		err := json.Unmarshal([]byte(respText), &badReq)
+		if err != nil {
+			return err
+		}
+		return errors.New(badReq.Error.Type + ":" + badReq.Error.Reason)
+	}
+	// then check elasticsearch response json
+	// unmarshal payload
+	esResp := &ESResponse{}
+	err = json.Unmarshal([]byte(respText), &esResp)
+	if err != nil {
+		return err
+	}
+	if esResp.Errors {
+		log.Error("2")
+		item := esResp.Items[0]
+		return errors.New(item.Index.Error.Type + ":" + item.Index.Error.Reason)
+	}
+	return nil
+}
 
 // Bulk sends a bulk request to elasticsearch with the provided payload.
 func Bulk(host string, port string, index string, datatype string, actions []string) error {
 	jsonLines := fmt.Sprintf("%s\n", strings.Join(actions, "\n"))
-	response, err := http.Post(host+":"+port+"/"+index+"/"+datatype+"/_bulk", "application/json", strings.NewReader(jsonLines))
+	resp, err := http.Post(host+":"+port+"/"+index+"/"+datatype+"/_bulk", "application/json", strings.NewReader(jsonLines))
 	if err != nil {
-		fmt.Println(err)
-		return errors.New("Bulk request failed")
+		return err
 	}
-	response.Body.Close()
+	err = parseResponse(resp)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -27,7 +130,7 @@ func IndexExists(host string, port string, index string) (bool, error) {
 		Head(host + ":" + port + "/" + index).
 		End()
 	if errs != nil {
-		fmt.Println(errs)
+		log.Error(errs)
 		return false, errors.New("Unable to determine if index exists")
 	}
 	return resp.StatusCode != 404, nil
@@ -40,7 +143,7 @@ func DeleteIndex(host string, port string, index string) error {
 		Delete(host + ":" + port + "/" + index).
 		End()
 	if errs != nil {
-		fmt.Println(errs)
+		log.Error(errs)
 		return errors.New("Failed to delete index")
 	}
 	return nil
@@ -54,7 +157,7 @@ func CreateIndex(host string, port string, index string, body string) error {
 		Send(body).
 		End()
 	if errs != nil {
-		fmt.Println(errs)
+		log.Error(errs)
 		return errors.New("Failed to create index")
 	}
 	return nil

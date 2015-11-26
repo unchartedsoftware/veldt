@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"runtime/debug"
 
 	"github.com/unchartedsoftware/prism/ingest/conf"
 	"github.com/unchartedsoftware/prism/ingest/es"
@@ -15,6 +14,7 @@ import (
 	//"github.com/unchartedsoftware/prism/ingest/terms"
 
 	"github.com/unchartedsoftware/prism/util"
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 var (
@@ -88,8 +88,7 @@ func main() {
 	// get ingest info
 	ingestInfo, errs := info.GetIngestInfo(config.HdfsHost, config.HdfsPort, config.HdfsPath)
 	if errs != nil {
-		fmt.Println(errs)
-		debug.PrintStack()
+		log.Error(errs)
 		os.Exit(1)
 	}
 
@@ -114,15 +113,28 @@ func main() {
 	// prepare elasticsearch index
 	err := es.PrepareIndex(config.EsHost, config.EsPort, config.EsIndex, config.EsDocType, config.EsClearExisting)
 	if err != nil {
-		fmt.Println(err)
-		debug.PrintStack()
+		log.Error(err)
 		os.Exit(1)
 	}
 
 	fmt.Println("Ingesting data into elasticsearch")
 
+	// setup for ingest
+	err = es.GetDocumentByType(config.EsDocType).Setup()
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+
 	// launch the ingest job
 	pool.Execute(es.IngestWorker, ingestInfo)
+
+	// teardown after ingest
+	err = es.GetDocumentByType(config.EsDocType).Teardown()
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
 
 	// finished succesfully
 	progress.PrintTotalDuration()

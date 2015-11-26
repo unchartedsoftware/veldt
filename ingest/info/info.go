@@ -35,7 +35,7 @@ func isValidFile(file os.FileInfo) bool {
 
 // GetIngestInfo returns an array of os.FileInfo and the total number of bytes in the provided directory.
 func GetIngestInfo(host string, port string, path string) (*IngestInfo, error) {
-	// create empty slice of fileinfos to populate
+	// read directory
 	files, err := hdfs.ReadDir(host, port, path)
 	if err != nil {
 		return nil, err
@@ -54,10 +54,6 @@ func GetIngestInfo(host string, port string, path string) (*IngestInfo, error) {
 			if err != nil {
 				return nil, err
 			}
-			fmt.Printf("Retreiving ingest information from: %s, %d files containing %s\n",
-				path+"/"+file.Name(),
-				len(subInfo.Files),
-				util.FormatBytes(float64(subInfo.NumTotalBytes)))
 		} else if isValidFile(file) {
 			// add to total bytes
 			numTotalBytes += uint64(file.Size())
@@ -69,6 +65,11 @@ func GetIngestInfo(host string, port string, path string) (*IngestInfo, error) {
 			})
 		}
 	}
+	fmt.Printf("Retreiving ingest information from: %s, %d files containing %s\n",
+		path,
+		len(ingestFiles),
+		util.FormatBytes(float64(numTotalBytes)))
+	// return ingest info
 	return &IngestInfo{
 		Files:         ingestFiles[0:],
 		NumTotalBytes: numTotalBytes,

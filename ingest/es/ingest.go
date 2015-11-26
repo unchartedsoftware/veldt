@@ -4,14 +4,13 @@ import (
 	"bufio"
 	"compress/gzip"
 	"encoding/json"
-	"fmt"
 	"io"
-	"runtime/debug"
 	"strings"
 
 	"github.com/unchartedsoftware/prism/ingest/conf"
 	"github.com/unchartedsoftware/prism/ingest/hdfs"
 	"github.com/unchartedsoftware/prism/ingest/info"
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 // Index represents the 'index' property of an index action.
@@ -26,6 +25,8 @@ type IndexAction struct {
 
 // Document represents all necessary info to create an index and ingest a document.
 type Document interface {
+	Setup() error
+	Teardown() error
 	SetData([]string)
 	GetSource() ([]byte, error)
 	GetID() string
@@ -73,8 +74,7 @@ func IngestWorker(file info.IngestFile) {
 	// get hdfs file reader
 	hdfsReader, err := hdfs.Open(config.HdfsHost, config.HdfsPort, file.Path+"/"+file.Name)
 	if err != nil {
-		fmt.Println(err)
-		debug.PrintStack()
+		log.Error(err)
 		return
 	}
 	// defer close reader
@@ -83,8 +83,7 @@ func IngestWorker(file info.IngestFile) {
 	// get file reader
 	reader, err := getDecompressReader(hdfsReader, config.HdfsCompression)
 	if err != nil {
-		fmt.Println(err)
-		debug.PrintStack()
+		log.Error(err)
 		return
 	}
 
@@ -97,8 +96,7 @@ func IngestWorker(file info.IngestFile) {
 		document.SetData(line[0:])
 		action, err := getIndexAction(document)
 		if err != nil {
-			fmt.Println(err)
-			debug.PrintStack()
+			log.Error(err)
 			continue
 		}
 		documents[documentIndex] = *action
@@ -108,17 +106,17 @@ func IngestWorker(file info.IngestFile) {
 			documentIndex = 0
 			err := Bulk(config.EsHost, config.EsPort, config.EsIndex, indexType, documents[0:])
 			if err != nil {
-				fmt.Println(err)
-				debug.PrintStack()
+				log.Error(err)
 				continue
 			}
 		}
 	}
 
 	// send remaining documents
-	err = Bulk(config.EsHost, config.EsPort, config.EsIndex, indexType, documents[0:documentIndex])
-	if err != nil {
-		fmt.Println(err)
-		debug.PrintStack()
+	if documentIndex > 0 {
+		err = Bulk(config.EsHost, config.EsPort, config.EsIndex, indexType, documents[0:documentIndex])
+		if err != nil {
+			log.Error(err)
+		}
 	}
 }
