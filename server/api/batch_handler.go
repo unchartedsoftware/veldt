@@ -22,7 +22,8 @@ var upgrader = websocket.Upgrader{
 
 // TileDispatcher represents a single clients tile dispatcher.
 type TileDispatcher struct {
-	Chan chan *tiling.TileResponse
+	RespChan chan *tiling.TileResponse
+	ErrChan chan error
 	Conn *websocket.Conn
 }
 
@@ -35,19 +36,48 @@ func NewTileDispatcher(w http.ResponseWriter, r *http.Request) (*TileDispatcher,
 	}
 	// set the message read limit
 	conn.SetReadLimit(maxMessageSize)
-	dispatcher := &TileDispatcher{
-		Chan: make(chan *tiling.TileResponse),
+	return &TileDispatcher{
+		RespChan: make(chan *tiling.TileResponse),
+		ErrChan: make(chan error),
 		Conn: conn,
+	}, nil
+}
+
+// Listen waits on both tile request and responses and handles each until the websocket connection dies.
+func (t* TileDispatcher) Listen() error {
+	go t.listenForRequests()
+	go t.listenForResponses()
+	return <- t.ErrChan
+}
+
+// ListenForResponses waits on tile responses and communicates them to the client via websocket.
+func (t *TileDispatcher) listenForResponses() {
+	for resp := range t.RespChan {
+		// write response to websocket
+		t.Conn.SetWriteDeadline(time.Now().Add(writeWait))
+		t.Conn.WriteJSON(resp)
+		err := t.Conn.WriteJSON(resp)
+		if err != nil {
+			t.ErrChan <- err
+			break
+		}
 	}
-	// set the dispatcher to listen for any responses to its dispatched requests,
-	// writing them out into the websocket connection as they come
-	go dispatcher.ListenForResponses()
-	// return the dispatcher
-	return dispatcher, nil
+}
+
+// DispatchRequest takes a tile request and dispatches it to the generation package.
+func (t *TileDispatcher) dispatchRequest(tileReq *tiling.TileRequest) {
+	promise, err := tiling.GetTile(tileReq)
+	if err != nil {
+		log.Warn(err)
+	}
+	promise.OnComplete(func(res interface{}) {
+		// cast to tile response and pass to response channel
+		t.RespChan <- res.(*tiling.TileResponse)
+	})
 }
 
 // GetRequest waits on the websocket connection for tile requests.
-func (t *TileDispatcher) GetRequest() (*tiling.TileRequest, error) {
+func (t *TileDispatcher) getRequest() (*tiling.TileRequest, error) {
 	// tile request
 	tileReq := &tiling.TileRequest{}
 	// wait on read
@@ -58,44 +88,26 @@ func (t *TileDispatcher) GetRequest() (*tiling.TileRequest, error) {
 	return tileReq, nil
 }
 
-// func (t* TileDispatcher) Listen() (*tiling.TileRequest, error) {
-// 	select {
-// 	case err := <- t.ErrChan:
-// 		return nil, err
-// 	case req := <- t.ReqChan:
-// 		return req, nil
-// 	}
-// }
-
-// DispatchRequest takes a tile request and dispatches it to the generation package.
-func (t *TileDispatcher) DispatchRequest(tileReq *tiling.TileRequest) {
-	promise, err := tiling.GetTile(tileReq)
-	if err != nil {
-		log.Warn(err)
-	}
-	promise.OnComplete(func(res interface{}) {
-		// cast to tile response and pass to response channel
-		t.Chan <- res.(*tiling.TileResponse)
-	})
-}
-
 // ListenForResponses waits on tile responses and communicates them to the client via websocket.
-func (t *TileDispatcher) ListenForResponses() {
-	for resp := range t.Chan {
-		// write response to websocket
-		t.Conn.SetWriteDeadline(time.Now().Add(writeWait))
-		t.Conn.WriteJSON(resp)
-		// err := t.Conn.WriteJSON(resp)
-		// if err != nil {
-		// 	t.ErrChan <- err
-		// }
+func (t *TileDispatcher) listenForRequests() {
+	for {
+		// wait on tile request
+		tileReq, err := t.getRequest()
+		if err != nil {
+			t.ErrChan <- err
+			break
+		}
+		// dispatch the request
+		go t.dispatchRequest(tileReq)
 	}
 }
 
 // Close closes the dispatchers internal channel and websocket connection.
 func (t *TileDispatcher) Close() {
 	// close response channel
-	close(t.Chan)
+	close(t.RespChan)
+	// close error channel
+	close(t.ErrChan)
 	// close websocket connection
 	t.Conn.Close()
 }
@@ -107,16 +119,9 @@ func batchHandler(w http.ResponseWriter, r *http.Request) {
 		log.Warn(err)
 		return
 	}
-	// begin read pump
-	for {
-		// wait on tile request
-		tileReq, err := dispatcher.GetRequest()
-		if err != nil {
-			log.Debug(err)
-			break
-		}
-		// dispatch the tile request
-		dispatcher.DispatchRequest(tileReq)
+	err = dispatcher.Listen()
+	if err != nil {
+		log.Debug(err)
 	}
 	// clean up dispatcher internals
 	dispatcher.Close()
