@@ -23,8 +23,8 @@ var upgrader = websocket.Upgrader{
 // TileDispatcher represents a single clients tile dispatcher.
 type TileDispatcher struct {
 	RespChan chan *tiling.TileResponse
-	ErrChan chan error
-	Conn *websocket.Conn
+	ErrChan  chan error
+	Conn     *websocket.Conn
 }
 
 // NewTileDispatcher returns a pointer to a new tile dispatcher object.
@@ -38,19 +38,19 @@ func NewTileDispatcher(w http.ResponseWriter, r *http.Request) (*TileDispatcher,
 	conn.SetReadLimit(maxMessageSize)
 	return &TileDispatcher{
 		RespChan: make(chan *tiling.TileResponse),
-		ErrChan: make(chan error),
-		Conn: conn,
+		ErrChan:  make(chan error),
+		Conn:     conn,
 	}, nil
 }
 
 // Listen waits on both tile request and responses and handles each until the websocket connection dies.
-func (t* TileDispatcher) Listen() error {
+func (t *TileDispatcher) Listen() error {
 	go t.listenForRequests()
 	go t.listenForResponses()
-	return <- t.ErrChan
+	return <-t.ErrChan
 }
 
-// ListenForResponses waits on tile responses and communicates them to the client via websocket.
+// listenForResponses waits on tile responses and communicates them to the client via websocket.
 func (t *TileDispatcher) listenForResponses() {
 	for resp := range t.RespChan {
 		// write response to websocket
@@ -63,7 +63,7 @@ func (t *TileDispatcher) listenForResponses() {
 	}
 }
 
-// DispatchRequest takes a tile request and dispatches it to the generation package.
+// dispatchRequest dispatches a tile request and receives a response promise.
 func (t *TileDispatcher) dispatchRequest(tileReq *tiling.TileRequest) {
 	promise, err := tiling.GetTile(tileReq)
 	if err != nil {
@@ -75,7 +75,7 @@ func (t *TileDispatcher) dispatchRequest(tileReq *tiling.TileRequest) {
 	})
 }
 
-// GetRequest waits on the websocket connection for tile requests.
+// getRequest waits on the websocket connection for tile requests.
 func (t *TileDispatcher) getRequest() (*tiling.TileRequest, error) {
 	// tile request
 	tileReq := &tiling.TileRequest{}
@@ -87,7 +87,7 @@ func (t *TileDispatcher) getRequest() (*tiling.TileRequest, error) {
 	return tileReq, nil
 }
 
-// ListenForResponses waits on tile responses and communicates them to the client via websocket.
+// listenForRequests waits on tile requests and dispatches them accordingly.
 func (t *TileDispatcher) listenForRequests() {
 	for {
 		// wait on tile request
@@ -101,7 +101,7 @@ func (t *TileDispatcher) listenForRequests() {
 	}
 }
 
-// Close closes the dispatchers internal channel and websocket connection.
+// Close closes the dispatchers internal channels and websocket connection.
 func (t *TileDispatcher) Close() {
 	// close response channel
 	close(t.RespChan)
