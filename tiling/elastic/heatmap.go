@@ -3,14 +3,12 @@ package elastic
 import (
 	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"math"
 	"strconv"
 
 	"github.com/parnurzeal/gorequest"
 
 	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/util/log"
 )
 
 // "aggregations": {
@@ -140,13 +138,12 @@ func GetHeatmapTile(tile *binning.TileCoord) ([]byte, error) {
 		Send(query).
 		End()
 	if errs != nil {
-		return nil, errors.New("Unable to retrieve tile data")
+		return nil, errs[0]
 	}
 	// unmarshal payload
 	payload := &HeatmapPayload{}
 	err := json.Unmarshal([]byte(body), &payload)
 	if err != nil {
-		log.Warn(err)
 		return nil, err
 	}
 	// build array of counts
