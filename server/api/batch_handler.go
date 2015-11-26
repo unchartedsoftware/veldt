@@ -55,7 +55,6 @@ func (t *TileDispatcher) listenForResponses() {
 	for resp := range t.RespChan {
 		// write response to websocket
 		t.Conn.SetWriteDeadline(time.Now().Add(writeWait))
-		t.Conn.WriteJSON(resp)
 		err := t.Conn.WriteJSON(resp)
 		if err != nil {
 			t.ErrChan <- err
