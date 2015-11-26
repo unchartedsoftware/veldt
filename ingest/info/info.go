@@ -43,6 +43,7 @@ func GetIngestInfo(host string, port string, path string) (*IngestInfo, error) {
 	// data to populate
 	var ingestFiles []IngestFile
 	numTotalBytes := uint64(0)
+	log.Debugf("Retreiving ingest info from: %s", path)
 	// for each file / dir
 	for _, file := range files {
 		if isValidDir(file) {
@@ -65,8 +66,7 @@ func GetIngestInfo(host string, port string, path string) (*IngestInfo, error) {
 			})
 		}
 	}
-	log.Debugf("Retreiving ingest info from: %s, %d files containing %s",
-		path,
+	log.Debugf("Found %d files containing %s of ingestible data",
 		len(ingestFiles),
 		util.FormatBytes(float64(numTotalBytes)))
 	// return ingest info

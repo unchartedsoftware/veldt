@@ -65,21 +65,23 @@ func (p *Pool) Execute(worker Worker, ingestInfo *info.IngestInfo) error {
 		// dispatch the workers, they will wait until the input channel is closed
 		go workerWrapper(p, worker, ingestInfo)
 	}
-	// close channels when the function exists, this will allow the worker goroutines to end
-	defer close(p.FileChan)
-	defer close(p.ErrChan)
 	// process all files by spreading them to free workers, this blocks until
 	// a worker is available, or exits if there is an error
 	for _, file := range ingestInfo.Files {
 		select {
 		case err := <-p.ErrChan:
 			// if error has occured, exit with error
+			close(p.FileChan)
+			close(p.ErrChan)
 			return err
 		default:
 			// if not, continue passing files to workers
 			p.FileChan <- file
 		}
 	}
+	// close channels to allow the worker goroutines to end execution
+	close(p.FileChan)
+	close(p.ErrChan)
 	// wait for all workers to finish (otherwise they die as main routine dies)
 	p.WaitGroup.Wait()
 	return nil

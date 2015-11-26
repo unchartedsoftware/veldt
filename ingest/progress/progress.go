@@ -48,19 +48,25 @@ func PrintProgress(totalBytes uint64, bytes uint64) {
 	formattedTime := formatTime(uint64(estimatedSecondsRemaining))
 	formattedBytes := util.FormatBytes(float64(bytes))
 	formattedBytesPerSecond := util.FormatBytes(bytesPerSecond)
-	fmt.Printf("\rProcessed %+9s at %+9sps, %6.2f%% complete, estimated time remaining: %2d:%02d:%02d",
+	lineEnding := ""
+	if percentComplete == 100 {
+		// only add line ending if the progress is done
+		lineEnding = "\n"
+	}
+	fmt.Printf("\rProcessed %+9s at %+9sps, %6.2f%% complete, estimated time remaining: %2d:%02d:%02d%s",
 		formattedBytes,
 		formattedBytesPerSecond,
 		percentComplete,
 		formattedTime.Hours%100,
 		formattedTime.Minutes,
-		formattedTime.Seconds)
+		formattedTime.Seconds,
+		lineEnding)
 }
 
 // PrintTotalDuration prints the total duration of the processed task.
 func PrintTotalDuration() {
 	formattedTime := formatTime(getTimestamp() - startTime)
-	log.Debugf("\nTask completed in %d:%02d:%02d",
+	log.Debugf("Task completed in %d:%02d:%02d",
 		formattedTime.Hours,
 		formattedTime.Minutes,
 		formattedTime.Seconds)
@@ -71,7 +77,7 @@ func PrintTotalDuration() {
 // PrintTimeout will print a timeout message for n seconds.
 func PrintTimeout(duration uint32) {
 	for duration >= 0 {
-		log.Debug("\rRetrying in " + string(duration) + " seconds...")
+		log.Debug("Retrying in " + string(duration) + " seconds...")
 		time.Sleep(time.Second)
 		duration--
 	}
