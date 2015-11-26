@@ -47,18 +47,19 @@ func loadRankingFile(host string, port string, filepath string, rankingsId strin
 
 // LoadRanking loads user rankings under the provided directory.
 func LoadRanking(host string, port string, path string, rankingsDir string) error {
+	// get rankings id by stripping any extensions off the name
 	rankingsId := strings.TrimSuffix(rankingsDir, filepath.Ext(rankingsDir))
 	// add rankings file to map
 	rankings[rankingsId] = make(RankingsMap)
 	// read directory
-	files, err := hdfs.ReadDir(host, port, path+"/"+rankingsId)
+	files, err := hdfs.ReadDir(host, port, path+"/"+rankingsDir)
 	if err != nil {
 		return err
 	}
 	// load individual ranking files
 	for _, file := range files {
 		if isRankingFile(file) {
-			err := loadRankingFile(host, port, path+"/"+rankingsId+"/"+file.Name(), rankingsId)
+			err := loadRankingFile(host, port, path+"/"+rankingsDir+"/"+file.Name(), rankingsId)
 			if err != nil {
 				return err
 			}

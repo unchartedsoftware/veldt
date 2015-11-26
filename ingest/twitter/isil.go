@@ -31,7 +31,7 @@ func (d ISILTweetDocument) Setup() error {
 		fmt.Printf("Loading ranks from %s\n", ranking)
 		err := LoadRanking(host, port, path, ranking)
 		if err != nil {
-			return nil
+			return err
 		}
 	}
 	return nil
@@ -130,11 +130,14 @@ func (d ISILTweetDocument) GetSource() ([]byte, error) {
 	//	  35: has account been verified by Twitter
 	//	  36: the 'real' name given by the user
 	cols := d.Cols
+	// get timestamp
 	timestamp, err := tweetDateToISO(cols[1])
 	if err != nil {
 		return nil, err
 	}
+	// username
 	username := cols[2]
+	// get rankings for username
 	rankings, err := GetUserRankings(username)
 	if err != nil {
 		return nil, err
