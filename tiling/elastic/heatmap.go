@@ -130,6 +130,19 @@ func GetHeatmapTile(tile *binning.TileCoord) ([]byte, error) {
 	        }
 	    }
 	}`
+
+	// searchResult, err := client.
+	// 	Search().
+	// 	Index(esIndex).
+	// 	Size(0)
+	// 	Query( NewBoolQuery().Must(
+	// 		NewRangeQuery("pixel.x").Gte(xMin).Lte(xMax),
+	// 		NewRangeQuery("pixel.y").Gte(yMin).Lte(yMax),
+	// 	)).
+	// 	Aggregation("x", NewHistogramAggregation().Field("pixel.x").Interval(xInterval).MinDocCount(1).
+	// 		SubAggregation("y", NewHistogramAggregation().Field("pixel.y").Interval(yInterval).MinDocCount(1) )).
+	// 	Do()
+
 	searchSize := "size=0"
 	filterPath := "filter_path=aggregations.x.buckets.key,aggregations.x.buckets.y.buckets.key,aggregations.x.buckets.y.buckets.doc_count"
 	_, body, errs := gorequest.
