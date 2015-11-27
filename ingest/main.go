@@ -27,7 +27,7 @@ var (
 	hdfsPath        = flag.CommandLine.String("hdfs-path", "", "HDFS ingest source data path")
 	hdfsCompression = flag.CommandLine.String("hdfs-compression", "", "HDFS file compression used")
 	batchSize       = flag.CommandLine.Int("batch-size", 24000, "The bulk batch size in documents")
-	poolSize        = flag.CommandLine.Int("pool-size", 4, "The worker pool size")
+	poolSize        = flag.CommandLine.Int("pool-size", 8, "The worker pool size")
 	numTopTerms     = flag.CommandLine.Int("num-top-terms", 200, "The number of top terms to store")
 )
 
