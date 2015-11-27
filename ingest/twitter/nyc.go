@@ -1,7 +1,6 @@
 package twitter
 
 import (
-	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -42,17 +41,19 @@ func (d NYCTweetDocument) GetType() string {
 func (d NYCTweetDocument) GetMappings() string {
 	return `{
         "` + d.GetType() + `": {
-            "location": {
-                "type": "geo_point"
-            },
-            "userid" : {
-              "type" : "string",
-              "index" : "not_analyzed"
-            },
-            "username" : {
-              "type" : "string",
-              "index" : "not_analyzed"
-            }
+			"properties":{
+	            "lonlat": {
+	                "type": "geo_point"
+	            },
+	            "userid" : {
+	              "type" : "string",
+	              "index" : "not_analyzed"
+	            },
+	            "username" : {
+	              "type" : "string",
+	              "index" : "not_analyzed"
+	            }
+			}
         }
     }`
 }
@@ -69,7 +70,7 @@ type NYCSource struct {
 }
 
 // GetSource returns the marshalled source portion of the document.
-func (d NYCTweetDocument) GetSource() ([]byte, error) {
+func (d NYCTweetDocument) GetSource() (interface{}, error) {
 	// CSV line as array:
 	//     0: 'Fri Jan 04 18:42:42 +0000 2013',
 	//     1: '242573761',
@@ -111,5 +112,5 @@ func (d NYCTweetDocument) GetSource() ([]byte, error) {
 	if columnExists(cols[5]) {
 		source.Hashtags = strings.Split(strings.TrimSpace(cols[5]), "#")
 	}
-	return json.Marshal(source)
+	return source, nil
 }

@@ -1,7 +1,6 @@
 package twitter
 
 import (
-	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -61,17 +60,19 @@ func (d ISILTweetDocument) GetType() string {
 func (d ISILTweetDocument) GetMappings() string {
 	return `{
         "` + d.GetType() + `": {
-            "location": {
-                "type": "geo_point"
-            },
-            "userid" : {
-              "type" : "string",
-              "index" : "not_analyzed"
-            },
-            "username" : {
-              "type" : "string",
-              "index" : "not_analyzed"
-            }
+			"properties":{
+	            "lonlat": {
+	                "type": "geo_point"
+	            },
+	            "userid" : {
+	              "type" : "string",
+	              "index" : "not_analyzed"
+	            },
+	            "username" : {
+	              "type" : "string",
+	              "index" : "not_analyzed"
+	            }
+			}
         }
     }`
 }
@@ -90,7 +91,7 @@ type ISILSource struct {
 }
 
 // GetSource returns the marshalled source portion of the document.
-func (d ISILTweetDocument) GetSource() ([]byte, error) {
+func (d ISILTweetDocument) GetSource() (*ISILSource, error) {
 	// CSV line as array:
 	//	  0: tweet id
 	//	  1: tweet datetime
@@ -174,5 +175,5 @@ func (d ISILTweetDocument) GetSource() ([]byte, error) {
 	if columnExists(cols[16]) {
 		source.URLs = strings.Split(strings.TrimSpace(cols[16]), ",")
 	}
-	return json.Marshal(source)
+	return source, nil
 }
