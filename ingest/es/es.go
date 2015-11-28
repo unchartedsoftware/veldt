@@ -17,6 +17,7 @@ func getClient(host string, port string) (*elastic.Client, error) {
 		client, err := elastic.NewClient(
 			elastic.SetURL(endpoint),
 			elastic.SetSniff(false),
+			elastic.SetGzip(true),
 		)
 		if err != nil {
 			return nil, err
@@ -26,40 +27,33 @@ func getClient(host string, port string) (*elastic.Client, error) {
 	return esClient, nil
 }
 
-// Bulk sends a bulk request to elasticsearch with the provided payload.
-func Bulk(host string, port string, index string, documents []*Document) (int, error) {
+// GetBulkRequest creates and returns a pointer to a new elastic.BulkService
+// for building a bulk request.
+func GetBulkRequest(host string, port string, index string, typ string) (*elastic.BulkService, error) {
 	client, err := getClient(host, port)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	bulk := client.Bulk().
+	return client.Bulk().
 		Index(index).
-		Type((*documents[0]).GetType())
+		Type(typ), nil
+}
 
-	for _, doc := range documents {
-		src, err := (*doc).GetSource()
-		if err != nil {
-			return 0, err
-		}
-		bulk.Add(
-			elastic.NewBulkIndexRequest().
-				Id((*doc).GetID()).
-				Doc(src))
-	}
-
+// SendBulkRequest sends the provided bulk request and handles the response.
+func SendBulkRequest(bulk *elastic.BulkService) error {
 	res, err := bulk.Do()
 	if err != nil {
-		return res.Took, err
+		return err
 	}
 	if res.Errors {
 		// find first error and return it
 		for _, item := range res.Items {
 			if item["index"].Error != nil {
-				return res.Took, fmt.Errorf("%s, %s", item["index"].Error.Type, item["index"].Error.Reason)
+				return fmt.Errorf("%s, %s", item["index"].Error.Type, item["index"].Error.Reason)
 			}
 		}
 	}
-	return res.Took, nil
+	return nil
 }
 
 // IndexExists returns whether or not the provided index exists in elasticsearch.
