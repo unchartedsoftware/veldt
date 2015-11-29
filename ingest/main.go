@@ -9,7 +9,6 @@ import (
 	"github.com/unchartedsoftware/prism/ingest/conf"
 	"github.com/unchartedsoftware/prism/ingest/es"
 	"github.com/unchartedsoftware/prism/ingest/info"
-	"github.com/unchartedsoftware/prism/ingest/pool"
 	"github.com/unchartedsoftware/prism/ingest/progress"
 
 	"github.com/unchartedsoftware/prism/util"
@@ -75,14 +74,14 @@ func main() {
 	// parse flags
 	flag.Parse()
 
-	// load args into configig struct
+	// load args into config struct
 	config, err := parseArgs()
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
 
-	// check document type id and implementation
+	// check document type and implementation
 	document, err := es.GetDocumentByType(config.EsDocType)
 	if err != nil {
 		log.Error(err)
@@ -95,9 +94,6 @@ func main() {
 		log.Error(errs)
 		os.Exit(1)
 	}
-
-	// create pool of size N
-	pool := pool.New(config.PoolSize)
 
 	// display some info of the pending ingest
 	log.Debugf("Processing %d files containing "+util.FormatBytes(float64(ingestInfo.NumTotalBytes))+" of data",
@@ -113,6 +109,8 @@ func main() {
 	// setup for ingest
 	document.Setup()
 
+	// create pool of size N
+	pool := es.NewPool(config.PoolSize)
 	// launch the ingest job
 	err = pool.Execute(es.IngestWorker, ingestInfo)
 	if err != nil {

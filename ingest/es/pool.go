@@ -1,4 +1,4 @@
-package pool
+package es
 
 import (
 	"sync"
@@ -8,7 +8,7 @@ import (
 )
 
 // Worker represents a designated worker function to batch in a pool.
-type Worker func(info.IngestFile) error
+type Worker func(info.IngestFile, *Equalizer) error
 
 // Pool represents a single goroutine pool for batching workers.
 type Pool struct {
@@ -19,8 +19,8 @@ type Pool struct {
 }
 
 // New returns a new pool object with the given worker size
-func New(size int) Pool {
-	return Pool{
+func NewPool(size int) *Pool {
+	return &Pool{
 		FileChan:  make(chan info.IngestFile),
 		ErrChan:   make(chan error),
 		WaitGroup: new(sync.WaitGroup),
@@ -35,12 +35,12 @@ func sendError(errChan chan error, err error) {
 	errChan <- err
 }
 
-func workerWrapper(p *Pool, worker Worker, ingestInfo *info.IngestInfo) {
+func workerWrapper(p *Pool, eq *Equalizer, worker Worker, ingestInfo *info.IngestInfo) {
 	// Decrease internal counter for wait-group as soon as goroutine finishes
 	defer p.WaitGroup.Done()
 	for file := range p.FileChan {
 		// do work
-		err := worker(file)
+		err := worker(file, eq)
 		// if error, broadcast to pool
 		if err != nil {
 			// broadcast error message and continue grabbing from pool
@@ -58,12 +58,16 @@ func workerWrapper(p *Pool, worker Worker, ingestInfo *info.IngestInfo) {
 
 // Execute launches a batch of ingest workers with the provided ingest information.
 func (p *Pool) Execute(worker Worker, ingestInfo *info.IngestInfo) error {
+	// create equalizer of same size
+	eq := NewEqualizer(p.Size)
+	eq.Listen()
+	defer eq.Close()
 	// for each worker in pool
 	for i := 0; i < p.Size; i++ {
 		// increase wait group size
 		p.WaitGroup.Add(1)
 		// dispatch the workers, they will wait until the input channel is closed
-		go workerWrapper(p, worker, ingestInfo)
+		go workerWrapper(p, eq, worker, ingestInfo)
 	}
 	// process all files by spreading them to free workers, this blocks until
 	// a worker is available, or exits if there is an error

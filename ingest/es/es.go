@@ -40,20 +40,20 @@ func GetBulkRequest(host string, port string, index string, typ string) (*elasti
 }
 
 // SendBulkRequest sends the provided bulk request and handles the response.
-func SendBulkRequest(bulk *elastic.BulkService) error {
+func SendBulkRequest(bulk *elastic.BulkService) (uint64, error) {
 	res, err := bulk.Do()
 	if err != nil {
-		return err
+		return uint64(res.Took), err
 	}
 	if res.Errors {
 		// find first error and return it
 		for _, item := range res.Items {
 			if item["index"].Error != nil {
-				return fmt.Errorf("%s, %s", item["index"].Error.Type, item["index"].Error.Reason)
+				return uint64(res.Took), fmt.Errorf("%s, %s", item["index"].Error.Type, item["index"].Error.Reason)
 			}
 		}
 	}
-	return nil
+	return uint64(res.Took), nil
 }
 
 // IndexExists returns whether or not the provided index exists in elasticsearch.
