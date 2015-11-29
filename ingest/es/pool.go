@@ -18,7 +18,7 @@ type Pool struct {
 	Size      int
 }
 
-// New returns a new pool object with the given worker size
+// NewPool returns a new pool object with the given worker size
 func NewPool(size int) *Pool {
 	return &Pool{
 		FileChan:  make(chan info.IngestFile),

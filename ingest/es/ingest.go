@@ -37,11 +37,11 @@ func getDecompressReader(reader io.Reader, compression string) (io.Reader, error
 
 func timestamp() uint64 {
 	// return timestamp in ms
-    return uint64( time.Now().UnixNano() ) / uint64(time.Millisecond)
+	return uint64(time.Now().UnixNano()) / uint64(time.Millisecond)
 }
 
 // IngestWorker is a worker to ingest twitter data into elasticsearch.
-func IngestWorker(file info.IngestFile,  eq *Equalizer) error {
+func IngestWorker(file info.IngestFile, eq *Equalizer) error {
 
 	// get the config struct
 	config := conf.GetConf()
@@ -109,13 +109,13 @@ func IngestWorker(file info.IngestFile,  eq *Equalizer) error {
 
 		// wait until the equalizer determines ES is ready, also check the
 		// status of the last req, if error, return error
-		rErr := <- eq.Ready
+		rErr := <-eq.Ready
 		if rErr != nil {
 			return rErr
 		}
 
 		// send bulk request asynchronously
-		eq.Send <- Request {
+		eq.Send <- Request{
 			Bulk: bulk,
 			Took: timestamp() - ts, // how long it took to generate payload
 		}
