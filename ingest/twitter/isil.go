@@ -61,7 +61,7 @@ func (d ISILTweetDocument) GetMappings() string {
 	return `{
         "` + d.GetType() + `": {
 			"properties":{
-	            "lonlat": {
+	            "location": {
 	                "type": "geo_point"
 	            },
 	            "userid" : {
@@ -85,7 +85,7 @@ type ISILSource struct {
 	URLs      []string            `json:"urls"`
 	Timestamp string              `json:"timestamp"`
 	Text      string              `json:"text"`
-	LonLat    *binning.LonLat     `json:"lonlat"`
+	LonLat    *binning.LonLat     `json:"location"`
 	Pixel     *binning.PixelCoord `json:"pixel"`
 	Rankings  map[string]uint64   `json:"rankings"`
 }

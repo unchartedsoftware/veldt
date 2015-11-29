@@ -42,7 +42,7 @@ func (d NYCTweetDocument) GetMappings() string {
 	return `{
         "` + d.GetType() + `": {
 			"properties":{
-	            "lonlat": {
+	            "location": {
 	                "type": "geo_point"
 	            },
 	            "userid" : {
@@ -65,7 +65,7 @@ type NYCSource struct {
 	Hashtags  []string            `json:"hashtags"`
 	Timestamp string              `json:"timestamp"`
 	Text      string              `json:"text"`
-	LonLat    *binning.LonLat     `json:"lonlat"`
+	LonLat    *binning.LonLat     `json:"location"`
 	Pixel     *binning.PixelCoord `json:"pixel"`
 }
 
