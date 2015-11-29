@@ -18,6 +18,8 @@ import (
 type Document interface {
 	Setup() error
 	Teardown() error
+	FilterDir() bool,
+	FilterFile() bool,
 	SetData([]string)
 	GetSource() (interface{}, error)
 	GetID() string

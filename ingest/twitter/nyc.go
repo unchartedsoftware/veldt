@@ -22,6 +22,16 @@ func (d NYCTweetDocument) Teardown() error {
 	return nil
 }
 
+// FilterDir returns true if the provided dir string is valid for ingestion.
+func (d NYCTweetDocument) FilterDir( dir string ) bool {
+	return true
+}
+
+// FilterFile returns true if the provided filename string is valid for ingestion.
+func (d NYCTweetDocument) FilterFile( file string ) bool {
+	return true
+}
+
 // SetData sets the internal TSV column.
 func (d *NYCTweetDocument) SetData(cols []string) {
 	d.Cols = cols
