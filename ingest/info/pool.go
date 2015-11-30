@@ -28,9 +28,6 @@ func NewPool(size int) *Pool {
 	}
 }
 
-// Track how many bytes of data has been processed
-var numProcessedBytes = uint64(0)
-
 func sendError(errChan chan error, err error) {
 	errChan <- err
 }
@@ -49,10 +46,8 @@ func workerWrapper(p *Pool, eq *es.Equalizer, worker Worker, ingestInfo *IngestI
 			go sendError(p.ErrChan, err)
 			continue
 		}
-		// Increment processed bytes
-		numProcessedBytes += file.Size
-		// Print current progress
-		progress.PrintProgress(ingestInfo.NumTotalBytes, numProcessedBytes)
+		// Update and print current progress
+		progress.UpdateProgress(file.Size)
 	}
 }
 
@@ -69,6 +64,8 @@ func (p *Pool) Execute(worker Worker, ingestInfo *IngestInfo) error {
 		// dispatch the workers, they will wait until the input channel is closed
 		go workerWrapper(p, eq, worker, ingestInfo)
 	}
+	// start progress tracking
+	progress.StartProgress(ingestInfo.NumTotalBytes)
 	// process all files by spreading them to free workers, this blocks until
 	// a worker is available, or exits if there is an error
 	for _, file := range ingestInfo.Files {
@@ -88,5 +85,8 @@ func (p *Pool) Execute(worker Worker, ingestInfo *IngestInfo) error {
 	close(p.ErrChan)
 	// wait for all workers to finish (otherwise they die as main routine dies)
 	p.WaitGroup.Wait()
+	// end progress tracking, and print summary
+	progress.EndProgress()
+	progress.PrintTotalDuration()
 	return nil
 }

@@ -48,14 +48,12 @@ func GetIngestInfo(host string, port string, path string, document es.Document) 
 		if isValidDir(file) && document.FilterDir(file.Name()) {
 			// depth-first traversal into sub directories
 			subInfo, err := GetIngestInfo(host, port, path+"/"+file.Name(), document)
-			ingestFiles = append(ingestFiles, subInfo.Files...)
-			numTotalBytes += subInfo.NumTotalBytes
-			// if any errors, append them
 			if err != nil {
 				return nil, err
 			}
+			ingestFiles = append(ingestFiles, subInfo.Files...)
+			numTotalBytes += subInfo.NumTotalBytes
 		} else if isValidFile(file) && document.FilterFile(file.Name()) {
-			log.Debug("     " + file.Name())
 			// add to total bytes
 			numTotalBytes += uint64(file.Size())
 			// store file info
@@ -66,9 +64,12 @@ func GetIngestInfo(host string, port string, path string, document es.Document) 
 			})
 		}
 	}
-	log.Debugf("Found %d files containing %s of ingestible data",
-		len(ingestFiles),
-		util.FormatBytes(float64(numTotalBytes)))
+	// print if we have found files
+	if len(ingestFiles) > 0 {
+		log.Debugf("Found %d files containing %s of ingestible data",
+			len(ingestFiles),
+			util.FormatBytes(float64(numTotalBytes)))
+	}
 	// return ingest info
 	return &IngestInfo{
 		Files:         ingestFiles[0:],

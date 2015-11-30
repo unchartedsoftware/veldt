@@ -10,7 +10,6 @@ import (
 	"github.com/unchartedsoftware/prism/ingest/conf"
 	"github.com/unchartedsoftware/prism/ingest/es"
 	"github.com/unchartedsoftware/prism/ingest/info"
-	"github.com/unchartedsoftware/prism/ingest/progress"
 
 	"github.com/unchartedsoftware/prism/util"
 	"github.com/unchartedsoftware/prism/util/log"
@@ -30,7 +29,7 @@ var (
 	startDate       = flag.Int64("start-date", -1, "The unix timestamp (seconds) of the start date to ingest from")
 	endDate         = flag.Int64("end-date", -1, "The unix timestamp (seconds) of the end date to ingest to")
 	duration        = flag.Int64("duration", -1, "The duration in seconds to ingest either from start date, or end date, depending on which is provided")
-	poolSize        = flag.Int("pool-size", 4, "The worker pool size")
+	poolSize        = flag.Int("pool-size", 16, "The worker pool size")
 	numTopTerms     = flag.Int("num-top-terms", 200, "The number of top terms to store")
 )
 
@@ -166,7 +165,4 @@ func main() {
 
 	// teardown after ingest
 	document.Teardown()
-
-	// finished succesfully
-	progress.PrintTotalDuration()
 }

@@ -15,13 +15,13 @@ import (
 // regex used to determine if the file is ingestible
 var fileRegex = regexp.MustCompile(`.+\.(\d{4})(\d{2})(\d{2})-\d{6}.txt.gz`)
 
-// ISILTweetDocument represents a single TSV row of isil keyword twitter data.
-type ISILTweetDocument struct {
+// ISILTweet represents a single TSV row of isil keyword twitter data.
+type ISILTweet struct {
 	Cols []string
 }
 
 // Setup initialized and required state prior to ingestion.
-func (d ISILTweetDocument) Setup() error {
+func (d ISILTweet) Setup() error {
 	config := conf.GetConf()
 	host := config.HdfsHost
 	port := config.HdfsPort
@@ -43,17 +43,17 @@ func (d ISILTweetDocument) Setup() error {
 }
 
 // Teardown cleans up any state after ingestion.
-func (d ISILTweetDocument) Teardown() error {
+func (d ISILTweet) Teardown() error {
 	return nil
 }
 
 // FilterDir returns true if the provided dir string is valid for ingestion.
-func (d ISILTweetDocument) FilterDir(dir string) bool {
+func (d ISILTweet) FilterDir(dir string) bool {
 	return dir != "es-mapping-files"
 }
 
 // FilterFile returns true if the provided filename string is valid for ingestion.
-func (d ISILTweetDocument) FilterFile(file string) bool {
+func (d ISILTweet) FilterFile(file string) bool {
 	// expected file format: ISIL_KEYWORDS.20150828-000001.txt.gz
 	config := conf.GetConf()
 	if config.StartDate != nil && config.EndDate != nil {
@@ -76,22 +76,22 @@ func (d ISILTweetDocument) FilterFile(file string) bool {
 }
 
 // SetData sets the internal TSV column.
-func (d *ISILTweetDocument) SetData(cols []string) {
+func (d *ISILTweet) SetData(cols []string) {
 	d.Cols = cols
 }
 
 // GetID returns the document id.
-func (d ISILTweetDocument) GetID() string {
+func (d ISILTweet) GetID() string {
 	return d.Cols[0]
 }
 
 // GetType returns the document type.
-func (d ISILTweetDocument) GetType() string {
+func (d ISILTweet) GetType() string {
 	return "datum"
 }
 
 // GetMappings returns the documents mappings.
-func (d ISILTweetDocument) GetMappings() string {
+func (d ISILTweet) GetMappings() string {
 	return `{
         "` + d.GetType() + `": {
 			"properties":{
@@ -125,7 +125,7 @@ type ISILSource struct {
 }
 
 // GetSource returns the marshalled source portion of the document.
-func (d ISILTweetDocument) GetSource() (interface{}, error) {
+func (d ISILTweet) GetSource() (interface{}, error) {
 	// CSV line as array:
 	//	  0: tweet id
 	//	  1: tweet datetime

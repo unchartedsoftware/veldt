@@ -25,8 +25,9 @@ var registry = make(map[string]reflect.Type)
 
 // register all document implementations here.
 func init() {
-	registry["nyc_twitter"] = reflect.TypeOf(twitter.NYCTweetDocument{})
-	registry["isil_twitter"] = reflect.TypeOf(twitter.ISILTweetDocument{})
+	registry["nyc_twitter"] = reflect.TypeOf(twitter.NYCTweet{})
+	registry["isil_twitter"] = reflect.TypeOf(twitter.ISILTweet{})
+	registry["isil_twitter_deprecated"] = reflect.TypeOf(twitter.ISILTweetDeprecated{})
 }
 
 // GetDocumentByType when given a document id will return the document struct type.
