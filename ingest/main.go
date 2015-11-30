@@ -20,7 +20,7 @@ var (
 	esPort          = flag.String("es-port", "9200", "Elasticsearch port")
 	esIndex         = flag.String("es-index", "", "Elasticsearch index")
 	esDocType       = flag.String("es-doc-type", "", "Elasticsearch type")
-	esBatchSize     = flag.Int("es-batch-size", 40000, "The bulk batch size in documents")
+	esBatchSize     = flag.Int("es-batch-size", 24000, "The bulk batch size in documents")
 	esClearExisting = flag.Bool("es-clear-existing", true, "Clear index before ingest")
 	hdfsHost        = flag.String("hdfs-host", "", "HDFS host")
 	hdfsPort        = flag.String("hdfs-port", "", "HDFS port")
@@ -29,7 +29,7 @@ var (
 	startDate       = flag.Int64("start-date", -1, "The unix timestamp (seconds) of the start date to ingest from")
 	endDate         = flag.Int64("end-date", -1, "The unix timestamp (seconds) of the end date to ingest to")
 	duration        = flag.Int64("duration", -1, "The duration in seconds to ingest either from start date, or end date, depending on which is provided")
-	poolSize        = flag.Int("pool-size", 16, "The worker pool size")
+	poolSize        = flag.Int("pool-size", 8, "The worker pool size")
 	numTopTerms     = flag.Int("num-top-terms", 200, "The number of top terms to store")
 )
 
