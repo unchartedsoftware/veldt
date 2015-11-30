@@ -1,4 +1,4 @@
-package es
+package info
 
 import (
 	"bufio"
@@ -7,25 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/olivere/elastic.v3"
-
 	"github.com/unchartedsoftware/prism/ingest/conf"
+	"github.com/unchartedsoftware/prism/ingest/es"
 	"github.com/unchartedsoftware/prism/ingest/hdfs"
-	"github.com/unchartedsoftware/prism/ingest/info"
 )
-
-// Document represents all necessary info to create an index and ingest a document.
-type Document interface {
-	Setup() error
-	Teardown() error
-	FilterDir() bool,
-	FilterFile() bool,
-	SetData([]string)
-	GetSource() (interface{}, error)
-	GetID() string
-	GetMappings() string
-	GetType() string
-}
 
 func getDecompressReader(reader io.Reader, compression string) (io.Reader, error) {
 	// use compression based reader if specified
@@ -43,12 +28,12 @@ func timestamp() uint64 {
 }
 
 // IngestWorker is a worker to ingest twitter data into elasticsearch.
-func IngestWorker(file info.IngestFile, eq *Equalizer) error {
+func IngestWorker(file IngestFile, eq *es.Equalizer) error {
 
 	// get the config struct
 	config := conf.GetConf()
 	// get document struct by type string
-	document, err := GetDocumentByType(config.EsDocType)
+	document, err := es.GetDocumentByType(config.EsDocType)
 	if err != nil {
 		return err
 	}
@@ -72,7 +57,7 @@ func IngestWorker(file info.IngestFile, eq *Equalizer) error {
 
 	for {
 		// create a new bulk request object
-		bulk, err := GetBulkRequest(config.EsHost, config.EsPort, config.EsIndex, document.GetType())
+		bulk, err := es.GetBulkRequest(config.EsHost, config.EsPort, config.EsIndex, document.GetType())
 		if err != nil {
 			return err
 		}
@@ -92,13 +77,16 @@ func IngestWorker(file info.IngestFile, eq *Equalizer) error {
 			if err != nil {
 				return err
 			}
-			// add index action to bulk req
-			bulk.Add(
-				elastic.NewBulkIndexRequest().
-					Id(document.GetID()).
-					Doc(source))
 
-			if bulk.NumberOfActions()%config.BatchSize == 0 {
+			if source != nil {
+				// add index action to bulk req
+				bulk.Add(
+					es.NewBulkIndexRequest().
+						Id(document.GetID()).
+						Doc(source))
+			}
+
+			if bulk.NumberOfActions()%config.EsBatchSize == 0 {
 				// ready to send
 				break
 			}
@@ -117,7 +105,7 @@ func IngestWorker(file info.IngestFile, eq *Equalizer) error {
 		}
 
 		// send bulk request asynchronously
-		eq.Send <- Request{
+		eq.Send <- es.Request{
 			Bulk: bulk,
 			Took: timestamp() - ts, // how long it took to generate payload
 		}

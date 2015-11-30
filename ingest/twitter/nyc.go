@@ -23,12 +23,12 @@ func (d NYCTweetDocument) Teardown() error {
 }
 
 // FilterDir returns true if the provided dir string is valid for ingestion.
-func (d NYCTweetDocument) FilterDir( dir string ) bool {
+func (d NYCTweetDocument) FilterDir(dir string) bool {
 	return true
 }
 
 // FilterFile returns true if the provided filename string is valid for ingestion.
-func (d NYCTweetDocument) FilterFile( file string ) bool {
+func (d NYCTweetDocument) FilterFile(file string) bool {
 	return true
 }
 

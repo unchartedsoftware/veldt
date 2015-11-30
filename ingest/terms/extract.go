@@ -5,10 +5,12 @@ import (
 	"strings"
 )
 
-var punctRegex, _ = regexp.Compile(`[^\w\s]`)
-var urlRegex, _ = regexp.Compile(`(^|\s)((https?:\/\/)?[\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?)`)
-var mentionRegex, _ = regexp.Compile(`(@[a-z\d_]+)`)
-var hashtagRegex, _ = regexp.Compile(`(#[\S\W]+)`)
+var (
+	punctRegex   = regexp.MustCompile(`[^\w\s]`)
+	urlRegex     = regexp.MustCompile(`(^|\s)((https?:\/\/)?[\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?)`)
+	mentionRegex = regexp.MustCompile(`(@[a-z\d_]+)`)
+	hashtagRegex = regexp.MustCompile(`(#[\S\W]+)`)
+)
 
 func removePunctuation(text string) string {
 	return punctRegex.ReplaceAllString(text, "")

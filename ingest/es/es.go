@@ -39,6 +39,11 @@ func GetBulkRequest(host string, port string, index string, typ string) (*elasti
 		Type(typ), nil
 }
 
+// NewBulkIndexRequest creates and returns a pointer to a BulkIndexRequest object.
+func NewBulkIndexRequest() *elastic.BulkIndexRequest {
+	return elastic.NewBulkIndexRequest()
+}
+
 // SendBulkRequest sends the provided bulk request and handles the response.
 func SendBulkRequest(bulk *elastic.BulkService) (uint64, error) {
 	res, err := bulk.Do()
@@ -67,7 +72,6 @@ func IndexExists(host string, port string, index string) (bool, error) {
 
 // DeleteIndex deletes the provided index in elasticsearch.
 func DeleteIndex(host string, port string, index string) error {
-	log.Debug("Deleting index '" + index + "'")
 	client, err := getClient(host, port)
 	if err != nil {
 		return err
@@ -84,7 +88,6 @@ func DeleteIndex(host string, port string, index string) error {
 
 // CreateIndex creates the provided index in elasticsearch.
 func CreateIndex(host string, port string, index string, body string) error {
-	log.Debug("Creating index '" + index + "'")
 	client, err := getClient(host, port)
 	if err != nil {
 		return err
@@ -108,6 +111,7 @@ func PrepareIndex(host string, port string, index string, mappings string, clear
 	}
 	// if index exists
 	if indexExists && clearExisting {
+		log.Debug("Deleting index '" + index + "'")
 		err = DeleteIndex(host, port, index)
 		if err != nil {
 			return err
@@ -115,6 +119,7 @@ func PrepareIndex(host string, port string, index string, mappings string, clear
 	}
 	// if index does not exist at this point, create it
 	if !indexExists || clearExisting {
+		log.Debug("Creating index '" + index + "'")
 		err = CreateIndex(host, port, index, `{"mappings":`+mappings+`}`)
 		if err != nil {
 			return err

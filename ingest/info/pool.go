@@ -1,18 +1,18 @@
-package es
+package info
 
 import (
 	"sync"
 
-	"github.com/unchartedsoftware/prism/ingest/info"
+	"github.com/unchartedsoftware/prism/ingest/es"
 	"github.com/unchartedsoftware/prism/ingest/progress"
 )
 
 // Worker represents a designated worker function to batch in a pool.
-type Worker func(info.IngestFile, *Equalizer) error
+type Worker func(IngestFile, *es.Equalizer) error
 
 // Pool represents a single goroutine pool for batching workers.
 type Pool struct {
-	FileChan  chan info.IngestFile
+	FileChan  chan IngestFile
 	ErrChan   chan error
 	WaitGroup *sync.WaitGroup
 	Size      int
@@ -21,7 +21,7 @@ type Pool struct {
 // NewPool returns a new pool object with the given worker size
 func NewPool(size int) *Pool {
 	return &Pool{
-		FileChan:  make(chan info.IngestFile),
+		FileChan:  make(chan IngestFile),
 		ErrChan:   make(chan error),
 		WaitGroup: new(sync.WaitGroup),
 		Size:      size,
@@ -35,7 +35,7 @@ func sendError(errChan chan error, err error) {
 	errChan <- err
 }
 
-func workerWrapper(p *Pool, eq *Equalizer, worker Worker, ingestInfo *info.IngestInfo) {
+func workerWrapper(p *Pool, eq *es.Equalizer, worker Worker, ingestInfo *IngestInfo) {
 	// Decrease internal counter for wait-group as soon as goroutine finishes
 	defer p.WaitGroup.Done()
 	for file := range p.FileChan {
@@ -57,9 +57,9 @@ func workerWrapper(p *Pool, eq *Equalizer, worker Worker, ingestInfo *info.Inges
 }
 
 // Execute launches a batch of ingest workers with the provided ingest information.
-func (p *Pool) Execute(worker Worker, ingestInfo *info.IngestInfo) error {
+func (p *Pool) Execute(worker Worker, ingestInfo *IngestInfo) error {
 	// create equalizer of same size
-	eq := NewEqualizer(p.Size)
+	eq := es.NewEqualizer(p.Size)
 	eq.Listen()
 	defer eq.Close()
 	// for each worker in pool

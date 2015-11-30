@@ -7,6 +7,19 @@ import (
 	"github.com/unchartedsoftware/prism/ingest/twitter"
 )
 
+// Document represents all necessary info to create an index and ingest a document.
+type Document interface {
+	Setup() error
+	Teardown() error
+	FilterDir(string) bool
+	FilterFile(string) bool
+	SetData([]string)
+	GetSource() (interface{}, error)
+	GetID() string
+	GetMappings() string
+	GetType() string
+}
+
 // registry contains all document implementations for twitter data.
 var registry = make(map[string]reflect.Type)
 

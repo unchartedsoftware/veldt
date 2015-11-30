@@ -1,13 +1,19 @@
 package twitter
 
 import (
+	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/ingest/conf"
 	"github.com/unchartedsoftware/prism/util/log"
 )
+
+// regex used to determine if the file is ingestible
+var fileRegex = regexp.MustCompile(`.+\.(\d{4})(\d{2})(\d{2})-\d{6}.txt.gz`)
 
 // ISILTweetDocument represents a single TSV row of isil keyword twitter data.
 type ISILTweetDocument struct {
@@ -42,13 +48,31 @@ func (d ISILTweetDocument) Teardown() error {
 }
 
 // FilterDir returns true if the provided dir string is valid for ingestion.
-func (d ISILTweetDocument) FilterDir( dir string ) bool {
-	return true
+func (d ISILTweetDocument) FilterDir(dir string) bool {
+	return dir != "es-mapping-files"
 }
 
 // FilterFile returns true if the provided filename string is valid for ingestion.
-func (d ISILTweetDocument) FilterFile( file string ) bool {
-	return true
+func (d ISILTweetDocument) FilterFile(file string) bool {
+	// expected file format: ISIL_KEYWORDS.20150828-000001.txt.gz
+	config := conf.GetConf()
+	if config.StartDate != nil && config.EndDate != nil {
+		matches := fileRegex.FindStringSubmatch(file)
+		if len(matches) > 0 {
+			year := matches[1]
+			month := matches[2]
+			day := matches[3]
+			layout := "2006-01-02" // Jan 2, 2006
+			fileDate, err := time.Parse(layout, fmt.Sprintf("%s-%s-%s", year, month, day))
+			if err != nil {
+				log.Debugf("Error parsing date from file '%s'", file)
+				return false
+			}
+			return fileDate.Unix() >= config.StartDate.Unix() &&
+				fileDate.Unix() <= config.EndDate.Unix()
+		}
+	}
+	return false
 }
 
 // SetData sets the internal TSV column.
@@ -101,7 +125,7 @@ type ISILSource struct {
 }
 
 // GetSource returns the marshalled source portion of the document.
-func (d ISILTweetDocument) GetSource() (*ISILSource, error) {
+func (d ISILTweetDocument) GetSource() (interface{}, error) {
 	// CSV line as array:
 	//	  0: tweet id
 	//	  1: tweet datetime
@@ -141,6 +165,10 @@ func (d ISILTweetDocument) GetSource() (*ISILSource, error) {
 	//	  35: has account been verified by Twitter
 	//	  36: the 'real' name given by the user
 	cols := d.Cols
+	// isil keyword data has broken lines
+	if len(cols) < 37 {
+		return nil, nil
+	}
 	// get timestamp
 	timestamp, err := tweetDateToISO(cols[1])
 	if err != nil {

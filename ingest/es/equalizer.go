@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	maxNumRates = 16
+	maxNumRates = 64
 )
 
 // Request represents a bulk request and its generation time.
@@ -68,7 +68,7 @@ func (e *Equalizer) forwardRequest(req Request) {
 
 func (e *Equalizer) listenToReqs() {
 	for req := range e.Send {
-		go forwardRequest(req)
+		go e.forwardRequest(req)
 	}
 }
 

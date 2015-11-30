@@ -3,6 +3,7 @@ package info
 import (
 	"os"
 
+	"github.com/unchartedsoftware/prism/ingest/es"
 	"github.com/unchartedsoftware/prism/ingest/hdfs"
 	"github.com/unchartedsoftware/prism/util"
 	"github.com/unchartedsoftware/prism/util/log"
@@ -22,19 +23,17 @@ type IngestFile struct {
 }
 
 func isValidDir(file os.FileInfo) bool {
-	return file.IsDir() &&
-		file.Name() != "es-mapping-files"
+	return file.IsDir()
 }
 
 func isValidFile(file os.FileInfo) bool {
 	return !file.IsDir() &&
-		file.Name() != ".SUCCESS" &&
 		file.Name() != "_SUCCESS" &&
 		file.Size() > 0
 }
 
 // GetIngestInfo returns an array of os.FileInfo and the total number of bytes in the provided directory.
-func GetIngestInfo(host string, port string, path string) (*IngestInfo, error) {
+func GetIngestInfo(host string, port string, path string, document es.Document) (*IngestInfo, error) {
 	// read directory
 	files, err := hdfs.ReadDir(host, port, path)
 	if err != nil {
@@ -46,16 +45,17 @@ func GetIngestInfo(host string, port string, path string) (*IngestInfo, error) {
 	log.Debugf("Retreiving ingest info from: %s", path)
 	// for each file / dir
 	for _, file := range files {
-		if isValidDir(file) {
+		if isValidDir(file) && document.FilterDir(file.Name()) {
 			// depth-first traversal into sub directories
-			subInfo, err := GetIngestInfo(host, port, path+"/"+file.Name())
+			subInfo, err := GetIngestInfo(host, port, path+"/"+file.Name(), document)
 			ingestFiles = append(ingestFiles, subInfo.Files...)
 			numTotalBytes += subInfo.NumTotalBytes
 			// if any errors, append them
 			if err != nil {
 				return nil, err
 			}
-		} else if isValidFile(file) {
+		} else if isValidFile(file) && document.FilterFile(file.Name()) {
+			log.Debug("     " + file.Name())
 			// add to total bytes
 			numTotalBytes += uint64(file.Size())
 			// store file info
