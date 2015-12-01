@@ -9,13 +9,13 @@ import (
 	"github.com/zenazn/goji/web"
 
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/server/conf"
 	"github.com/unchartedsoftware/prism/store"
 	"github.com/unchartedsoftware/prism/tiling"
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
 func parseTileParams(params map[string]string) (*tiling.TileRequest, error) {
-	tileType := params["type"]
 	x, ex := strconv.ParseUint(params["x"], 10, 32)
 	y, ey := strconv.ParseUint(params["y"], 10, 32)
 	z, ez := strconv.ParseUint(params["z"], 10, 32)
@@ -26,7 +26,9 @@ func parseTileParams(params map[string]string) (*tiling.TileRequest, error) {
 				Y: uint32(y),
 				Z: uint32(z),
 			},
-			Type: tileType,
+			Endpoint: conf.Unalias(params["endpoint"]),
+			Index:    conf.Unalias(params["index"]),
+			Type:     conf.Unalias(params["type"]),
 		}, nil
 	}
 	return nil, errors.New("Unable to parse tile coordinate from URL")

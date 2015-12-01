@@ -2,11 +2,10 @@ package elastic
 
 import (
 	"encoding/binary"
-	"encoding/json"
+	"errors"
 	"math"
-	"strconv"
 
-	"github.com/parnurzeal/gorequest"
+	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/binning"
 )
@@ -31,38 +30,6 @@ import (
 // 	   }
 // }
 
-// Row represents a row value in the y axis aggregations.
-type Row struct {
-	Count  uint64 `json:"doc_count"`
-	PixelY uint64 `json:"key"`
-}
-
-// YAgg represents the y value aggregations inside a column.
-type YAgg struct {
-	Rows []Row `json:"buckets"`
-}
-
-// Column represents a column of values in an x aggregation.
-type Column struct {
-	Y      YAgg   `json:"y"`
-	PixelX uint64 `json:"key"`
-}
-
-// XAgg represents the set of bucketed columns.
-type XAgg struct {
-	Columns []Column `json:"buckets"`
-}
-
-// Aggregation represents the histogram aggregations.
-type Aggregation struct {
-	X XAgg `json:"x"`
-}
-
-// HeatmapPayload represents the aggregations payload of the elasticsearch response.
-type HeatmapPayload struct {
-	Aggs Aggregation `json:"aggregations"`
-}
-
 func float64ToBytes(bytes []byte, float float64) {
 	bits := math.Float64bits(float)
 	binary.LittleEndian.PutUint64(bytes, bits)
@@ -77,101 +44,63 @@ func getByteArray(data []float64) []byte {
 }
 
 // GetHeatmapTile returns a marshalled tile containing a flat array of bins.
-func GetHeatmapTile(tile *binning.TileCoord) ([]byte, error) {
-	tileResolution := binning.MaxTileResolution // TEMP
+func GetHeatmapTile(endpoint string, index string, tile *binning.TileCoord) ([]byte, error) {
 	pixelBounds := binning.GetTilePixelBounds(tile)
-	xBinSize := (pixelBounds.BottomRight.X - pixelBounds.TopLeft.X) / tileResolution
-	yBinSize := (pixelBounds.BottomRight.Y - pixelBounds.TopLeft.Y) / tileResolution
-	xMin := strconv.FormatUint(pixelBounds.TopLeft.X, 10)
-	xMax := strconv.FormatUint(pixelBounds.BottomRight.X-1, 10)
-	yMin := strconv.FormatUint(pixelBounds.TopLeft.Y, 10)
-	yMax := strconv.FormatUint(pixelBounds.BottomRight.Y-1, 10)
-	xInterval := strconv.FormatUint(xBinSize, 10)
-	yInterval := strconv.FormatUint(yBinSize, 10)
-	query := `{
-		"query": {
-			"bool" : {
-		        "must" : [
-					{
-			            "range": {
-							"pixel.x": {
-								"gte":` + xMin + `,
-								"lte":` + xMax + `
-							}
-						}
-					},
-					{
-			            "range": {
-							"pixel.y": {
-								"gte":` + yMin + `,
-								"lte":` + yMax + `
-							}
-						}
-					}
-				]
-			}
-		},
-		"aggs": {
-	        "x": {
-	            "histogram": {
-	                "field": "pixel.x",
-	                "interval":` + xInterval + `,
-	                "min_doc_count": 1
-	            },
-	            "aggs": {
-	                "y": {
-	                    "histogram": {
-	                        "field": "pixel.y",
-	                        "interval":` + yInterval + `,
-	                        "min_doc_count": 1
-	                    }
-	                }
-	            }
-	        }
-	    }
-	}`
-
-	// searchResult, err := client.
-	// 	Search().
-	// 	Index(esIndex).
-	// 	Size(0)
-	// 	Query( NewBoolQuery().Must(
-	// 		NewRangeQuery("pixel.x").Gte(xMin).Lte(xMax),
-	// 		NewRangeQuery("pixel.y").Gte(yMin).Lte(yMax),
-	// 	)).
-	// 	Aggregation("x", NewHistogramAggregation().Field("pixel.x").Interval(xInterval).MinDocCount(1).
-	// 		SubAggregation("y", NewHistogramAggregation().Field("pixel.y").Interval(yInterval).MinDocCount(1) )).
-	// 	Do()
-
-	searchSize := "size=0"
-	filterPath := "filter_path=aggregations.x.buckets.key,aggregations.x.buckets.y.buckets.key,aggregations.x.buckets.y.buckets.doc_count"
-	_, body, errs := gorequest.
-		New().
-		Post(esHost + "/" + esIndex + "/_search?" + searchSize + "&" + filterPath).
-		Send(query).
-		End()
-	if errs != nil {
-		return nil, errs[0]
-	}
-	// unmarshal payload
-	payload := &HeatmapPayload{}
-	err := json.Unmarshal([]byte(body), &payload)
+	tileResolution := int64(binning.MaxTileResolution) // TEMP
+	xBinSize := int64(pixelBounds.BottomRight.X-pixelBounds.TopLeft.X) / tileResolution
+	yBinSize := int64(pixelBounds.BottomRight.Y-pixelBounds.TopLeft.Y) / tileResolution
+	xMin := int64(pixelBounds.TopLeft.X)
+	xMax := int64(pixelBounds.BottomRight.X - 1)
+	yMin := int64(pixelBounds.TopLeft.Y)
+	yMax := int64(pixelBounds.BottomRight.Y - 1)
+	// query
+	result, err := client.
+		Search(index).
+		Size(0).
+		Query(elastic.NewBoolQuery().Must(
+		elastic.NewRangeQuery("pixel.x").
+			Gte(xMin).
+			Lte(xMax),
+		elastic.NewRangeQuery("pixel.y").
+			Gte(yMin).
+			Lte(yMax),
+	)).
+		Aggregation("x",
+		elastic.NewHistogramAggregation().
+			Field("pixel.x").
+			Interval(xBinSize).
+			MinDocCount(1).
+			SubAggregation("y",
+			elastic.NewHistogramAggregation().
+				Field("pixel.y").
+				Interval(yBinSize).
+				MinDocCount(1))).
+		Do()
 	if err != nil {
 		return nil, err
 	}
-	// build array of counts
-	counts := make([]float64, tileResolution*tileResolution)
-	cols := payload.Aggs.X.Columns
-	for i := 0; i < len(cols); i++ {
-		x := cols[i].PixelX
-		xBin := (x - pixelBounds.TopLeft.X) / xBinSize
-		rows := cols[i].Y.Rows
-		for j := 0; j < len(rows); j++ {
-			y := rows[j].PixelY
-			yBin := (y - pixelBounds.TopLeft.Y) / yBinSize
-			counts[xBin+tileResolution*yBin] = float64(rows[j].Count)
+	// parse aggregations
+	xAgg, ok := result.Aggregations.Histogram("x")
+	if !ok {
+		return nil, errors.New("Histogram aggregation 'x' was not found in response.")
+	}
+	// allocate count buffer
+	bytes := make([]byte, tileResolution*tileResolution*8)
+	// fill count buffer
+	for _, xBucket := range xAgg.Buckets {
+		x := xBucket.Key
+		xBin := (x - xMin) / xBinSize
+		yAgg, ok := xBucket.Histogram("y")
+		if !ok {
+			return nil, errors.New("Histogram aggregation 'y' was not found in response.")
+		}
+		for _, yBucket := range yAgg.Buckets {
+			y := yBucket.Key
+			yBin := (y - yMin) / yBinSize
+			index := xBin + tileResolution*yBin
+			// encode count
+			float64ToBytes(bytes[index*8:index*8+8], float64(yBucket.DocCount))
 		}
 	}
-	bytes := getByteArray(counts)
 	return bytes, nil
 }

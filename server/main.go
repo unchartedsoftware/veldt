@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"runtime"
 	"syscall"
 
@@ -12,26 +11,14 @@ import (
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
-var (
-	port   = flag.CommandLine.String("port", "8080", "Port to bind HTTP server")
-	prod   = flag.CommandLine.Bool("prod", false, "Production flag")
-	public = flag.CommandLine.String("publicDir", "./build", "The public directory to static serve from")
-)
-
 func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	// Parse the flags and store them as a conf struct
-	flag.Parse()
-	config := conf.Conf{
-		Prod:   *prod,
-		Port:   *port,
-		Public: *public,
-	}
-	conf.SaveConf(&config)
+	// parse flags into config struct
+	config := conf.ParseCommandLine()
 
-	// Start the web server
+	// start the web server
 	graceful.AddSignal(syscall.SIGINT, syscall.SIGTERM)
 	app := api.New()
 	log.Debug("Prism server listening on port " + config.Port)

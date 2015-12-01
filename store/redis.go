@@ -15,10 +15,12 @@ const (
 	idleTimeout = 10 * time.Second
 )
 
-var redisPool = getPool(redisHost + ":" + redisPort)
+var (
+	redisPool = getPool(redisHost + ":" + redisPort)
+)
 
 func getPool(server string) *redis.Pool {
-	log.Debugf("Connecting to redis server: %s:%s", redisHost, redisPort)
+	log.Debugf("Connecting to redis '%s:%s'", redisHost, redisPort)
 	return &redis.Pool{
 		MaxIdle:     maxIdle,
 		IdleTimeout: idleTimeout,

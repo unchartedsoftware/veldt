@@ -4,8 +4,8 @@
 
     var $ = require('jquery');
 
-    function getTileHash(type, x, y, z) {
-        return type + '-' + x + '-' + y + '-' + z;
+    function getTileHash(endpoint, index, type, x, y, z) {
+        return endpoint + ':' + index + ':' + type + ':' + x + '-' + y + '-' + z;
     }
 
     function TileRequester(url, callback) {
@@ -15,7 +15,13 @@
         this.socket.onmessage = function(event) {
             var tileRes = JSON.parse(event.data);
             var tileCoord = tileRes.tilecoord;
-            var tileHash = getTileHash(tileRes.type, tileCoord.x, tileCoord.y, tileCoord.z);
+            var tileHash = getTileHash(
+                tileRes.endpoint,
+                tileRes.index,
+                tileRes.type,
+                tileCoord.x,
+                tileCoord.y,
+                tileCoord.z);
             var request = requests[tileHash];
             delete requests[tileHash];
             if (tileRes.success) {
@@ -26,8 +32,8 @@
         };
     }
 
-    TileRequester.prototype.get = function(type, x, y, z) {
-        var tileHash = getTileHash(type, x, y, z);
+    TileRequester.prototype.get = function(endpoint, index, type, x, y, z) {
+        var tileHash = getTileHash(endpoint, index, type, x, y, z);
         var request = this.requests[tileHash];
         if (request) {
             return request.promise();
@@ -39,6 +45,8 @@
                 y: y,
                 z: z
             },
+            endpoint: endpoint,
+            index: index,
             type: type
         };
         this.socket.send(JSON.stringify(msg));

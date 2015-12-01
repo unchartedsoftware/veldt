@@ -4,8 +4,6 @@ import (
 	"sync"
 
 	"github.com/fanliao/go-promise"
-
-	"github.com/unchartedsoftware/prism/util/log"
 )
 
 var mutex = sync.Mutex{}
@@ -29,10 +27,7 @@ func GetTilePromise(tileHash string, tileReq *TileRequest) *promise.Promise {
 	tilePromises[tileHash] = p
 	mutex.Unlock()
 	go func() {
-		tileRes, err := GetTileByType(tileHash, tileReq)
-		if err != nil {
-			log.Error(err)
-		}
+		tileRes := GetTileByType(tileHash, tileReq)
 		p.Resolve(tileRes)
 		deletePromise(tileHash)
 	}()
