@@ -207,7 +207,7 @@ func (d ISILTweet) GetSource() (interface{}, error) {
 	}
 	// hashtags may not exist
 	if columnExists(cols[9]) {
-		source.Hashtags = strings.Split(strings.TrimSpace(cols[9]), "#")
+		source.Hashtags = strings.Split(strings.TrimSpace(strings.ToLower(cols[9])), ",")
 	}
 	// URLs may not exist
 	if columnExists(cols[16]) {

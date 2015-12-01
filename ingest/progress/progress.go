@@ -16,7 +16,7 @@ var (
 	currentBytes uint64
 	totalBytes   uint64
 	mutex        = sync.Mutex{}
-	layout		 = "15:04:05" // format for 3:04:05PM
+	layout       = "15:04:05" // format for 3:04:05PM
 )
 
 // Time represents the hour, minutes, and seconds of a given time.
@@ -27,15 +27,15 @@ type Time struct {
 }
 
 func formatTime(duration time.Duration) string {
-	totalSeconds := uint64( duration.Seconds() )
+	totalSeconds := uint64(duration.Seconds())
 	totalMinutes := totalSeconds / 60
 	seconds := totalSeconds % 60
 	hours := totalMinutes / 60
 	minutes := totalMinutes % 60
 	return fmt.Sprintf("%2dh:%02dm:%02ds",
-		int( math.Min( 99, float64(hours) ) ),
+		int(math.Min(99, float64(hours))),
 		minutes,
-		seconds )
+		seconds)
 }
 
 // StartProgress sets the internal epoch and the total bytes to track.
@@ -50,20 +50,21 @@ func EndProgress() {
 	endTime = time.Now()
 }
 
-// PrintProgress will print a human readable progress message for a given task.
+// UpdateProgress will update and print a human readable progress message for
+// a given task.
 func UpdateProgress(bytes uint64) {
 	mutex.Lock()
 	currentBytes = currentBytes + bytes
 	fCurrentBytes := float64(currentBytes)
 	fTotalBytes := float64(totalBytes)
-	elapsedSec := time.Since( startTime ).Seconds()
+	elapsedSec := time.Since(startTime).Seconds()
 	percentage := 100 * (fCurrentBytes / fTotalBytes)
 	bytesPerSec := 1.0
 	if elapsedSec > 0 {
 		bytesPerSec = fCurrentBytes / elapsedSec
 	}
 	remainingBytes := fTotalBytes - fCurrentBytes
-	remaining := time.Second * time.Duration(remainingBytes / bytesPerSec)
+	remaining := time.Second * time.Duration(remainingBytes/bytesPerSec)
 	fmtBytes := util.FormatBytes(fCurrentBytes)
 	fmtBytesPerSec := util.FormatBytes(bytesPerSec)
 	lineEnding := ""

@@ -20,7 +20,7 @@ var (
 	esPort          = flag.String("es-port", "9200", "Elasticsearch port")
 	esIndex         = flag.String("es-index", "", "Elasticsearch index")
 	esDocType       = flag.String("es-doc-type", "", "Elasticsearch type")
-	esBatchSize     = flag.Int("es-batch-size", 24000, "The bulk batch size in documents")
+	esBatchSize     = flag.Int("es-batch-size", 40000, "The bulk batch size in documents")
 	esClearExisting = flag.Bool("es-clear-existing", true, "Clear index before ingest")
 	hdfsHost        = flag.String("hdfs-host", "", "HDFS host")
 	hdfsPort        = flag.String("hdfs-port", "", "HDFS port")

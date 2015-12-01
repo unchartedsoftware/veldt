@@ -48,7 +48,7 @@ func NewBulkIndexRequest() *elastic.BulkIndexRequest {
 func SendBulkRequest(bulk *elastic.BulkService) (uint64, error) {
 	res, err := bulk.Do()
 	if err != nil {
-		return uint64(res.Took), err
+		return 0, err
 	}
 	if res.Errors {
 		// find first error and return it
