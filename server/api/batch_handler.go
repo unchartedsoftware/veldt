@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/unchartedsoftware/prism/server/conf"
 	"github.com/unchartedsoftware/prism/tiling"
 	"github.com/unchartedsoftware/prism/util/log"
 )
@@ -61,10 +62,18 @@ func (t *TileDispatcher) Close() {
 }
 
 func (t *TileDispatcher) listenForResponses() {
-	for resp := range t.RespChan {
+	for tileRes := range t.RespChan {
+		// log error if there is one
+		if tileRes.Error != nil {
+			log.Warn(tileRes.Error)
+		}
+		// alias endpoint, index, and type
+		tileRes.Endpoint = conf.Alias(tileRes.Endpoint)
+		tileRes.Index = conf.Alias(tileRes.Index)
+		tileRes.Type = conf.Alias(tileRes.Type)
 		// write response to websocket
 		t.Conn.SetWriteDeadline(time.Now().Add(writeWait))
-		err := t.Conn.WriteJSON(resp)
+		err := t.Conn.WriteJSON(tileRes)
 		if err != nil {
 			t.ErrChan <- err
 			break
@@ -73,10 +82,7 @@ func (t *TileDispatcher) listenForResponses() {
 }
 
 func (t *TileDispatcher) dispatchRequest(tileReq *tiling.TileRequest) {
-	promise, err := tiling.GetTile(tileReq)
-	if err != nil {
-		log.Warn(err)
-	}
+	promise := tiling.GetTile(tileReq)
 	promise.OnComplete(func(res interface{}) {
 		// cast to tile response and pass to response channel
 		t.RespChan <- res.(*tiling.TileResponse)
@@ -91,6 +97,10 @@ func (t *TileDispatcher) getRequest() (*tiling.TileRequest, error) {
 	if err != nil {
 		return nil, err
 	}
+	// unalias endpoint, index, and type
+	tileReq.Endpoint = conf.Unalias(tileReq.Endpoint)
+	tileReq.Index = conf.Unalias(tileReq.Index)
+	tileReq.Type = conf.Unalias(tileReq.Type)
 	return tileReq, nil
 }
 

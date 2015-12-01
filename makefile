@@ -22,12 +22,15 @@ lint:
 	@go vet ./...
 	@golint ./...
 
+test:
+	@go test ./...
+
 fmt:
 	@gofmt -l -w .
 	@./node_modules/.bin/jsfmt -w ./webapp/scripts ./webapp/*.js
 
 build: clean lint
-	@go build -o ./bin/prism.bin server/main.go
+	@go build -o ./bin/server.bin server/main.go
 	@go build -o ./bin/ingest.bin ingest/main.go
 
 deps:

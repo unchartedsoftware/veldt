@@ -7,6 +7,5 @@ github.com/gorilla/websocket 361d4c0ffd78338ebe0a9e6320cdbe115d7dc026
 github.com/mgutz/ansi c286dcecd19ff979eeb73ea444e479b903f2cfcb
 github.com/onsi/ginkgo 39d2c24f8a92c88f7e7f4d8ec6c80d3cc8f5ac65
 github.com/onsi/gomega 2152b45fa28a361beba9aab0885972323a444e28
-github.com/parnurzeal/gorequest 8fe8e16b3c50b6cc37399ee385b15f62a20bf584
 github.com/zenazn/goji 739f05c9497895aee8d398a8ff38fb0517c4d670
-golang.org/x/net 042ba42fa6633b34205efc66ba5719cd3afd8d38
+gopkg.in/olivere/elastic.v3 ec88a89966d87deda1c191c04c09c0c352411c7f

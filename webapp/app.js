@@ -45,11 +45,16 @@
 
     window.startApp = function() {
 
+        var ES_ENDPOINT = 'production'; //'openstack';
+        var ES_INDEX = 'isil_twitter_weekly'; //'nyc_twitter';
+
         // Map control
         var map = new L.Map('map', {
             zoomControl: true,
-            center: [40.7, -73.9],
-            zoom: 14,
+            zoom: 4,
+            center: [0, 0],
+            //center: [40.7, -73.9],
+            //zoom: 14,
             maxZoom: 18,
             fadeAnimation: true,
             zoomAnimation: true
@@ -113,9 +118,9 @@
         heatmapLayer.drawTile = function(canvas, index, zoom) {
             $(canvas).addClass('blinking');
             requester
-                .get('heatmap', index.x, index.y, zoom)
+                .get(ES_ENDPOINT, ES_INDEX, 'heatmap', index.x, index.y, zoom)
                 .done(function() {
-                    var url = './heatmap/' + zoom + '/' + index.x + '/' + index.y;
+                    var url = ES_ENDPOINT + '/' + ES_INDEX + '/heatmap/' + zoom + '/' + index.x + '/' + index.y;
                     $.ajax({
                         url: url,
                         dataType: 'arraybuffer',
@@ -155,9 +160,9 @@
         wordCloudLayer.drawTile = function(tile, index, zoom) {
             $(tile).addClass('blinking');
             requester
-                .get('topiccount', index.x, index.y, zoom)
+                .get(ES_ENDPOINT, ES_INDEX, 'topiccount', index.x, index.y, zoom)
                 .done(function() {
-                    var url = './topiccount/' + zoom + '/' + index.x + '/' + index.y;
+                    var url = ES_ENDPOINT + '/' + ES_INDEX + '/topiccount/' + zoom + '/' + index.x + '/' + index.y;
                     $.ajax({
                         url: url,
                         dataType: 'json',

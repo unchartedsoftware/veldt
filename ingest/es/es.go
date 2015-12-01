@@ -1,168 +1,103 @@
 package es
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
 
-	"github.com/parnurzeal/gorequest"
+	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
-// Error represents the error node of an elasticsearch json response.
-type Error struct {
-	Type   string `json:"type"`
-	Reason string `json:"reason"`
-}
+var esClient *elastic.Client
 
-// ItemIndex represents the index node of an elasticsearch item attribute.
-type ItemIndex struct {
-	Error Error `json:"error"`
-}
-
-// Item represents an item element of an elasticsearch items array.
-type Item struct {
-	Index ItemIndex `json:"index"`
-}
-
-// Response represents the json response from a valid elasticsearch action.
-// {
-//     "took": 5,
-//     "errors": true,
-//     "items": [
-//         {
-//             "index": {
-//                 "_index": "isil_twitter",
-//                 "_type": "datum",
-//                 "_id": "287366349146181633",
-//                 "status": 400,
-//                 "error": {
-//                     "type": "mapper_parsing_exception",
-//                     "reason": "failed to parse",
-//           		   "caused_by": {
-//                         "type": "json_parse_exception",
-//                         "reason": "..."
-//                     }
-//                 }
-//             }
-//         }
-//     ]
-// }
-type Response struct {
-	Errors bool   `json:"errors"`
-	Items  []Item `json:"items"`
-}
-
-// BadRequest represents the json response from an invalid elasticsearch action.
-// {
-//     "error": {
-// 	        "root_cause": [
-// 	            {
-// 	        	    "type": "action_request_validation_exception",
-// 	            	"reason": "Validation Failed: 1: no requests added;"
-// 	            }
-// 	        ],
-// 	        "type": "action_request_validation_exception",
-// 	        "reason": "Validation Failed: 1: no requests added;"
-// 	   },
-//     "status": 400
-// }
-type BadRequest struct {
-	Status uint  `json:"status"`
-	Error  Error `json:"error"`
-}
-
-func getResponseString(resp *http.Response) (string, error) {
-	defer resp.Body.Close()
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	return string(contents), nil
-}
-
-func parseResponse(r *http.Response) error {
-	respText, err := getResponseString(r)
-	if err != nil {
-		return err
-	}
-	// first check if the request itself was malformed
-	if r.StatusCode >= 400 && r.StatusCode < 500 {
-		badReq := &BadRequest{}
-		err := json.Unmarshal([]byte(respText), &badReq)
+func getClient(host string, port string) (*elastic.Client, error) {
+	endpoint := host + ":" + port
+	if esClient == nil {
+		client, err := elastic.NewClient(
+			elastic.SetURL(endpoint),
+			elastic.SetSniff(false),
+			elastic.SetGzip(true),
+		)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		return fmt.Errorf("Error %d: %s, %s", r.StatusCode, badReq.Error.Type, badReq.Error.Reason)
+		esClient = client
 	}
-	// then check elasticsearch response json
-	// unmarshal payload
-	esResp := &Response{}
-	err = json.Unmarshal([]byte(respText), &esResp)
-	if err != nil {
-		return err
-	}
-	if esResp.Errors {
-		item := esResp.Items[0]
-		log.Error(respText)
-		return errors.New(item.Index.Error.Type + ": " + item.Index.Error.Reason)
-	}
-	return nil
+	return esClient, nil
 }
 
-// Bulk sends a bulk request to elasticsearch with the provided payload.
-func Bulk(host string, port string, index string, datatype string, actions []string) error {
-	jsonLines := fmt.Sprintf("%s\n", strings.Join(actions, "\n"))
-	resp, err := http.Post(host+":"+port+"/"+index+"/"+datatype+"/_bulk", "application/json", strings.NewReader(jsonLines))
+// GetBulkRequest creates and returns a pointer to a new elastic.BulkService
+// for building a bulk request.
+func GetBulkRequest(host string, port string, index string, typ string) (*elastic.BulkService, error) {
+	client, err := getClient(host, port)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = parseResponse(resp)
+	return client.Bulk().
+		Index(index).
+		Type(typ), nil
+}
+
+// NewBulkIndexRequest creates and returns a pointer to a BulkIndexRequest object.
+func NewBulkIndexRequest() *elastic.BulkIndexRequest {
+	return elastic.NewBulkIndexRequest()
+}
+
+// SendBulkRequest sends the provided bulk request and handles the response.
+func SendBulkRequest(bulk *elastic.BulkService) (uint64, error) {
+	res, err := bulk.Do()
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	if res.Errors {
+		// find first error and return it
+		for _, item := range res.Items {
+			if item["index"].Error != nil {
+				return uint64(res.Took), fmt.Errorf("%s, %s", item["index"].Error.Type, item["index"].Error.Reason)
+			}
+		}
+	}
+	return uint64(res.Took), nil
 }
 
 // IndexExists returns whether or not the provided index exists in elasticsearch.
 func IndexExists(host string, port string, index string) (bool, error) {
-	resp, _, errs := gorequest.New().
-		Head(host + ":" + port + "/" + index).
-		End()
-	if errs != nil {
-		log.Error(errs)
-		return false, errors.New("Unable to determine if index exists")
+	client, err := getClient(host, port)
+	if err != nil {
+		return false, err
 	}
-	return resp.StatusCode != 404, nil
+	return client.IndexExists(index).Do()
 }
 
 // DeleteIndex deletes the provided index in elasticsearch.
 func DeleteIndex(host string, port string, index string) error {
-	log.Debug("Clearing index '" + index + "'")
-	_, _, errs := gorequest.New().
-		Delete(host + ":" + port + "/" + index).
-		End()
-	if errs != nil {
-		log.Error(errs)
-		return errors.New("Failed to delete index")
+	client, err := getClient(host, port)
+	if err != nil {
+		return err
+	}
+	res, err := client.DeleteIndex(index).Do()
+	if err != nil {
+		return err
+	}
+	if !res.Acknowledged {
+		return errors.New("Delete index request not acknowledged")
 	}
 	return nil
 }
 
 // CreateIndex creates the provided index in elasticsearch.
 func CreateIndex(host string, port string, index string, body string) error {
-	log.Debug("Creating index '" + index + "'")
-	_, _, errs := gorequest.New().
-		Put(host + ":" + port + "/" + index).
-		Send(body).
-		End()
-	if errs != nil {
-		log.Error(errs)
-		return errors.New("Failed to create index")
+	client, err := getClient(host, port)
+	if err != nil {
+		return err
+	}
+	res, err := client.CreateIndex(index).Body(body).Do()
+	if err != nil {
+		return err
+	}
+	if !res.Acknowledged {
+		return errors.New("Create index request not acknowledged")
 	}
 	return nil
 }
@@ -176,20 +111,16 @@ func PrepareIndex(host string, port string, index string, mappings string, clear
 	}
 	// if index exists
 	if indexExists && clearExisting {
+		log.Debug("Deleting index '" + index + "'")
 		err = DeleteIndex(host, port, index)
 		if err != nil {
 			return err
 		}
 	}
-	// if index does not exist at this point
+	// if index does not exist at this point, create it
 	if !indexExists || clearExisting {
-		err = CreateIndex(
-			host,
-			port,
-			index,
-			`{
-                "mappings": `+mappings+`
-            }`)
+		log.Debug("Creating index '" + index + "'")
+		err = CreateIndex(host, port, index, `{"mappings":`+mappings+`}`)
 		if err != nil {
 			return err
 		}

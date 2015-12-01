@@ -19,7 +19,7 @@ func formatRecursive(size float64, powerOfThousand uint8) string {
 	if size > 1000 {
 		return formatRecursive(size/1000, powerOfThousand+1)
 	}
-	return fmt.Sprintf("%.2f "+suffixes[powerOfThousand], size)
+	return fmt.Sprintf("%.2f"+suffixes[powerOfThousand], size)
 }
 
 // FormatBytes formats a number of bytes into a string with the appropriate suffix.

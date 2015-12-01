@@ -2,7 +2,7 @@ package twitter
 
 import (
 	"bufio"
-	//"errors"
+	"errors"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -76,7 +76,7 @@ func GetUserRankings(username string) (map[string]uint64, error) {
 	for rankingsID, ranking := range rankings {
 		rank, ok := ranking[username]
 		if !ok {
-			//return nil, errors.New("User has not been assigned a rank.")
+			return nil, errors.New("User has not been assigned a rank.")
 		}
 		ranks[rankingsID] = rank
 	}

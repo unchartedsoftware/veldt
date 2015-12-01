@@ -2,10 +2,21 @@ package progress
 
 import (
 	"fmt"
+	"math"
+	"sync"
 	"time"
 
 	"github.com/unchartedsoftware/prism/util"
 	"github.com/unchartedsoftware/prism/util/log"
+)
+
+var (
+	startTime    time.Time
+	endTime      time.Time
+	currentBytes uint64
+	totalBytes   uint64
+	mutex        = sync.Mutex{}
+	layout       = "15:04:05" // format for 3:04:05PM
 )
 
 // Time represents the hour, minutes, and seconds of a given time.
@@ -15,70 +26,64 @@ type Time struct {
 	Hours   uint64
 }
 
-func formatTime(totalSeconds uint64) Time {
+func formatTime(duration time.Duration) string {
+	totalSeconds := uint64(duration.Seconds())
 	totalMinutes := totalSeconds / 60
 	seconds := totalSeconds % 60
 	hours := totalMinutes / 60
 	minutes := totalMinutes % 60
-	return Time{
-		Seconds: seconds,
-		Minutes: minutes,
-		Hours:   hours,
-	}
+	return fmt.Sprintf("%2dh:%02dm:%02ds",
+		int(math.Min(99, float64(hours))),
+		minutes,
+		seconds)
 }
 
-func getTimestamp() uint64 {
-	return uint64(time.Now().Unix())
+// StartProgress sets the internal epoch and the total bytes to track.
+func StartProgress(bytes uint64) {
+	startTime = time.Now()
+	currentBytes = 0
+	totalBytes = bytes
 }
 
-var startTime uint64
+// EndProgress sets the end time.
+func EndProgress() {
+	endTime = time.Now()
+}
 
-// PrintProgress will print a human readable progress message for a given task.
-func PrintProgress(totalBytes uint64, bytes uint64) {
-	if startTime == 0 {
-		startTime = getTimestamp()
+// UpdateProgress will update and print a human readable progress message for
+// a given task.
+func UpdateProgress(bytes uint64) {
+	mutex.Lock()
+	currentBytes = currentBytes + bytes
+	fCurrentBytes := float64(currentBytes)
+	fTotalBytes := float64(totalBytes)
+	elapsedSec := time.Since(startTime).Seconds()
+	percentage := 100 * (fCurrentBytes / fTotalBytes)
+	bytesPerSec := 1.0
+	if elapsedSec > 0 {
+		bytesPerSec = fCurrentBytes / elapsedSec
 	}
-	elapsed := getTimestamp() - startTime
-	percentComplete := 100 * (float64(bytes) / float64(totalBytes))
-	bytesPerSecond := 1.0
-	if elapsed > 0 {
-		bytesPerSecond = float64(bytes) / float64(elapsed)
-	}
-	estimatedSecondsRemaining := (float64(totalBytes) - float64(bytes)) / bytesPerSecond
-	formattedTime := formatTime(uint64(estimatedSecondsRemaining))
-	formattedBytes := util.FormatBytes(float64(bytes))
-	formattedBytesPerSecond := util.FormatBytes(bytesPerSecond)
+	remainingBytes := fTotalBytes - fCurrentBytes
+	remaining := time.Second * time.Duration(remainingBytes/bytesPerSec)
+	fmtBytes := util.FormatBytes(fCurrentBytes)
+	fmtBytesPerSec := util.FormatBytes(bytesPerSec)
 	lineEnding := ""
-	if percentComplete == 100 {
+	if percentage == 100 {
 		// only add line ending if the progress is done
 		lineEnding = "\n"
 	}
-	fmt.Printf("\rProcessed %+9s at %+9sps, %6.2f%% complete, estimated time remaining: %2d:%02d:%02d%s",
-		formattedBytes,
-		formattedBytesPerSecond,
-		percentComplete,
-		formattedTime.Hours%100,
-		formattedTime.Minutes,
-		formattedTime.Seconds,
+	fmt.Printf("\rProcessed %+8s at %+8sps, %6.2f%% complete, estimated time remaining: %s%s",
+		fmtBytes,
+		fmtBytesPerSec,
+		percentage,
+		formatTime(remaining),
 		lineEnding)
+	mutex.Unlock()
 }
 
 // PrintTotalDuration prints the total duration of the processed task.
 func PrintTotalDuration() {
-	formattedTime := formatTime(getTimestamp() - startTime)
-	log.Debugf("Task completed in %d:%02d:%02d",
-		formattedTime.Hours,
-		formattedTime.Minutes,
-		formattedTime.Seconds)
-	// clear start time
-	startTime = 0
-}
-
-// PrintTimeout will print a timeout message for n seconds.
-func PrintTimeout(duration uint32) {
-	for duration >= 0 {
-		log.Debug("Retrying in " + string(duration) + " seconds...")
-		time.Sleep(time.Second)
-		duration--
-	}
+	elapsed := endTime.Sub(startTime)
+	log.Debugf("Task completed in %s",
+		formatTime(elapsed))
 }

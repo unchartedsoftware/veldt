@@ -1,58 +1,69 @@
 package twitter
 
 import (
-	"encoding/json"
 	"strconv"
 	"strings"
 
 	"github.com/unchartedsoftware/prism/binning"
 )
 
-// NYCTweetDocument represents a single TSV row of nyc twitter data.
-type NYCTweetDocument struct {
+// NYCTweet represents a single TSV row of nyc twitter data.
+type NYCTweet struct {
 	Cols []string
 }
 
 // Setup initialized and required state prior to ingestion.
-func (d NYCTweetDocument) Setup() error {
+func (d NYCTweet) Setup() error {
 	return nil
 }
 
 // Teardown cleans up any state after ingestion.
-func (d NYCTweetDocument) Teardown() error {
+func (d NYCTweet) Teardown() error {
 	return nil
 }
 
+// FilterDir returns true if the provided dir string is valid for ingestion.
+func (d NYCTweet) FilterDir(dir string) bool {
+	return true
+}
+
+// FilterFile returns true if the provided filename string is valid for ingestion.
+func (d NYCTweet) FilterFile(file string) bool {
+	return true
+}
+
 // SetData sets the internal TSV column.
-func (d *NYCTweetDocument) SetData(cols []string) {
+func (d *NYCTweet) SetData(cols []string) {
 	d.Cols = cols
 }
 
 // GetID returns the document id.
-func (d NYCTweetDocument) GetID() string {
+func (d NYCTweet) GetID() string {
 	return d.Cols[3]
 }
 
 // GetType returns the document type.
-func (d NYCTweetDocument) GetType() string {
+func (d NYCTweet) GetType() string {
 	return "datum"
 }
 
 // GetMappings returns the documents mappings.
-func (d NYCTweetDocument) GetMappings() string {
+func (d NYCTweet) GetMappings() string {
 	return `{
         "` + d.GetType() + `": {
-            "location": {
-                "type": "geo_point"
-            },
-            "userid" : {
-              "type" : "string",
-              "index" : "not_analyzed"
-            },
-            "username" : {
-              "type" : "string",
-              "index" : "not_analyzed"
-            }
+			"properties":{
+	            "location": {
+	                "type": "geo_point"
+	            },
+	            "userid" : {
+	              "type" : "string",
+	              "index" : "not_analyzed"
+	            },
+	            "username" : {
+	              "type" : "string",
+	              "index" : "not_analyzed"
+	            }
+			}
         }
     }`
 }
@@ -64,12 +75,12 @@ type NYCSource struct {
 	Hashtags  []string            `json:"hashtags"`
 	Timestamp string              `json:"timestamp"`
 	Text      string              `json:"text"`
-	LonLat    *binning.LonLat     `json:"lonlat"`
+	LonLat    *binning.LonLat     `json:"location"`
 	Pixel     *binning.PixelCoord `json:"pixel"`
 }
 
 // GetSource returns the marshalled source portion of the document.
-func (d NYCTweetDocument) GetSource() ([]byte, error) {
+func (d NYCTweet) GetSource() (interface{}, error) {
 	// CSV line as array:
 	//     0: 'Fri Jan 04 18:42:42 +0000 2013',
 	//     1: '242573761',
@@ -111,5 +122,5 @@ func (d NYCTweetDocument) GetSource() ([]byte, error) {
 	if columnExists(cols[5]) {
 		source.Hashtags = strings.Split(strings.TrimSpace(cols[5]), "#")
 	}
-	return json.Marshal(source)
+	return source, nil
 }

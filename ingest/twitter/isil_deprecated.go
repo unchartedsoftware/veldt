@@ -2,26 +2,21 @@ package twitter
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/ingest/conf"
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
-// regex used to determine if the file is ingestible
-var fileRegex = regexp.MustCompile(`.+\.(\d{4})(\d{2})(\d{2})-\d{6}.txt.gz`)
-
-// ISILTweet represents a single TSV row of isil keyword twitter data.
-type ISILTweet struct {
+// ISILTweetDeprecated represents a single TSV row of isil keyword twitter data.
+type ISILTweetDeprecated struct {
 	Cols []string
 }
 
 // Setup initialized and required state prior to ingestion.
-func (d ISILTweet) Setup() error {
+func (d ISILTweetDeprecated) Setup() error {
 	config := conf.GetConf()
 	host := config.HdfsHost
 	port := config.HdfsPort
@@ -43,17 +38,17 @@ func (d ISILTweet) Setup() error {
 }
 
 // Teardown cleans up any state after ingestion.
-func (d ISILTweet) Teardown() error {
+func (d ISILTweetDeprecated) Teardown() error {
 	return nil
 }
 
 // FilterDir returns true if the provided dir string is valid for ingestion.
-func (d ISILTweet) FilterDir(dir string) bool {
+func (d ISILTweetDeprecated) FilterDir(dir string) bool {
 	return dir != "es-mapping-files"
 }
 
 // FilterFile returns true if the provided filename string is valid for ingestion.
-func (d ISILTweet) FilterFile(file string) bool {
+func (d ISILTweetDeprecated) FilterFile(file string) bool {
 	// expected file format: ISIL_KEYWORDS.20150828-000001.txt.gz
 	config := conf.GetConf()
 	if config.StartDate != nil && config.EndDate != nil {
@@ -76,56 +71,85 @@ func (d ISILTweet) FilterFile(file string) bool {
 }
 
 // SetData sets the internal TSV column.
-func (d *ISILTweet) SetData(cols []string) {
+func (d *ISILTweetDeprecated) SetData(cols []string) {
 	d.Cols = cols
 }
 
 // GetID returns the document id.
-func (d ISILTweet) GetID() string {
+func (d ISILTweetDeprecated) GetID() string {
 	return d.Cols[0]
 }
 
 // GetType returns the document type.
-func (d ISILTweet) GetType() string {
+func (d ISILTweetDeprecated) GetType() string {
 	return "datum"
 }
 
 // GetMappings returns the documents mappings.
-func (d ISILTweet) GetMappings() string {
+func (d ISILTweetDeprecated) GetMappings() string {
 	return `{
         "` + d.GetType() + `": {
-			"properties":{
-	            "location": {
-	                "type": "geo_point"
-	            },
-	            "userid" : {
-	              "type" : "string",
-	              "index" : "not_analyzed"
-	            },
-	            "username" : {
-	              "type" : "string",
-	              "index" : "not_analyzed"
-	            }
+            "properties":{
+                "cluster":{
+					"type":"nested",
+                    "properties":{
+                        "id":{
+                            "type":"long"
+                        },
+                        "mode":{
+                            "type":"string"
+                        },
+                        "name":{
+                            "type":"string"
+                        }
+                    }
+                },
+				"locality":{
+                    "properties":{
+                        "location":{
+                            "type":"geo_point"
+                        }
+                    }
+                }
 			}
         }
     }`
 }
 
-// ISILSource is the source structure for this document.
-type ISILSource struct {
-	UserID    *string             `json:"userid"`
-	Username  string              `json:"username"`
-	Hashtags  []string            `json:"hashtags"`
-	URLs      []string            `json:"urls"`
-	Timestamp string              `json:"timestamp"`
-	Text      string              `json:"text"`
-	LonLat    *binning.LonLat     `json:"location"`
-	Pixel     *binning.PixelCoord `json:"pixel"`
-	Rankings  map[string]uint64   `json:"rankings"`
+// ISILClusterDeprecated is a cluster property.
+type ISILClusterDeprecated struct {
+	ID   uint64 `json:"id"`
+	Name string `json:"name"`
+	Mode string `json:"mode"`
+}
+
+// ISILLocalityDeprecated is the locality node.
+type ISILLocalityDeprecated struct {
+	DateBegin string  `json:"dateBegin"`
+	DateEnd   string  `json:"dateEnd"`
+	Location  *string `json:"location"`
+}
+
+// ISILPropertiesDeprecated is the properties node.
+type ISILPropertiesDeprecated struct {
+	UserID   *string  `json:"userid"`
+	Username string   `json:"username"`
+	Hashtags []string `json:"hashtags"`
+	URLs     []string `json:"urls"`
+}
+
+// ISILSourceDeprecated is the source structure for this document.
+type ISILSourceDeprecated struct {
+	ID         string                   `json:"id"`
+	Clusters   []ISILClusterDeprecated  `json:"cluster"`
+	Locality   ISILLocalityDeprecated   `json:"locality"`
+	Properties ISILPropertiesDeprecated `json:"properties"`
+	Label      string                   `json:"label"`
+	Type       string                   `json:"type"`
 }
 
 // GetSource returns the marshalled source portion of the document.
-func (d ISILTweet) GetSource() (interface{}, error) {
+func (d ISILTweetDeprecated) GetSource() (interface{}, error) {
 	// CSV line as array:
 	//	  0: tweet id
 	//	  1: tweet datetime
@@ -164,54 +188,73 @@ func (d ISILTweet) GetSource() (interface{}, error) {
 	//	  34: user-provided personal url
 	//	  35: has account been verified by Twitter
 	//	  36: the 'real' name given by the user
+
+	// NOTE: The isil_keyword tsv is broken, there are empty lines, partial
+	// lines, and invalid dates. Normally I would return an error and kill
+	// the scripts immedaitely, but that isn't viable with this data.
+
 	cols := d.Cols
-	// isil keyword data has broken lines
+	// isil keyword data has empty lines
 	if len(cols) < 37 {
 		return nil, nil
 	}
 	// get timestamp
 	timestamp, err := tweetDateToISO(cols[1])
 	if err != nil {
-		return nil, err
+		log.Warn(err)
+		return nil, nil
 	}
 	// username
 	username := cols[2]
 	// get rankings for username
 	rankings, err := GetUserRankings(username)
-	if err != nil {
-		return nil, err
+	var clusters []ISILClusterDeprecated
+	// only add mappings if they exist for this user
+	if err == nil {
+		for mode, ranking := range rankings {
+			clusters = append(clusters, ISILClusterDeprecated{
+				ID:   ranking,
+				Name: username,
+				Mode: mode,
+			})
+		}
 	}
-	source := &ISILSource{
-		Username:  username,
-		Hashtags:  make([]string, 0),
-		URLs:      make([]string, 0),
-		Timestamp: timestamp,
-		Text:      cols[6],
-		Rankings:  rankings,
+	source := &ISILSourceDeprecated{
+		ID: d.GetID(),
+		Properties: ISILPropertiesDeprecated{
+			Username: username,
+			Hashtags: make([]string, 0),
+			URLs:     make([]string, 0),
+		},
+		Clusters: clusters,
+		Locality: ISILLocalityDeprecated{
+			DateBegin: timestamp,
+			DateEnd:   timestamp,
+		},
+		Label: cols[6],
+		Type:  "Tweet",
 	}
 	// user id may not exist
 	if columnExists(cols[23]) {
-		source.UserID = &cols[23]
+		source.Properties.UserID = &cols[23]
 	}
 	// lon / lat data may not exist
 	if columnExists(cols[4]) && columnExists(cols[5]) {
 		lon, lonErr := strconv.ParseFloat(cols[5], 64)
 		lat, latErr := strconv.ParseFloat(cols[4], 64)
 		if lonErr == nil && latErr == nil {
-			source.LonLat = &binning.LonLat{
-				Lat: lat,
-				Lon: lon,
-			}
-			source.Pixel = binning.LonLatToPixelCoord(source.LonLat)
+			// comma delimited string for lat, lon
+			locStr := fmt.Sprintf("%f,%f", lat, lon)
+			source.Locality.Location = &locStr
 		}
 	}
 	// hashtags may not exist
 	if columnExists(cols[9]) {
-		source.Hashtags = strings.Split(strings.TrimSpace(strings.ToLower(cols[9])), ",")
+		source.Properties.Hashtags = strings.Split(strings.TrimSpace(strings.ToLower(cols[9])), ",")
 	}
 	// URLs may not exist
 	if columnExists(cols[16]) {
-		source.URLs = strings.Split(strings.TrimSpace(cols[16]), ",")
+		source.Properties.URLs = strings.Split(strings.TrimSpace(cols[16]), ",")
 	}
 	return source, nil
 }

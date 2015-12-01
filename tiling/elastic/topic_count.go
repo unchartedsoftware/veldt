@@ -3,9 +3,8 @@ package elastic
 import (
 	"encoding/json"
 	"strconv"
-	"strings"
 
-	"github.com/parnurzeal/gorequest"
+	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/binning"
 )
@@ -23,17 +22,7 @@ import (
 //		...
 // }
 
-// Topic represents the count for a specific topic.
-type Topic struct {
-	Count uint64 `json:"doc_count"`
-}
-
-// TopicPayload represents the aggregations payload of the elasticsearch response.
-type TopicPayload struct {
-	Aggs map[string]Topic `json:"aggregations"`
-}
-
-var targetWords = []string{
+var terms = []string{
 	"cool",
 	"awesome",
 	"amazing",
@@ -59,80 +48,45 @@ var targetWords = []string{
 	"rancid",
 }
 
-func buildTermsFilter(terms []string) string {
-	var filters []string
-	for _, term := range terms {
-		filters = append(filters, `
-			"`+term+`": {
-				"filter": {
-					"term": {
-						"text": "`+term+`"
-					}
-				}
-			}`)
-	}
-	return strings.Join(filters, ",")
-}
-
 // GetTopicCountTile returns a marshalled tile containing topics and their counts.
-func GetTopicCountTile(tile *binning.TileCoord) ([]byte, error) {
+func GetTopicCountTile(endpoint string, index string, tile *binning.TileCoord) ([]byte, error) {
 	pixelBounds := binning.GetTilePixelBounds(tile)
 	xMin := strconv.FormatUint(pixelBounds.TopLeft.X, 10)
 	xMax := strconv.FormatUint(pixelBounds.BottomRight.X-1, 10)
 	yMin := strconv.FormatUint(pixelBounds.TopLeft.Y, 10)
 	yMax := strconv.FormatUint(pixelBounds.BottomRight.Y-1, 10)
-	termsFilters := buildTermsFilter(targetWords[0:])
-	query := `{
-		"query": {
-			"bool" : {
-		        "must" : [
-					{
-			            "range": {
-							"pixel.x": {
-								"gte":` + xMin + `,
-								"lte":` + xMax + `
-							}
-						}
-					},
-					{
-			            "range": {
-							"pixel.y": {
-								"gte":` + yMin + `,
-								"lte":` + yMax + `
-							}
-						}
-					}
-				]
-			}
-		},
-		"aggs": {` + termsFilters + `}
-	}`
-	searchSize := "size=0"
-	filterPath := "filter_path=aggregations"
-	_, body, errs := gorequest.
-		New().
-		Post(esHost + "/" + esIndex + "/_search?" + searchSize + "&" + filterPath).
-		Send(query).
-		End()
-	if errs != nil {
-		return nil, errs[0]
+	// query
+	query := client.
+		Search(index).
+		Size(0).
+		Query(elastic.NewBoolQuery().Must(
+		elastic.NewRangeQuery("pixel.x").
+			Gte(xMin).
+			Lte(xMax),
+		elastic.NewRangeQuery("pixel.y").
+			Gte(yMin).
+			Lte(yMax),
+	))
+	// add all filter aggregations
+	for _, term := range terms {
+		query.Aggregation(term,
+			elastic.NewFilterAggregation().
+				Filter(elastic.NewTermQuery("text", term)))
 	}
-	// unmarshal payload
-	payload := &TopicPayload{}
-	err := json.Unmarshal([]byte(body), &payload)
+
+	result, err := query.Do()
 	if err != nil {
 		return nil, err
 	}
-	// build map of topics and their counts
-	topicCounts := make(map[string]uint64)
-	for topic, value := range payload.Aggs {
-		if value.Count > 0 {
-			topicCounts[topic] = value.Count
+
+	// build map of topics and counts
+	topicCounts := make(map[string]int64)
+	for _, term := range terms {
+		filter, ok := result.Aggregations.Filter(term)
+		if ok && filter.DocCount > 0 {
+			topicCounts[term] = filter.DocCount
 		}
 	}
-	result, err := json.Marshal(topicCounts)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
+	// marshal results map
+	return json.Marshal(topicCounts)
 }
