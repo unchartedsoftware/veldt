@@ -136,7 +136,7 @@ func (d ISILTweet) GetSource() (interface{}, error) {
 	//	  6: text of tweet
 	//	  7: language
 	//	  8: source of tweet
-	//	  9: #-delimited list of hashtags
+	//	  9: comma-delimited list of hashtags
 	//	  10: this tweet has been favorited
 	//	  11: number of times this tweet has been favorited
 	//	  12: has been retweeted
