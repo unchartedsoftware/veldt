@@ -3,7 +3,6 @@ package log
 import (
 	"path"
 	"strings"
-	//"path/filepath"
 	"fmt"
 	"github.com/Sirupsen/logrus"
 	"runtime"

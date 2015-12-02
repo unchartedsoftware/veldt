@@ -33,6 +33,11 @@ build: clean lint
 	@go build -o ./bin/server.bin server/main.go
 	@go build -o ./bin/ingest.bin ingest/main.go
 
+deploy: clean lint
+	@go build -o ./deploy/server/bin/server.bin server/main.go
+	@gulp deploy
+	@cp -r ./build ./deploy/server/public
+
 deps:
 	@npm install
 	@bower install

@@ -1,6 +1,6 @@
 ( function() {
 
-    "use strict";
+    'use strict';
 
     var gulp = require('gulp'),
         concat = require('gulp-concat'),
@@ -39,28 +39,31 @@
         this.emit( 'end' );
     }
 
-    function bundle( bundler ) {
-        var watchify = require('watchify'),
-            watcher = watchify( bundler ),
-            source = require('vinyl-source-stream');
-        return watcher
-            .on( 'update', function( ids ) {
+    function bundle( bundler, watch ) {
+        var source = require('vinyl-source-stream');
+        if ( watch ) {
+            var watchify = require('watchify');
+            var watcher = watchify( bundler );
+            watcher.on( 'update', function( ids ) {
                 // When any files updates
-                console.log("\nWatch detected changes to: ");
+                console.log('\nWatch detected changes to: ');
                 for ( var i=0; i<ids.length; ids++ ) {
                    console.log( '\t'+ids[i] );
                 }
                 var updateStart = Date.now();
                 watcher.bundle()
                     .on( 'error', handleError )
-                    .pipe( source( projectName + ".js" ) )
+                    .pipe( source( projectName + '.js' ) )
                     // This is where you add uglifying etc.
                     .pipe( gulp.dest( output.dir ) );
                 console.log( 'Updated in', ( Date.now() - updateStart ) + 'ms' );
-            })
+            });
+            bundler = watcher;
+        }
+        return bundler
             .bundle() // Create the initial bundle when starting the task
             .on( 'error', handleError )
-            .pipe( source( projectName + ".js" ) )
+            .pipe( source( projectName + '.js' ) )
             .pipe( gulp.dest( output.dir ) );
     }
 
@@ -78,13 +81,22 @@
             .pipe( jshint.reporter('jshint-stylish') );
     });
 
+    gulp.task('build-and-watch-scripts', function() {
+        var browserify = require('browserify'),
+            bundler = browserify( paths.webappRoot, {
+                debug: true,
+                standalone: projectName
+            });
+        return bundle( bundler, true );
+    });
+
     gulp.task('build-scripts', function() {
         var browserify = require('browserify'),
             bundler = browserify( paths.webappRoot, {
                 debug: true,
                 standalone: projectName
             });
-        return bundle( bundler );
+        return bundle( bundler, false );
     });
 
     gulp.task('build-styles', function () {
@@ -94,9 +106,6 @@
             .pipe( csso() )
             .pipe( concat( projectName + '.css') )
             .pipe( gulp.dest( output.dir ) );
-    });
-
-    gulp.task('build-src', [ 'build-scripts', 'build-styles' ], function() {
     });
 
     gulp.task('copy-resources', function() {
@@ -128,24 +137,37 @@
             .pipe( gulp.dest( output.dir ) );
     });
 
-    gulp.task('build-vendor', [ 'build-vendor-js', 'build-vendor-css' ], function() {
+    gulp.task('build-vendor', function( done ) {
+        runSequence = runSequence || require('run-sequence');
+        runSequence([
+            'build-vendor-js',
+            'build-vendor-css' ],
+            done );
     });
 
     gulp.task('build', function( done ) {
         runSequence = runSequence || require('run-sequence');
         runSequence(
             [ 'clean', 'lint' ],
-            [ 'build-src', 'build-vendor', 'copy-resources' ],
+            [ 'build-and-watch-scripts', 'build-styles', 'build-vendor', 'copy-resources' ],
+            done );
+    });
+
+    gulp.task('deploy', function( done ) {
+        runSequence = runSequence || require('run-sequence');
+        runSequence(
+            [ 'clean', 'lint' ],
+            [ 'build-scripts', 'build-styles', 'build-vendor', 'copy-resources' ],
             done );
     });
 
     var go;
-    gulp.task("serve", function() {
-        var gulpgo = require( "gulp-go" );
+    gulp.task('serve', function() {
+        var gulpgo = require( 'gulp-go' );
         go = gulpgo.run( paths.serverRoot, [
-            "-alias", "development=http://192.168.0.41:9300",
-            "-alias", "production=http://10.65.16.13",
-            "-alias", "openstack=http://10.64.16.120",
+            '-alias', 'development=http://192.168.0.41:9200',
+            '-alias', 'production=http://10.65.16.13:9200',
+            '-alias', 'openstack=http://10.64.16.120:9200',
         ], {
             cwd: __dirname,
             stdio: 'inherit'
