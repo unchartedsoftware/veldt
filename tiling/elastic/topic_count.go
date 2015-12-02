@@ -2,7 +2,6 @@ package elastic
 
 import (
 	"encoding/json"
-	"strconv"
 
 	"gopkg.in/olivere/elastic.v3"
 
@@ -51,11 +50,16 @@ var terms = []string{
 // GetTopicCountTile returns a marshalled tile containing topics and their counts.
 func GetTopicCountTile(endpoint string, index string, tile *binning.TileCoord) ([]byte, error) {
 	pixelBounds := binning.GetTilePixelBounds(tile)
-	xMin := strconv.FormatUint(pixelBounds.TopLeft.X, 10)
-	xMax := strconv.FormatUint(pixelBounds.BottomRight.X-1, 10)
-	yMin := strconv.FormatUint(pixelBounds.TopLeft.Y, 10)
-	yMax := strconv.FormatUint(pixelBounds.BottomRight.Y-1, 10)
-	// query
+	xMin := int64(pixelBounds.TopLeft.X)
+	xMax := int64(pixelBounds.BottomRight.X - 1)
+	yMin := int64(pixelBounds.TopLeft.Y)
+	yMax := int64(pixelBounds.BottomRight.Y - 1)
+	// get client
+	client, err := getClient(endpoint)
+	if err != nil {
+		return nil, err
+	}
+	// build query
 	query := client.
 		Search(index).
 		Size(0).
@@ -73,12 +77,11 @@ func GetTopicCountTile(endpoint string, index string, tile *binning.TileCoord) (
 			elastic.NewFilterAggregation().
 				Filter(elastic.NewTermQuery("text", term)))
 	}
-
+	// send query
 	result, err := query.Do()
 	if err != nil {
 		return nil, err
 	}
-
 	// build map of topics and counts
 	topicCounts := make(map[string]int64)
 	for _, term := range terms {

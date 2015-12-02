@@ -142,7 +142,11 @@
     var go;
     gulp.task("serve", function() {
         var gulpgo = require( "gulp-go" );
-        go = gulpgo.run( paths.serverRoot, [], {
+        go = gulpgo.run( paths.serverRoot, [
+            "-alias", "development=http://192.168.0.41:9300",
+            "-alias", "production=http://10.65.16.13",
+            "-alias", "openstack=http://10.64.16.120",
+        ], {
             cwd: __dirname,
             stdio: 'inherit'
         });

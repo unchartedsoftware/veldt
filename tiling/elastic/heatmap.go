@@ -46,13 +46,18 @@ func getByteArray(data []float64) []byte {
 // GetHeatmapTile returns a marshalled tile containing a flat array of bins.
 func GetHeatmapTile(endpoint string, index string, tile *binning.TileCoord) ([]byte, error) {
 	pixelBounds := binning.GetTilePixelBounds(tile)
-	tileResolution := int64(binning.MaxTileResolution) // TEMP
+	tileResolution := int64(binning.MaxTileResolution)
 	xBinSize := int64(pixelBounds.BottomRight.X-pixelBounds.TopLeft.X) / tileResolution
 	yBinSize := int64(pixelBounds.BottomRight.Y-pixelBounds.TopLeft.Y) / tileResolution
 	xMin := int64(pixelBounds.TopLeft.X)
 	xMax := int64(pixelBounds.BottomRight.X - 1)
 	yMin := int64(pixelBounds.TopLeft.Y)
 	yMax := int64(pixelBounds.BottomRight.Y - 1)
+	// get client
+	client, err := getClient(endpoint)
+	if err != nil {
+		return nil, err
+	}
 	// query
 	result, err := client.
 		Search(index).

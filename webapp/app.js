@@ -45,16 +45,16 @@
 
     window.startApp = function() {
 
-        var ES_ENDPOINT = 'production'; //'openstack';
-        var ES_INDEX = 'isil_twitter_weekly'; //'nyc_twitter';
+        var ES_ENDPOINT = 'openstack';
+        var ES_INDEX = 'nyc_twitter';
 
         // Map control
         var map = new L.Map('map', {
             zoomControl: true,
-            zoom: 4,
-            center: [0, 0],
-            //center: [40.7, -73.9],
-            //zoom: 14,
+            //zoom: 4,
+            //center: [0, 0],
+            center: [40.7, -73.9],
+            zoom: 14,
             maxZoom: 18,
             fadeAnimation: true,
             zoomAnimation: true

@@ -26,6 +26,9 @@ func GetTileByType(tileHash string, tileReq *TileRequest) *TileResponse {
 		return getFailureResponse(tileReq, err)
 	}
 	// add tile to store
-	store.Set(tileHash, tileData[0:])
+	err = store.Set(tileHash, tileData[0:])
+	if err != nil {
+		return getFailureResponse(tileReq, err)
+	}
 	return getSuccessResponse(tileReq)
 }
