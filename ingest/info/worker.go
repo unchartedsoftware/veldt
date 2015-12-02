@@ -32,6 +32,7 @@ func IngestWorker(file IngestFile, eq *es.Equalizer) error {
 
 	// get the config struct
 	config := conf.GetConf()
+
 	// get document struct by type string
 	document, err := es.GetDocumentByType(config.EsDocType)
 	if err != nil {

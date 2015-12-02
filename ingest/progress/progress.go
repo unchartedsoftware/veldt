@@ -3,6 +3,7 @@ package progress
 import (
 	"fmt"
 	"math"
+	"runtime"
 	"sync"
 	"time"
 
@@ -79,6 +80,7 @@ func UpdateProgress(bytes uint64) {
 		formatTime(remaining),
 		lineEnding)
 	mutex.Unlock()
+	runtime.Gosched()
 }
 
 // PrintTotalDuration prints the total duration of the processed task.
