@@ -2,8 +2,6 @@ package binning
 
 import (
 	"math"
-
-	"github.com/unchartedsoftware/prism/util"
 )
 
 const (
@@ -54,25 +52,6 @@ func LonLatToTile(lonlat *LonLat, level uint32) *TileCoord {
 		X: uint32(math.Floor(tile.X)),
 		Y: uint32(math.Floor(tile.Y)),
 		Z: uint32(tile.Z),
-	}
-}
-
-// LonLatToFractionalBin converts a geographic coordinate into a floating point bin coordinate.
-func LonLatToFractionalBin(lonlat *LonLat, level uint32, numBins uint32) *FractionalBinCoord {
-	tile := LonLatToFractionalTile(lonlat, level)
-	fbins := float64(numBins)
-	return &FractionalBinCoord{
-		X: util.Fract(tile.X) * fbins,
-		Y: util.Fract(tile.Y) * fbins,
-	}
-}
-
-// LonLatToBin converts a geographic coordinate into a bin coordinate.
-func LonLatToBin(lonlat *LonLat, level uint32, numBins uint32) *BinCoord {
-	bin := LonLatToFractionalBin(lonlat, level, numBins)
-	return &BinCoord{
-		X: uint32(math.Floor(bin.X)),
-		Y: uint32(math.Floor(bin.Y)),
 	}
 }
 

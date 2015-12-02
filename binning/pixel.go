@@ -37,8 +37,8 @@ func LonLatToPixelCoord(lonLat *LonLat) *PixelCoord {
 		Y: normalizedTile.Y,
 	}
 	return &PixelCoord{
-		X: uint64(math.Floor(normalizedCoord.X * maxPixels)),
-		Y: uint64(math.Floor(normalizedCoord.Y * maxPixels)),
+		X: uint64(math.Min(maxPixels-1, math.Floor(normalizedCoord.X*maxPixels))),
+		Y: uint64(math.Min(maxPixels-1, math.Floor(normalizedCoord.Y*maxPixels))),
 	}
 }
 
@@ -51,8 +51,8 @@ func CoordToPixelCoord(coord *Coord, bounds *Bounds) *PixelCoord {
 		Y: normalizedTile.Y,
 	}
 	return &PixelCoord{
-		X: uint64(math.Floor(normalizedCoord.X * maxPixels)),
-		Y: uint64(math.Floor(normalizedCoord.Y * maxPixels)),
+		X: uint64(math.Min(maxPixels-1, math.Floor(normalizedCoord.X*maxPixels))),
+		Y: uint64(math.Min(maxPixels-1, math.Floor(normalizedCoord.Y*maxPixels))),
 	}
 }
 
@@ -66,12 +66,12 @@ func GetTilePixelBounds(tile *TileCoord) *PixelBounds {
 	yMax := float64(tile.Y+1) / pow2
 	return &PixelBounds{
 		TopLeft: &PixelCoord{
-			X: uint64(util.Round(xMin * maxPixels)),
-			Y: uint64(util.Round(yMin * maxPixels)),
+			X: uint64(math.Min(maxPixels-1, util.Round(xMin*maxPixels))),
+			Y: uint64(math.Min(maxPixels-1, util.Round(yMin*maxPixels))),
 		},
 		BottomRight: &PixelCoord{
-			X: uint64(util.Round(xMax * maxPixels)),
-			Y: uint64(util.Round(yMax * maxPixels)),
+			X: uint64(math.Min(maxPixels-1, util.Round(xMax*maxPixels))),
+			Y: uint64(math.Min(maxPixels-1, util.Round(yMax*maxPixels))),
 		},
 	}
 }
