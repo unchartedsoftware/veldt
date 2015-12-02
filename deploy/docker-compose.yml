@@ -1,0 +1,37 @@
+# nginx:
+#     build: ./nginx
+#     links:
+#         - server
+#     ports:
+#         - "80:80"
+
+server:
+    build: ./server
+    links:
+        - redis
+        #- rabbitmq
+    ports:
+        - "8080"
+
+# batcher:
+#     build: ./batcher
+#     links:
+#         - redis
+#         - rabbitmq
+#     ports:
+#         - "8080"
+
+# rabbitmq:
+#     image: rabbitmq
+#     ports:
+#         - "4369"
+#         - "5671"
+#         - "5672"
+#         - "25672"
+
+redis:
+    image: redis
+    volumes:
+        - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+        - "6379"
