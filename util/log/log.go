@@ -1,11 +1,11 @@
 package log
 
 import (
-	"path"
-	"strings"
 	"fmt"
 	"github.com/Sirupsen/logrus"
+	"path"
 	"runtime"
+	"strings"
 )
 
 const (

@@ -30,7 +30,7 @@ func getPool() *redis.Pool {
 			MaxIdle:     maxIdle,
 			IdleTimeout: idleTimeout,
 			Dial: func() (redis.Conn, error) {
-				conn, err := redis.Dial("tcp", config.RedisHost + ":" + config.RedisPort)
+				conn, err := redis.Dial("tcp", config.RedisHost+":"+config.RedisPort)
 				if err != nil {
 					return nil, err
 				}
