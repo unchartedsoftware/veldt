@@ -77,7 +77,7 @@ func (d *ISILTweetDeprecated) SetData(cols []string) {
 
 // GetID returns the document id.
 func (d ISILTweetDeprecated) GetID() string {
-	return d.Cols[0]
+	return "tweet" + d.Cols[0]
 }
 
 // GetType returns the document type.
@@ -90,6 +90,22 @@ func (d ISILTweetDeprecated) GetMappings() string {
 	return `{
         "` + d.GetType() + `": {
             "properties":{
+				"userid": {
+					"type": "string",
+					"index": "not_analyzed"
+				},
+				"username": {
+					"type": "string",
+					"index": "not_analyzed"
+				},
+				"urls": {
+					"type": "string",
+					"index": "not_analyzed"
+				},
+				"hashtags": {
+					"type": "string",
+					"index": "not_analyzed"
+				},
                 "cluster":{
 					"type":"nested",
                     "properties":{
@@ -97,10 +113,12 @@ func (d ISILTweetDeprecated) GetMappings() string {
                             "type":"long"
                         },
                         "mode":{
-                            "type":"string"
+                            "type":"string",
+							"index": "not_analyzed"
                         },
                         "name":{
-                            "type":"string"
+                            "type":"string",
+							"index": "not_analyzed"
                         }
                     }
                 },
@@ -208,9 +226,11 @@ func (d ISILTweetDeprecated) GetSource() (interface{}, error) {
 	username := cols[2]
 	// get rankings for username
 	rankings, err := GetUserRankings(username)
+	// only add mappings if they exist for this user, if not, add empty array
 	var clusters []ISILClusterDeprecated
-	// only add mappings if they exist for this user
-	if err == nil {
+	if err != nil || len(rankings) == 0 {
+		clusters = make([]ISILClusterDeprecated, 0)
+	} else {
 		for mode, ranking := range rankings {
 			clusters = append(clusters, ISILClusterDeprecated{
 				ID:   ranking,

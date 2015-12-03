@@ -95,16 +95,24 @@ func (d ISILTweet) GetMappings() string {
 	return `{
         "` + d.GetType() + `": {
 			"properties":{
+				"userid": {
+					"type": "string",
+					"index": "not_analyzed"
+				},
+				"username": {
+					"type": "string",
+					"index": "not_analyzed"
+				},
+				"urls": {
+					"type": "string",
+					"index": "not_analyzed"
+				},
+				"hashtags": {
+					"type": "string",
+					"index": "not_analyzed"
+				},
 	            "location": {
 	                "type": "geo_point"
-	            },
-	            "userid" : {
-	              "type" : "string",
-	              "index" : "not_analyzed"
-	            },
-	            "username" : {
-	              "type" : "string",
-	              "index" : "not_analyzed"
 	            }
 			}
         }

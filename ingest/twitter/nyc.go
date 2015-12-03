@@ -56,13 +56,17 @@ func (d NYCTweet) GetMappings() string {
 	                "type": "geo_point"
 	            },
 	            "userid" : {
-	              "type" : "string",
-	              "index" : "not_analyzed"
+	            	"type" : "string",
+	                "index" : "not_analyzed"
 	            },
 	            "username" : {
-	              "type" : "string",
-	              "index" : "not_analyzed"
-	            }
+	            	"type" : "string",
+	            	"index" : "not_analyzed"
+			    },
+			    "urls": {
+			    	"type": "string",
+				    "index": "not_analyzed"
+			    }
 			}
         }
     }`
