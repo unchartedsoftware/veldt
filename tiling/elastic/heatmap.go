@@ -35,14 +35,6 @@ func float64ToBytes(bytes []byte, float float64) {
 	binary.LittleEndian.PutUint64(bytes, bits)
 }
 
-func getByteArray(data []float64) []byte {
-	buf := make([]byte, len(data)*8)
-	for i := 0; i < len(data); i++ {
-		float64ToBytes(buf[i*8:i*8+8], data[i])
-	}
-	return buf[0:]
-}
-
 // GetHeatmapTile returns a marshalled tile containing a flat array of bins.
 func GetHeatmapTile(endpoint string, index string, tile *binning.TileCoord) ([]byte, error) {
 	pixelBounds := binning.GetTilePixelBounds(tile)
@@ -68,8 +60,7 @@ func GetHeatmapTile(endpoint string, index string, tile *binning.TileCoord) ([]b
 			Lte(xMax),
 		elastic.NewRangeQuery("pixel.y").
 			Gte(yMin).
-			Lte(yMax),
-	)).
+			Lte(yMax))).
 		Aggregation("x",
 		elastic.NewHistogramAggregation().
 			Field("pixel.x").

@@ -69,8 +69,7 @@ func GetTopicCountTile(endpoint string, index string, tile *binning.TileCoord) (
 			Lte(xMax),
 		elastic.NewRangeQuery("pixel.y").
 			Gte(yMin).
-			Lte(yMax),
-	))
+			Lte(yMax)))
 	// add all filter aggregations
 	for _, term := range terms {
 		query.Aggregation(term,
