@@ -6,6 +6,8 @@ type Conf struct {
 	Public     string
 	Aliases    AliasMap
 	InvAliases AliasMap
+	RedisHost  string
+	RedisPort  string
 }
 
 var conf *Conf

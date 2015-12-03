@@ -5,13 +5,13 @@
 #     ports:
 #         - "80:80"
 
-server:
+prism_server:
     build: ./server
     links:
-        - redis
+        - prism_redis
         #- rabbitmq
     ports:
-        - "8080"
+        - "8080:8080"
 
 # batcher:
 #     build: ./batcher
@@ -29,9 +29,7 @@ server:
 #         - "5672"
 #         - "25672"
 
-redis:
-    image: redis
-    volumes:
-        - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+prism_redis:
+    build: ./redis
     ports:
         - "6379"

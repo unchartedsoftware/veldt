@@ -11,7 +11,10 @@ func ParseCommandLine() *Conf {
 	flag.Var(&aliases, "alias", "Alias a string value by another string.")
 
 	port := flag.String("port", "8080", "Port to bind HTTP server")
-	public := flag.String("publicDir", "./build", "The public directory to static serve from")
+	public := flag.String("public", "./build/public", "The public directory to static serve from")
+
+	redisHost := flag.String("redisHost", "localhost", "Host to connect to redis server")
+	redisPort := flag.String("redisPort", "6379", "Port to connect to Redis server")
 
 	// Parse the flags
 	flag.Parse()
@@ -22,6 +25,8 @@ func ParseCommandLine() *Conf {
 		Public:     *public,
 		Aliases:    aliases,
 		InvAliases: invertAliases(aliases),
+		RedisHost:  *redisHost,
+		RedisPort:  *redisPort,
 	}
 	SaveConf(config)
 	return config

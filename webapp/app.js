@@ -272,7 +272,7 @@
         //         });
         // };
 
-        var requester = new TileRequester('ws://localhost:8080/batch', function() {
+        var requester = new TileRequester('batch', function() {
             // Add layer to the map
             heatmapLayer.addTo(map);
             // Add layer to the map

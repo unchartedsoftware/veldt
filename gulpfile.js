@@ -13,7 +13,7 @@
     var projectName = 'prism';
 
     var output = {
-        dir: 'build/',
+        dir: 'build/public/',
         app: 'app',
         vendor: 'vendor'
     };
@@ -69,7 +69,7 @@
 
     gulp.task('clean', function () {
         var del = require('del');
-        del.sync([ 'build/*']);
+        del.sync([ output.dir + '/*']);
     });
 
     gulp.task('lint', function() {

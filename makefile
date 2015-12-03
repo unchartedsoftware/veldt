@@ -16,7 +16,7 @@ all:
 	@echo "  update_deps   - update deps lock file"
 
 clean:
-	@rm -rf ./bin
+	@rm -rf ./build
 
 lint:
 	@go vet ./...
@@ -30,13 +30,14 @@ fmt:
 	@./node_modules/.bin/jsfmt -w ./webapp/scripts ./webapp/*.js
 
 build: clean lint
-	@go build -o ./bin/server.bin server/main.go
-	@go build -o ./bin/ingest.bin ingest/main.go
+	@go build -o ./build/server.bin server/main.go
+	@go build -o ./build/ingest.bin ingest/main.go
 
 deploy: clean lint
-	@go build -o ./deploy/server/bin/server.bin server/main.go
+	@GOARCH=amd64 GOOS=linux go build -o ./build/server.bin server/main.go
+	@cp -r ./build/server.bin ./deploy/server
 	@gulp deploy
-	@cp -r ./build ./deploy/server/public
+	@cp -r ./build/public ./deploy/server
 
 deps:
 	@npm install

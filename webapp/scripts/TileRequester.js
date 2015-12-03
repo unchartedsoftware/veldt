@@ -8,9 +8,20 @@
         return endpoint + ':' + index + ':' + type + ':' + x + '-' + y + '-' + z;
     }
 
+    function getHost() {
+        var loc = window.location;
+        var new_uri;
+        if (loc.protocol === 'https:') {
+            new_uri = 'wss:';
+        } else {
+            new_uri = 'ws:';
+        }
+        return new_uri + '//' + loc.host + loc.pathname;
+    }
+
     function TileRequester(url, callback) {
         var requests = this.requests = {};
-        this.socket = new WebSocket(url);
+        this.socket = new WebSocket(getHost() + url);
         this.socket.onopen = callback;
         this.socket.onmessage = function(event) {
             var tileRes = JSON.parse(event.data);

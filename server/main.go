@@ -18,10 +18,14 @@ func main() {
 	// parse flags into config struct
 	config := conf.ParseCommandLine()
 
+	log.Debugf("Prism serving from directory '%s'", config.Public)
+	log.Debugf("Prism server listening on port %s", config.Port)
+
 	// start the web server
 	graceful.AddSignal(syscall.SIGINT, syscall.SIGTERM)
+
+	// create server
 	app := api.New()
-	log.Debug("Prism server listening on port " + config.Port)
 	err := graceful.ListenAndServe(":"+config.Port, app)
 	if err != nil {
 		log.Error(err)

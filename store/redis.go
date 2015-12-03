@@ -1,45 +1,54 @@
 package store
 
 import (
+	"runtime"
+	"sync"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
 
+	"github.com/unchartedsoftware/prism/server/conf"
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
 const (
-	redisHost   = "localhost"
-	redisPort   = "6379"
 	maxIdle     = 8
 	idleTimeout = 10 * time.Second
 )
 
 var (
-	redisPool = getPool(redisHost + ":" + redisPort)
+	mutex     = sync.Mutex{}
+	redisPool *redis.Pool
 )
 
-func getPool(server string) *redis.Pool {
-	log.Debugf("Connecting to redis '%s:%s'", redisHost, redisPort)
-	return &redis.Pool{
-		MaxIdle:     maxIdle,
-		IdleTimeout: idleTimeout,
-		Dial: func() (redis.Conn, error) {
-			conn, err := redis.Dial("tcp", server)
-			if err != nil {
-				return nil, err
-			}
-			return conn, err
-		},
-		TestOnBorrow: func(conn redis.Conn, t time.Time) error {
-			_, err := conn.Do("PING")
-			return err
-		},
+func getPool() *redis.Pool {
+	mutex.Lock()
+	if redisPool == nil {
+		config := conf.GetConf()
+		log.Debugf("Connecting to redis 'tcp://%s:%s'", config.RedisHost, config.RedisPort)
+		redisPool = &redis.Pool{
+			MaxIdle:     maxIdle,
+			IdleTimeout: idleTimeout,
+			Dial: func() (redis.Conn, error) {
+				conn, err := redis.Dial("tcp", config.RedisHost + ":" + config.RedisPort)
+				if err != nil {
+					return nil, err
+				}
+				return conn, err
+			},
+			TestOnBorrow: func(conn redis.Conn, t time.Time) error {
+				_, err := conn.Do("PING")
+				return err
+			},
+		}
 	}
+	mutex.Unlock()
+	runtime.Gosched()
+	return redisPool
 }
 
 func getConnection() redis.Conn {
-	return redisPool.Get()
+	return getPool().Get()
 }
 
 // RedisGet when given a string key will return a byte slice of data from redis.
