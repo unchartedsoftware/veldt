@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	// number of ingestion durations to use when calculating the avg
 	maxNumRates = 64
 )
 
