@@ -10,19 +10,19 @@ type Worker func(IngestFile, *es.Equalizer) error
 
 // Pool represents a single goroutine pool for batching workers.
 type Pool struct {
-	FileChan  chan IngestFile
-	ErrChan   chan error
-	KillChan  chan bool
-	Size      int
+	FileChan chan IngestFile
+	ErrChan  chan error
+	KillChan chan bool
+	Size     int
 }
 
 // NewPool returns a new pool object with the given worker size
 func NewPool(size int) *Pool {
 	return &Pool{
-		FileChan:  make(chan IngestFile),
-		ErrChan:   make(chan error),
-		KillChan:  make(chan bool),
-		Size:      size,
+		FileChan: make(chan IngestFile),
+		ErrChan:  make(chan error),
+		KillChan: make(chan bool),
+		Size:     size,
 	}
 }
 
@@ -32,7 +32,7 @@ func workerWrapper(p *Pool, eq *es.Equalizer, worker Worker, ingestInfo *IngestI
 	// begin worker loop
 	for {
 		select {
-		case file := <- p.FileChan:
+		case file := <-p.FileChan:
 			// do work
 			err := worker(file, eq)
 			// broadcast work response to pool, if nil worker is ready for more
@@ -43,20 +43,21 @@ func workerWrapper(p *Pool, eq *es.Equalizer, worker Worker, ingestInfo *IngestI
 				// Update and print current progress
 				progress.UpdateProgress(file.Size)
 			}
-		case <- p.KillChan:
+		case <-p.KillChan:
 			// kill worker
 			return
 		}
 	}
 }
 
+// Close safely closes the pool
 func (p *Pool) Close() {
 	// workers will currently be blocked trying to send a ready/error message
 	// to the pool. We need to absorb those messages now so that they will be
 	// able to process the kill signals.
 	for i := 0; i < p.Size; i++ {
 		go func() {
-			<- p.ErrChan
+			<-p.ErrChan
 		}()
 	}
 	// send a kill message to all workers
@@ -91,7 +92,7 @@ func (p *Pool) Execute(worker Worker, ingestInfo *IngestInfo) error {
 	// process all files by spreading them to free workers, this blocks until
 	// a worker is available, or exits if there is an error
 	for _, file := range ingestInfo.Files {
-		err := <- p.ErrChan
+		err := <-p.ErrChan
 		if err != nil {
 			// error has occured, close the pool and return error
 			p.Close()

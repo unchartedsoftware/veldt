@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -23,9 +24,10 @@ var upgrader = websocket.Upgrader{
 
 // TileDispatcher represents a single clients tile dispatcher.
 type TileDispatcher struct {
-	RespChan chan *tiling.TileResponse
-	ErrChan  chan error
-	Conn     *websocket.Conn
+	RespChan  chan *tiling.TileResponse
+	ErrChan   chan error
+	WaitGroup *sync.WaitGroup
+	Conn      *websocket.Conn
 }
 
 // NewTileDispatcher returns a pointer to a new tile dispatcher object.
@@ -38,14 +40,15 @@ func NewTileDispatcher(w http.ResponseWriter, r *http.Request) (*TileDispatcher,
 	// set the message read limit
 	conn.SetReadLimit(maxMessageSize)
 	return &TileDispatcher{
-		RespChan: make(chan *tiling.TileResponse),
-		ErrChan:  make(chan error),
-		Conn:     conn,
+		RespChan:  make(chan *tiling.TileResponse),
+		ErrChan:   make(chan error),
+		WaitGroup: new(sync.WaitGroup),
+		Conn:      conn,
 	}, nil
 }
 
 // Listen waits on both tile request and responses and handles each until the websocket connection dies.
-func (t *TileDispatcher) Listen() error {
+func (t *TileDispatcher) ListenAndRespond() error {
 	go t.listenForRequests()
 	go t.listenForResponses()
 	return <-t.ErrChan
@@ -53,9 +56,10 @@ func (t *TileDispatcher) Listen() error {
 
 // Close closes the dispatchers internal channels and websocket connection.
 func (t *TileDispatcher) Close() {
-	// close response channel
+	// wait to ensure that no more responses are pending
+	t.WaitGroup.Wait()
+	// close dispatcher channels
 	close(t.RespChan)
-	// close error channel
 	close(t.ErrChan)
 	// close websocket connection
 	t.Conn.Close()
@@ -82,10 +86,17 @@ func (t *TileDispatcher) listenForResponses() {
 }
 
 func (t *TileDispatcher) dispatchRequest(tileReq *tiling.TileRequest) {
+	// increment pending response wait group to ensure we don't send on
+	// a closed channel
+	t.WaitGroup.Add(1)
+	// get the tile promise
 	promise := tiling.GetTile(tileReq)
+	// when the tile is ready
 	promise.OnComplete(func(res interface{}) {
 		// cast to tile response and pass to response channel
 		t.RespChan <- res.(*tiling.TileResponse)
+		// decrement the pending response wait group
+		t.WaitGroup.Done()
 	})
 }
 
@@ -124,7 +135,7 @@ func batchHandler(w http.ResponseWriter, r *http.Request) {
 		log.Warn(err)
 		return
 	}
-	err = dispatcher.Listen()
+	err = dispatcher.ListenAndRespond()
 	if err != nil {
 		log.Debug(err)
 	}
