@@ -6,6 +6,7 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/tiling"
 )
 
 // "aggregations": {
@@ -48,20 +49,20 @@ var terms = []string{
 }
 
 // GetTopicCountTile returns a marshalled tile containing topics and their counts.
-func GetTopicCountTile(endpoint string, index string, tile *binning.TileCoord) ([]byte, error) {
-	pixelBounds := binning.GetTilePixelBounds(tile)
+func GetTopicCountTile(tileReq *tiling.TileRequest) ([]byte, error) {
+	pixelBounds := binning.GetTilePixelBounds(&tileReq.TileCoord)
 	xMin := int64(pixelBounds.TopLeft.X)
 	xMax := int64(pixelBounds.BottomRight.X - 1)
 	yMin := int64(pixelBounds.TopLeft.Y)
 	yMax := int64(pixelBounds.BottomRight.Y - 1)
 	// get client
-	client, err := getClient(endpoint)
+	client, err := getClient(tileReq.Endpoint)
 	if err != nil {
 		return nil, err
 	}
 	// build query
 	query := client.
-		Search(index).
+		Search(tileReq.Index).
 		Size(0).
 		Query(elastic.NewBoolQuery().Must(
 		elastic.NewRangeQuery("pixel.x").

@@ -8,6 +8,8 @@ import (
 
 	"github.com/unchartedsoftware/prism/server/api"
 	"github.com/unchartedsoftware/prism/server/conf"
+	"github.com/unchartedsoftware/prism/tiling"
+	"github.com/unchartedsoftware/prism/tiling/elastic"
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
@@ -17,9 +19,12 @@ func main() {
 
 	// parse flags into config struct
 	config := conf.ParseCommandLine()
-
 	log.Debugf("Prism serving from directory '%s'", config.Public)
 	log.Debugf("Prism server listening on port %s", config.Port)
+
+	// register available tiling types
+	tiling.Register("heatmap", elastic.GetHeatmapTile)
+	tiling.Register("topiccount", elastic.GetTopicCountTile)
 
 	// start the web server
 	graceful.AddSignal(syscall.SIGINT, syscall.SIGTERM)

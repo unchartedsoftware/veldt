@@ -47,7 +47,7 @@ func NewTileDispatcher(w http.ResponseWriter, r *http.Request) (*TileDispatcher,
 	}, nil
 }
 
-// Listen waits on both tile request and responses and handles each until the websocket connection dies.
+// ListenAndRespond waits on both tile request and responses and handles each until the websocket connection dies.
 func (t *TileDispatcher) ListenAndRespond() error {
 	go t.listenForRequests()
 	go t.listenForResponses()

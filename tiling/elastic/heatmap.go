@@ -8,6 +8,7 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/tiling"
 )
 
 // "aggregations": {
@@ -36,8 +37,8 @@ func float64ToBytes(bytes []byte, float float64) {
 }
 
 // GetHeatmapTile returns a marshalled tile containing a flat array of bins.
-func GetHeatmapTile(endpoint string, index string, tile *binning.TileCoord) ([]byte, error) {
-	pixelBounds := binning.GetTilePixelBounds(tile)
+func GetHeatmapTile(tileReq *tiling.TileRequest) ([]byte, error) {
+	pixelBounds := binning.GetTilePixelBounds(&tileReq.TileCoord)
 	tileResolution := int64(binning.MaxTileResolution)
 	xBinSize := int64(pixelBounds.BottomRight.X-pixelBounds.TopLeft.X) / tileResolution
 	yBinSize := int64(pixelBounds.BottomRight.Y-pixelBounds.TopLeft.Y) / tileResolution
@@ -46,13 +47,13 @@ func GetHeatmapTile(endpoint string, index string, tile *binning.TileCoord) ([]b
 	yMin := int64(pixelBounds.TopLeft.Y)
 	yMax := int64(pixelBounds.BottomRight.Y - 1)
 	// get client
-	client, err := getClient(endpoint)
+	client, err := getClient(tileReq.Endpoint)
 	if err != nil {
 		return nil, err
 	}
 	// query
 	result, err := client.
-		Search(index).
+		Search(tileReq.Index).
 		Size(0).
 		Query(elastic.NewBoolQuery().Must(
 		elastic.NewRangeQuery("pixel.x").
