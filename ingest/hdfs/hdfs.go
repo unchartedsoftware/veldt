@@ -8,13 +8,19 @@ import (
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
-var hdfsClient *hdfs.Client
+const (
+	hdfsUser = "etl"
+)
+
+var (
+	hdfsClient *hdfs.Client
+)
 
 func getHdfsClient(host string, port string) (*hdfs.Client, error) {
 	endpoint := host + ":" + port
 	if hdfsClient == nil {
 		log.Debug("Connecting to HDFS: " + endpoint)
-		client, err := hdfs.New(endpoint)
+		client, err := hdfs.NewForUser(endpoint, hdfsUser)
 		if err != nil {
 			return nil, err
 		}

@@ -30,6 +30,7 @@ func loadRankingFile(host string, port string, filepath string, rankingsID strin
 	}
 	// defer close reader
 	defer reader.Close()
+	// for each line
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		// split line
@@ -65,7 +66,6 @@ func LoadRanking(host string, port string, path string, rankingsDir string) erro
 				return err
 			}
 		}
-
 	}
 	return nil
 }

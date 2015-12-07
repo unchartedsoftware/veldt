@@ -11,13 +11,16 @@ import (
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
+const (
+	maxTimeDisplayed = (100 * 60 * 60) - 1 // 99h:59m:59s
+)
+
 var (
 	startTime    time.Time
 	endTime      time.Time
 	currentBytes uint64
 	totalBytes   uint64
 	mutex        = sync.Mutex{}
-	layout       = "15:04:05" // format for 3:04:05PM
 )
 
 // Time represents the hour, minutes, and seconds of a given time.
@@ -28,13 +31,13 @@ type Time struct {
 }
 
 func formatTime(duration time.Duration) string {
-	totalSeconds := uint64(duration.Seconds())
+	totalSeconds := uint64(math.Min(maxTimeDisplayed, float64(duration.Seconds())))
 	totalMinutes := totalSeconds / 60
 	seconds := totalSeconds % 60
 	hours := totalMinutes / 60
 	minutes := totalMinutes % 60
 	return fmt.Sprintf("%2dh:%02dm:%02ds",
-		int(math.Min(99, float64(hours))),
+		hours,
 		minutes,
 		seconds)
 }
