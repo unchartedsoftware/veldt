@@ -13,9 +13,8 @@ ES_PROD_CLUSTER="http://10.65.16.13"
 ES_PORT="9200"
 
 # time duration
-#START_DATE="1433116800"
-#END_DATE="1448928000"
-DURATION="14515200" # 6 months in seconds
+END_DATE="1449273600"
+DURATION="20995200" # 8 months in seconds
 
 # isil
 HDFS_ISIL_PATH="/xdata/data/twitter/isil-keywords"
@@ -33,7 +32,8 @@ ES_ISIL_DOC_TYPE="isil_twitter_deprecated"
     -hdfs-port=$HDFS_PORT \
     -hdfs-path=$HDFS_ISIL_PATH \
     -hdfs-compression=$HDFS_ISIL_COMPRESSION \
-    -duration=$DURATION
+    -duration=$DURATION \
+    -end-date=$END_DATE
 
 # ingest into prod
 ./$INGEST_EXE \
@@ -45,4 +45,5 @@ ES_ISIL_DOC_TYPE="isil_twitter_deprecated"
     -hdfs-port=$HDFS_PORT \
     -hdfs-path=$HDFS_ISIL_PATH \
     -hdfs-compression=$HDFS_ISIL_COMPRESSION \
-    -duration=$DURATION
+    -duration=$DURATION \
+    -end-date=$END_DATE
