@@ -18,6 +18,7 @@ func GetTilePromise(tileHash string, tileReq *TileRequest) *promise.Promise {
 	p, ok := tilePromises[tileHash]
 	if ok {
 		mutex.Unlock()
+		runtime.Gosched()
 		return p
 	}
 	p = promise.NewPromise()

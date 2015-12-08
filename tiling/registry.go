@@ -11,17 +11,17 @@ type Generator func(tileReq *TileRequest) ([]byte, error)
 // registry contains all tiling function implementations.
 var registry = make(map[string]Generator)
 
-// Register registers a tiling function under the provided type id string.
-func Register(typeID string, tileFunc Generator) {
-	registry[typeID] = tileFunc
+// Register registers a tile generator under the provided type id string.
+func Register(typeID string, gen Generator) {
+	registry[typeID] = gen
 }
 
-// GetTilingFuncByType when given a tiling type id will return the registered
-// tiling function.
-func GetTilingFuncByType(typeID string) (Generator, error) {
-	tileFunc, ok := registry[typeID]
+// GetGeneratorByType when given a string id will return the registered
+// tile generator.
+func GetGeneratorByType(typeID string) (Generator, error) {
+	gen, ok := registry[typeID]
 	if !ok {
 		return nil, fmt.Errorf("Tiling type '%s' is not recognized", typeID)
 	}
-	return tileFunc, nil
+	return gen, nil
 }
