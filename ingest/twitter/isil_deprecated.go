@@ -2,6 +2,7 @@ package twitter
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -9,6 +10,9 @@ import (
 	"github.com/unchartedsoftware/prism/ingest/conf"
 	"github.com/unchartedsoftware/prism/util/log"
 )
+
+// regex used to determine if the file is ingestible
+var dirRegex = regexp.MustCompile(`(\d{4})-(\d{2})`)
 
 // ISILTweetDeprecated represents a single TSV row of isil keyword twitter data.
 type ISILTweetDeprecated struct {
@@ -44,30 +48,31 @@ func (d ISILTweetDeprecated) Teardown() error {
 
 // FilterDir returns true if the provided dir string is valid for ingestion.
 func (d ISILTweetDeprecated) FilterDir(dir string) bool {
-	return dir != "es-mapping-files"
+	if dir == "es-mapping-files" {
+		return false
+	}
+	config := conf.GetConf()
+	if config.StartDate != nil && config.EndDate != nil {
+		matches := dirRegex.FindStringSubmatch(dir)
+		if len(matches) > 0 {
+			year := matches[1]
+			month := matches[2]
+			layout := "2006-01" // Jan, 2006
+			dirDate, err := time.Parse(layout, fmt.Sprintf("%s-%s", year, month))
+			if err != nil {
+				log.Debugf("Error parsing date from dir '%s'", dir)
+				return false
+			}
+			return dirDate.Unix() >= config.StartDate.Unix() &&
+				dirDate.Unix() <= config.EndDate.Unix()
+		}
+	}
+	return false
 }
 
 // FilterFile returns true if the provided filename string is valid for ingestion.
 func (d ISILTweetDeprecated) FilterFile(file string) bool {
-	// expected file format: ISIL_KEYWORDS.20150828-000001.txt.gz
-	config := conf.GetConf()
-	if config.StartDate != nil && config.EndDate != nil {
-		matches := fileRegex.FindStringSubmatch(file)
-		if len(matches) > 0 {
-			year := matches[1]
-			month := matches[2]
-			day := matches[3]
-			layout := "2006-01-02" // Jan 2, 2006
-			fileDate, err := time.Parse(layout, fmt.Sprintf("%s-%s-%s", year, month, day))
-			if err != nil {
-				log.Debugf("Error parsing date from file '%s'", file)
-				return false
-			}
-			return fileDate.Unix() >= config.StartDate.Unix() &&
-				fileDate.Unix() <= config.EndDate.Unix()
-		}
-	}
-	return false
+	return true
 }
 
 // SetData sets the internal TSV column.
