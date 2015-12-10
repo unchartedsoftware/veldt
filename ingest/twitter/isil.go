@@ -185,10 +185,10 @@ func (d ISILTweet) GetSource() (interface{}, error) {
 	// username
 	username := cols[2]
 	// get rankings for username
-	rankings, err := GetUserRankings(username)
-	if err != nil {
-		return nil, err
-	}
+	rankings, _ := GetUserRankings(username)
+	// if err != nil {
+	// 	return nil, err
+	// }
 	source := &ISILSource{
 		Username:  username,
 		Hashtags:  make([]string, 0),

@@ -23,7 +23,6 @@ type Conf struct {
 	EndDate   *time.Time
 	// other
 	PoolSize    int
-	NumTopTerms int
 }
 
 var config *Conf

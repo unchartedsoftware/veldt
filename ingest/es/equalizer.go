@@ -1,6 +1,7 @@
 package es
 
 import (
+	"sync"
 	"time"
 
 	"gopkg.in/olivere/elastic.v3"
@@ -21,6 +22,7 @@ type Request struct {
 type Equalizer struct {
 	Send  chan Request
 	Ready chan error
+	waitGroup *sync.WaitGroup
 	size  int
 	rates []uint64
 }
@@ -30,6 +32,7 @@ func NewEqualizer(size int) *Equalizer {
 	return &Equalizer{
 		Send:  make(chan Request),
 		Ready: make(chan error),
+		waitGroup: new(sync.WaitGroup),
 		size:  size,
 	}
 }
@@ -65,10 +68,12 @@ func (e *Equalizer) forwardRequest(req Request) {
 	took, err := SendBulkRequest(req.Bulk)
 	e.measure(took)
 	e.Ready <- err
+	e.waitGroup.Done()
 }
 
 func (e *Equalizer) listenToReqs() {
 	for req := range e.Send {
+		e.waitGroup.Add(1)
 		go e.forwardRequest(req)
 	}
 }
@@ -87,6 +92,18 @@ func (e *Equalizer) Listen() {
 
 // Close disables the equalizer so that it no longer listens to any incoming bulk requests.
 func (e *Equalizer) Close() {
-	close(e.Ready)
+	// close the send channel
 	close(e.Send)
+	// at this point any requests will be blocked waiting for the eq to read
+	// from the ready channel, so lets grab all these right now so the Equalizer
+	// can close
+	for i := 0; i < e.size; i++ {
+		go func() {
+			<-e.Ready
+		}()
+	}
+	// ensure there are no pending responses
+	e.waitGroup.Wait()
+	// safe to close ready channel now
+	close(e.Ready)
 }

@@ -62,7 +62,6 @@ func ParseCommandLine() (*Conf, error) {
 	endDate := flag.Int64("end-date", -1, "The unix timestamp (seconds) of the end date to ingest to")
 	duration := flag.Int64("duration", -1, "The duration in seconds to ingest either from start date, or end date, depending on which is provided")
 	poolSize := flag.Int("pool-size", 8, "The worker pool size")
-	numTopTerms := flag.Int("num-top-terms", 200, "The number of top terms to store")
 
 	// parse the flags
 	flag.Parse()
@@ -105,7 +104,6 @@ func ParseCommandLine() (*Conf, error) {
 		StartDate:       start,
 		EndDate:         end,
 		PoolSize:        *poolSize,
-		NumTopTerms:     *numTopTerms,
 	}
 	SaveConf(config)
 	return config, nil

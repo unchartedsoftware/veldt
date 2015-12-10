@@ -36,14 +36,14 @@ ES_ISIL_DOC_TYPE="isil_twitter_deprecated"
     -end-date=$END_DATE
 
 # ingest into prod
-./$INGEST_EXE \
-    -es-host=$ES_PROD_CLUSTER \
-    -es-port=$ES_PORT \
-    -es-index=$ES_ISIL_INDEX \
-    -es-doc-type=$ES_ISIL_DOC_TYPE \
-    -hdfs-host=$HDFS_HOST \
-    -hdfs-port=$HDFS_PORT \
-    -hdfs-path=$HDFS_ISIL_PATH \
-    -hdfs-compression=$HDFS_ISIL_COMPRESSION \
-    -duration=$DURATION \
-    -end-date=$END_DATE
+# ./$INGEST_EXE \
+#     -es-host=$ES_PROD_CLUSTER \
+#     -es-port=$ES_PORT \
+#     -es-index=$ES_ISIL_INDEX \
+#     -es-doc-type=$ES_ISIL_DOC_TYPE \
+#     -hdfs-host=$HDFS_HOST \
+#     -hdfs-port=$HDFS_PORT \
+#     -hdfs-path=$HDFS_ISIL_PATH \
+#     -hdfs-compression=$HDFS_ISIL_COMPRESSION \
+#     -duration=$DURATION \
+#     -end-date=$END_DATE
