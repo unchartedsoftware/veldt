@@ -4,8 +4,11 @@ import (
 	"fmt"
 
 	"gopkg.in/olivere/elastic.v3"
+
+	"github.com/unchartedsoftware/prism/tiling"
 )
 
+// Extrema represents the min and max values for an ordinal property.
 type Extrema struct {
 	Min float64
 	Max float64
@@ -18,7 +21,6 @@ func GetExtrema(endpoint string, index string, field string) (*Extrema, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("Get extrema for %s\n", field)
 	// query
 	result, err := client.
 		Search(index).
@@ -42,7 +44,6 @@ func GetExtrema(endpoint string, index string, field string) (*Extrema, error) {
 	if !ok {
 		return nil, fmt.Errorf("Max '%s' aggregation was not found in response", field )
 	}
-	fmt.Printf("%s, min: %f, max: %f\n", field, *min.Value, *max.Value)
 	return &Extrema{
 		Min: *min.Value,
 		Max: *max.Value,

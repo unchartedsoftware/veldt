@@ -4,15 +4,16 @@ import (
 	"github.com/unchartedsoftware/prism/store"
 )
 
-// GetTileByType returns a tile response based on the provided hash and request object.
+// GetTileByType returns a tile response based on the provided hash and request
+// object.
 func GetTileByType(tileHash string, tileReq *TileRequest) *TileResponse {
-	// get tiling type by id
-	tileFunc, err := GetGeneratorByType(tileReq.Type)
+	// get tile generator by id
+	gen, err := GetTileGeneratorByType(tileReq.Type)
 	if err != nil {
 		return getFailureResponse(tileReq, err)
 	}
 	// generate tile
-	tileData, err := tileFunc(tileReq)
+	tileData, err := gen(tileReq)
 	if err != nil {
 		return getFailureResponse(tileReq, err)
 	}
