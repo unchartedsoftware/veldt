@@ -20,20 +20,20 @@ type Request struct {
 
 // Equalizer represents an equalzier to apply backpressure to bulk requests.
 type Equalizer struct {
-	Send  chan Request
-	Ready chan error
+	Send      chan Request
+	Ready     chan error
 	waitGroup *sync.WaitGroup
-	size  int
-	rates []uint64
+	size      int
+	rates     []uint64
 }
 
 // NewEqualizer creates and returns a new equalizer object of a specific size.
 func NewEqualizer(size int) *Equalizer {
 	return &Equalizer{
-		Send:  make(chan Request),
-		Ready: make(chan error),
+		Send:      make(chan Request),
+		Ready:     make(chan error),
 		waitGroup: new(sync.WaitGroup),
-		size:  size,
+		size:      size,
 	}
 }
 

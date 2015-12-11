@@ -6,7 +6,7 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/tiling"
+	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
 // "aggregations": {
@@ -49,7 +49,7 @@ var terms = []string{
 }
 
 // GetTopicCountTile returns a marshalled tile containing topics and their counts.
-func GetTopicCountTile(tileReq *tiling.TileRequest) ([]byte, error) {
+func GetTopicCountTile(tileReq *tile.TileRequest) ([]byte, error) {
 	pixelBounds := binning.GetTilePixelBounds(&tileReq.TileCoord)
 	xMin := int64(pixelBounds.TopLeft.X)
 	xMax := int64(pixelBounds.BottomRight.X - 1)

@@ -1,7 +1,9 @@
-package tiling
+package tile
 
 import (
 	"fmt"
+	"runtime"
+	"sync"
 
 	"github.com/fanliao/go-promise"
 
@@ -10,7 +12,12 @@ import (
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
-// TileRequest represents the tile type and tile coord
+var (
+	mutex        = sync.Mutex{}
+	tilePromises = make(map[string]*promise.Promise)
+)
+
+// TileRequest represents the tile type and tile coord.
 type TileRequest struct {
 	TileCoord binning.TileCoord `json:"tilecoord"`
 	Type      string            `json:"type"`
@@ -18,7 +25,7 @@ type TileRequest struct {
 	Endpoint  string            `json:"endpoint"`
 }
 
-// TileResponse represents the tile response data
+// TileResponse represents the tile response data.
 type TileResponse struct {
 	TileCoord binning.TileCoord `json:"tilecoord"`
 	Type      string            `json:"type"`
@@ -50,6 +57,35 @@ func getSuccessResponse(tileReq *TileRequest) *TileResponse {
 	}
 }
 
+func getSuccessPromise(tileReq *TileRequest) *promise.Promise {
+	p := promise.NewPromise()
+	p.Resolve(getSuccessResponse(tileReq))
+	return p
+}
+
+func getTilePromise(tileHash string, tileReq *TileRequest) *promise.Promise {
+	mutex.Lock()
+	p, ok := tilePromises[tileHash]
+	if ok {
+		mutex.Unlock()
+		runtime.Gosched()
+		return p
+	}
+	p = promise.NewPromise()
+	tilePromises[tileHash] = p
+	mutex.Unlock()
+	runtime.Gosched()
+	go func() {
+		tileRes := GetTileByType(tileHash, tileReq)
+		p.Resolve(tileRes)
+		mutex.Lock()
+		delete(tilePromises, tileHash)
+		mutex.Unlock()
+		runtime.Gosched()
+	}()
+	return p
+}
+
 // GetTileHash returns a unique hash string for the given tile and type.
 func GetTileHash(tileReq *TileRequest) string {
 	return fmt.Sprintf("%s:%s:%s:%d-%d-%d",
@@ -61,7 +97,8 @@ func GetTileHash(tileReq *TileRequest) string {
 		tileReq.TileCoord.Z)
 }
 
-// GetTile will return a tile response channel that can be used to determine when a tile is ready.
+// GetTile will return a promise for existing tile data, an existing tiling
+// request, or a new tiling request.
 func GetTile(tileReq *TileRequest) *promise.Promise {
 	// get hash for tile
 	tileHash := GetTileHash(tileReq)
@@ -72,8 +109,8 @@ func GetTile(tileReq *TileRequest) *promise.Promise {
 	}
 	// if it exists, return success promise
 	if exists {
-		return GetSuccessPromise(tileReq)
+		return getSuccessPromise(tileReq)
 	}
 	// otherwise, initiate the tiling job and return promise
-	return GetTilePromise(tileHash, tileReq)
+	return getTilePromise(tileHash, tileReq)
 }

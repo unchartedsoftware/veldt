@@ -22,7 +22,7 @@ type Conf struct {
 	StartDate *time.Time
 	EndDate   *time.Time
 	// other
-	PoolSize    int
+	PoolSize int
 }
 
 var config *Conf
