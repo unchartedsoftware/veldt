@@ -7,8 +7,8 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/unchartedsoftware/prism/generation/tile"
 	"github.com/unchartedsoftware/prism/server/conf"
-	"github.com/unchartedsoftware/prism/tiling"
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
@@ -24,7 +24,7 @@ var upgrader = websocket.Upgrader{
 
 // TileDispatcher represents a single clients tile dispatcher.
 type TileDispatcher struct {
-	RespChan  chan *tiling.TileResponse
+	RespChan  chan *tile.TileResponse
 	ErrChan   chan error
 	WaitGroup *sync.WaitGroup
 	Conn      *websocket.Conn
@@ -40,7 +40,7 @@ func NewTileDispatcher(w http.ResponseWriter, r *http.Request) (*TileDispatcher,
 	// set the message read limit
 	conn.SetReadLimit(maxMessageSize)
 	return &TileDispatcher{
-		RespChan:  make(chan *tiling.TileResponse),
+		RespChan:  make(chan *tile.TileResponse),
 		ErrChan:   make(chan error),
 		WaitGroup: new(sync.WaitGroup),
 		Conn:      conn,
@@ -85,24 +85,24 @@ func (t *TileDispatcher) listenForResponses() {
 	}
 }
 
-func (t *TileDispatcher) dispatchRequest(tileReq *tiling.TileRequest) {
+func (t *TileDispatcher) dispatchRequest(tileReq *tile.TileRequest) {
 	// increment pending response wait group to ensure we don't send on
 	// a closed channel
 	t.WaitGroup.Add(1)
 	// get the tile promise
-	promise := tiling.GetTile(tileReq)
+	promise := tile.GetTile(tileReq)
 	// when the tile is ready
 	promise.OnComplete(func(res interface{}) {
 		// cast to tile response and pass to response channel
-		t.RespChan <- res.(*tiling.TileResponse)
+		t.RespChan <- res.(*tile.TileResponse)
 		// decrement the pending response wait group
 		t.WaitGroup.Done()
 	})
 }
 
-func (t *TileDispatcher) getRequest() (*tiling.TileRequest, error) {
+func (t *TileDispatcher) getRequest() (*tile.TileRequest, error) {
 	// tile request
-	tileReq := &tiling.TileRequest{}
+	tileReq := &tile.TileRequest{}
 	// wait on read
 	err := t.Conn.ReadJSON(&tileReq)
 	if err != nil {

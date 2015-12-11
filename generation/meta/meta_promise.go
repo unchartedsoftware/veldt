@@ -1,4 +1,4 @@
-package tiling
+package meta
 
 import (
 	"fmt"
@@ -25,32 +25,32 @@ type MetaRequest struct {
 
 // MetaResponse represents the meta data response.
 type MetaResponse struct {
-	Meta      []byte `json:"meta"`
-	Type      string `json:"type"`
-	Index     string            `json:"index"`
-	Endpoint  string            `json:"endpoint"`
-	Success   bool              `json:"success"`
-	Error     error             `json:"-"` // ignore field
+	Meta     []byte `json:"meta"`
+	Type     string `json:"type"`
+	Index    string `json:"index"`
+	Endpoint string `json:"endpoint"`
+	Success  bool   `json:"success"`
+	Error    error  `json:"-"` // ignore field
 }
 
 func getFailureResponse(metaReq *MetaRequest, err error) *MetaResponse {
 	return &MetaResponse{
-		Type:      metaReq.Type,
-		Index:     metaReq.Index,
-		Endpoint:  metaReq.Endpoint,
-		Success:   false,
-		Error:     err,
+		Type:     metaReq.Type,
+		Index:    metaReq.Index,
+		Endpoint: metaReq.Endpoint,
+		Success:  false,
+		Error:    err,
 	}
 }
 
 func getSuccessResponse(metaReq *MetaRequest, meta []byte) *MetaResponse {
 	return &MetaResponse{
-		Meta:	   meta,
-		Type:      metaReq.Type,
-		Index:     metaReq.Index,
-		Endpoint:  metaReq.Endpoint,
-		Success:   true,
-		Error:     nil,
+		Meta:     meta,
+		Type:     metaReq.Type,
+		Index:    metaReq.Index,
+		Endpoint: metaReq.Endpoint,
+		Success:  true,
+		Error:    nil,
 	}
 }
 

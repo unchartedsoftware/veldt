@@ -1,16 +1,15 @@
-package tiling
+package meta
 
 import (
-	"encoding/json"
-	
 	"github.com/unchartedsoftware/prism/store"
+	"github.com/unchartedsoftware/prism/util/log"
 )
 
 // GetMetaByType returns a meta data response based on the provided hash and
 // request object.
 func GetMetaByType(metaHash string, metaReq *MetaRequest) *MetaResponse {
 	// get meta generator by id
-	gen, err := GetMetaGeneratorByType(metaReq.Type)
+	gen, err := GetGeneratorByType(metaReq.Type)
 	if err != nil {
 		return getFailureResponse(metaReq, err)
 	}
@@ -19,15 +18,10 @@ func GetMetaByType(metaHash string, metaReq *MetaRequest) *MetaResponse {
 	if err != nil {
 		return getFailureResponse(metaReq, err)
 	}
-	// marshal data
-	bytes, err := json.Marshal(meta)
-	if err != nil {
-		return getFailureResponse(metaReq, err)
-	}
 	// add tile to store
-	err = store.Set(metaHash, bytes)
+	err = store.Set(metaHash, meta)
 	if err != nil {
-		return getFailureResponse(metaReq, err)
+		log.Warn(err)
 	}
 	return getSuccessResponse(metaReq, meta)
 }

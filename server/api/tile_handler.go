@@ -9,18 +9,18 @@ import (
 	"github.com/zenazn/goji/web"
 
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/generation/tile"
 	"github.com/unchartedsoftware/prism/server/conf"
 	"github.com/unchartedsoftware/prism/store"
-	"github.com/unchartedsoftware/prism/tiling"
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
-func parseTileParams(params map[string]string) (*tiling.TileRequest, error) {
+func parseTileParams(params map[string]string) (*tile.TileRequest, error) {
 	x, ex := strconv.ParseUint(params["x"], 10, 32)
 	y, ey := strconv.ParseUint(params["y"], 10, 32)
 	z, ez := strconv.ParseUint(params["z"], 10, 32)
 	if ex == nil || ey == nil || ez == nil {
-		return &tiling.TileRequest{
+		return &tile.TileRequest{
 			TileCoord: binning.TileCoord{
 				X: uint32(x),
 				Y: uint32(y),
@@ -51,7 +51,7 @@ func tileHandler(c web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// get tile hash
-	tileHash := tiling.GetTileHash(tileReq)
+	tileHash := tile.GetTileHash(tileReq)
 	// get tile data from store
 	tileData, tileErr := store.Get(tileHash)
 	if tileData == nil || tileErr != nil {

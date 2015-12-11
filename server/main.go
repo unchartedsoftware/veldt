@@ -6,10 +6,11 @@ import (
 
 	"github.com/zenazn/goji/graceful"
 
+	"github.com/unchartedsoftware/prism/generation/elastic"
+	"github.com/unchartedsoftware/prism/generation/meta"
+	"github.com/unchartedsoftware/prism/generation/tile"
 	"github.com/unchartedsoftware/prism/server/api"
 	"github.com/unchartedsoftware/prism/server/conf"
-	"github.com/unchartedsoftware/prism/tiling"
-	"github.com/unchartedsoftware/prism/tiling/elastic"
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
@@ -23,28 +24,18 @@ func main() {
 	log.Debugf("Prism server listening on port %s", config.Port)
 
 	// register available tiling types
-	tiling.Register("heatmap", elastic.GetHeatmapTile, elastic.GetMeta)
-	tiling.Register("topiccount", elastic.GetTopicCountTile, elastic.GetMeta)
-	tiling.Register("crossplot_deprecated", elastic.GetCrossPlotDeprecatedTile, elastic.GetMeta)
+	tile.Register("heatmap", elastic.GetHeatmapTile)
+	tile.Register("topiccount", elastic.GetTopicCountTile)
 
-	meta, err := elastic.GetMeta("http://10.64.16.120:9200", "isil_twitter_weekly")
-	if err != nil {
-		log.Error(err)
-	}
-	for k, v := range meta {
-		if v.Extrema != nil {
-			log.Debugf("%s: type: %s, min: %f, max: %f", k, v.Type, v.Extrema.Min, v.Extrema.Max)
-		} else {
-			log.Debugf("%s: type: %s", k, v.Type)
-		}
-	}
+	// register available meta data types
+	meta.Register("default", elastic.GetMeta)
 
 	// start the web server
 	graceful.AddSignal(syscall.SIGINT, syscall.SIGTERM)
 
 	// create server
 	app := api.New()
-	err = graceful.ListenAndServe(":"+config.Port, app)
+	err := graceful.ListenAndServe(":"+config.Port, app)
 	if err != nil {
 		log.Error(err)
 	}

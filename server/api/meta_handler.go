@@ -6,13 +6,13 @@ import (
 
 	"github.com/zenazn/goji/web"
 
+	"github.com/unchartedsoftware/prism/generation/meta"
 	"github.com/unchartedsoftware/prism/server/conf"
-	"github.com/unchartedsoftware/prism/tiling"
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
-func parseMetaParams(params map[string]string) *tiling.TileRequest {
-	return &tiling.MetaRequest{
+func parseMetaParams(params map[string]string) *meta.MetaRequest {
+	return &meta.MetaRequest{
 		Endpoint: conf.Unalias(params["endpoint"]),
 		Index:    conf.Unalias(params["index"]),
 		Type:     conf.Unalias(params["type"]),
@@ -30,14 +30,22 @@ func metaHandler(c web.C, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	// parse params from URL
 	metaReq := parseMetaParams(c.URLParams)
-	// get meta data
-	meta, err := tiling.GetMeta(metaReq)
-	if err != nil {
-		log.Warn(err)
+	// create channel to pass metadata
+	metaChan := make(chan *meta.MetaResponse)
+	// get the meta data promise
+	promise := meta.GetMeta(metaReq)
+	// when the meta data is ready
+	promise.OnComplete(func(res interface{}) {
+		metaChan <- res.(*meta.MetaResponse)
+	})
+	// wait on response
+	metaRes := <-metaChan
+	if metaRes.Error != nil {
+		log.Warn(metaRes.Error)
 		handleTileErr(w)
 		return
 	}
-	// send response
+	// send success response
 	w.WriteHeader(200)
-	w.Write(meta)
+	w.Write(metaRes.Meta)
 }

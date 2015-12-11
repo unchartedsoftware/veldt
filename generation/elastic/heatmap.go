@@ -8,7 +8,7 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/tiling"
+	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
 // "aggregations": {
@@ -37,7 +37,7 @@ func float64ToBytes(bytes []byte, float float64) {
 }
 
 // GetHeatmapTile returns a marshalled tile containing a flat array of bins.
-func GetHeatmapTile(tileReq *tiling.TileRequest) ([]byte, error) {
+func GetHeatmapTile(tileReq *tile.TileRequest) ([]byte, error) {
 	pixelBounds := binning.GetTilePixelBounds(&tileReq.TileCoord)
 	tileResolution := int64(binning.MaxTileResolution)
 	xBinSize := int64(pixelBounds.BottomRight.X-pixelBounds.TopLeft.X) / tileResolution

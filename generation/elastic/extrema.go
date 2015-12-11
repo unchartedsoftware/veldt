@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"gopkg.in/olivere/elastic.v3"
-
-	"github.com/unchartedsoftware/prism/tiling"
 )
 
 // Extrema represents the min and max values for an ordinal property.
@@ -38,11 +36,11 @@ func GetExtrema(endpoint string, index string, field string) (*Extrema, error) {
 	// parse aggregations
 	min, ok := result.Aggregations.Min("min")
 	if !ok {
-		return nil, fmt.Errorf("Min '%s' aggregation was not found in response", field )
+		return nil, fmt.Errorf("Min '%s' aggregation was not found in response", field)
 	}
 	max, ok := result.Aggregations.Max("max")
 	if !ok {
-		return nil, fmt.Errorf("Max '%s' aggregation was not found in response", field )
+		return nil, fmt.Errorf("Max '%s' aggregation was not found in response", field)
 	}
 	return &Extrema{
 		Min: *min.Value,

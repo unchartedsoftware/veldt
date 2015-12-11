@@ -1,4 +1,4 @@
-package tiling
+package tile
 
 import (
 	"github.com/unchartedsoftware/prism/store"
@@ -8,7 +8,7 @@ import (
 // object.
 func GetTileByType(tileHash string, tileReq *TileRequest) *TileResponse {
 	// get tile generator by id
-	gen, err := GetTileGeneratorByType(tileReq.Type)
+	gen, err := GetGeneratorByType(tileReq.Type)
 	if err != nil {
 		return getFailureResponse(tileReq, err)
 	}

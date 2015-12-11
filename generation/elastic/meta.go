@@ -1,15 +1,17 @@
 package elastic
 
 import (
+	"encoding/json"
 	"fmt"
 
-	"github.com/unchartedsoftware/prism/util/json"
+	"github.com/unchartedsoftware/prism/generation/meta"
+	jsonutil "github.com/unchartedsoftware/prism/util/json"
 )
 
 // PropertyMeta represents the meta data for a single property.
 type PropertyMeta struct {
-	Type string `json:"type"`
-	Extrema *Extrema `json:"extrema"`
+	Type    string   `json:"type"`
+	Extrema *Extrema `json:"extrema,omitempty"`
 }
 
 func getPropertyMeta(endpoint string, index string, field string, typ string) (*PropertyMeta, error) {
@@ -28,12 +30,12 @@ func getPropertyMeta(endpoint string, index string, field string, typ string) (*
 }
 
 func parsePropertiesRecursive(meta map[string]PropertyMeta, endpoint string, index string, p map[string]interface{}, path string) error {
-	for key, props := range json.GetChildren(p) {
+	for key, props := range jsonutil.GetChildren(p) {
 		subpath := key
 		if path != "" {
 			subpath = path + "." + key
 		}
-		subprops, hasProps := json.GetChild(props, "properties")
+		subprops, hasProps := jsonutil.GetChild(props, "properties")
 		if hasProps {
 			// recurse further
 			err := parsePropertiesRecursive(meta, endpoint, index, subprops, subpath)
@@ -41,7 +43,7 @@ func parsePropertiesRecursive(meta map[string]PropertyMeta, endpoint string, ind
 				return err
 			}
 		} else {
-			typ, hasType := json.GetString(props, "type")
+			typ, hasType := jsonutil.GetString(props, "type")
 			// we don't support nested types
 			if hasType && typ != "nested" {
 				prop, err := getPropertyMeta(endpoint, index, subpath, typ)
@@ -66,21 +68,21 @@ func parseProperties(endpoint string, index string, props map[string]interface{}
 }
 
 // GetMeta returns the meta data for a given index.
-func GetMeta(metaReq *MetaRequest) ([]byte, error) {
+func GetMeta(metaReq *meta.MetaRequest) ([]byte, error) {
 	// get the raw mappings
 	mapping, err := GetMapping(metaReq.Endpoint, metaReq.Index)
 	if err != nil {
 		return nil, err
 	}
 	// get nested 'properties' attribute of mappings payload
-	props, ok := json.GetChildByPath(mapping, metaReq.Index, "mappings", "datum", "properties")
+	props, ok := jsonutil.GetChild(mapping, metaReq.Index, "mappings", "datum", "properties")
 	if !ok {
 		return nil, fmt.Errorf("Unable to parse properties from mappings response for %s/%s",
 			metaReq.Endpoint,
 			metaReq.Index)
 	}
 	// parse json mappings into the property map
- 	meta, err := parseProperties(metaReq.Endpoint, metaReq.Index, props)
+	meta, err := parseProperties(metaReq.Endpoint, metaReq.Index, props)
 	if err != nil {
 		return nil, err
 	}

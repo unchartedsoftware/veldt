@@ -1,4 +1,4 @@
-package tiling
+package tile
 
 import (
 	"fmt"
@@ -112,5 +112,5 @@ func GetTile(tileReq *TileRequest) *promise.Promise {
 		return getSuccessPromise(tileReq)
 	}
 	// otherwise, initiate the tiling job and return promise
-	return GetTilePromise(tileHash, tileReq)
+	return getTilePromise(tileHash, tileReq)
 }
