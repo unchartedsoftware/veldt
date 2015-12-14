@@ -24,8 +24,8 @@ func main() {
 	log.Debugf("Prism server listening on port %s", config.Port)
 
 	// register available tiling types
-	tile.Register("heatmap", elastic.GetHeatmapTile)
-	tile.Register("topiccount", elastic.GetTopicCountTile)
+	tile.Register("heatmap", elastic.GetHeatmapTile, elastic.GetHeatmapHash)
+	tile.Register("topiccount", elastic.GetTopicCountTile, elastic.GetTopicCountHash)
 
 	// register available meta data types
 	meta.Register("default", elastic.GetMeta)

@@ -2,59 +2,74 @@ package elastic
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/generation/tile"
+	jsonutil "github.com/unchartedsoftware/prism/util/json"
 )
 
-// "aggregations": {
-//     "term0": {
-//     		"doc_count": 234
-// 	    },
-// 	    "term1": {
-//     		"doc_count": 234
-// 	    },
-// 	    "term2": {
-//     		"doc_count": 234
-// 	    }
-//		...
-// }
-
-var terms = []string{
-	"cool",
-	"awesome",
-	"amazing",
-	"badass",
-	"killer",
-	"dank",
-	"superfly",
-	"smooth",
-	"radical",
-	"wicked",
-	"neato",
-	"nifty",
-	"primo",
-	"gnarly",
-	"crazy",
-	"insane",
-	"sick",
-	"mint",
-	"nice",
-	"nasty",
-	"classic",
-	"tight",
-	"rancid",
+// TopicCountParams represents the parameters passed for a topic count tiling tile.Request.
+type TopicCountParams struct {
+	X       string
+	Y       string
+	Extents *binning.Bounds
+	Topics  []string
 }
 
-// GetTopicCountTile returns a marshalled tile containing topics and their counts.
-func GetTopicCountTile(tileReq *tile.TileRequest) ([]byte, error) {
-	pixelBounds := binning.GetTilePixelBounds(&tileReq.TileCoord)
-	xMin := int64(pixelBounds.TopLeft.X)
-	xMax := int64(pixelBounds.BottomRight.X - 1)
-	yMin := int64(pixelBounds.TopLeft.Y)
-	yMax := int64(pixelBounds.BottomRight.Y - 1)
+func extractTopicCountParams(params map[string]interface{}) *TopicCountParams {
+	topics, ok := jsonutil.GetStringArray(params, "topics")
+	if !ok {
+		topics = make([]string, 0)
+	}
+	return &TopicCountParams{
+		X: jsonutil.GetStringDefault(params, "x", "pixel.x"),
+		Y: jsonutil.GetStringDefault(params, "y", "pixel.y"),
+		Extents: &binning.Bounds{
+			TopLeft: &binning.Coord{
+				X: jsonutil.GetNumberDefault(params, "minX", 0.0),
+				Y: jsonutil.GetNumberDefault(params, "maxY", binning.MaxPixels),
+			},
+			BottomRight: &binning.Coord{
+				X: jsonutil.GetNumberDefault(params, "maxX", binning.MaxPixels),
+				Y: jsonutil.GetNumberDefault(params, "minY", 0.0),
+			},
+		},
+		Topics: topics,
+	}
+}
+
+// GetTopicCountHash returns a unique hash for a topic count tile.
+func GetTopicCountHash(tileReq *tile.Request) string {
+	params := extractTopicCountParams(tileReq.Params)
+	return fmt.Sprintf("%s:%s:%s:%d:%d:%d:%s:%s:%f:%f:%f:%f:%s",
+		tileReq.Endpoint,
+		tileReq.Index,
+		tileReq.Type,
+		tileReq.TileCoord.X,
+		tileReq.TileCoord.Y,
+		tileReq.TileCoord.Z,
+		params.X,
+		params.Y,
+		params.Extents.TopLeft.X,
+		params.Extents.TopLeft.Y,
+		params.Extents.BottomRight.X,
+		params.Extents.BottomRight.Y,
+		strings.Join(params.Topics, ":"),
+	)
+}
+
+// GetTopicCountTile returns a marshalled tile containing topics and counts.
+func GetTopicCountTile(tileReq *tile.Request) ([]byte, error) {
+	params := extractTopicCountParams(tileReq.Params)
+	bounds := binning.GetTileBounds(&tileReq.TileCoord, params.Extents)
+	xMin := int64(bounds.TopLeft.X)
+	xMax := int64(bounds.BottomRight.X - 1)
+	yMin := int64(bounds.TopLeft.Y)
+	yMax := int64(bounds.BottomRight.Y - 1)
 	// get client
 	client, err := getClient(tileReq.Endpoint)
 	if err != nil {
@@ -65,17 +80,17 @@ func GetTopicCountTile(tileReq *tile.TileRequest) ([]byte, error) {
 		Search(tileReq.Index).
 		Size(0).
 		Query(elastic.NewBoolQuery().Must(
-		elastic.NewRangeQuery("pixel.x").
+		elastic.NewRangeQuery(params.X).
 			Gte(xMin).
 			Lte(xMax),
-		elastic.NewRangeQuery("pixel.y").
+		elastic.NewRangeQuery(params.Y).
 			Gte(yMin).
 			Lte(yMax)))
 	// add all filter aggregations
-	for _, term := range terms {
-		query.Aggregation(term,
+	for _, topic := range params.Topics {
+		query.Aggregation(topic,
 			elastic.NewFilterAggregation().
-				Filter(elastic.NewTermQuery("text", term)))
+				Filter(elastic.NewTermQuery("text", topic)))
 	}
 	// send query
 	result, err := query.Do()
@@ -84,10 +99,10 @@ func GetTopicCountTile(tileReq *tile.TileRequest) ([]byte, error) {
 	}
 	// build map of topics and counts
 	topicCounts := make(map[string]int64)
-	for _, term := range terms {
-		filter, ok := result.Aggregations.Filter(term)
+	for _, topic := range params.Topics {
+		filter, ok := result.Aggregations.Filter(topic)
 		if ok && filter.DocCount > 0 {
-			topicCounts[term] = filter.DocCount
+			topicCounts[topic] = filter.DocCount
 		}
 	}
 	// marshal results map

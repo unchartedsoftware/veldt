@@ -68,7 +68,7 @@ func parseProperties(endpoint string, index string, props map[string]interface{}
 }
 
 // GetMeta returns the meta data for a given index.
-func GetMeta(metaReq *meta.MetaRequest) ([]byte, error) {
+func GetMeta(metaReq *meta.Request) ([]byte, error) {
 	// get the raw mappings
 	mapping, err := GetMapping(metaReq.Endpoint, metaReq.Index)
 	if err != nil {

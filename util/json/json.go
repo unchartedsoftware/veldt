@@ -45,6 +45,20 @@ func GetString(json Node, key string) (string, bool) {
 	return val, true
 }
 
+// GetStringDefault returns a string property under the given key, if it doesn't
+// exist, it will return the provided default.
+func GetStringDefault(json Node, key string, def string) string {
+	v, ok := json[key]
+	if !ok {
+		return def
+	}
+	val, ok := v.(string)
+	if !ok {
+		return def
+	}
+	return val
+}
+
 // GetNumber returns a float property under the given key.
 func GetNumber(json Node, key string) (float64, bool) {
 	v, ok := json[key]
@@ -58,13 +72,53 @@ func GetNumber(json Node, key string) (float64, bool) {
 	return val, true
 }
 
-// GetArray returns an array property under the given key.
+// GetNumberDefault returns a float property under the given key, if it doesn't
+// exist, it will return the provided default.
+func GetNumberDefault(json Node, key string, def float64) float64 {
+	v, ok := json[key]
+	if !ok {
+		return def
+	}
+	val, ok := v.(float64)
+	if !ok {
+		return def
+	}
+	return val
+}
+
+// GetArray returns an []interface{} property under the given key.
 func GetArray(json Node, key string) ([]interface{}, bool) {
 	v, ok := json[key]
 	if !ok {
 		return nil, false
 	}
 	val, ok := v.([]interface{})
+	if !ok {
+		return nil, false
+	}
+	return val, true
+}
+
+// GetNumberArray returns an []float64 property under the given key.
+func GetNumberArray(json Node, key string) ([]float64, bool) {
+	v, ok := json[key]
+	if !ok {
+		return nil, false
+	}
+	val, ok := v.([]float64)
+	if !ok {
+		return nil, false
+	}
+	return val, true
+}
+
+// GetStringArray returns an []string property under the given key.
+func GetStringArray(json Node, key string) ([]string, bool) {
+	v, ok := json[key]
+	if !ok {
+		return nil, false
+	}
+	val, ok := v.([]string)
 	if !ok {
 		return nil, false
 	}

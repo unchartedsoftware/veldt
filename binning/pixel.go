@@ -8,9 +8,14 @@ import (
 
 const (
 	// MaxLevelSupported represents the maximum zoom level supported by the pixel coordinate system.
-	MaxLevelSupported = uint64(24)
+	MaxLevelSupported = float64(24)
 	// MaxTileResolution represents the maximum bin resolution of a tile
-	MaxTileResolution = uint64(256)
+	MaxTileResolution = float64(256)
+)
+
+var (
+	// MaxPixels represents the maximum value of the pixel coordinates
+	MaxPixels = MaxTileResolution * math.Pow(2, MaxLevelSupported)
 )
 
 // PixelBounds represents a bounding box in pixel coordinates.
@@ -25,9 +30,6 @@ type PixelCoord struct {
 	Y uint64 `json:"y"`
 }
 
-// number of pixels across the x / y dimensions at maximum zoom level
-var maxPixels = float64(MaxTileResolution) * math.Pow(2, float64(MaxLevelSupported))
-
 // LonLatToPixelCoord translates a geographic coordinate to a pixel coordinate.
 func LonLatToPixelCoord(lonLat *LonLat) *PixelCoord {
 	// Converting to range from [0:1] where 0,0 is top left
@@ -37,8 +39,8 @@ func LonLatToPixelCoord(lonLat *LonLat) *PixelCoord {
 		Y: normalizedTile.Y,
 	}
 	return &PixelCoord{
-		X: uint64(math.Min(maxPixels-1, math.Floor(normalizedCoord.X*maxPixels))),
-		Y: uint64(math.Min(maxPixels-1, math.Floor(normalizedCoord.Y*maxPixels))),
+		X: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.X*MaxPixels))),
+		Y: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.Y*MaxPixels))),
 	}
 }
 
@@ -51,8 +53,8 @@ func CoordToPixelCoord(coord *Coord, bounds *Bounds) *PixelCoord {
 		Y: normalizedTile.Y,
 	}
 	return &PixelCoord{
-		X: uint64(math.Min(maxPixels-1, math.Floor(normalizedCoord.X*maxPixels))),
-		Y: uint64(math.Min(maxPixels-1, math.Floor(normalizedCoord.Y*maxPixels))),
+		X: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.X*MaxPixels))),
+		Y: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.Y*MaxPixels))),
 	}
 }
 
@@ -66,12 +68,12 @@ func GetTilePixelBounds(tile *TileCoord) *PixelBounds {
 	yMax := float64(tile.Y+1) / pow2
 	return &PixelBounds{
 		TopLeft: &PixelCoord{
-			X: uint64(math.Min(maxPixels-1, util.Round(xMin*maxPixels))),
-			Y: uint64(math.Min(maxPixels-1, util.Round(yMin*maxPixels))),
+			X: uint64(math.Min(MaxPixels-1, util.Round(xMin*MaxPixels))),
+			Y: uint64(math.Min(MaxPixels-1, util.Round(yMin*MaxPixels))),
 		},
 		BottomRight: &PixelCoord{
-			X: uint64(math.Min(maxPixels-1, util.Round(xMax*maxPixels))),
-			Y: uint64(math.Min(maxPixels-1, util.Round(yMax*maxPixels))),
+			X: uint64(math.Min(MaxPixels-1, util.Round(xMax*MaxPixels))),
+			Y: uint64(math.Min(MaxPixels-1, util.Round(yMax*MaxPixels))),
 		},
 	}
 }

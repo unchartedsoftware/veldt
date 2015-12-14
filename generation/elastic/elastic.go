@@ -25,6 +25,8 @@ func getClient(endpoint string) (*elastic.Client, error) {
 			elastic.SetGzip(true),
 		)
 		if err != nil {
+			mutex.Unlock()
+			runtime.Gosched()
 			return nil, err
 		}
 		clients[endpoint] = c

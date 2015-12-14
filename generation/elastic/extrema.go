@@ -8,8 +8,8 @@ import (
 
 // Extrema represents the min and max values for an ordinal property.
 type Extrema struct {
-	Min float64
-	Max float64
+	Min float64 `json:"min"`
+	Max float64 `json:"max"`
 }
 
 // GetExtrema returns the extrema of a numeric field for the provided index.

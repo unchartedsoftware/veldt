@@ -24,7 +24,7 @@ var upgrader = websocket.Upgrader{
 
 // TileDispatcher represents a single clients tile dispatcher.
 type TileDispatcher struct {
-	RespChan  chan *tile.TileResponse
+	RespChan  chan *tile.Response
 	ErrChan   chan error
 	WaitGroup *sync.WaitGroup
 	Conn      *websocket.Conn
@@ -40,7 +40,7 @@ func NewTileDispatcher(w http.ResponseWriter, r *http.Request) (*TileDispatcher,
 	// set the message read limit
 	conn.SetReadLimit(maxMessageSize)
 	return &TileDispatcher{
-		RespChan:  make(chan *tile.TileResponse),
+		RespChan:  make(chan *tile.Response),
 		ErrChan:   make(chan error),
 		WaitGroup: new(sync.WaitGroup),
 		Conn:      conn,
@@ -85,7 +85,7 @@ func (t *TileDispatcher) listenForResponses() {
 	}
 }
 
-func (t *TileDispatcher) dispatchRequest(tileReq *tile.TileRequest) {
+func (t *TileDispatcher) dispatchRequest(tileReq *tile.Request) {
 	// increment pending response wait group to ensure we don't send on
 	// a closed channel
 	t.WaitGroup.Add(1)
@@ -94,15 +94,15 @@ func (t *TileDispatcher) dispatchRequest(tileReq *tile.TileRequest) {
 	// when the tile is ready
 	promise.OnComplete(func(res interface{}) {
 		// cast to tile response and pass to response channel
-		t.RespChan <- res.(*tile.TileResponse)
+		t.RespChan <- res.(*tile.Response)
 		// decrement the pending response wait group
 		t.WaitGroup.Done()
 	})
 }
 
-func (t *TileDispatcher) getRequest() (*tile.TileRequest, error) {
+func (t *TileDispatcher) getRequest() (*tile.Request, error) {
 	// tile request
-	tileReq := &tile.TileRequest{}
+	tileReq := &tile.Request{}
 	// wait on read
 	err := t.Conn.ReadJSON(&tileReq)
 	if err != nil {
