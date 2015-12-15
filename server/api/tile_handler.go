@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/zenazn/goji/web"
@@ -14,7 +15,23 @@ import (
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
-func parseTileParams(params map[string]string) (*tile.Request, error) {
+func parseParams(params url.Values) map[string]interface{} {
+	p := make(map[string]interface{})
+	for k, _ := range params {
+		p[k] = params.Get(k)
+	}
+	return p
+}
+
+// func parseParams(p map[string]string) map[string]interface{} {
+// 	params := make(map[string]interface{})
+// 	for path, val := range p {
+// 		json.Set(params, val, strings.Split(path, "."))
+// 	}
+// 	return params
+// }
+
+func parseTileParams(params map[string]string, queryParams url.Values) (*tile.Request, error) {
 	x, ex := strconv.ParseUint(params["x"], 10, 32)
 	y, ey := strconv.ParseUint(params["y"], 10, 32)
 	z, ez := strconv.ParseUint(params["z"], 10, 32)
@@ -28,6 +45,7 @@ func parseTileParams(params map[string]string) (*tile.Request, error) {
 			Endpoint: conf.Unalias(params["endpoint"]),
 			Index:    conf.Unalias(params["index"]),
 			Type:     conf.Unalias(params["type"]),
+			Params:   parseParams(queryParams),
 		}, nil
 	}
 	return nil, errors.New("Unable to parse tile coordinate from URL")
@@ -43,7 +61,7 @@ func tileHandler(c web.C, w http.ResponseWriter, r *http.Request) {
 	// set content type response header
 	w.Header().Set("Content-Type", "application/json")
 	// parse tile coord from URL
-	tileReq, parseErr := parseTileParams(c.URLParams)
+	tileReq, parseErr := parseTileParams(c.URLParams, r.URL.Query())
 	if parseErr != nil {
 		log.Warn(parseErr)
 		handleTileErr(w)

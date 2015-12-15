@@ -30,27 +30,30 @@ func getPropertyMeta(endpoint string, index string, field string, typ string) (*
 }
 
 func parsePropertiesRecursive(meta map[string]PropertyMeta, endpoint string, index string, p map[string]interface{}, path string) error {
-	for key, props := range jsonutil.GetChildren(p) {
-		subpath := key
-		if path != "" {
-			subpath = path + "." + key
-		}
-		subprops, hasProps := jsonutil.GetChild(props, "properties")
-		if hasProps {
-			// recurse further
-			err := parsePropertiesRecursive(meta, endpoint, index, subprops, subpath)
-			if err != nil {
-				return err
+	children, ok := jsonutil.GetChildren(p)
+	if ok {
+		for key, props := range children {
+			subpath := key
+			if path != "" {
+				subpath = path + "." + key
 			}
-		} else {
-			typ, hasType := jsonutil.GetString(props, "type")
-			// we don't support nested types
-			if hasType && typ != "nested" {
-				prop, err := getPropertyMeta(endpoint, index, subpath, typ)
+			subprops, hasProps := jsonutil.GetChild(props, "properties")
+			if hasProps {
+				// recurse further
+				err := parsePropertiesRecursive(meta, endpoint, index, subprops, subpath)
 				if err != nil {
 					return err
 				}
-				meta[subpath] = *prop
+			} else {
+				typ, hasType := jsonutil.GetString(props, "type")
+				// we don't support nested types
+				if hasType && typ != "nested" {
+					prop, err := getPropertyMeta(endpoint, index, subpath, typ)
+					if err != nil {
+						return err
+					}
+					meta[subpath] = *prop
+				}
 			}
 		}
 	}
