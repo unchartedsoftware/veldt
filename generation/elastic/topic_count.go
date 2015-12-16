@@ -17,28 +17,27 @@ type TopicCountParams struct {
 	X       string
 	Y       string
 	Extents *binning.Bounds
+	Text	string
 	Topics  []string
 }
 
 func extractTopicCountParams(params map[string]interface{}) *TopicCountParams {
-	topics, ok := jsonutil.GetStringArray(params, "topics")
-	if !ok {
-		topics = make([]string, 0)
-	}
+	topics := jsonutil.GetStringDefault(params, "topics", "")
 	return &TopicCountParams{
 		X: jsonutil.GetStringDefault(params, "x", "pixel.x"),
 		Y: jsonutil.GetStringDefault(params, "y", "pixel.y"),
 		Extents: &binning.Bounds{
 			TopLeft: &binning.Coord{
 				X: jsonutil.GetNumberDefault(params, "minX", 0.0),
-				Y: jsonutil.GetNumberDefault(params, "maxY", binning.MaxPixels),
+				Y: jsonutil.GetNumberDefault(params, "maxY", 0.0),
 			},
 			BottomRight: &binning.Coord{
 				X: jsonutil.GetNumberDefault(params, "maxX", binning.MaxPixels),
-				Y: jsonutil.GetNumberDefault(params, "minY", 0.0),
+				Y: jsonutil.GetNumberDefault(params, "minY", binning.MaxPixels),
 			},
 		},
-		Topics: topics,
+		Text: jsonutil.GetStringDefault(params, "text", "text"),
+		Topics: strings.Split(topics, ","),
 	}
 }
 
@@ -90,7 +89,7 @@ func GetTopicCountTile(tileReq *tile.Request) ([]byte, error) {
 	for _, topic := range params.Topics {
 		query.Aggregation(topic,
 			elastic.NewFilterAggregation().
-				Filter(elastic.NewTermQuery("text", topic)))
+				Filter(elastic.NewTermQuery(params.Text, topic)))
 	}
 	// send query
 	result, err := query.Do()

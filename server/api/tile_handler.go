@@ -17,19 +17,11 @@ import (
 
 func parseParams(params url.Values) map[string]interface{} {
 	p := make(map[string]interface{})
-	for k, _ := range params {
+	for k := range params {
 		p[k] = params.Get(k)
 	}
 	return p
 }
-
-// func parseParams(p map[string]string) map[string]interface{} {
-// 	params := make(map[string]interface{})
-// 	for path, val := range p {
-// 		json.Set(params, val, strings.Split(path, "."))
-// 	}
-// 	return params
-// }
 
 func parseTileParams(params map[string]string, queryParams url.Values) (*tile.Request, error) {
 	x, ex := strconv.ParseUint(params["x"], 10, 32)

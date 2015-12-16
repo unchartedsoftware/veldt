@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"sync"
 	"time"
@@ -101,12 +102,16 @@ func (t *TileDispatcher) dispatchRequest(tileReq *tile.Request) {
 }
 
 func (t *TileDispatcher) getRequest() (*tile.Request, error) {
-	// tile request
-	tileReq := &tile.Request{}
 	// wait on read
-	err := t.Conn.ReadJSON(&tileReq)
+	_, msg, err := t.Conn.ReadMessage()
 	if err != nil {
 		return nil, err
+	}
+	// unmarshal tile request
+	tileReq := &tile.Request{}
+	err = json.Unmarshal(msg, &tileReq)
+	if err != nil {
+		return nil, nil
 	}
 	// unalias endpoint, index, and type
 	tileReq.Endpoint = conf.Unalias(tileReq.Endpoint)
@@ -122,6 +127,13 @@ func (t *TileDispatcher) listenForRequests() {
 		if err != nil {
 			t.ErrChan <- err
 			break
+		}
+		// if no request could be parsed, return failure immediately
+		if tileReq == nil {
+			t.RespChan <- &tile.Response{
+				Success: false,
+			}
+			continue
 		}
 		// dispatch the request
 		go t.dispatchRequest(tileReq)

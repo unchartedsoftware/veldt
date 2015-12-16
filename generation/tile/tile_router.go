@@ -34,6 +34,7 @@ func getFailureResponse(tileReq *Request, err error) *Response {
 		Type:      tileReq.Type,
 		Index:     tileReq.Index,
 		Endpoint:  tileReq.Endpoint,
+		Params:	   tileReq.Params,
 		Success:   false,
 		Error:     err,
 	}
@@ -45,6 +46,7 @@ func getSuccessResponse(tileReq *Request) *Response {
 		Type:      tileReq.Type,
 		Index:     tileReq.Index,
 		Endpoint:  tileReq.Endpoint,
+		Params:	   tileReq.Params,
 		Success:   true,
 		Error:     nil,
 	}

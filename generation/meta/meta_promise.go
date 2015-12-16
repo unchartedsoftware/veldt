@@ -5,8 +5,6 @@ import (
 	"sync"
 
 	"github.com/fanliao/go-promise"
-
-	"github.com/unchartedsoftware/prism/util/log"
 )
 
 var (
@@ -17,7 +15,6 @@ var (
 func getSuccessPromise(metaReq *Request, meta []byte) *promise.Promise {
 	p := promise.NewPromise()
 	p.Resolve(getSuccessResponse(metaReq, meta))
-	log.Infof("Resolved meta promise with len of bytes %d", len(meta))
 	return p
 }
 
