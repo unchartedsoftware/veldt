@@ -78,7 +78,6 @@
     "globals"       : {         // additional predefined global variables
         "require"   : false,
         "module"    : false,
-        "L"         : false,
-        "Cloud5"    : false
+        "L"         : false
     }
 }

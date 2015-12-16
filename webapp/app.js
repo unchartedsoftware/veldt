@@ -9,6 +9,10 @@
     var WordCloudLayer = require('./scripts/WordCloudLayer');
     var AJAX_TIMEOUT = 5000;
 
+    function mod(m, n) {
+        return ((m%n)+n)%n;
+    }
+
     $.ajaxTransport('+arraybuffer', function(options) {
         var xhr;
         return {
@@ -46,15 +50,43 @@
     window.startApp = function() {
 
         var ES_ENDPOINT = 'openstack';
-        var ES_INDEX = 'nyc_twitter';
+        var ES_INDEX = 'isil_twitter_weekly'; //nyc_twitter';
+        var RESOLUTION = 32;
+        var TOPICS = [
+            'cool',
+            'awesome',
+            'amazing',
+            'badass',
+            'killer',
+            'dank',
+            'superfly',
+            'smooth',
+            'radical',
+            'wicked',
+            'neato',
+            'nifty',
+            'primo',
+            'gnarly',
+            'crazy',
+            'insane',
+            'sick',
+            'mint',
+            'nice',
+            'nasty',
+            'classic',
+            'tight',
+            'rancid',
+        ];
+
+        var meta = null;
 
         // Map control
         var map = new L.Map('map', {
             zoomControl: true,
-            //zoom: 4,
-            //center: [0, 0],
-            center: [40.7, -73.9],
-            zoom: 14,
+            zoom: 4,
+            center: [0, 0],
+            // zoom: 14,
+            // center: [40.7, -73.9],
             maxZoom: 18,
             fadeAnimation: true,
             zoomAnimation: true
@@ -117,18 +149,31 @@
         // if it exists, renders to the canvas element for the repsecive tile.
         heatmapLayer.drawTile = function(canvas, index, zoom) {
             $(canvas).addClass('blinking');
+
+            var params = {
+                resolution: RESOLUTION
+            };
+
+            index.x = mod(index.x, Math.pow(2, zoom));
+            index.y = mod(index.y, Math.pow(2, zoom));
+
             requester
-                .get(ES_ENDPOINT, ES_INDEX, 'heatmap', index.x, index.y, zoom)
+                .get(ES_ENDPOINT, ES_INDEX, 'heatmap', index.x, index.y, zoom, params)
                 .done(function() {
                     var url = ES_ENDPOINT + '/' + ES_INDEX + '/heatmap/' + zoom + '/' + index.x + '/' + index.y;
                     $.ajax({
-                        url: url,
+                        url: url + '?' + $.param(params),
                         dataType: 'arraybuffer',
                         timeout: AJAX_TIMEOUT
                     }).done(function(buffer) {
                         var bins = new Float64Array(buffer);
-                        var ctx = canvas.getContext('2d');
-                        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                        var tileCanvas = document.createElement('canvas');
+                        tileCanvas.height = params.resolution;
+                        tileCanvas.width = params.resolution;
+                        var tileCtx = tileCanvas.getContext('2d');
+
+                        var imageData = tileCtx.getImageData(0, 0, params.resolution, params.resolution);
                         var data = imageData.data;
                         var minMax = {
                             min: 0,
@@ -142,8 +187,17 @@
                             data[index * 4 + 2] = rgba.b;
                             data[index * 4 + 3] = rgba.a;
                         });
-                        // Overwrite original image
-                        ctx.putImageData(imageData, 0, 0);
+                        tileCtx.putImageData(imageData, 0, 0);
+
+                        var ctx = canvas.getContext('2d');
+                        ctx.imageSmoothingEnabled = false;
+                        ctx.drawImage(
+                            tileCanvas,
+                            0, 0,
+                            params.resolution, params.resolution,
+                            0, 0,
+                            canvas.width, canvas.height);
+
                     }).always(function() {
                         $(canvas).removeClass('blinking');
                     });
@@ -159,12 +213,21 @@
         });
         wordCloudLayer.drawTile = function(tile, index, zoom) {
             $(tile).addClass('blinking');
+
+            var params = {
+                text: 'text',
+                topics: TOPICS.join(',')
+            };
+
+            index.x = mod(index.x, Math.pow(2, zoom));
+            index.y = mod(index.y, Math.pow(2, zoom));
+
             requester
-                .get(ES_ENDPOINT, ES_INDEX, 'topiccount', index.x, index.y, zoom)
+                .get(ES_ENDPOINT, ES_INDEX, 'topiccount', index.x, index.y, zoom, params)
                 .done(function() {
                     var url = ES_ENDPOINT + '/' + ES_INDEX + '/topiccount/' + zoom + '/' + index.x + '/' + index.y;
                     $.ajax({
-                        url: url,
+                        url: url + '?' + $.param(params),
                         dataType: 'json',
                         timeout: AJAX_TIMEOUT
                     }).done(function(wordCounts) {
@@ -186,97 +249,18 @@
                 });
         };
 
-        // // Create the canvas tile layer
-        // var wordCloudLayer = new L.tileLayer.canvas();
-        // // Override 'drawTile' method. Requests the bin data for the tile, and
-        // // if it exists, renders to the canvas element for the repsective tile.
-        // var layout = function(words, renderInfo, width, height) {
-        //     var that = this;
-        //     var startX = width / 2;
-        //     var startY = height / 2;
-        //     var maxRadius = Math.min(width, height) * 0.5;
-        //     words.forEach(function(word) {
-        //         var placed = false;
-        //         for (var i = 10; i > 0 && !placed; i--) {
-        //             var minRadius = maxRadius * (1 / i);
-        //             for (var t = 0; t <= 1 && !placed; t += (1 / 50)) {
-        //                 var searchRadius = minRadius + (maxRadius - minRadius) * t;
-        //                 var theta = Math.random() * Math.PI * 2;
-        //                 var r = Math.random() * searchRadius;
-        //                 // Apply a shift no more than the width of word to avoid bunching on the right
-        //                 var shiftX = -(Math.random() * renderInfo[word].bb.width);
-        //                 var shiftY = -(Math.random() * renderInfo[word].bb.height);
-        //                 renderInfo[word].x = startX + r * Math.sin(theta) + shiftX;
-        //                 renderInfo[word].y = startY + r * Math.cos(theta) + shiftY;
-        //                 if (that.fits(renderInfo[word])) {
-        //                     placed = true;
-        //                     that.place(word, renderInfo[word]);
-        //                 }
-        //             }
-        //         }
-        //         if (!placed) {
-        //             renderInfo[word].x = -1;
-        //             renderInfo[word].y = -1;
-        //         }
-        //     });
-        // };
-        //
-        // var colorRamp = d3.scale.sqrt()
-        //     .range(['#c77c11', '#f8d9ac'])
-        //     .domain([0, 1]);
-        //
-        // wordCloudLayer.drawTile = function(canvas, index, zoom) {
-        //     $(canvas).addClass('blinking');
-        //     requester
-        //         .get('topiccount', index.x, index.y, zoom)
-        //         .done(function() {
-        //             var url = './topiccount/' + zoom + '/' + index.x + '/' + index.y;
-        //             $.getJSON(url, function(wordCounts) {
-        //                 if (_.isEmpty(wordCounts)) {
-        //                     // Exit early if no data
-        //                     $(canvas).removeClass('blinking');
-        //                     return;
-        //                 }
-        //                 new Cloud5()
-        //                     .canvas(canvas)
-        //                     .width(256)
-        //                     .height(256)
-        //                     .font('Helvetica')
-        //                     .minFontSize(10)
-        //                     .maxFontSize(30)
-        //                     .wordMap(wordCounts)
-        //                     .color(function(info) {
-        //                         return colorRamp((info.count - info.minCount) / (info.maxCount - info.minCount));
-        //                     })
-        //                     .onWordOver(function() {
-        //                         // handle mousing over a word
-        //                         $(canvas).css('cursor', 'pointer');
-        //                     //cloud.highlight( word, 'ff0000' );
-        //                     })
-        //                     .onWordOut(function() {
-        //                         // handle mousing out of a word
-        //                         $(canvas).css('cursor', 'auto');
-        //                     //cloud.unhighlight( word );
-        //                     })
-        //                     .onWordClick(function(word) {
-        //                         // handle clicking a word
-        //                         console.log(word);
-        //                     })
-        //                     .layout(layout)
-        //                     .generate();
-        //                 $(canvas).removeClass('blinking');
-        //             });
-        //         })
-        //         .fail(function() {
-        //             console.error('Could not generate tile.');
-        //         });
-        // };
-
         var requester = new TileRequester('batch', function() {
-            // Add layer to the map
-            heatmapLayer.addTo(map);
-            // Add layer to the map
-            wordCloudLayer.addTo(map);
+
+            $.ajax({
+                url: ES_ENDPOINT + '/' + ES_INDEX + '/default'
+            }).done(function(res) {
+                meta = res;
+                // Add layer to the map
+                heatmapLayer.addTo(map);
+                // Add layer to the map
+                wordCloudLayer.addTo(map);
+            });
+
         });
     };
 

@@ -3,9 +3,16 @@
     'use strict';
 
     var $ = require('jquery');
+    var _ = require('lodash');
 
-    function getTileHash(endpoint, index, type, x, y, z) {
-        return endpoint + ':' + index + ':' + type + ':' + x + '-' + y + '-' + z;
+    function getTileHash(endpoint, index, type, x, y, z, params) {
+        var ps = _.map( params, function(val, key) {
+            return key.toLowerCase() + '=' + val;
+        });
+        ps.sort(function(a, b) {
+            return (a < b) ? -1 : (a > b) ? 1 : 0;
+        });
+        return endpoint + '-' + index + '-' + type + '-' + x + '-' + y + '-' + z + '-' + ps.join('-');
     }
 
     function getHost() {
@@ -20,7 +27,8 @@
     }
 
     function TileRequester(url, callback) {
-        var requests = this.requests = {};
+        var that = this;
+        this.requests = {};
         this.socket = new WebSocket(getHost() + url);
         this.socket.onopen = callback;
         this.socket.onmessage = function(event) {
@@ -32,19 +40,23 @@
                 tileRes.type,
                 tileCoord.x,
                 tileCoord.y,
-                tileCoord.z);
-            var request = requests[tileHash];
-            delete requests[tileHash];
+                tileCoord.z,
+                tileRes.params);
+            var request = that.requests[tileHash];
+            delete that.requests[tileHash];
             if (tileRes.success) {
                 request.resolve(tileRes);
             } else {
                 request.reject(tileRes);
             }
         };
+        this.socket.onclose = function() {
+            console.warn('Websocket connection closed.');
+        };
     }
 
-    TileRequester.prototype.get = function(endpoint, index, type, x, y, z) {
-        var tileHash = getTileHash(endpoint, index, type, x, y, z);
+    TileRequester.prototype.get = function(endpoint, index, type, x, y, z, params) {
+        var tileHash = getTileHash(endpoint, index, type, x, y, z, params);
         var request = this.requests[tileHash];
         if (request) {
             return request.promise();
@@ -58,7 +70,8 @@
             },
             endpoint: endpoint,
             index: index,
-            type: type
+            type: type,
+            params: params
         };
         this.socket.send(JSON.stringify(msg));
         return request.promise();
