@@ -7,6 +7,7 @@ import (
 	"github.com/zenazn/goji/graceful"
 
 	"github.com/unchartedsoftware/prism/generation/elastic"
+	"github.com/unchartedsoftware/prism/generation/filter"
 	"github.com/unchartedsoftware/prism/generation/meta"
 	"github.com/unchartedsoftware/prism/generation/tile"
 	"github.com/unchartedsoftware/prism/server/api"
@@ -26,6 +27,10 @@ func main() {
 	// register available tiling types
 	tile.Register("heatmap", elastic.GetHeatmapTile, elastic.GetHeatmapHash)
 	tile.Register("topiccount", elastic.GetTopicCountTile, elastic.GetTopicCountHash)
+
+	// register available tiling filters
+	filter.Register("time", elastic.GetTimeFilter)
+	filter.Register("terms", elastic.GetTermsFilter)
 
 	// register available meta data types
 	meta.Register("default", elastic.GetMeta)

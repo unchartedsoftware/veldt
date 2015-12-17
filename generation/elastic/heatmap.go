@@ -10,6 +10,7 @@ import (
 
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/generation/filter"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -18,12 +19,47 @@ type HeatmapParams struct {
 	X          string
 	Y          string
 	Extents    *binning.Bounds
+	Filters	   []elastic.Query
 	Resolution int64
 }
 
 func float64ToBytes(bytes []byte, float float64) {
 	bits := math.Float64bits(float)
 	binary.LittleEndian.PutUint64(bytes, bits)
+}
+
+func extractFilter(typeID string, args map[string]interface{}) (elastic.Query, error) {
+	// get filter generator by type
+	gen, err := filter.GetGeneratorByType(typeID)
+	if err != nil {
+		return nil, err
+	}
+	v, ok := gen(args)
+	if !ok {
+		return nil, fmt.Errorf("Unable to instantiate filter type '%s' with provided arguments", typeID)
+	}
+	f, ok := v.(elastic.Query)
+	if !ok {
+		return nil, fmt.Errorf("Filter of type '%s' is incompatible with the provided tile generator", typeID)
+	}
+	return f, nil
+}
+
+func extractFilters(params map[string]interface{}) []elastic.Query {
+	filters, ok := json.GetChildren(params, "filters")
+	if !ok {
+		return make([]elastic.Query, 0)
+	}
+	var fs []elastic.Query
+	for typeID, args := range filters {
+		f, err := extractFilter(typeID, args)
+		if err != nil {
+			//log.Warn(err)
+			continue
+		}
+		fs = append(fs, f)
+	}
+	return fs
 }
 
 func extractHeatmapParams(params map[string]interface{}) *HeatmapParams {
@@ -40,6 +76,7 @@ func extractHeatmapParams(params map[string]interface{}) *HeatmapParams {
 				Y: json.GetNumberDefault(params, "minY", binning.MaxPixels),
 			},
 		},
+		Filters: extractFilters(params),
 		Resolution: int64(json.GetNumberDefault(params, "resolution", binning.MaxTileResolution)),
 	}
 }
@@ -79,17 +116,23 @@ func GetHeatmapTile(tileReq *tile.Request) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// query
-	result, err := client.
-		Search(tileReq.Index).
-		Size(0).
-		Query(elastic.NewBoolQuery().Must(
+	// create x and y range queries
+	boolQuery := elastic.NewBoolQuery().Must(
 		elastic.NewRangeQuery(params.X).
 			Gte(xMin).
 			Lte(xMax),
 		elastic.NewRangeQuery(params.Y).
 			Gte(yMin).
-			Lte(yMax))).
+			Lte(yMax))
+	// add filters
+	for _, filter := range params.Filters {
+		boolQuery.Must(filter)
+	}
+	// query
+	result, err := client.
+		Search(tileReq.Index).
+		Size(0).
+		Query(boolQuery).
 		Aggregation("x",
 		elastic.NewHistogramAggregation().
 			Field(params.X).
