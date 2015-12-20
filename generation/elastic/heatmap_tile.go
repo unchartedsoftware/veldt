@@ -55,7 +55,7 @@ func (g *HeatmapTile) GetParams() []tile.Param {
 // GetTile returns the marshalled tile data.
 func (g *HeatmapTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 	binning := g.Binning
-	tiling := g.Binning.Tiling
+	tiling := binning.Tiling
 	timeRange := g.TimeRange
 	topic := g.Topic
 	// get client
@@ -80,8 +80,9 @@ func (g *HeatmapTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 		Search(tileReq.Index).
 		Size(0).
 		Query(boolQuery).
-		Aggregation(xAggName, binning.GetXAgg().
-		SubAggregation(yAggName, binning.GetYAgg())).
+		Aggregation(xAggName,
+		binning.GetXAgg().
+			SubAggregation(yAggName, binning.GetYAgg())).
 		Do()
 	if err != nil {
 		return nil, err
@@ -96,14 +97,14 @@ func (g *HeatmapTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 	// fill count buffer
 	for _, xBucket := range xAgg.Buckets {
 		x := xBucket.Key
-		xBin := (x - tiling.MinX) / binning.BinSizeX
+		xBin := (x - tiling.Left) / binning.BinSizeX
 		yAgg, ok := xBucket.Histogram(yAggName)
 		if !ok {
 			return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response", yAggName)
 		}
 		for _, yBucket := range yAgg.Buckets {
 			y := yBucket.Key
-			yBin := (y - tiling.MinY) / binning.BinSizeY
+			yBin := (y - tiling.Top) / binning.BinSizeY
 			index := xBin + binning.Resolution*yBin
 			// encode count
 			float64ToBytes(bytes[index*8:index*8+8], float64(yBucket.DocCount))

@@ -2,6 +2,7 @@ package param
 
 import (
 	"fmt"
+	"math"
 
 	"gopkg.in/olivere/elastic.v3"
 
@@ -28,8 +29,8 @@ func NewBinning(tileReq *tile.Request) (*Binning, error) {
 	resolution := int64(json.GetNumberDefault(params, "resolution", binning.MaxTileResolution))
 	return &Binning{
 		Tiling:     tiling,
-		BinSizeX:   tiling.MaxX - tiling.MinX/resolution,
-		BinSizeY:   tiling.MaxY - tiling.MinY/resolution,
+		BinSizeX:   int64(math.Abs(float64(tiling.Right-tiling.Left))) / resolution,
+		BinSizeY:   int64(math.Abs(float64(tiling.Bottom-tiling.Top))) / resolution,
 		Resolution: resolution,
 	}, nil
 }

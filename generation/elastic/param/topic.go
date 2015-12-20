@@ -20,14 +20,13 @@ type Topic struct {
 // NewTopic instantiates and returns a new topic parameter object.
 func NewTopic(tileReq *tile.Request) (*Topic, error) {
 	params := tileReq.Params
-	topicsStr := json.GetStringDefault(params, "topics", "")
-	topics := strings.Split(topicsStr, ",")
-	if len(topics) == 0 {
+	topics, ok := json.GetString(params, "topics")
+	if !ok {
 		return nil, errors.New("Topic parameters missing from tiling request")
 	}
 	return &Topic{
 		Text:   json.GetStringDefault(params, "text", "text"),
-		Topics: topics,
+		Topics: strings.Split(topics, ","),
 	}, nil
 }
 

@@ -2,6 +2,7 @@ package tile
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/fanliao/go-promise"
@@ -55,6 +56,11 @@ func getSuccessResponse(tileReq *Request) *Response {
 	}
 }
 
+func isNil(a interface{}) bool {
+	defer func() { recover() }()
+	return a == nil || reflect.ValueOf(a).IsNil()
+}
+
 func getTileHash(tileReq *Request, tileGen Generator) string {
 	tileParams := tileGen.GetParams()
 	// create hashes array
@@ -70,10 +76,10 @@ func getTileHash(tileReq *Request, tileGen Generator) string {
 	hashes = append(hashes, hash)
 	// add individual param hashes
 	for _, p := range tileParams {
-		if p != nil {
-			hashes = append(hashes, p.GetHash())
-		} else {
+		if isNil(p) {
 			hashes = append(hashes, "-")
+		} else {
+			hashes = append(hashes, p.GetHash())
 		}
 	}
 	return strings.Join(hashes, ":")
