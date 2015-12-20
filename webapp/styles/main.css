@@ -9,6 +9,8 @@
     padding: 0;
     margin: 0;
     background-color: #111;
+    color: #ccc;
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
 .leaflet-tile-container:first-child .leaflet-tile-loaded.leaflet-wordcloud {

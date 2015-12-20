@@ -7,10 +7,11 @@
     //var d3 = require('d3');
     var TileRequester = require('./scripts/TileRequester');
     var WordCloudLayer = require('./scripts/WordCloudLayer');
+    var Slider = require('./scripts/Slider');
     var AJAX_TIMEOUT = 5000;
 
     function mod(m, n) {
-        return ((m%n)+n)%n;
+        return ((m % n) + n) % n;
     }
 
     $.ajaxTransport('+arraybuffer', function(options) {
@@ -254,6 +255,22 @@
             $.ajax({
                 url: ES_ENDPOINT + '/' + ES_INDEX + '/default'
             }).done(function(res) {
+
+                $('.controls').append(new Slider({
+                    label: 'resolution',
+                    min: 0,
+                    max: 8,
+                    step: 1,
+                    initialValue: Math.log2(RESOLUTION),
+                    formatter: function(value) {
+                        return Math.pow(2, value);
+                    },
+                    slideStop: function(value) {
+                        RESOLUTION = Math.pow(2, value);
+                        heatmapLayer.redraw();
+                    }
+                }).getElement());
+
                 meta = res;
                 // Add layer to the map
                 heatmapLayer.addTo(map);
