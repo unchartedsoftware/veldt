@@ -6,15 +6,20 @@ import (
 
 // Generator represents a function which takes a tile request and returns a
 // byte slice of marshalled tile data.
-type Generator func(*Request) ([]byte, error)
+type Generator func(*Request, map[string]Param) ([]byte, error)
 
-// Hasher represents a function which takes a tile request and returns a
-// unique string hash o.
-type Hasher func(*Request) string
+// Param represents a single set of related tiling parameters.
+type Param interface {
+	GetHash() string
+}
+
+// Params represents a function which takes a tile request and returns a
+// map of parameters.
+type Params func(*Request) map[string]Param
 
 // Pair represents a tile generator and tile hasher pair.
 type Pair struct {
-	Hasher    Hasher
+	Params    Params
 	Generator Generator
 }
 
@@ -24,10 +29,10 @@ var (
 )
 
 // Register registers a tile generator under the provided type id string.
-func Register(typeID string, tile Generator, hash Hasher) {
+func Register(typeID string, tile Generator, params Params) {
 	registry[typeID] = Pair{
 		Generator: tile,
-		Hasher:    hash,
+		Params:    params,
 	}
 }
 
@@ -41,12 +46,12 @@ func GetGeneratorByType(typeID string) (Generator, error) {
 	return pair.Generator, nil
 }
 
-// GetHasherByType when given a string id will return the registered
-// tile generator.
-func GetHasherByType(typeID string) (Hasher, error) {
+// GetParamsByType when given a string id will return the registered
+// tile parameters.
+func GetParamsByType(typeID string) (Params, error) {
 	pair, ok := registry[typeID]
 	if !ok {
-		return nil, fmt.Errorf("Tile type '%s' is not recognized", typeID)
+		return nil, fmt.Errorf("Parameters type '%s' is not recognized", typeID)
 	}
-	return pair.Hasher, nil
+	return pair.Params, nil
 }

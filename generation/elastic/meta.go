@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/generation/meta"
 	jsonutil "github.com/unchartedsoftware/prism/util/json"
 )
@@ -11,7 +12,7 @@ import (
 // PropertyMeta represents the meta data for a single property.
 type PropertyMeta struct {
 	Type    string   `json:"type"`
-	Extrema *Extrema `json:"extrema,omitempty"`
+	Extrema *binning.Extrema `json:"extrema,omitempty"`
 }
 
 func getPropertyMeta(endpoint string, index string, field string, typ string) (*PropertyMeta, error) {

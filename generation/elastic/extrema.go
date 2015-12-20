@@ -4,16 +4,12 @@ import (
 	"fmt"
 
 	"gopkg.in/olivere/elastic.v3"
+
+	"github.com/unchartedsoftware/prism/binning"
 )
 
-// Extrema represents the min and max values for an ordinal property.
-type Extrema struct {
-	Min float64 `json:"min"`
-	Max float64 `json:"max"`
-}
-
 // GetExtrema returns the extrema of a numeric field for the provided index.
-func GetExtrema(endpoint string, index string, field string) (*Extrema, error) {
+func GetExtrema(endpoint string, index string, field string) (*binning.Extrema, error) {
 	// get client
 	client, err := getClient(endpoint)
 	if err != nil {
@@ -42,7 +38,7 @@ func GetExtrema(endpoint string, index string, field string) (*Extrema, error) {
 	if !ok {
 		return nil, fmt.Errorf("Max '%s' aggregation was not found in response", field)
 	}
-	return &Extrema{
+	return &binning.Extrema{
 		Min: *min.Value,
 		Max: *max.Value,
 	}, nil

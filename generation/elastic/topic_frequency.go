@@ -10,8 +10,12 @@ import (
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
-// GetTopicCountParams returns a map of tiling parameters.
-func GetTopicCountParams(tileReq *tile.Request) map[string]tile.Param {
+const (
+	timeAggName = "time"
+)
+
+// GetTopicFrequencyParams returns a map of tiling parameters.
+func GetTopicFrequencyParams(tileReq *tile.Request) map[string]tile.Param {
 	return map[string]tile.Param{
 		"binning": NewBinningParams(tileReq),
 		"topic": NewTopicParams(tileReq),
@@ -19,8 +23,8 @@ func GetTopicCountParams(tileReq *tile.Request) map[string]tile.Param {
 	}
 }
 
-// GetTopicCountTile returns a marshalled tile containing topics and counts.
-func GetTopicCountTile(tileReq *tile.Request, params map[string]tile.Param) ([]byte, error) {
+// GetTopicFrequencyTile returns a marshalled tile containing topics and frequencies.
+func GetTopicFrequencyTile(tileReq *tile.Request, params map[string]tile.Param) ([]byte, error) {
 	binning, _ := params["binning"].(*BinningParams)
 	time, _ := params["time"].(*TimeParams)
 	topic, _ := params["topic"].(*TopicParams)
@@ -29,6 +33,9 @@ func GetTopicCountTile(tileReq *tile.Request, params map[string]tile.Param) ([]b
 	}
 	if topic == nil {
 		return nil, errors.New("No topics have been provided")
+	}
+	if time == nil {
+		return nil, errors.New("No time range has been provided")
 	}
 	// get client
 	client, err := getClient(tileReq.Endpoint)
@@ -49,26 +56,33 @@ func GetTopicCountTile(tileReq *tile.Request, params map[string]tile.Param) ([]b
 		Size(0).
 		Query(boolQuery)
 	// add all filter aggregations
+	timeAgg := time.GetTimeAggregation()
 	topicAggs := topic.GetTopicAggregations()
 	for topic, topicAgg := range topicAggs {
-		query.Aggregation(topic, topicAgg)
+		query.Aggregation(topic, topicAgg.SubAggregation(timeAggName, timeAgg))
 	}
 	// send query
 	result, err := query.Do()
 	if err != nil {
 		return nil, err
 	}
-	// build map of topics and counts
-	topicCounts := make(map[string]int64)
+	// build map of topics and frequency arrays
+	topicFrequencies := make(map[string][]int64)
 	for _, topic := range topic.Topics {
 		filter, ok := result.Aggregations.Filter(topic)
 		if !ok {
 			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response", topic)
 		}
-		if filter.DocCount > 0 {
-			topicCounts[topic] = filter.DocCount
+		timeAgg, ok := filter.DateHistogram(timeAggName)
+		if !ok {
+			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response", timeAggName)
 		}
+		topicCounts := make([]int64, len(timeAgg.Buckets))
+		for _, bucket := range timeAgg.Buckets {
+			topicCounts = append(topicCounts, bucket.DocCount)
+		}
+		topicFrequencies[topic] = topicCounts
 	}
 	// marshal results map
-	return json.Marshal(topicCounts)
+	return json.Marshal(topicFrequencies)
 }

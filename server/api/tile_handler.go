@@ -29,7 +29,7 @@ func parseTileParams(params map[string]string, queryParams url.Values) (*tile.Re
 	z, ez := strconv.ParseUint(params["z"], 10, 32)
 	if ex == nil || ey == nil || ez == nil {
 		return &tile.Request{
-			TileCoord: binning.TileCoord{
+			TileCoord: &binning.TileCoord{
 				X: uint32(x),
 				Y: uint32(y),
 				Z: uint32(z),

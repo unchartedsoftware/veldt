@@ -58,7 +58,7 @@ func CoordToPixelCoord(coord *Coord, bounds *Bounds) *PixelCoord {
 	}
 }
 
-// GetTilePixelBounds returns the pixel coordniate bounds of the tile coordinate.
+// GetTilePixelBounds returns the pixel coordinate bounds of the tile coordinate.
 func GetTilePixelBounds(tile *TileCoord) *PixelBounds {
 	pow2 := math.Pow(2, float64(tile.Z))
 	// Converting to range from [0:1] where 0,0 is top left

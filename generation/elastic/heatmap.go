@@ -8,109 +8,36 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/generation/tile"
-	"github.com/unchartedsoftware/prism/generation/filter"
-	"github.com/unchartedsoftware/prism/util/json"
 )
 
-// HeatmapParams represents the parameters passed for a heatmap tiling tile.Request.
-type HeatmapParams struct {
-	X          string
-	Y          string
-	Extents    *binning.Bounds
-	Filters	   []elastic.Query
-	Resolution int64
-}
+const (
+	xAggName = "x"
+	yAggName = "y"
+)
 
 func float64ToBytes(bytes []byte, float float64) {
 	bits := math.Float64bits(float)
 	binary.LittleEndian.PutUint64(bytes, bits)
 }
 
-func extractFilter(typeID string, args map[string]interface{}) (elastic.Query, error) {
-	// get filter generator by type
-	gen, err := filter.GetGeneratorByType(typeID)
-	if err != nil {
-		return nil, err
+// GetHeatmapParams returns a map of tiling parameters.
+func GetHeatmapParams(tileReq *tile.Request) map[string]tile.Param {
+	return map[string]tile.Param{
+		"binning": NewBinningParams(tileReq),
+		"topic": NewTopicParams(tileReq),
+		"time": NewTimeParams(tileReq),
 	}
-	v, ok := gen(args)
-	if !ok {
-		return nil, fmt.Errorf("Unable to instantiate filter type '%s' with provided arguments", typeID)
-	}
-	f, ok := v.(elastic.Query)
-	if !ok {
-		return nil, fmt.Errorf("Filter of type '%s' is incompatible with the provided tile generator", typeID)
-	}
-	return f, nil
-}
-
-func extractFilters(params map[string]interface{}) []elastic.Query {
-	filters, ok := json.GetChildren(params, "filters")
-	if !ok {
-		return make([]elastic.Query, 0)
-	}
-	var fs []elastic.Query
-	for typeID, args := range filters {
-		f, err := extractFilter(typeID, args)
-		if err != nil {
-			//log.Warn(err)
-			continue
-		}
-		fs = append(fs, f)
-	}
-	return fs
-}
-
-func extractHeatmapParams(params map[string]interface{}) *HeatmapParams {
-	return &HeatmapParams{
-		X: json.GetStringDefault(params, "x", "pixel.x"),
-		Y: json.GetStringDefault(params, "y", "pixel.y"),
-		Extents: &binning.Bounds{
-			TopLeft: &binning.Coord{
-				X: json.GetNumberDefault(params, "minX", 0.0),
-				Y: json.GetNumberDefault(params, "maxY", 0.0),
-			},
-			BottomRight: &binning.Coord{
-				X: json.GetNumberDefault(params, "maxX", binning.MaxPixels),
-				Y: json.GetNumberDefault(params, "minY", binning.MaxPixels),
-			},
-		},
-		Filters: extractFilters(params),
-		Resolution: int64(json.GetNumberDefault(params, "resolution", binning.MaxTileResolution)),
-	}
-}
-
-// GetHeatmapHash returns a unique hash for a heatmap tile.
-func GetHeatmapHash(tileReq *tile.Request) string {
-	params := extractHeatmapParams(tileReq.Params)
-	return fmt.Sprintf("%s:%s:%s:%d:%d:%d:%s:%s:%f:%f:%f:%f:%d",
-		tileReq.Endpoint,
-		tileReq.Index,
-		tileReq.Type,
-		tileReq.TileCoord.X,
-		tileReq.TileCoord.Y,
-		tileReq.TileCoord.Z,
-		params.X,
-		params.Y,
-		params.Extents.TopLeft.X,
-		params.Extents.TopLeft.Y,
-		params.Extents.BottomRight.X,
-		params.Extents.BottomRight.Y,
-		params.Resolution,
-	)
 }
 
 // GetHeatmapTile returns a marshalled tile containing a flat array of bins.
-func GetHeatmapTile(tileReq *tile.Request) ([]byte, error) {
-	params := extractHeatmapParams(tileReq.Params)
-	bounds := binning.GetTileBounds(&tileReq.TileCoord, params.Extents)
-	xBinSize := int64(bounds.BottomRight.X-bounds.TopLeft.X) / params.Resolution
-	yBinSize := int64(bounds.BottomRight.Y-bounds.TopLeft.Y) / params.Resolution
-	xMin := int64(bounds.TopLeft.X)
-	xMax := int64(bounds.BottomRight.X - 1)
-	yMin := int64(bounds.TopLeft.Y)
-	yMax := int64(bounds.BottomRight.Y - 1)
+func GetHeatmapTile(tileReq *tile.Request, params map[string]tile.Param) ([]byte, error) {
+	binning, _ := params["binning"].(*BinningParams)
+	time, _ := params["time"].(*TimeParams)
+	topic, _ := params["topic"].(*TopicParams)
+	if binning == nil {
+		return nil, errors.New("No binning information has been provided")
+	}
 	// get client
 	client, err := getClient(tileReq.Endpoint)
 	if err != nil {
@@ -118,54 +45,46 @@ func GetHeatmapTile(tileReq *tile.Request) ([]byte, error) {
 	}
 	// create x and y range queries
 	boolQuery := elastic.NewBoolQuery().Must(
-		elastic.NewRangeQuery(params.X).
-			Gte(xMin).
-			Lte(xMax),
-		elastic.NewRangeQuery(params.Y).
-			Gte(yMin).
-			Lte(yMax))
-	// add filters
-	for _, filter := range params.Filters {
-		boolQuery.Must(filter)
+		binning.GetXQuery(),
+		binning.GetYQuery())
+	// if time params are provided, add time range query
+	if time != nil {
+		boolQuery.Must(time.GetTimeQuery())
+	}
+	// if topic params are provided, add terms query
+	if topic != nil {
+		boolQuery.Must(topic.GetTopicQuery())
 	}
 	// query
 	result, err := client.
 		Search(tileReq.Index).
 		Size(0).
 		Query(boolQuery).
-		Aggregation("x",
-		elastic.NewHistogramAggregation().
-			Field(params.X).
-			Interval(xBinSize).
-			MinDocCount(1).
-			SubAggregation("y",
-			elastic.NewHistogramAggregation().
-				Field(params.Y).
-				Interval(yBinSize).
-				MinDocCount(1))).
+		Aggregation(xAggName, binning.GetXAgg().
+			SubAggregation(yAggName, binning.GetYAgg())).
 		Do()
 	if err != nil {
 		return nil, err
 	}
 	// parse aggregations
-	xAgg, ok := result.Aggregations.Histogram("x")
+	xAgg, ok := result.Aggregations.Histogram(xAggName)
 	if !ok {
-		return nil, errors.New("Histogram aggregation 'x' was not found in response.")
+		return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response", xAggName)
 	}
 	// allocate count buffer
-	bytes := make([]byte, params.Resolution*params.Resolution*8)
+	bytes := make([]byte, binning.Resolution*binning.Resolution*8)
 	// fill count buffer
 	for _, xBucket := range xAgg.Buckets {
 		x := xBucket.Key
-		xBin := (x - xMin) / xBinSize
-		yAgg, ok := xBucket.Histogram("y")
+		xBin := (x - binning.MinX) / binning.BinSizeX
+		yAgg, ok := xBucket.Histogram(yAggName)
 		if !ok {
-			return nil, errors.New("Histogram aggregation 'y' was not found in response.")
+			return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response", yAggName)
 		}
 		for _, yBucket := range yAgg.Buckets {
 			y := yBucket.Key
-			yBin := (y - yMin) / yBinSize
-			index := xBin + params.Resolution*yBin
+			yBin := (y - binning.MinY) / binning.BinSizeY
+			index := xBin + binning.Resolution*yBin
 			// encode count
 			float64ToBytes(bytes[index*8:index*8+8], float64(yBucket.DocCount))
 		}
