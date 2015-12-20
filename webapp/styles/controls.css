@@ -1,0 +1,11 @@
+
+.controls {
+    position: absolute;
+    left: 10px;
+    bottom: 20px;
+}
+
+.layer-control {
+    height: 20px;
+    line-height: 20px;
+}

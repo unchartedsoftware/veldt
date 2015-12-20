@@ -6,7 +6,7 @@
     var _ = require('lodash');
 
     function getTileHash(endpoint, index, type, x, y, z, params) {
-        var ps = _.map( params, function(val, key) {
+        var ps = _.map(params, function(val, key) {
             return key.toLowerCase() + '=' + val;
         });
         ps.sort(function(a, b) {

@@ -11,20 +11,14 @@
         uglify;
 
     var projectName = 'prism';
-
-    var output = {
-        dir: 'build/public/',
-        app: 'app',
-        vendor: 'vendor'
-    };
-
     var webappPath = 'webapp/';
     var serverPath = 'server/';
-
+    var outputDir = 'build/public/';
     var paths = {
         serverRoot: serverPath + '/main.go',
         webappRoot: webappPath + '/app.js',
         go: [ './**/*.go' ],
+        templates: [ webappPath + 'templates/**/*.hbs'],
         scripts: [ webappPath + 'scripts/**/*.js',  webappPath + 'app.js' ],
         styles: [  webappPath + 'styles/reset.css',  webappPath + 'styles/**/*.css' ],
         index: [  webappPath + 'index.html' ],
@@ -55,7 +49,7 @@
                     .on( 'error', handleError )
                     .pipe( source( projectName + '.js' ) )
                     // This is where you add uglifying etc.
-                    .pipe( gulp.dest( output.dir ) );
+                    .pipe( gulp.dest( outputDir ) );
                 console.log( 'Updated in', ( Date.now() - updateStart ) + 'ms' );
             });
             bundler = watcher;
@@ -64,12 +58,12 @@
             .bundle() // Create the initial bundle when starting the task
             .on( 'error', handleError )
             .pipe( source( projectName + '.js' ) )
-            .pipe( gulp.dest( output.dir ) );
+            .pipe( gulp.dest( outputDir ) );
     }
 
     gulp.task('clean', function () {
         var del = require('del');
-        del.sync([ output.dir + '/*']);
+        del.sync([ outputDir + '/*']);
     });
 
     gulp.task('lint', function() {
@@ -99,20 +93,38 @@
         return bundle( bundler, false );
     });
 
+    gulp.task('build-templates',function() {
+        var handlebars = require('gulp-handlebars');
+        var wrap = require('gulp-wrap');
+        var declare = require('gulp-declare');
+        return gulp.src( paths.templates )
+            .pipe( handlebars({
+                // Pass your local handlebars version
+                handlebars: require('handlebars')
+            }))
+            .pipe( wrap('Handlebars.template(<%= contents %>)'))
+            .pipe(declare({
+                namespace: 'Templates',
+                noRedeclare: true, // avoid duplicate declarations
+            }))
+            .pipe( concat( projectName + '.templates.js' ) )
+            .pipe( gulp.dest( outputDir ) );
+    });
+
     gulp.task('build-styles', function () {
         csso = csso || require('gulp-csso');
         var concat = require('gulp-concat');
         return gulp.src( paths.styles )
             .pipe( csso() )
             .pipe( concat( projectName + '.css') )
-            .pipe( gulp.dest( output.dir ) );
+            .pipe( gulp.dest( outputDir ) );
     });
 
     gulp.task('copy-resources', function() {
         return gulp.src( paths.resources, {
                 base: webappPath
             })
-            .pipe( gulp.dest( output.dir ) );
+            .pipe( gulp.dest( outputDir ) );
     });
 
     gulp.task('build-vendor-js', function() {
@@ -123,7 +135,7 @@
             .pipe( filter('**/*.js') ) // filter js files
             .pipe( concat('vendor.min.js') )
             .pipe( uglify() )
-            .pipe( gulp.dest( output.dir ) );
+            .pipe( gulp.dest( outputDir ) );
     });
 
     gulp.task('build-vendor-css', function() {
@@ -134,7 +146,7 @@
             .pipe( filter('**/*.css') ) // filter css files
             .pipe( csso() )
             .pipe( concat('vendor.min.css') )
-            .pipe( gulp.dest( output.dir ) );
+            .pipe( gulp.dest( outputDir ) );
     });
 
     gulp.task('build-vendor', function( done ) {
@@ -149,7 +161,7 @@
         runSequence = runSequence || require('run-sequence');
         runSequence(
             [ 'clean', 'lint' ],
-            [ 'build-and-watch-scripts', 'build-styles', 'build-vendor', 'copy-resources' ],
+            [ 'build-and-watch-scripts', 'build-templates', 'build-styles', 'build-vendor', 'copy-resources' ],
             done );
     });
 
@@ -157,7 +169,7 @@
         runSequence = runSequence || require('run-sequence');
         runSequence(
             [ 'clean', 'lint' ],
-            [ 'build-scripts', 'build-styles', 'build-vendor', 'copy-resources' ],
+            [ 'build-scripts', 'build-templates', 'build-styles', 'build-vendor', 'copy-resources' ],
             done );
     });
 
@@ -179,6 +191,7 @@
             go.restart();
         });
         gulp.watch( paths.styles, [ 'build-styles' ] );
+        gulp.watch( paths.templates, [ 'build-templates' ]);
         gulp.watch( paths.resources, [ 'copy-resources' ] );
         done();
     });
