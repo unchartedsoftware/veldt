@@ -2,11 +2,11 @@ package elastic
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"gopkg.in/olivere/elastic.v3"
 
+	"github.com/unchartedsoftware/prism/generation/elastic/param"
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
@@ -14,29 +14,50 @@ const (
 	timeAggName = "time"
 )
 
-// GetTopicFrequencyParams returns a map of tiling parameters.
-func GetTopicFrequencyParams(tileReq *tile.Request) map[string]tile.Param {
-	return map[string]tile.Param{
-		"binning": NewBinningParams(tileReq),
-		"topic": NewTopicParams(tileReq),
-		"time": NewTimeParams(tileReq),
+// TopicFrequencyTile represents a tiling generator that produces topic
+// frequency counts.
+type TopicFrequencyTile struct {
+	Tiling     *param.Tiling
+	Topic      *param.Topic
+	TimeBucket *param.TimeBucket
+}
+
+// NewTopicFrequencyTile instantiates and returns a pointer to a new generator.
+func NewTopicFrequencyTile(tileReq *tile.Request) (tile.Generator, error) {
+	tiling, err := param.NewTiling(tileReq)
+	if err != nil {
+		return nil, err
+	}
+	topic, err := param.NewTopic(tileReq)
+	if err != nil {
+		return nil, err
+	}
+	time, err := param.NewTimeBucket(tileReq)
+	if err != nil {
+		return nil, err
+	}
+	return &TopicFrequencyTile{
+		Tiling:     tiling,
+		Topic:      topic,
+		TimeBucket: time,
+	}, nil
+}
+
+// GetParams returns a slice of tiling parameters.
+func (g *TopicFrequencyTile) GetParams() []tile.Param {
+	return []tile.Param{
+		g.Tiling,
+		g.Topic,
+		g.TimeBucket,
 	}
 }
 
-// GetTopicFrequencyTile returns a marshalled tile containing topics and frequencies.
-func GetTopicFrequencyTile(tileReq *tile.Request, params map[string]tile.Param) ([]byte, error) {
-	binning, _ := params["binning"].(*BinningParams)
-	time, _ := params["time"].(*TimeParams)
-	topic, _ := params["topic"].(*TopicParams)
-	if binning == nil {
-		return nil, errors.New("No binning information has been provided")
-	}
-	if topic == nil {
-		return nil, errors.New("No topics have been provided")
-	}
-	if time == nil {
-		return nil, errors.New("No time range has been provided")
-	}
+// GetTile returns the marshalled tile data.
+func (g *TopicFrequencyTile) GetTile(tileReq *tile.Request) ([]byte, error) {
+	tiling := g.Tiling
+	timeBucket := g.TimeBucket
+	timeRange := timeBucket.TimeRange
+	topic := g.Topic
 	// get client
 	client, err := getClient(tileReq.Endpoint)
 	if err != nil {
@@ -44,11 +65,11 @@ func GetTopicFrequencyTile(tileReq *tile.Request, params map[string]tile.Param) 
 	}
 	// create x and y range queries
 	boolQuery := elastic.NewBoolQuery().Must(
-		binning.GetXQuery(),
-		binning.GetYQuery())
+		tiling.GetXQuery(),
+		tiling.GetYQuery())
 	// if time params are provided, add time range query
-	if time != nil {
-		boolQuery.Must(time.GetTimeQuery())
+	if timeRange != nil {
+		boolQuery.Must(timeRange.GetTimeQuery())
 	}
 	// build query
 	query := client.
@@ -56,7 +77,7 @@ func GetTopicFrequencyTile(tileReq *tile.Request, params map[string]tile.Param) 
 		Size(0).
 		Query(boolQuery)
 	// add all filter aggregations
-	timeAgg := time.GetTimeAggregation()
+	timeAgg := timeBucket.GetTimeAggregation()
 	topicAggs := topic.GetTopicAggregations()
 	for topic, topicAgg := range topicAggs {
 		query.Aggregation(topic, topicAgg.SubAggregation(timeAggName, timeAgg))

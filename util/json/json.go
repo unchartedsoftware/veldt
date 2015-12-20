@@ -10,7 +10,7 @@ type Node map[string]interface{}
 // Exists returns true if something exists under the provided path.
 func Exists(json Node, path ...string) bool {
 	child := json
-	lastIndex := len(path)-1
+	lastIndex := len(path) - 1
 	for index, key := range path {
 		// does a child exists?
 		v, ok := child[key]

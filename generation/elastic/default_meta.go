@@ -11,7 +11,7 @@ import (
 
 // PropertyMeta represents the meta data for a single property.
 type PropertyMeta struct {
-	Type    string   `json:"type"`
+	Type    string           `json:"type"`
 	Extrema *binning.Extrema `json:"extrema,omitempty"`
 }
 
@@ -71,8 +71,17 @@ func parseProperties(endpoint string, index string, props map[string]interface{}
 	return meta, nil
 }
 
+// DefaultMeta represents a meta data generator that produces default
+// metadata with property types and extrema.
+type DefaultMeta struct{}
+
+// NewDefaultMeta instantiates and returns a pointer to a new generator.
+func NewDefaultMeta(metaReq *meta.Request) (meta.Generator, error) {
+	return &DefaultMeta{}, nil
+}
+
 // GetMeta returns the meta data for a given index.
-func GetMeta(metaReq *meta.Request) ([]byte, error) {
+func (g *DefaultMeta) GetMeta(metaReq *meta.Request) ([]byte, error) {
 	// get the raw mappings
 	mapping, err := GetMapping(metaReq.Endpoint, metaReq.Index)
 	if err != nil {

@@ -2,7 +2,6 @@ package tile
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/fanliao/go-promise"
@@ -38,7 +37,7 @@ func getFailureResponse(tileReq *Request, err error) *Response {
 		Type:      tileReq.Type,
 		Index:     tileReq.Index,
 		Endpoint:  tileReq.Endpoint,
-		Params:	   tileReq.Params,
+		Params:    tileReq.Params,
 		Success:   false,
 		Error:     err,
 	}
@@ -50,13 +49,14 @@ func getSuccessResponse(tileReq *Request) *Response {
 		Type:      tileReq.Type,
 		Index:     tileReq.Index,
 		Endpoint:  tileReq.Endpoint,
-		Params:	   tileReq.Params,
+		Params:    tileReq.Params,
 		Success:   true,
 		Error:     nil,
 	}
 }
 
-func getTileHash(tileReq *Request, tileParams map[string]Param) string {
+func getTileHash(tileReq *Request, tileGen Generator) string {
+	tileParams := tileGen.GetParams()
 	// create hashes array
 	hashes := make([]string, len(tileParams)+1)
 	// add tile req hash first
@@ -68,15 +68,8 @@ func getTileHash(tileReq *Request, tileParams map[string]Param) string {
 		tileReq.TileCoord.Y,
 		tileReq.TileCoord.Z)
 	hashes = append(hashes, hash)
-	// sort keys alphabetically
-	keys := make([]string, len(tileParams))
-	for k := range tileParams {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	// add hashes alphabetically
-	for _, k := range keys {
-		p := tileParams[k]
+	// add individual param hashes
+	for _, p := range tileParams {
 		if p != nil {
 			hashes = append(hashes, p.GetHash())
 		} else {
@@ -90,13 +83,12 @@ func getTileHash(tileReq *Request, tileParams map[string]Param) string {
 // has completed and the tile is ready.
 func GetTile(tileReq *Request) *promise.Promise {
 	// get parameters
-	params, err := GetParamsByType(tileReq.Type)
+	tileGen, err := GetGenerator(tileReq)
 	if err != nil {
 		return getFailurePromise(tileReq, err)
 	}
-	tileParams := params(tileReq)
 	// get tile hash
-	tileHash := getTileHash(tileReq, tileParams)
+	tileHash := getTileHash(tileReq, tileGen)
 	// check if tile exists in store
 	exists, err := store.Exists(tileHash)
 	if err != nil {
@@ -107,18 +99,13 @@ func GetTile(tileReq *Request) *promise.Promise {
 		return getSuccessPromise(tileReq)
 	}
 	// otherwise, initiate the tiling job and return promise
-	return getTilePromise(tileHash, tileReq, tileParams)
+	return getTilePromise(tileHash, tileReq, tileGen)
 }
 
 // GenerateAndStoreTile generates a new tile and then puts it in the store.
-func GenerateAndStoreTile(tileHash string, tileReq *Request, tileParams map[string]Param) *Response {
-	// get generator by id
-	generator, err := GetGeneratorByType(tileReq.Type)
-	if err != nil {
-		return getFailureResponse(tileReq, err)
-	}
-	// otherwise, generate the tile
-	tileData, err := generator(tileReq, tileParams)
+func GenerateAndStoreTile(tileHash string, tileReq *Request, tileGen Generator) *Response {
+	// generate the tile
+	tileData, err := tileGen.GetTile(tileReq)
 	if err != nil {
 		return getFailureResponse(tileReq, err)
 	}
@@ -133,13 +120,12 @@ func GenerateAndStoreTile(tileHash string, tileReq *Request, tileParams map[stri
 // GetTileFromStore returns a serialized tile from store.
 func GetTileFromStore(tileReq *Request) ([]byte, error) {
 	// get parameters
-	params, err := GetParamsByType(tileReq.Type)
+	tileGen, err := GetGenerator(tileReq)
 	if err != nil {
 		return nil, err
 	}
-	tileParams := params(tileReq)
 	// get tile hash
-	tileHash := getTileHash(tileReq, tileParams)
+	tileHash := getTileHash(tileReq, tileGen)
 	// get tile data from store
 	tile, err := store.Get(tileHash)
 	if tile == nil || err != nil {

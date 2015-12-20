@@ -1,6 +1,7 @@
-package elastic
+package param
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -10,35 +11,35 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
-// TopicParams represents params for extracting particular topics.
-type TopicParams struct {
-	Text	string
-	Topics  []string
+// Topic represents params for extracting particular topics.
+type Topic struct {
+	Text   string
+	Topics []string
 }
 
-// NewTopicParams parses the params map returns a pointer to the param struct.
-func NewTopicParams(tileReq *tile.Request) *TopicParams {
+// NewTopic instantiates and returns a new topic parameter object.
+func NewTopic(tileReq *tile.Request) (*Topic, error) {
 	params := tileReq.Params
 	topicsStr := json.GetStringDefault(params, "topics", "")
 	topics := strings.Split(topicsStr, ",")
 	if len(topics) == 0 {
-		return nil
+		return nil, errors.New("Topic parameters missing from tiling request")
 	}
-	return &TopicParams{
-		Text: json.GetStringDefault(params, "text", "text"),
+	return &Topic{
+		Text:   json.GetStringDefault(params, "text", "text"),
 		Topics: topics,
-	}
+	}, nil
 }
 
 // GetHash returns a string hash of the parameter state.
-func (p *TopicParams) GetHash() string {
+func (p *Topic) GetHash() string {
 	return fmt.Sprintf("%s:%s",
 		p.Text,
 		strings.Join(p.Topics, ":"))
 }
 
 // GetTopicQuery returns an elastic query.
-func (p *TopicParams) GetTopicQuery() *elastic.TermsQuery {
+func (p *Topic) GetTopicQuery() *elastic.TermsQuery {
 	ts := make([]interface{}, len(p.Topics))
 	for _, str := range p.Topics {
 		ts = append(ts, str)
@@ -47,7 +48,7 @@ func (p *TopicParams) GetTopicQuery() *elastic.TermsQuery {
 }
 
 // GetTopicAggregations returns an elastic aggregation.
-func (p *TopicParams) GetTopicAggregations() map[string]*elastic.FilterAggregation {
+func (p *Topic) GetTopicAggregations() map[string]*elastic.FilterAggregation {
 	aggs := make(map[string]*elastic.FilterAggregation, len(p.Topics))
 	// add all filter aggregations
 	for _, topic := range p.Topics {

@@ -1,4 +1,4 @@
-package elastic
+package param
 
 import (
 	"fmt"
@@ -10,8 +10,8 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
-// TilingParams represents params for binning the data within the tile.
-type TilingParams struct {
+// Tiling represents params for tiling data.
+type Tiling struct {
 	X    string
 	Y    string
 	MinX int64
@@ -20,8 +20,8 @@ type TilingParams struct {
 	MaxY int64
 }
 
-// NewTilingParams parses the params map returns a pointer to the param struct.
-func NewTilingParams(tileReq *tile.Request) *TilingParams {
+// NewTiling instantiates and returns a new tiling parameter object.
+func NewTiling(tileReq *tile.Request) (*Tiling, error) {
 	params := tileReq.Params
 	extents := &binning.Bounds{
 		TopLeft: &binning.Coord{
@@ -34,18 +34,18 @@ func NewTilingParams(tileReq *tile.Request) *TilingParams {
 		},
 	}
 	bounds := binning.GetTileBounds(tileReq.TileCoord, extents)
-	return &TilingParams{
-		X: json.GetStringDefault(params, "x", "pixel.x"),
-		Y: json.GetStringDefault(params, "y", "pixel.y"),
+	return &Tiling{
+		X:    json.GetStringDefault(params, "x", "pixel.x"),
+		Y:    json.GetStringDefault(params, "y", "pixel.y"),
 		MinX: int64(bounds.TopLeft.X),
-		MaxX: int64(bounds.BottomRight.X - 1),
+		MaxX: int64(bounds.BottomRight.X),
 		MinY: int64(bounds.TopLeft.Y),
-		MaxY: int64(bounds.BottomRight.Y - 1),
-	}
+		MaxY: int64(bounds.BottomRight.Y),
+	}, nil
 }
 
 // GetHash returns a string hash of the parameter state.
-func (p *TilingParams) GetHash() string {
+func (p *Tiling) GetHash() string {
 	return fmt.Sprintf("%s:%s:%d:%d:%d:%d",
 		p.X,
 		p.Y,
@@ -56,15 +56,15 @@ func (p *TilingParams) GetHash() string {
 }
 
 // GetXQuery returns an elastic query.
-func (p *TilingParams) GetXQuery() *elastic.RangeQuery {
+func (p *Tiling) GetXQuery() *elastic.RangeQuery {
 	return elastic.NewRangeQuery(p.X).
 		Gte(p.MinX).
-		Lte(p.MaxX)
+		Lt(p.MaxX)
 }
 
 // GetYQuery returns an elastic query.
-func (p *TilingParams) GetYQuery() *elastic.RangeQuery {
+func (p *Tiling) GetYQuery() *elastic.RangeQuery {
 	return elastic.NewRangeQuery(p.Y).
 		Gte(p.MinY).
-		Lte(p.MaxY)
+		Lt(p.MaxY)
 }
