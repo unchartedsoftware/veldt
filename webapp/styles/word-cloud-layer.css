@@ -1,0 +1,59 @@
+
+.leaflet-tile-container:first-child .leaflet-tile-loaded.leaflet-wordcloud {
+    display: none !important;
+}
+
+.leaflet-wordcloud {
+    font: 'Proxima Nova','Helvetica Neue',sans-serif;
+    text-transform: lowercase;
+    color: #c77c11;
+    text-shadow: -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000,
+        1px 0 0 #000,
+        -1px 0 0 #000,
+        0 1px 0 #000,
+        0 -1px 0 #000;
+    width: 256px;
+    height: 256px;
+    background-color: rgba(0,0,0,.2);
+    border: 1px solid rgba(150,150,150,.1);
+    box-sizing: border-box;
+}
+
+.leaflet-wordcloud:hover {
+    background-color: rgba(0,0,0,.5);
+}
+
+.word-cloud-label-100{color:#F8D9AC;}
+.word-cloud-label-90{color:#ECCB9C;}
+.word-cloud-label-80{color:#E0BE8C;}
+.word-cloud-label-70{color:#D5B17C;}
+.word-cloud-label-60{color:#C9A36D;}
+.word-cloud-label-50{color:#BE965D;}
+.word-cloud-label-40{color:#B2894D;}
+.word-cloud-label-30{color:#A67B3E;}
+.word-cloud-label-20{color:#9B6E2E;}
+.word-cloud-label-10{color:#8F611E;}
+.word-cloud-label-0{color:#84540F;}
+
+.highlight .word-cloud-label{
+    opacity: 0.5;
+}
+
+.word-cloud-label{
+    position: absolute;
+    padding: 0 5px;
+    cursor: pointer;
+}
+.word-cloud-label.highlight{
+    color: #fe9;
+    opacity: 1;
+}
+.word-cloud-label:hover,
+.word-cloud-label.hover,
+.word-cloud-label.hover.highlight{
+    color: #fe9;
+    opacity: 1;
+}

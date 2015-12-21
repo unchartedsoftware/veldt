@@ -270,8 +270,9 @@
                 });
                 this._update();
             }
+            var that = this;
             _.forIn(this._tiles, function(tile) {
-                this._redrawTile(tile);
+                that._redrawTile(tile);
             });
             return this;
         },

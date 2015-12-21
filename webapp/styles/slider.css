@@ -6,7 +6,7 @@
 .slider.slider-horizontal .slider-track {
     border-radius: 4px;
     background: none;
-    border: 1px solid rgb(20, 155, 223);
+    border: 1px solid rgb(255, 174, 66);
 }
 
 .slider.slider-horizontal .slider-track-high {
@@ -17,7 +17,7 @@
 
 .slider.slider-horizontal .slider-selection {
     background: none;
-    background-color: rgba(20, 155, 223, 0.5);
+    background-color: rgba(255, 174, 66, 0.5);
     border-radius: 4px;
 }
 
@@ -25,7 +25,7 @@
     height: 14px;
     width: 14px;
     background-image: none;
-    background-color: rgb(20, 155, 223);
+    background-color: rgb(255, 174, 66);
 }
 
 .slider-handle.round {

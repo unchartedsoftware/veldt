@@ -4,15 +4,164 @@
 
     var $ = require('jquery');
     var _ = require('lodash');
+    var moment = require('moment');
     //var d3 = require('d3');
     var TileRequester = require('./scripts/TileRequester');
     var WordCloudLayer = require('./scripts/WordCloudLayer');
+    var TopicFrequencyLayer = require('./scripts/TopicFrequencyLayer');
+
+    var LayerMenu = require('./scripts/LayerMenu');
     var Slider = require('./scripts/Slider');
+    var RangeSlider = require('./scripts/RangeSlider');
     var AJAX_TIMEOUT = 5000;
 
     function mod(m, n) {
         return ((m % n) + n) % n;
     }
+
+    function createOpacitySlider(layer) {
+
+        layer.getOpacity = function() {
+            return this.options.opacity;
+        };
+
+        return new Slider({
+            label: 'Opacity',
+            min: 0,
+            max: 1,
+            step: 0.01,
+            initialValue: layer.getOpacity(),
+            change: function(event) {
+                layer.setOpacity(event.newValue);
+            }
+        });
+    }
+
+    function createResolutionSlider(layer) {
+        return new Slider({
+            label: 'Resolution',
+            min: 0,
+            max: 8,
+            step: 1,
+            initialValue: Math.log2(layer.resolution),
+            formatter: function(value) {
+                return Math.pow(2, value);
+            },
+            slideStop: function(value) {
+                layer.resolution = Math.pow(2, value);
+                layer.redraw();
+            }
+        });
+    }
+
+    function createTimeSlider(layer) {
+        return new RangeSlider({
+            label: 'Time Range',
+            min: layer.meta.timestamp.extrema.min,
+            max: layer.meta.timestamp.extrema.max,
+            step: 86400000,
+            initialValue: [layer.timeRange.from, layer.timeRange.to],
+            formatter: function(values) {
+                var from = moment.unix(values[0] / 1000).format('MMM D, YYYY');
+                var to = moment.unix(values[1] / 1000).format('MMM D, YYYY');
+                return from + ' to ' + to;
+            },
+            slideStop: function(values) {
+                layer.timeRange.from = values[0];
+                layer.timeRange.to = values[1];
+                layer.redraw();
+            }
+        });
+    }
+
+    function getControlByType(type, layer) {
+        switch (type) {
+            case 'opacity':
+                return createOpacitySlider(layer);
+            case 'resolution':
+                return createResolutionSlider(layer);
+            case 'time':
+                return createTimeSlider(layer);
+        }
+    }
+
+    function createLayerControls(layerName, layer, controls) {
+        // add visibility controls to the layer
+        layer.show = function() {
+            this._hidden = false;
+            this._prevMap.addLayer(this);
+        };
+        layer.hide = function() {
+            this._hidden = true;
+            this._prevMap = this._map;
+            this._map.removeLayer(this);
+        };
+        layer.isHidden = function() {
+            return !!this._hidden;
+        };
+        var layerMenu = new LayerMenu({
+            layer: layer,
+            label: layerName
+        });
+        controls.forEach(function(control) {
+            layerMenu.getBody()
+                .append(getControlByType(control, layer).getElement())
+                .append('<div style="clear:both;"></div>');
+        });
+        return layerMenu.getElement();
+    }
+    //
+    // function createLayerControls(layerName, layer) {
+    //     var layerMenu = new LayerMenu({
+    //         layer: layer,
+    //         label: layerName
+    //     });
+    //     var opacitySlider = new Slider({
+    //         label: 'Opacity',
+    //         min: 0,
+    //         max: 1,
+    //         step: 0.01,
+    //         initialValue: layer.getOpacity(),
+    //         change: function( value ) {
+    //             layer.setOpacity( value );
+    //         }
+    //     });
+    //     var resolutionSlider = new Slider({
+    //         label: 'Resolution',
+    //         min: 0,
+    //         max: 8,
+    //         step: 1,
+    //         initialValue: Math.log2(layer.resolution),
+    //         formatter: function(value) {
+    //             return Math.pow(2, value);
+    //         },
+    //         slideStop: function(value) {
+    //             layer.resolution = Math.pow(2, value);
+    //             layer.redraw();
+    //         }
+    //     });
+    //     var timeSlider = new RangeSlider({
+    //         label: 'Time Range',
+    //         min: layer.meta.timestamp.extrema.min,
+    //         max: layer.meta.timestamp.extrema.max,
+    //         step: 86400000,
+    //         initialValue: [ layer.timeRange.from, layer.timeRange.to ],
+    //         formatter: function(values) {
+    //             var from = moment.unix(values[0]/1000).format('MMM D, YYYY');
+    //             var to = moment.unix(values[1]/1000).format('MMM D, YYYY');
+    //             return from + ' to ' + to;
+    //         },
+    //         slideStop: function(values) {
+    //             layer.timeRange.from = values[0];
+    //             layer.timeRange.to = values[1];
+    //             layer.redraw();
+    //         }
+    //     });
+    //     layerMenu.getBody().append( opacitySlider.getElement() ).append('<div style="clear:both;"></div>');
+    //     layerMenu.getBody().append( resolutionSlider.getElement() ).append('<div style="clear:both;"></div>');
+    //     layerMenu.getBody().append( timeSlider.getElement() ).append('<div style="clear:both;"></div>');
+    //     return layerMenu.getElement();
+    // }
 
     $.ajaxTransport('+arraybuffer', function(options) {
         var xhr;
@@ -51,9 +200,14 @@
     window.startApp = function() {
 
         var ES_ENDPOINT = 'openstack';
-        var ES_INDEX = 'isil_twitter_weekly'; //nyc_twitter';
-        var RESOLUTION = 32;
+        var ES_INDEX = 'isil_twitter_weekly';
         var TOPICS = [
+            'isil',
+            'isis',
+            'terror',
+            'bomb',
+            'death',
+            'kill',
             'cool',
             'awesome',
             'amazing',
@@ -152,7 +306,9 @@
             $(canvas).addClass('blinking');
 
             var params = {
-                resolution: RESOLUTION
+                resolution: heatmapLayer.resolution,
+                from: heatmapLayer.timeRange.from,
+                to: heatmapLayer.timeRange.to
             };
 
             index.x = mod(index.x, Math.pow(2, zoom));
@@ -216,8 +372,9 @@
             $(tile).addClass('blinking');
 
             var params = {
-                text: 'text',
-                topics: TOPICS.join(',')
+                topics: TOPICS.join(','),
+                from: wordCloudLayer.timeRange.from,
+                to: wordCloudLayer.timeRange.to
             };
 
             index.x = mod(index.x, Math.pow(2, zoom));
@@ -250,32 +407,87 @@
                 });
         };
 
+        // Create the canvas tile layer
+        var topicFrequencyLayer = new TopicFrequencyLayer(null, {
+            unloadInvisibleTiles: true
+        });
+        topicFrequencyLayer.drawTile = function(tile, index, zoom) {
+            $(tile).addClass('blinking');
+
+            var params = {
+                topics: TOPICS.join(','),
+                from: topicFrequencyLayer.timeRange.from,
+                to: topicFrequencyLayer.timeRange.to,
+                interval: 'month'
+            };
+
+            index.x = mod(index.x, Math.pow(2, zoom));
+            index.y = mod(index.y, Math.pow(2, zoom));
+
+            requester
+                .get(ES_ENDPOINT, ES_INDEX, 'topicfrequency', index.x, index.y, zoom, params)
+                .done(function() {
+                    var url = ES_ENDPOINT + '/' + ES_INDEX + '/topicfrequency/' + zoom + '/' + index.x + '/' + index.y;
+                    $.ajax({
+                        url: url + '?' + $.param(params),
+                        dataType: 'json',
+                        timeout: AJAX_TIMEOUT
+                    }).done(function(topicCounts) {
+                        topicFrequencyLayer.render(
+                            $(tile),
+                            topicCounts,
+                            {
+                                min: 0,
+                                max: 1000
+                            },
+                            topicFrequencyLayer.highlight);
+                        topicFrequencyLayer.tileDrawn(tile);
+                    }).always(function() {
+                        $(tile).removeClass('blinking');
+                    });
+                })
+                .fail(function() {
+                    console.error('Could not generate tile.');
+                });
+        };
+
         var requester = new TileRequester('batch', function() {
 
             $.ajax({
                 url: ES_ENDPOINT + '/' + ES_INDEX + '/default'
             }).done(function(res) {
 
-                $('.controls').append(new Slider({
-                    label: 'resolution',
-                    min: 0,
-                    max: 8,
-                    step: 1,
-                    initialValue: Math.log2(RESOLUTION),
-                    formatter: function(value) {
-                        return Math.pow(2, value);
-                    },
-                    slideStop: function(value) {
-                        RESOLUTION = Math.pow(2, value);
-                        heatmapLayer.redraw();
-                    }
-                }).getElement());
-
                 meta = res;
+
+                heatmapLayer.meta = meta;
+                heatmapLayer.resolution = 32;
+                heatmapLayer.timeRange = {
+                    from: meta.timestamp.extrema.min,
+                    to: meta.timestamp.extrema.max
+                };
+
+                wordCloudLayer.meta = meta;
+                wordCloudLayer.timeRange = {
+                    from: meta.timestamp.extrema.min,
+                    to: meta.timestamp.extrema.max
+                };
+
+                topicFrequencyLayer.meta = meta;
+                topicFrequencyLayer.timeRange = {
+                    from: meta.timestamp.extrema.min,
+                    to: meta.timestamp.extrema.max
+                };
+
+                //$('.controls').append(createLayerControls('Heatmap', heatmapLayer, ['opacity', 'resolution', 'time']));
+                //$('.controls').append(createLayerControls('Word Cloud', wordCloudLayer, ['opacity', 'time']));
+                $('.controls').append(createLayerControls('Topic Trends', topicFrequencyLayer, ['opacity', 'time']));
+
                 // Add layer to the map
-                heatmapLayer.addTo(map);
+                //heatmapLayer.addTo(map);
                 // Add layer to the map
-                wordCloudLayer.addTo(map);
+                //wordCloudLayer.addTo(map);
+                // Add layer to the map
+                topicFrequencyLayer.addTo(map);
             });
 
         });

@@ -1,0 +1,71 @@
+
+.text-frequencies {
+	position: relative;
+	display: inline-block;
+}
+
+.text-by-frequency-entry {
+	position: relative;
+	width: 236px;
+	left: 10px;
+	z-index: 1;
+	cursor: pointer;
+}
+
+.text-by-frequency-left {
+	position: relative;
+	float: left;
+	padding-top: 2px;
+	padding-bottom: 2px;
+	width: 162px;
+	height: 100%;
+    box-sizing: border-box;
+}
+
+.text-by-frequency-right {
+	position: relative;
+	float: right;
+	width: 74px;
+	height: 100%;
+}
+
+.text-by-frequency-label {
+	position: relative;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	padding-bottom: 5px;
+}
+
+.text-by-frequency-bar {
+	position: relative;
+	float: left;
+	bottom: 0px;
+	border: 1px solid #000;
+	margin-left: -1px;
+    box-sizing: border-box;
+}
+
+.text-by-frequency-label-100{color:#F8D9AC;}
+.text-by-frequency-label-90{color:#ECCB9C;}
+.text-by-frequency-label-80{color:#E0BE8C;}
+.text-by-frequency-label-70{color:#D5B17C;}
+.text-by-frequency-label-60{color:#C9A36D;}
+.text-by-frequency-label-50{color:#BE965D;}
+.text-by-frequency-label-40{color:#B2894D;}
+.text-by-frequency-label-30{color:#A67B3E;}
+.text-by-frequency-label-20{color:#9B6E2E;}
+.text-by-frequency-label-10{color:#8F611E;}
+.text-by-frequency-label-0{color:#84540F;}
+
+.text-by-frequency-bar-100{background-color:#F8D9AC;}
+.text-by-frequency-bar-90{background-color:#ECCB9C;}
+.text-by-frequency-bar-80{background-color:#E0BE8C;}
+.text-by-frequency-bar-70{background-color:#D5B17C;}
+.text-by-frequency-bar-60{background-color:#C9A36D;}
+.text-by-frequency-bar-50{background-color:#BE965D;}
+.text-by-frequency-bar-40{background-color:#B2894D;}
+.text-by-frequency-bar-30{background-color:#A67B3E;}
+.text-by-frequency-bar-20{background-color:#9B6E2E;}
+.text-by-frequency-bar-10{background-color:#8F611E;}
+.text-by-frequency-bar-0{background-color:#84540F;}

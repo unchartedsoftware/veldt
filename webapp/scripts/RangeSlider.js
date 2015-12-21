@@ -3,7 +3,7 @@
 
     var $ = require('jquery');
 
-    var S = function(spec) {
+    var RangeSlider = function(spec) {
         var self = this;
         // parse inputs
         spec = spec || {};
@@ -11,11 +11,16 @@
         spec.min = spec.min !== undefined ? spec.min : 0.0;
         spec.max = spec.max !== undefined ? spec.max : 1.0;
         spec.step = spec.step !== undefined ? spec.step : 0.1;
-        spec.initialValue = spec.initialValue !== undefined ? spec.initialValue : spec.max;
-        this._formatter = spec.formatter || function(value) {
-                return value.toFixed(2);
+        spec.range = true;
+        this._formatter = spec.formatter || function(values) {
+                return values[0].toFixed(2) + ' to ' + values[1].toFixed(2);
         };
         spec.initialFormattedValue = this._formatter(spec.initialValue);
+        if (spec.initialValue !== undefined) {
+            spec.initialValue = '[' + spec.initialValue[0] + ',' + spec.initialValue[1] + ']';
+        } else {
+            spec.initialValue = '[' + spec.min + ',' + spec.max + ']';
+        }
         // create container element
         this._$container = $(Templates.slider(spec));
         this._$label = this._$container.find('.control-value-label');
@@ -40,10 +45,10 @@
         });
     };
 
-    S.prototype.getElement = function() {
+    RangeSlider.prototype.getElement = function() {
         return this._$container;
     };
 
-    module.exports = S;
+    module.exports = RangeSlider;
 
 }());
