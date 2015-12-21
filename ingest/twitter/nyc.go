@@ -5,11 +5,17 @@ import (
 	"strings"
 
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/ingest/es"
 )
 
 // NYCTweet represents a single TSV row of nyc twitter data.
 type NYCTweet struct {
 	Cols []string
+}
+
+// NewNYCTweet instantiates and returns a new document.
+func NewNYCTweet() es.Document {
+	return &NYCTweet{}
 }
 
 // Setup initialized and required state prior to ingestion.

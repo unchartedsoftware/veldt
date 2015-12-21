@@ -16,7 +16,13 @@ type Coord struct {
 	Y float64 `json:"y"`
 }
 
-// CoordToFractionalTile converts a data coordniate to a floating point tile coordinate.
+// Extrema represents the min and max values for an ordinal property.
+type Extrema struct {
+	Min float64 `json:"min"`
+	Max float64 `json:"max"`
+}
+
+// CoordToFractionalTile converts a data coordinate to a floating point tile coordinate.
 func CoordToFractionalTile(coord *Coord, level uint32, bounds *Bounds) *FractionalTileCoord {
 	pow2 := math.Pow(2, float64(level))
 	x := pow2 * (coord.X - bounds.TopLeft.X) / (bounds.BottomRight.X - bounds.TopLeft.X)
@@ -28,7 +34,7 @@ func CoordToFractionalTile(coord *Coord, level uint32, bounds *Bounds) *Fraction
 	}
 }
 
-// CoordToTile converts a data coordniate to a tile coordinate.
+// CoordToTile converts a data coordinate to a tile coordinate.
 func CoordToTile(coord *Coord, level uint32, bounds *Bounds) *TileCoord {
 	tile := CoordToFractionalTile(coord, level, bounds)
 	return &TileCoord{
@@ -38,7 +44,7 @@ func CoordToTile(coord *Coord, level uint32, bounds *Bounds) *TileCoord {
 	}
 }
 
-// GetTileBounds returns the data coordniate bounds of the tile coordinate.
+// GetTileBounds returns the data coordinate bounds of the tile coordinate.
 func GetTileBounds(tile *TileCoord, bounds *Bounds) *Bounds {
 	pow2 := math.Pow(2, float64(tile.Z))
 	tileXSize := (bounds.BottomRight.X - bounds.TopLeft.X) / pow2
@@ -52,5 +58,15 @@ func GetTileBounds(tile *TileCoord, bounds *Bounds) *Bounds {
 			X: bounds.TopLeft.X + tileXSize*float64(tile.X+1),
 			Y: bounds.TopLeft.Y + tileYSize*float64(tile.Y+1),
 		},
+	}
+}
+
+// GetTileExtrema returns the data coordinate bounds of the tile coordinate.
+func GetTileExtrema(coord uint32, level uint32, extrema *Extrema) *Extrema {
+	pow2 := math.Pow(2, float64(level))
+	interval := (extrema.Max - extrema.Min) / pow2
+	return &Extrema{
+		Min: extrema.Min + interval*float64(coord),
+		Max: extrema.Min + interval*float64(coord+1),
 	}
 }

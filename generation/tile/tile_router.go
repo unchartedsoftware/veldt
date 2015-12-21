@@ -1,6 +1,10 @@
 package tile
 
 import (
+	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/fanliao/go-promise"
 
 	"github.com/unchartedsoftware/prism/binning"
@@ -10,7 +14,7 @@ import (
 
 // Request represents the tile type and tile coord.
 type Request struct {
-	TileCoord binning.TileCoord      `json:"tilecoord"`
+	TileCoord *binning.TileCoord     `json:"tilecoord"`
 	Type      string                 `json:"type"`
 	Index     string                 `json:"index"`
 	Endpoint  string                 `json:"endpoint"`
@@ -19,7 +23,7 @@ type Request struct {
 
 // Response represents the tile response data.
 type Response struct {
-	TileCoord binning.TileCoord      `json:"tilecoord"`
+	TileCoord *binning.TileCoord     `json:"tilecoord"`
 	Type      string                 `json:"type"`
 	Index     string                 `json:"index"`
 	Endpoint  string                 `json:"endpoint"`
@@ -34,7 +38,7 @@ func getFailureResponse(tileReq *Request, err error) *Response {
 		Type:      tileReq.Type,
 		Index:     tileReq.Index,
 		Endpoint:  tileReq.Endpoint,
-		Params:	   tileReq.Params,
+		Params:    tileReq.Params,
 		Success:   false,
 		Error:     err,
 	}
@@ -46,22 +50,51 @@ func getSuccessResponse(tileReq *Request) *Response {
 		Type:      tileReq.Type,
 		Index:     tileReq.Index,
 		Endpoint:  tileReq.Endpoint,
-		Params:	   tileReq.Params,
+		Params:    tileReq.Params,
 		Success:   true,
 		Error:     nil,
 	}
 }
 
+func isNil(a interface{}) bool {
+	defer func() { recover() }()
+	return a == nil || reflect.ValueOf(a).IsNil()
+}
+
+func getTileHash(tileReq *Request, tileGen Generator) string {
+	tileParams := tileGen.GetParams()
+	// create hashes array
+	hashes := make([]string, len(tileParams)+1)
+	// add tile req hash first
+	hash := fmt.Sprintf("%s:%s:%s:%d:%d:%d",
+		tileReq.Endpoint,
+		tileReq.Index,
+		tileReq.Type,
+		tileReq.TileCoord.X,
+		tileReq.TileCoord.Y,
+		tileReq.TileCoord.Z)
+	hashes = append(hashes, hash)
+	// add individual param hashes
+	for _, p := range tileParams {
+		if isNil(p) {
+			hashes = append(hashes, "-")
+		} else {
+			hashes = append(hashes, p.GetHash())
+		}
+	}
+	return strings.Join(hashes, ":")
+}
+
 // GetTile returns a promise which will be fulfilled when the tile generation
 // has completed and the tile is ready.
 func GetTile(tileReq *Request) *promise.Promise {
-	// get hasher by id
-	hasher, err := GetHasherByType(tileReq.Type)
+	// get parameters
+	tileGen, err := GetGenerator(tileReq)
 	if err != nil {
 		return getFailurePromise(tileReq, err)
 	}
 	// get tile hash
-	tileHash := hasher(tileReq)
+	tileHash := getTileHash(tileReq, tileGen)
 	// check if tile exists in store
 	exists, err := store.Exists(tileHash)
 	if err != nil {
@@ -72,18 +105,13 @@ func GetTile(tileReq *Request) *promise.Promise {
 		return getSuccessPromise(tileReq)
 	}
 	// otherwise, initiate the tiling job and return promise
-	return getTilePromise(tileHash, tileReq)
+	return getTilePromise(tileHash, tileReq, tileGen)
 }
 
 // GenerateAndStoreTile generates a new tile and then puts it in the store.
-func GenerateAndStoreTile(tileHash string, tileReq *Request) *Response {
-	// get generator by id
-	generator, err := GetGeneratorByType(tileReq.Type)
-	if err != nil {
-		return getFailureResponse(tileReq, err)
-	}
-	// otherwise, generate the tile
-	tileData, err := generator(tileReq)
+func GenerateAndStoreTile(tileHash string, tileReq *Request, tileGen Generator) *Response {
+	// generate the tile
+	tileData, err := tileGen.GetTile(tileReq)
 	if err != nil {
 		return getFailureResponse(tileReq, err)
 	}
@@ -97,13 +125,13 @@ func GenerateAndStoreTile(tileHash string, tileReq *Request) *Response {
 
 // GetTileFromStore returns a serialized tile from store.
 func GetTileFromStore(tileReq *Request) ([]byte, error) {
-	// get hasher by id
-	hasher, err := GetHasherByType(tileReq.Type)
+	// get parameters
+	tileGen, err := GetGenerator(tileReq)
 	if err != nil {
 		return nil, err
 	}
 	// get tile hash
-	tileHash := hasher(tileReq)
+	tileHash := getTileHash(tileReq, tileGen)
 	// get tile data from store
 	tile, err := store.Get(tileHash)
 	if tile == nil || err != nil {

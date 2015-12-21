@@ -1,7 +1,6 @@
 (function() {
     'use strict';
 
-    //var Slider = require("bootstrap-slider");
     var $ = require('jquery');
 
     var S = function(spec) {

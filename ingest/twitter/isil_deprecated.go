@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/unchartedsoftware/prism/ingest/conf"
+	"github.com/unchartedsoftware/prism/ingest/es"
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
@@ -17,6 +18,11 @@ var dirRegex = regexp.MustCompile(`(\d{4})-(\d{2})`)
 // ISILTweetDeprecated represents a single TSV row of isil keyword twitter data.
 type ISILTweetDeprecated struct {
 	Cols []string
+}
+
+// NewISILTweetDeprecated instantiates and returns a new document.
+func NewISILTweetDeprecated() es.Document {
+	return &ISILTweetDeprecated{}
 }
 
 // Setup initialized and required state prior to ingestion.

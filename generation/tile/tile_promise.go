@@ -24,7 +24,7 @@ func getFailurePromise(tileReq *Request, err error) *promise.Promise {
 	return p
 }
 
-func getTilePromise(tileHash string, tileReq *Request) *promise.Promise {
+func getTilePromise(tileHash string, tileReq *Request, tileGen Generator) *promise.Promise {
 	mutex.Lock()
 	p, ok := tilePromises[tileHash]
 	if ok {
@@ -37,7 +37,7 @@ func getTilePromise(tileHash string, tileReq *Request) *promise.Promise {
 	mutex.Unlock()
 	runtime.Gosched()
 	go func() {
-		tileRes := GenerateAndStoreTile(tileHash, tileReq)
+		tileRes := GenerateAndStoreTile(tileHash, tileReq, tileGen)
 		p.Resolve(tileRes)
 		mutex.Lock()
 		delete(tilePromises, tileHash)

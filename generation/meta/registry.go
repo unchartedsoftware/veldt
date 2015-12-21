@@ -4,26 +4,30 @@ import (
 	"fmt"
 )
 
-// Generator represents a function which takes a meta request and returns a byte
-// slice of marshalled meta data.
-type Generator func(metaReq *Request) ([]byte, error)
-
-// registry contains all tiling function implementations.
 var (
-	registry = make(map[string]Generator)
+	// registry contains all tiling function implementations.
+	registry = make(map[string]GeneratorConstructor)
 )
 
-// Register registers a meta generator under the provided type id string.
-func Register(typeID string, meta Generator) {
-	registry[typeID] = meta
+// Generator represents an interface for generating meta data.
+type Generator interface {
+	GetMeta(*Request) ([]byte, error)
 }
 
-// GetGeneratorByType when given a string id will return the registered
-// meta generator.
-func GetGeneratorByType(typeID string) (Generator, error) {
-	gen, ok := registry[typeID]
+// GeneratorConstructor represents a function to instantiate a new generator
+// from a meta data request.
+type GeneratorConstructor func(*Request) (Generator, error)
+
+// Register registers a meta data generator under the provided type id string.
+func Register(typeID string, gen GeneratorConstructor) {
+	registry[typeID] = gen
+}
+
+// GetGenerator instantiates a meta data generator from a meta data request.
+func GetGenerator(metaReq *Request) (Generator, error) {
+	ctor, ok := registry[metaReq.Type]
 	if !ok {
-		return nil, fmt.Errorf("Meta type '%s' is not recognized", typeID)
+		return nil, fmt.Errorf("Meta type '%s' is not recognized", metaReq.Type)
 	}
-	return gen, nil
+	return ctor(metaReq)
 }

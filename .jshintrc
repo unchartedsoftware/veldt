@@ -79,6 +79,7 @@
         "require"   : false,
         "module"    : false,
         "L"         : false,
-        "Templates" : false
+        "Templates" : false,
+        "Slider"    : false
     }
 }

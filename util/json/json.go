@@ -7,6 +7,30 @@ import (
 // Node represents a single json node as a map[string]interface{}
 type Node map[string]interface{}
 
+// Exists returns true if something exists under the provided path.
+func Exists(json Node, path ...string) bool {
+	child := json
+	lastIndex := len(path) - 1
+	for index, key := range path {
+		// does a child exists?
+		v, ok := child[key]
+		if !ok {
+			return false
+		}
+		// is it the target?
+		if index == lastIndex {
+			break
+		}
+		// if not, does it have children to traverse?
+		c, ok := v.(map[string]interface{})
+		if !ok {
+			return false
+		}
+		child = c
+	}
+	return true
+}
+
 // Set sets the value under a given path, creating intermediate nodes along the
 // way if they do not exist.
 func Set(json Node, v interface{}, path ...string) {

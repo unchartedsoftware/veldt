@@ -80,12 +80,12 @@ func GetMeta(metaReq *Request) *promise.Promise {
 // request object.
 func GenerateAndStoreMeta(metaHash string, metaReq *Request) *Response {
 	// get meta generator by id
-	gen, err := GetGeneratorByType(metaReq.Type)
+	metaGen, err := GetGenerator(metaReq)
 	if err != nil {
 		return getFailureResponse(metaReq, err)
 	}
 	// generate meta
-	meta, err := gen(metaReq)
+	meta, err := metaGen.GetMeta(metaReq)
 	if err != nil {
 		return getFailureResponse(metaReq, err)
 	}

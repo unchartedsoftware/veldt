@@ -7,7 +7,6 @@ import (
 	"github.com/zenazn/goji/graceful"
 
 	"github.com/unchartedsoftware/prism/generation/elastic"
-	"github.com/unchartedsoftware/prism/generation/filter"
 	"github.com/unchartedsoftware/prism/generation/meta"
 	"github.com/unchartedsoftware/prism/generation/tile"
 	"github.com/unchartedsoftware/prism/server/api"
@@ -25,15 +24,12 @@ func main() {
 	log.Debugf("Prism server listening on port %s", config.Port)
 
 	// register available tiling types
-	tile.Register("heatmap", elastic.GetHeatmapTile, elastic.GetHeatmapHash)
-	tile.Register("topiccount", elastic.GetTopicCountTile, elastic.GetTopicCountHash)
-
-	// register available tiling filters
-	filter.Register("time", elastic.GetTimeFilter)
-	filter.Register("terms", elastic.GetTermsFilter)
+	tile.Register("heatmap", elastic.NewHeatmapTile)
+	tile.Register("topiccount", elastic.NewTopicCountTile)
+	tile.Register("topicfrequency", elastic.NewTopicFrequencyTile)
 
 	// register available meta data types
-	meta.Register("default", elastic.GetMeta)
+	meta.Register("default", elastic.NewDefaultMeta)
 
 	// start the web server
 	graceful.AddSignal(syscall.SIGINT, syscall.SIGTERM)
