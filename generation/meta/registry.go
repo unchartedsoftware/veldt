@@ -4,6 +4,11 @@ import (
 	"fmt"
 )
 
+var (
+	// registry contains all tiling function implementations.
+	registry = make(map[string]GeneratorConstructor)
+)
+
 // Generator represents an interface for generating meta data.
 type Generator interface {
 	GetMeta(*Request) ([]byte, error)
@@ -12,11 +17,6 @@ type Generator interface {
 // GeneratorConstructor represents a function to instantiate a new generator
 // from a meta data request.
 type GeneratorConstructor func(*Request) (Generator, error)
-
-// registry contains all tiling function implementations.
-var (
-	registry = make(map[string]GeneratorConstructor)
-)
 
 // Register registers a meta data generator under the provided type id string.
 func Register(typeID string, gen GeneratorConstructor) {

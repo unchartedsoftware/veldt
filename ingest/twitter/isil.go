@@ -9,6 +9,7 @@ import (
 
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/ingest/conf"
+	"github.com/unchartedsoftware/prism/ingest/es"
 	"github.com/unchartedsoftware/prism/util/log"
 )
 
@@ -18,6 +19,11 @@ var fileRegex = regexp.MustCompile(`.+\.(\d{4})(\d{2})(\d{2})-\d{6}.txt.gz`)
 // ISILTweet represents a single TSV row of isil keyword twitter data.
 type ISILTweet struct {
 	Cols []string
+}
+
+// NewISILTweet instantiates and returns a new document.
+func NewISILTweet() es.Document {
+	return &ISILTweet{}
 }
 
 // Setup initialized and required state prior to ingestion.

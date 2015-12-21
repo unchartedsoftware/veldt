@@ -1,10 +1,12 @@
 package es
 
 import (
-	"errors"
-	"reflect"
+	"fmt"
+)
 
-	"github.com/unchartedsoftware/prism/ingest/twitter"
+var (
+	// registry contains all document implementations for twitter data.
+	registry = make(map[string]DocumentConstructor)
 )
 
 // Document represents all necessary info to create an index and ingest a document.
@@ -20,25 +22,20 @@ type Document interface {
 	GetType() string
 }
 
-// registry contains all document implementations for twitter data.
-var registry = make(map[string]reflect.Type)
+// DocumentConstructor represents a function to instantiate and return a
+// document.
+type DocumentConstructor func() Document
 
-// register all document implementations here.
-func init() {
-	registry["nyc_twitter"] = reflect.TypeOf(twitter.NYCTweet{})
-	registry["isil_twitter"] = reflect.TypeOf(twitter.ISILTweet{})
-	registry["isil_twitter_deprecated"] = reflect.TypeOf(twitter.ISILTweetDeprecated{})
+// Register registers a document constructor under the provided type id string.
+func Register(typeID string, ctor DocumentConstructor) {
+	registry[typeID] = ctor
 }
 
-// GetDocumentByType when given a document id will return the document struct type.
-func GetDocumentByType(typeID string) (Document, error) {
-	docType, ok := registry[typeID]
+// GetDocument when given a document id will return the document struct type.
+func GetDocument(typeID string) (Document, error) {
+	ctor, ok := registry[typeID]
 	if !ok {
-		return nil, errors.New("Document type '" + typeID + "' has not been registered.")
+		return nil, fmt.Errorf("Document type '%s' has not been registered", typeID)
 	}
-	doc, ok := reflect.New(docType).Interface().(Document)
-	if !ok {
-		return nil, errors.New("Document type '" + typeID + "' does not implement the Document interface.")
-	}
-	return doc, nil
+	return ctor(), nil
 }
