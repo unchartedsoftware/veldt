@@ -26,6 +26,7 @@
     "jshint-stylish": "2.0.1",
     "lodash": "3.10.1",
     "main-bower-files": "2.7.0",
+    "moment": "2.10.6",
     "run-sequence": "1.1.4",
     "vinyl-buffer": "1.0.0",
     "vinyl-source-stream": "1.1.0",
