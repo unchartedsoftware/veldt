@@ -64,7 +64,7 @@ func isNil(a interface{}) bool {
 func getTileHash(tileReq *Request, tileGen Generator) string {
 	tileParams := tileGen.GetParams()
 	// create hashes array
-	hashes := make([]string, len(tileParams)+1)
+	var hashes []string
 	// add tile req hash first
 	hash := fmt.Sprintf("%s:%s:%s:%d:%d:%d",
 		tileReq.Endpoint,

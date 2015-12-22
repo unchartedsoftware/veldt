@@ -43,6 +43,5 @@ func (p *TimeBucket) GetTimeAggregation() *elastic.DateHistogramAggregation {
 		Interval(p.Interval).
 		ExtendedBoundsMin(p.TimeRange.From).
 		ExtendedBoundsMax(p.TimeRange.To).
-		PreOffset(-p.TimeRange.From).
-		PreOffset(p.TimeRange.From)
+		Offset(fmt.Sprintf( "%ds", p.TimeRange.From / 1000))
 }

@@ -40,8 +40,8 @@ func (p *Topic) GetHash() string {
 // GetTopicQuery returns an elastic query.
 func (p *Topic) GetTopicQuery() *elastic.TermsQuery {
 	ts := make([]interface{}, len(p.Topics))
-	for _, str := range p.Topics {
-		ts = append(ts, str)
+	for i, str := range p.Topics {
+		ts[i] = str
 	}
 	return elastic.NewTermsQuery(p.Text, ts...)
 }

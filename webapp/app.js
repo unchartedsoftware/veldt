@@ -110,58 +110,6 @@
         });
         return layerMenu.getElement();
     }
-    //
-    // function createLayerControls(layerName, layer) {
-    //     var layerMenu = new LayerMenu({
-    //         layer: layer,
-    //         label: layerName
-    //     });
-    //     var opacitySlider = new Slider({
-    //         label: 'Opacity',
-    //         min: 0,
-    //         max: 1,
-    //         step: 0.01,
-    //         initialValue: layer.getOpacity(),
-    //         change: function( value ) {
-    //             layer.setOpacity( value );
-    //         }
-    //     });
-    //     var resolutionSlider = new Slider({
-    //         label: 'Resolution',
-    //         min: 0,
-    //         max: 8,
-    //         step: 1,
-    //         initialValue: Math.log2(layer.resolution),
-    //         formatter: function(value) {
-    //             return Math.pow(2, value);
-    //         },
-    //         slideStop: function(value) {
-    //             layer.resolution = Math.pow(2, value);
-    //             layer.redraw();
-    //         }
-    //     });
-    //     var timeSlider = new RangeSlider({
-    //         label: 'Time Range',
-    //         min: layer.meta.timestamp.extrema.min,
-    //         max: layer.meta.timestamp.extrema.max,
-    //         step: 86400000,
-    //         initialValue: [ layer.timeRange.from, layer.timeRange.to ],
-    //         formatter: function(values) {
-    //             var from = moment.unix(values[0]/1000).format('MMM D, YYYY');
-    //             var to = moment.unix(values[1]/1000).format('MMM D, YYYY');
-    //             return from + ' to ' + to;
-    //         },
-    //         slideStop: function(values) {
-    //             layer.timeRange.from = values[0];
-    //             layer.timeRange.to = values[1];
-    //             layer.redraw();
-    //         }
-    //     });
-    //     layerMenu.getBody().append( opacitySlider.getElement() ).append('<div style="clear:both;"></div>');
-    //     layerMenu.getBody().append( resolutionSlider.getElement() ).append('<div style="clear:both;"></div>');
-    //     layerMenu.getBody().append( timeSlider.getElement() ).append('<div style="clear:both;"></div>');
-    //     return layerMenu.getElement();
-    // }
 
     $.ajaxTransport('+arraybuffer', function(options) {
         var xhr;
