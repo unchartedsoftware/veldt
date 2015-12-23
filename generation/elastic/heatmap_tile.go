@@ -90,7 +90,7 @@ func (g *HeatmapTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 	// parse aggregations
 	xAgg, ok := result.Aggregations.Histogram(xAggName)
 	if !ok {
-		return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response", xAggName)
+		return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s", xAggName, tileReq.String())
 	}
 	// allocate count buffer
 	bytes := make([]byte, binning.Resolution*binning.Resolution*8)
@@ -100,7 +100,7 @@ func (g *HeatmapTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 		xBin := (x - tiling.Left) / binning.BinSizeX
 		yAgg, ok := xBucket.Histogram(yAggName)
 		if !ok {
-			return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response", yAggName)
+			return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s", yAggName, tileReq.String())
 		}
 		for _, yBucket := range yAgg.Buckets {
 			y := yBucket.Key

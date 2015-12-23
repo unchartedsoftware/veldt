@@ -32,11 +32,11 @@ func GetExtrema(endpoint string, index string, field string) (*binning.Extrema, 
 	// parse aggregations
 	min, ok := result.Aggregations.Min("min")
 	if !ok {
-		return nil, fmt.Errorf("Min '%s' aggregation was not found in response", field)
+		return nil, fmt.Errorf("Min '%s' aggregation was not found in response for %s/%s", field, endpoint, index)
 	}
 	max, ok := result.Aggregations.Max("max")
 	if !ok {
-		return nil, fmt.Errorf("Max '%s' aggregation was not found in response", field)
+		return nil, fmt.Errorf("Max '%s' aggregation was not found in response for %s/%s", field, endpoint, index)
 	}
 	return &binning.Extrema{
 		Min: *min.Value,

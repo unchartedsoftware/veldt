@@ -82,7 +82,7 @@ func (g *TopicCountTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 	for _, topic := range topic.Topics {
 		filter, ok := result.Aggregations.Filter(topic)
 		if !ok {
-			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response", topic)
+			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s", topic, tileReq.String())
 		}
 		if filter.DocCount > 0 {
 			topicCounts[topic] = filter.DocCount

@@ -1,7 +1,6 @@
 package param
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -28,7 +27,7 @@ func NewTimeRange(tileReq *tile.Request) (*TimeRange, error) {
 			To:   int64(json.GetNumberDefault(params, "to", float64(time.Now().Unix()))),
 		}, nil
 	}
-	return nil, errors.New("Time parameters missing from tiling request")
+	return nil, fmt.Errorf("Time parameters missing from tiling request %s", tileReq.String())
 }
 
 // GetHash returns a string hash of the parameter state.

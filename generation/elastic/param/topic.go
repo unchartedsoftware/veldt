@@ -1,7 +1,6 @@
 package param
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -22,7 +21,7 @@ func NewTopic(tileReq *tile.Request) (*Topic, error) {
 	params := tileReq.Params
 	topics, ok := json.GetString(params, "topics")
 	if !ok {
-		return nil, errors.New("Topic parameters missing from tiling request")
+		return nil, fmt.Errorf("Topic parameters missing from tiling request %s", tileReq.String())
 	}
 	return &Topic{
 		Text:   json.GetStringDefault(params, "text", "text"),

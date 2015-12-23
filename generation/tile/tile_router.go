@@ -21,6 +21,16 @@ type Request struct {
 	Params    map[string]interface{} `json:"params"`
 }
 
+func (r *Request) String() string {
+	return fmt.Sprintf("%s/%s/%s/%d/%d/%d",
+		r.Endpoint,
+		r.Index,
+		r.Type,
+		r.TileCoord.Z,
+		r.TileCoord.X,
+		r.TileCoord.Y)
+}
+
 // Response represents the tile response data.
 type Response struct {
 	TileCoord *binning.TileCoord     `json:"tilecoord"`

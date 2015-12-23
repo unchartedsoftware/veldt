@@ -92,15 +92,15 @@ func (g *TopicFrequencyTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 	for _, topic := range topic.Topics {
 		filter, ok := result.Aggregations.Filter(topic)
 		if !ok {
-			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response", topic)
+			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request", topic, tileReq.String())
 		}
 		timeAgg, ok := filter.DateHistogram(timeAggName)
 		if !ok {
-			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response", timeAggName)
+			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request", timeAggName, tileReq.String())
 		}
 		topicCounts := make([]int64, len(timeAgg.Buckets))
-		for _, bucket := range timeAgg.Buckets {
-			topicCounts = append(topicCounts, bucket.DocCount)
+		for i, bucket := range timeAgg.Buckets {
+			topicCounts[i] = bucket.DocCount
 		}
 		topicFrequencies[topic] = topicCounts
 	}

@@ -27,7 +27,7 @@ func Register(typeID string, gen GeneratorConstructor) {
 func GetGenerator(metaReq *Request) (Generator, error) {
 	ctor, ok := registry[metaReq.Type]
 	if !ok {
-		return nil, fmt.Errorf("Meta type '%s' is not recognized", metaReq.Type)
+		return nil, fmt.Errorf("Meta type '%s' is not recognized in request %s", metaReq.Type, metaReq.String())
 	}
 	return ctor(metaReq)
 }

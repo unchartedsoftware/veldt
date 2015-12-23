@@ -33,7 +33,7 @@ func Register(typeID string, gen GeneratorConstructor) {
 func GetGenerator(tileReq *Request) (Generator, error) {
 	ctor, ok := registry[tileReq.Type]
 	if !ok {
-		return nil, fmt.Errorf("Tile type '%s' is not recognized", tileReq.Type)
+		return nil, fmt.Errorf("Tile type '%s' is not recognized in request %s", tileReq.Type, tileReq.String())
 	}
 	return ctor(tileReq)
 }

@@ -16,6 +16,13 @@ type Request struct {
 	Endpoint string `json:"endpoint"`
 }
 
+func (r *Request) String() string {
+	return fmt.Sprintf("%s/%s/%s",
+		r.Endpoint,
+		r.Index,
+		r.Type)
+}
+
 // Response represents the meta data response.
 type Response struct {
 	Meta     []byte `json:"meta"`

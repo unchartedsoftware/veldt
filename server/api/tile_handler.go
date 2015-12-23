@@ -40,7 +40,7 @@ func parseTileParams(params map[string]string, queryParams url.Values) (*tile.Re
 			Params:   parseParams(queryParams),
 		}, nil
 	}
-	return nil, errors.New("Unable to parse tile coordinate from URL")
+	return nil, errors.New("Unable to parse tile request from URL")
 }
 
 func handleTileErr(w http.ResponseWriter) {
