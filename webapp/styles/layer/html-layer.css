@@ -1,0 +1,27 @@
+
+.leaflet-tile-container:first-child .leaflet-tile-loaded.leaflet-html-tile {
+    display: none !important;
+}
+
+.leaflet-html-tile {
+    font: 'Proxima Nova','Helvetica Neue',sans-serif;
+    text-transform: lowercase;
+    color: #c77c11;
+    text-shadow: -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000,
+        1px 0 0 #000,
+        -1px 0 0 #000,
+        0 1px 0 #000,
+        0 -1px 0 #000;
+    width: 256px;
+    height: 256px;
+    background-color: rgba(0,0,0,.2);
+    border: 1px solid rgba(150,150,150,.1);
+    box-sizing: border-box;
+}
+
+.leaflet-html-tile:hover {
+    background-color: rgba(0,0,0,.5);
+}

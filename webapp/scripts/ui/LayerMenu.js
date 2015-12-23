@@ -13,6 +13,7 @@
         spec.isMinimized = false;
         if (!spec.layer) {
             console.error('LayerMenu constructor must be passed a "layer" attribute');
+            return;
         }
         // set layer
         this._layer = spec.layer;

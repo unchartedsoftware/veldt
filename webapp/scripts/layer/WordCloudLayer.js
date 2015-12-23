@@ -4,11 +4,12 @@
 
     var $ = require('jquery');
     var _ = require('lodash');
+    var HTMLTileLayer = require('./HTMLTileLayer');
 
-    var HORIZONTAL_OFFSET = 10;
     var TILE_SIZE = 256;
     var HALF_SIZE = TILE_SIZE / 2;
     var VERTICAL_OFFSET = 24;
+    var HORIZONTAL_OFFSET = 10;
     var SIZE_FUNCTION = 'log';
     var MAX_NUM_WORDS = 15;
     var MIN_FONT_SIZE = 10;
@@ -94,7 +95,9 @@
         wordCounts.forEach(function(word) {
             word.percent = transformValue(word.count, min, max, sizeFunction);
             word.fontSize = MIN_FONT_SIZE + word.percent * (MAX_FONT_SIZE - MIN_FONT_SIZE);
-            html += '<div class="word-cloud-label" style="visibility:hidden; font-size:' + word.fontSize + 'px;">' + word.text + '</div>';
+            html += '<div class="word-cloud-label" style="' +
+                'visibility:hidden;' +
+                'font-size:' + word.fontSize + 'px;">' + word.text + '</div>';
         });
         html += '</div>';
         // append measurements
@@ -168,76 +171,7 @@
         return cloud;
     };
 
-    var render = function(container, data, extents, highlight) {
-        var wordCounts = _.map(data, function(count, key) {
-            return {
-                count: count,
-                text: key
-            };
-        });
-        // exit early if no words
-        if (wordCounts.length === 0) {
-            return;
-        }
-        // genereate the cloud
-        var cloud = createWordCloud(wordCounts, extents.min, extents.max);
-        // build html elements
-        var html = '';
-        cloud.forEach(function(word) {
-            // create classes
-            var classNames = [
-                'word-cloud-label',
-                'word-cloud-label-' + word.percent,
-                word.text === highlight ? 'highlight' : ''
-            ].join(' ');
-            // create styles
-            var styles = [
-                'font-size:' + word.fontSize + 'px',
-                'left:' + (HALF_SIZE + word.x - (word.width / 2)) + 'px',
-                'top:' + (HALF_SIZE + word.y - (word.height / 2)) + 'px',
-                'width:' + word.width + 'px',
-                'height:' + word.height + 'px',
-            ].join(';');
-            // create html for entry
-            html += '<div class="' + classNames + '"' +
-                'style="' + styles + '"' +
-                'data-word="' + word.text + '">' +
-                word.text +
-                '</div>';
-        });
-        container.html(html);
-    };
-
-    var WordCloudLayer = L.TileLayer.extend({
-
-        initialize: function(url, options) {
-            this._url = url;
-            L.setOptions(this, options);
-        },
-
-        onAdd: function(map) {
-            var self = this;
-            L.TileLayer.prototype.onAdd.call(this, map);
-            map.on('zoomend', this.onZoom, this);
-            map.on('click', this.onClick, this);
-            $(this._container).on('mouseover', function(e) {
-                self.onHover(e);
-            });
-        },
-
-        onRemove: function(map) {
-            map.off('zoomend', this.onZoom);
-            map.off('click', this.onClick);
-            $(this._container).off('mouseover');
-            this.highlight = null;
-            L.TileLayer.prototype.onRemove.call(this, map);
-        },
-
-        onZoom: function() {
-            // Clear highlighting
-            $(this._container).removeClass('highlight');
-            this.highlight = null;
-        },
+    var WordCloudLayer = HTMLTileLayer.extend({
 
         onHover: function(e) {
             var target = $(e.originalEvent.target);
@@ -249,7 +183,6 @@
         },
 
         onClick: function(e) {
-            // Highlight clicked-on word
             var target = $(e.originalEvent.target);
             $('.word-cloud-label').removeClass('highlight');
             var word = target.attr('data-word');
@@ -263,48 +196,46 @@
             }
         },
 
-        redraw: function() {
-            if (this._map) {
-                this._reset({
-                    hard: true
-                });
-                this._update();
-            }
-            var self = this;
-            _.forIn(this._tiles, function(tile) {
-                self._redrawTile(tile);
+        render: function(container, data, extents, highlight) {
+            var wordCounts = _.map(data, function(count, key) {
+                return {
+                    count: count,
+                    text: key
+                };
             });
-            return this;
-        },
-
-        _redrawTile: function(tile) {
-            this.drawTile(tile, tile._tilePoint, this._map._zoom);
-        },
-
-        _createTile: function() {
-            var tile = L.DomUtil.create('div', 'leaflet-tile leaflet-wordcloud');
-            tile.width = tile.height = this.options.tileSize;
-            tile.onselectstart = tile.onmousemove = L.Util.falseFn;
-            return tile;
-        },
-
-        _loadTile: function(tile, tilePoint) {
-            tile._layer = this;
-            tile._tilePoint = tilePoint;
-            this._adjustTilePoint(tilePoint);
-            this._redrawTile(tile);
-            if (!this.options.async) {
-                this.tileDrawn(tile);
+            // exit early if no words
+            if (wordCounts.length === 0) {
+                return;
             }
-        },
+            // genereate the cloud
+            var cloud = createWordCloud(wordCounts, extents.min, extents.max);
+            // build html elements
+            var html = '';
+            cloud.forEach(function(word) {
+                // create classes
+                var classNames = [
+                    'word-cloud-label',
+                    'word-cloud-label-' + word.percent,
+                    word.text === highlight ? 'highlight' : ''
+                ].join(' ');
+                // create styles
+                var styles = [
+                    'font-size:' + word.fontSize + 'px',
+                    'left:' + (HALF_SIZE + word.x - (word.width / 2)) + 'px',
+                    'top:' + (HALF_SIZE + word.y - (word.height / 2)) + 'px',
+                    'width:' + word.width + 'px',
+                    'height:' + word.height + 'px',
+                ].join(';');
+                // create html for entry
+                html += '<div class="' + classNames + '"' +
+                    'style="' + styles + '"' +
+                    'data-word="' + word.text + '">' +
+                    word.text +
+                    '</div>';
+            });
+            container.html(html);
+        }
 
-        tileDrawn: function(tile) {
-            this._tileOnLoad.call(tile);
-        },
-
-        render: render,
-
-        refresh: function() {}
     });
 
     module.exports = WordCloudLayer;
