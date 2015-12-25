@@ -4,13 +4,6 @@
 
     var CanvasTileLayer = L.TileLayer.Canvas.extend({
 
-        setOpacity: function(opacity) {
-            if (opacity !== this.options.opacity) {
-                this.options.opacity = opacity;
-                this._container.style.opacity = opacity;
-            }
-        },
-
         getOpacity: function() {
             return this.options.opacity;
         },

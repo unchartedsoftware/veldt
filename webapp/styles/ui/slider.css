@@ -1,6 +1,7 @@
 
 .slider.slider-horizontal {
     margin: 0 10px;
+    width: 100px;
 }
 
 .slider.slider-horizontal .slider-track {

@@ -8,7 +8,7 @@
 
     var HTMLTileLayer = TileLayer.extend({
 
-        initialize: function(options) {
+        initialize: function(meta, options) {
             L.setOptions(this, options);
         },
 

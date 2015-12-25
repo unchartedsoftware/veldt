@@ -179,10 +179,16 @@
         });
 
         // Base map
-        var baseLayer = new TileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+        var baseLayer = new TileLayer('http://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png', {
             attribution: 'CartoDB'
         });
         baseLayer.addTo(map);
+
+        // Label layer
+        var labelLayer = new TileLayer('http://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png', {
+            attribution: 'CartoDB'
+        });
+        labelLayer.addTo(map);
 
         var requester = new TileRequester('batch', function() {
 
@@ -225,21 +231,19 @@
                         });
                 };
 
-                var wordCloudLayer = new WordCloudLayer({
+                var wordCloudLayer = new WordCloudLayer(meta, {
                     unloadInvisibleTiles: true
                 });
-                // wordCloudLayer.setTimeRange({
-                //     from: meta.timestamp.extrema.min,
-                //     to: meta.timestamp.extrema.max
-                // });
-                // wordCloudLayer.setTopics(TOPICS);
+                wordCloudLayer.setTimeRange({
+                    from: meta.timestamp.extrema.min,
+                    to: meta.timestamp.extrema.max
+                });
+                wordCloudLayer.setTopics(TOPICS);
                 wordCloudLayer.drawTile = function(tile, index, zoom) {
                     $(tile).addClass('blinking');
                     wordCloudLayer.tileDrawn(tile);
 
-                    var params = {
-                        topics: TOPICS.join(',')
-                    };
+                    var params = wordCloudLayer.getParams();
 
                     requester
                         .get(ES_ENDPOINT, ES_INDEX, 'topiccount', index.x, index.y, zoom, params)
@@ -250,14 +254,7 @@
                                 dataType: 'json',
                                 timeout: AJAX_TIMEOUT
                             }).done(function(wordCounts) {
-                                wordCloudLayer.render(
-                                    $(tile),
-                                    wordCounts,
-                                    {
-                                        min: 0,
-                                        max: 1000
-                                    },
-                                    wordCloudLayer.highlight);
+                                wordCloudLayer.render(tile, wordCounts);
                                 wordCloudLayer.tileDrawn(tile);
                             }).always(function() {
                                 $(tile).removeClass('blinking');
@@ -269,25 +266,21 @@
                 };
 
                 // Create the canvas tile layer
-                var topicFrequencyLayer = new TopicFrequencyLayer({
+                var topicFrequencyLayer = new TopicFrequencyLayer(meta, {
                     unloadInvisibleTiles: true
                 });
-                // topicFrequencyLayer.setTimeRange({
-                //     from: meta.timestamp.extrema.min,
-                //     to: meta.timestamp.extrema.max,
-                //     interval: 'month'
-                // });
-                // topicFrequencyLayer.setTopics(TOPICS);
+                topicFrequencyLayer.setTimeRange({
+                    from: meta.timestamp.extrema.min,
+                    to: meta.timestamp.extrema.max,
+                    interval: 'month'
+                });
+                topicFrequencyLayer.setTimeInterval('month');
+                topicFrequencyLayer.setTopics(TOPICS);
                 topicFrequencyLayer.drawTile = function(tile, index, zoom) {
                     $(tile).addClass('blinking');
                     topicFrequencyLayer.tileDrawn(tile);
 
-                    var params = {
-                        topics: TOPICS.join(','),
-                        from: meta.timestamp.extrema.min,
-                        to: meta.timestamp.extrema.max,
-                        interval: 'month'
-                    };
+                    var params = topicFrequencyLayer.getParams();
 
                     requester
                         .get(ES_ENDPOINT, ES_INDEX, 'topicfrequency', index.x, index.y, zoom, params)
@@ -298,14 +291,7 @@
                                 dataType: 'json',
                                 timeout: AJAX_TIMEOUT
                             }).done(function(topicCounts) {
-                                topicFrequencyLayer.render(
-                                    $(tile),
-                                    topicCounts,
-                                    {
-                                        min: 0,
-                                        max: 1000
-                                    },
-                                    topicFrequencyLayer.highlight);
+                                topicFrequencyLayer.render(tile, topicCounts);
                                 topicFrequencyLayer.tileDrawn(tile);
                             }).always(function() {
                                 $(tile).removeClass('blinking');
@@ -316,9 +302,12 @@
                         });
                 };
 
-                $('.controls').append(createLayerControls('Heatmap', heatmapLayer, ['opacity', 'resolution', 'time']));
-                //$('.controls').append(createLayerControls('Word Cloud', wordCloudLayer, ['opacity', 'time']));
+                $('.controls').append(createLayerControls('Word Cloud', wordCloudLayer, ['opacity', 'time']));
                 //$('.controls').append(createLayerControls('Topic Trends', topicFrequencyLayer, ['opacity', 'time']));
+
+                $('.controls').append(createLayerControls('Labels', labelLayer, ['opacity']));
+                $('.controls').append(createLayerControls('Heatmap', heatmapLayer, ['opacity', 'resolution', 'time']));
+                $('.controls').append(createLayerControls('Basemap', baseLayer, ['opacity']));
 
                 // Add layers to the map
                 heatmapLayer.addTo(map);

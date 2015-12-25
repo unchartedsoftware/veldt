@@ -1,10 +1,8 @@
-
 .leaflet-tile-container:first-child .leaflet-tile-loaded.leaflet-html-tile {
     display: none !important;
 }
 
 .leaflet-html-tile {
-    font: 'Proxima Nova','Helvetica Neue',sans-serif;
     text-transform: lowercase;
     color: #c77c11;
     text-shadow: -1px -1px 0 #000,

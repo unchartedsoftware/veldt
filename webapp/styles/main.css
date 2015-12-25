@@ -1,4 +1,3 @@
-
 * {
     box-sizing: border-box;
 }
@@ -10,5 +9,11 @@
     margin: 0;
     background-color: #111;
     color: #ccc;
-    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    font: 14px 'Helvetica Neue', sans-serif;
+}
+
+.controls {
+    position: absolute;
+    left: 10px;
+    bottom: 20px;
 }

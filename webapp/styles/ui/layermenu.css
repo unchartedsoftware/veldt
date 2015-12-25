@@ -1,3 +1,11 @@
+.layer-control-group {
+    background-color: rgba(0,0,0,0.5);
+    border-radius: 4px;
+    border: 1px solid #000;
+    padding: 4px;
+    margin-bottom: 10px;
+    white-space: nowrap;
+}
 
 .layer-control-head {
     position: relative;
