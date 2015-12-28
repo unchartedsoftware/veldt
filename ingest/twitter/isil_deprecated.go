@@ -9,7 +9,7 @@ import (
 
 	"github.com/unchartedsoftware/prism/ingest/conf"
 	"github.com/unchartedsoftware/prism/ingest/es"
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/log"
 )
 
 // regex used to determine if the file is ingestible

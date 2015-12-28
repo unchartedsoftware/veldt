@@ -1,4 +1,4 @@
-package api
+package batch
 
 import (
 	"encoding/json"
@@ -8,9 +8,9 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/unchartedsoftware/prism/conf"
 	"github.com/unchartedsoftware/prism/generation/tile"
-	"github.com/unchartedsoftware/prism/server/conf"
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/log"
 )
 
 const (
@@ -138,19 +138,4 @@ func (t *TileDispatcher) listenForRequests() {
 		// dispatch the request
 		go t.dispatchRequest(tileReq)
 	}
-}
-
-func batchHandler(w http.ResponseWriter, r *http.Request) {
-	// create dispatcher
-	dispatcher, err := NewTileDispatcher(w, r)
-	if err != nil {
-		log.Warn(err)
-		return
-	}
-	err = dispatcher.ListenAndRespond()
-	if err != nil {
-		log.Debug(err)
-	}
-	// clean up dispatcher internals
-	dispatcher.Close()
 }

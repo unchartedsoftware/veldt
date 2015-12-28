@@ -1,4 +1,4 @@
-package api
+package tile
 
 import (
 	"errors"
@@ -10,9 +10,14 @@ import (
 	"github.com/zenazn/goji/web"
 
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/conf"
 	"github.com/unchartedsoftware/prism/generation/tile"
-	"github.com/unchartedsoftware/prism/server/conf"
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/log"
+)
+
+const (
+	// Route represents the HTTP route for the resource.
+	Route = "/:endpoint/:index/:type/:z/:x/:y"
 )
 
 func parseParams(params url.Values) map[string]interface{} {
@@ -49,7 +54,8 @@ func handleTileErr(w http.ResponseWriter) {
 	fmt.Fprint(w, `{"status": "error"}`)
 }
 
-func tileHandler(c web.C, w http.ResponseWriter, r *http.Request) {
+// Handler represents the HTTP route response handler.
+func Handler(c web.C, w http.ResponseWriter, r *http.Request) {
 	// set content type response header
 	w.Header().Set("Content-Type", "application/json")
 	// parse tile coord from URL

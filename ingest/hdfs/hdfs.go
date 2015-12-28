@@ -5,7 +5,7 @@ import (
 
 	"github.com/colinmarc/hdfs"
 
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/log"
 )
 
 const (

@@ -27,27 +27,16 @@ test:
 
 fmt:
 	@gofmt -l -w .
-	@./node_modules/.bin/jsfmt -w ./webapp/scripts ./webapp/*.js
 
 build: clean lint
-	@go build -o ./build/server.bin server/main.go
-	@go build -o ./build/ingest.bin ingest/main.go
-
-deploy: clean lint
-	@GOARCH=amd64 GOOS=linux go build -o ./build/server.bin server/main.go
-	@cp -r ./build/server.bin ./deploy/server
-	@gulp deploy
-	@cp -r ./build/public ./deploy/server
+	@go build ./...
 
 deps:
-	@npm install
-	@bower install
 	@glock sync -n github.com/unchartedsoftware/prism < Glockfile
 
 update_deps:
 	@glock save -n github.com/unchartedsoftware/prism > Glockfile
 
 tools:
-	npm install gulp bower -g
 	go get github.com/robfig/glock
 	go get github.com/golang/lint/golint

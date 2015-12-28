@@ -6,11 +6,12 @@ import (
 	"github.com/fanliao/go-promise"
 
 	"github.com/unchartedsoftware/prism/store"
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/log"
 )
 
 // Request represents a meta data request.
 type Request struct {
+	Store 	 string `json:"store"`
 	Type     string `json:"type"`
 	Index    string `json:"index"`
 	Endpoint string `json:"endpoint"`

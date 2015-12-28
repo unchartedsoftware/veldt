@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	// registry contains all tiling function implementations.
+	// registry contains all registered tile generator constructors.
 	registry = make(map[string]GeneratorConstructor)
 )
 

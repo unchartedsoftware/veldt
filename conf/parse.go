@@ -13,8 +13,8 @@ func ParseCommandLine() *Conf {
 	port := flag.String("port", "8080", "Port to bind HTTP server")
 	public := flag.String("public", "./build/public", "The public directory to static serve from")
 
-	redisHost := flag.String("redisHost", "localhost", "Host to connect to redis server")
-	redisPort := flag.String("redisPort", "6379", "Port to connect to Redis server")
+	redisHost := flag.String("redis-host", "localhost", "Host to connect to redis server")
+	redisPort := flag.String("redis-port", "6379", "Port to connect to Redis server")
 
 	// Parse the flags
 	flag.Parse()

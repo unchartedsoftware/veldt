@@ -6,7 +6,7 @@ import (
 	"github.com/unchartedsoftware/prism/ingest/es"
 	"github.com/unchartedsoftware/prism/ingest/hdfs"
 	"github.com/unchartedsoftware/prism/util"
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/log"
 )
 
 // IngestInfo represents a directory worth of ingestible data.

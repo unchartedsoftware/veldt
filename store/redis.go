@@ -7,8 +7,8 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 
-	"github.com/unchartedsoftware/prism/server/conf"
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/conf"
+	"github.com/unchartedsoftware/prism/log"
 )
 
 const (

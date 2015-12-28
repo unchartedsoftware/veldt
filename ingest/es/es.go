@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/log"
 )
 
 var esClient *elastic.Client

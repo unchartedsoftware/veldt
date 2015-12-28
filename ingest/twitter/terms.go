@@ -8,7 +8,7 @@ import (
 	"github.com/unchartedsoftware/prism/ingest/conf"
 	"github.com/unchartedsoftware/prism/ingest/hdfs"
 	"github.com/unchartedsoftware/prism/ingest/terms"
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/log"
 )
 
 // TopTermsWorker is a worker to calculate the top terms found in tweet text.

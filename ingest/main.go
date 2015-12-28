@@ -10,7 +10,7 @@ import (
 	"github.com/unchartedsoftware/prism/ingest/twitter"
 
 	"github.com/unchartedsoftware/prism/util"
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/log"
 )
 
 func main() {

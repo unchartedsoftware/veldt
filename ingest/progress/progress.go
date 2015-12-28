@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/unchartedsoftware/prism/util"
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/log"
 )
 
 const (

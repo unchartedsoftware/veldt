@@ -1,4 +1,4 @@
-package api
+package meta
 
 import (
 	"fmt"
@@ -6,9 +6,14 @@ import (
 
 	"github.com/zenazn/goji/web"
 
+	"github.com/unchartedsoftware/prism/conf"
 	"github.com/unchartedsoftware/prism/generation/meta"
-	"github.com/unchartedsoftware/prism/server/conf"
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/log"
+)
+
+const (
+	// Route represents the HTTP route for the resource.
+	Route = "/:endpoint/:index/:type"
 )
 
 func parseMetaParams(params map[string]string) *meta.Request {
@@ -34,7 +39,8 @@ func dispatchRequest(metaChan chan *meta.Response, metaReq *meta.Request) {
 	})
 }
 
-func metaHandler(c web.C, w http.ResponseWriter, r *http.Request) {
+// Handler represents the HTTP route response handler.
+func Handler(c web.C, w http.ResponseWriter, r *http.Request) {
 	// set content type response header
 	w.Header().Set("Content-Type", "application/json")
 	// parse params from URL

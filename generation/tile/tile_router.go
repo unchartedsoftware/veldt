@@ -9,7 +9,7 @@ import (
 
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/store"
-	"github.com/unchartedsoftware/prism/util/log"
+	"github.com/unchartedsoftware/prism/log"
 )
 
 // Request represents the tile type and tile coord.
