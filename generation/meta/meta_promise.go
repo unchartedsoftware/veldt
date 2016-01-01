@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	"github.com/fanliao/go-promise"
+
+	"github.com/unchartedsoftware/prism/store"
 )
 
 var (
@@ -18,7 +20,7 @@ func getSuccessPromise(metaReq *Request, meta []byte) *promise.Promise {
 	return p
 }
 
-func getMetaPromise(metaHash string, metaReq *Request) *promise.Promise {
+func getMetaPromise(metaHash string, metaReq *Request, storeReq *store.Request) *promise.Promise {
 	mutex.Lock()
 	p, ok := metaPromises[metaHash]
 	if ok {
@@ -31,7 +33,7 @@ func getMetaPromise(metaHash string, metaReq *Request) *promise.Promise {
 	mutex.Unlock()
 	runtime.Gosched()
 	go func() {
-		meta := GenerateAndStoreMeta(metaHash, metaReq)
+		meta := GenerateAndStoreMeta(metaHash, metaReq, storeReq)
 		p.Resolve(meta)
 		mutex.Lock()
 		delete(metaPromises, metaHash)

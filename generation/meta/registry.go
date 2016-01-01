@@ -24,10 +24,10 @@ func Register(typeID string, gen GeneratorConstructor) {
 }
 
 // GetGenerator instantiates a meta data generator from a meta data request.
-func GetGenerator(metaReq *Request) (Generator, error) {
-	ctor, ok := registry[metaReq.Type]
+func GetGenerator(req *Request) (Generator, error) {
+	ctor, ok := registry[req.Type]
 	if !ok {
-		return nil, fmt.Errorf("Meta type '%s' is not recognized in request %s", metaReq.Type, metaReq.String())
+		return nil, fmt.Errorf("Meta type '%s' is not recognized in request %s", req.Type, req.String())
 	}
-	return ctor(metaReq)
+	return ctor(req)
 }

@@ -15,8 +15,10 @@ import (
 type Binning struct {
 	Tiling     *Tiling
 	Resolution int64
-	BinSizeX   int64
-	BinSizeY   int64
+	BinSizeX   float64
+	BinSizeY   float64
+	xInterval  int64
+	yInterval  int64
 }
 
 // NewBinning instantiates and returns a new binning parameter object.
@@ -26,14 +28,33 @@ func NewBinning(tileReq *tile.Request) (*Binning, error) {
 	if err != nil {
 		return nil, err
 	}
-	resolution := int64(json.GetNumberDefault(params, "resolution", binning.MaxTileResolution))
+	bounds := tiling.Bounds
+	xRange := math.Abs(bounds.BottomRight.X - bounds.TopLeft.X)
+	yRange := math.Abs(bounds.BottomRight.Y - bounds.TopLeft.Y)
+	resolution := json.GetNumberDefault(params, "resolution", binning.MaxTileResolution)
+	binSizeX := xRange / resolution
+	binSizeY := yRange / resolution
 	return &Binning{
 		Tiling:     tiling,
-		BinSizeX:   int64(math.Abs(float64(tiling.Right-tiling.Left))) / resolution,
-		BinSizeY:   int64(math.Abs(float64(tiling.Bottom-tiling.Top))) / resolution,
-		Resolution: resolution,
+		Resolution: int64(resolution),
+		BinSizeX:   binSizeX,
+		BinSizeY:   binSizeY,
+		xInterval:  int64(binSizeX),
+		yInterval:  int64(binSizeY),
 	}, nil
 }
+
+/*
+func (p *Binning) clampBinToResolution(bin int64) int64 {
+	if bin > p.Resolution-1 {
+		return p.Resolution-1
+	}
+	if bin < 0 {
+		return 0
+	}
+	return bin
+}
+*/
 
 // GetHash returns a string hash of the parameter state.
 func (p *Binning) GetHash() string {
@@ -46,7 +67,7 @@ func (p *Binning) GetHash() string {
 func (p *Binning) GetXAgg() *elastic.HistogramAggregation {
 	return elastic.NewHistogramAggregation().
 		Field(p.Tiling.X).
-		Interval(p.BinSizeX).
+		Interval(p.xInterval).
 		MinDocCount(1)
 }
 
@@ -54,6 +75,34 @@ func (p *Binning) GetXAgg() *elastic.HistogramAggregation {
 func (p *Binning) GetYAgg() *elastic.HistogramAggregation {
 	return elastic.NewHistogramAggregation().
 		Field(p.Tiling.Y).
-		Interval(p.BinSizeY).
+		Interval(p.yInterval).
 		MinDocCount(1)
+}
+
+// GetXBin given an x value, returns the corresponding bin.
+func (p *Binning) GetXBin(x int64) int64 {
+	bounds := p.Tiling.Bounds
+	fx := float64(x)
+	var bin int64
+	if bounds.TopLeft.X > bounds.BottomRight.X {
+		maxBin := float64(p.Resolution - 1)
+		bin = int64(maxBin - ((fx - bounds.BottomRight.X) / p.BinSizeX))
+	} else {
+		bin = int64((fx - bounds.TopLeft.X) / p.BinSizeX)
+	}
+	return bin
+}
+
+// GetYBin given an y value, returns the corresponding bin.
+func (p *Binning) GetYBin(y int64) int64 {
+	bounds := p.Tiling.Bounds
+	fy := float64(y)
+	var bin int64
+	if bounds.TopLeft.Y > bounds.BottomRight.Y {
+		maxBin := float64(p.Resolution - 1)
+		bin = int64(maxBin - ((fy - bounds.BottomRight.Y) / p.BinSizeY))
+	} else {
+		bin = int64((fy - bounds.TopLeft.Y) / p.BinSizeY)
+	}
+	return bin
 }

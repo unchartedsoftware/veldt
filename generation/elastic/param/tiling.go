@@ -2,6 +2,7 @@ package param
 
 import (
 	"fmt"
+	"math"
 
 	"gopkg.in/olivere/elastic.v3"
 
@@ -14,10 +15,11 @@ import (
 type Tiling struct {
 	X      string
 	Y      string
-	Left   int64
-	Right  int64
-	Top    int64
-	Bottom int64
+	Bounds *binning.Bounds
+	minX   int64
+	maxX   int64
+	minY   int64
+	maxY   int64
 }
 
 // NewTiling instantiates and returns a new tiling parameter object.
@@ -33,14 +35,15 @@ func NewTiling(tileReq *tile.Request) (*Tiling, error) {
 			Y: json.GetNumberDefault(params, "bottom", binning.MaxPixels),
 		},
 	}
-	bounds := binning.GetTileBounds(tileReq.TileCoord, extents)
+	bounds := binning.GetTileBounds(tileReq.Coord, extents)
 	return &Tiling{
 		X:      json.GetStringDefault(params, "x", "pixel.x"),
 		Y:      json.GetStringDefault(params, "y", "pixel.y"),
-		Left:   int64(bounds.TopLeft.X),
-		Right:  int64(bounds.BottomRight.X),
-		Top:    int64(bounds.TopLeft.Y),
-		Bottom: int64(bounds.BottomRight.Y),
+		Bounds: bounds,
+		minX:   int64(math.Min(bounds.TopLeft.X, bounds.BottomRight.X)),
+		maxX:   int64(math.Max(bounds.TopLeft.X, bounds.BottomRight.X)),
+		minY:   int64(math.Min(bounds.TopLeft.Y, bounds.BottomRight.Y)),
+		maxY:   int64(math.Max(bounds.TopLeft.Y, bounds.BottomRight.Y)),
 	}, nil
 }
 
@@ -49,32 +52,22 @@ func (p *Tiling) GetHash() string {
 	return fmt.Sprintf("%s:%s:%d:%d:%d:%d",
 		p.X,
 		p.Y,
-		p.Left,
-		p.Right,
-		p.Top,
-		p.Bottom)
+		p.minX,
+		p.maxX,
+		p.minY,
+		p.maxY)
 }
 
 // GetXQuery returns an elastic query.
 func (p *Tiling) GetXQuery() *elastic.RangeQuery {
-	if p.Right > p.Left {
-		return elastic.NewRangeQuery(p.X).
-			Gte(p.Left).
-			Lt(p.Right)
-	}
 	return elastic.NewRangeQuery(p.X).
-		Gte(p.Right).
-		Lt(p.Left)
+		Gte(p.minX).
+		Lt(p.maxX)
 }
 
 // GetYQuery returns an elastic query.
 func (p *Tiling) GetYQuery() *elastic.RangeQuery {
-	if p.Top > p.Bottom {
-		return elastic.NewRangeQuery(p.Y).
-			Gte(p.Bottom).
-			Lt(p.Top)
-	}
 	return elastic.NewRangeQuery(p.Y).
-		Gte(p.Top).
-		Lt(p.Bottom)
+		Gte(p.minY).
+		Lt(p.maxY)
 }

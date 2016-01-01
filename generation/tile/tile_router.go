@@ -8,61 +8,62 @@ import (
 	"github.com/fanliao/go-promise"
 
 	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/store"
 	"github.com/unchartedsoftware/prism/log"
+	"github.com/unchartedsoftware/prism/store"
 )
 
 // Request represents the tile type and tile coord.
 type Request struct {
-	TileCoord *binning.TileCoord     `json:"tilecoord"`
-	Type      string                 `json:"type"`
-	Index     string                 `json:"index"`
-	Endpoint  string                 `json:"endpoint"`
-	Params    map[string]interface{} `json:"params"`
+	Coord    *binning.TileCoord     `json:"coord"`
+	Type     string                 `json:"type"`
+	Index    string                 `json:"index"`
+	Endpoint string                 `json:"endpoint"`
+	Params   map[string]interface{} `json:"params"`
 }
 
+// String returns the request formatted as a string.
 func (r *Request) String() string {
 	return fmt.Sprintf("%s/%s/%s/%d/%d/%d",
 		r.Endpoint,
 		r.Index,
 		r.Type,
-		r.TileCoord.Z,
-		r.TileCoord.X,
-		r.TileCoord.Y)
+		r.Coord.Z,
+		r.Coord.X,
+		r.Coord.Y)
 }
 
 // Response represents the tile response data.
 type Response struct {
-	TileCoord *binning.TileCoord     `json:"tilecoord"`
-	Type      string                 `json:"type"`
-	Index     string                 `json:"index"`
-	Endpoint  string                 `json:"endpoint"`
-	Params    map[string]interface{} `json:"params"`
-	Success   bool                   `json:"success"`
-	Error     error                  `json:"-"` // ignore field
+	Coord    *binning.TileCoord     `json:"coord"`
+	Type     string                 `json:"type"`
+	Index    string                 `json:"index"`
+	Endpoint string                 `json:"endpoint"`
+	Params   map[string]interface{} `json:"params"`
+	Success  bool                   `json:"success"`
+	Error    error                  `json:"-"` // ignore field
 }
 
 func getFailureResponse(tileReq *Request, err error) *Response {
 	return &Response{
-		TileCoord: tileReq.TileCoord,
-		Type:      tileReq.Type,
-		Index:     tileReq.Index,
-		Endpoint:  tileReq.Endpoint,
-		Params:    tileReq.Params,
-		Success:   false,
-		Error:     err,
+		Coord:    tileReq.Coord,
+		Type:     tileReq.Type,
+		Index:    tileReq.Index,
+		Endpoint: tileReq.Endpoint,
+		Params:   tileReq.Params,
+		Success:  false,
+		Error:    err,
 	}
 }
 
 func getSuccessResponse(tileReq *Request) *Response {
 	return &Response{
-		TileCoord: tileReq.TileCoord,
-		Type:      tileReq.Type,
-		Index:     tileReq.Index,
-		Endpoint:  tileReq.Endpoint,
-		Params:    tileReq.Params,
-		Success:   true,
-		Error:     nil,
+		Coord:    tileReq.Coord,
+		Type:     tileReq.Type,
+		Index:    tileReq.Index,
+		Endpoint: tileReq.Endpoint,
+		Params:   tileReq.Params,
+		Success:  true,
+		Error:    nil,
 	}
 }
 
@@ -80,9 +81,9 @@ func getTileHash(tileReq *Request, tileGen Generator) string {
 		tileReq.Endpoint,
 		tileReq.Index,
 		tileReq.Type,
-		tileReq.TileCoord.X,
-		tileReq.TileCoord.Y,
-		tileReq.TileCoord.Z)
+		tileReq.Coord.X,
+		tileReq.Coord.Y,
+		tileReq.Coord.Z)
 	hashes = append(hashes, hash)
 	// add individual param hashes
 	for _, p := range tileParams {
@@ -97,16 +98,22 @@ func getTileHash(tileReq *Request, tileGen Generator) string {
 
 // GetTile returns a promise which will be fulfilled when the tile generation
 // has completed and the tile is ready.
-func GetTile(tileReq *Request) *promise.Promise {
+func GetTile(tileReq *Request, storeReq *store.Request) *promise.Promise {
 	// get parameters
 	tileGen, err := GetGenerator(tileReq)
+	if err != nil {
+		return getFailurePromise(tileReq, err)
+	}
+	// get store connection
+	conn, err := store.GetConnection(storeReq)
 	if err != nil {
 		return getFailurePromise(tileReq, err)
 	}
 	// get tile hash
 	tileHash := getTileHash(tileReq, tileGen)
 	// check if tile exists in store
-	exists, err := store.Exists(tileHash)
+	exists, err := conn.Exists(tileHash)
+	conn.Close()
 	if err != nil {
 		log.Warn(err)
 	}
@@ -115,18 +122,24 @@ func GetTile(tileReq *Request) *promise.Promise {
 		return getSuccessPromise(tileReq)
 	}
 	// otherwise, initiate the tiling job and return promise
-	return getTilePromise(tileHash, tileReq, tileGen)
+	return getTilePromise(tileHash, tileReq, storeReq, tileGen)
 }
 
 // GenerateAndStoreTile generates a new tile and then puts it in the store.
-func GenerateAndStoreTile(tileHash string, tileReq *Request, tileGen Generator) *Response {
+func GenerateAndStoreTile(tileHash string, tileReq *Request, storeReq *store.Request, tileGen Generator) *Response {
 	// generate the tile
 	tileData, err := tileGen.GetTile(tileReq)
 	if err != nil {
 		return getFailureResponse(tileReq, err)
 	}
+	// get store connection
+	conn, err := store.GetConnection(storeReq)
+	if err != nil {
+		return getFailureResponse(tileReq, err)
+	}
 	// add tile to store
-	err = store.Set(tileHash, tileData[0:])
+	err = conn.Set(tileHash, tileData[0:])
+	conn.Close()
 	if err != nil {
 		return getFailureResponse(tileReq, err)
 	}
@@ -134,7 +147,7 @@ func GenerateAndStoreTile(tileHash string, tileReq *Request, tileGen Generator) 
 }
 
 // GetTileFromStore returns a serialized tile from store.
-func GetTileFromStore(tileReq *Request) ([]byte, error) {
+func GetTileFromStore(tileReq *Request, storeReq *store.Request) ([]byte, error) {
 	// get parameters
 	tileGen, err := GetGenerator(tileReq)
 	if err != nil {
@@ -142,8 +155,14 @@ func GetTileFromStore(tileReq *Request) ([]byte, error) {
 	}
 	// get tile hash
 	tileHash := getTileHash(tileReq, tileGen)
+	// get store connection
+	conn, err := store.GetConnection(storeReq)
+	if err != nil {
+		return nil, err
+	}
 	// get tile data from store
-	tile, err := store.Get(tileHash)
+	tile, err := conn.Get(tileHash)
+	conn.Close()
 	if tile == nil || err != nil {
 		return nil, err
 	}

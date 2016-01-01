@@ -30,10 +30,10 @@ func Register(typeID string, gen GeneratorConstructor) {
 }
 
 // GetGenerator instantiates a tile generator from a tile request.
-func GetGenerator(tileReq *Request) (Generator, error) {
-	ctor, ok := registry[tileReq.Type]
+func GetGenerator(req *Request) (Generator, error) {
+	ctor, ok := registry[req.Type]
 	if !ok {
-		return nil, fmt.Errorf("Tile type '%s' is not recognized in request %s", tileReq.Type, tileReq.String())
+		return nil, fmt.Errorf("Tile type '%s' is not recognized in request %s", req.Type, req.String())
 	}
-	return ctor(tileReq)
+	return ctor(req)
 }

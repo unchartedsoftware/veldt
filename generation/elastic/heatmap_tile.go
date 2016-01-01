@@ -21,6 +21,14 @@ func float64ToBytes(bytes []byte, float float64) {
 	binary.LittleEndian.PutUint64(bytes, bits)
 }
 
+func float64ToByteSlice(arr []float64) []byte {
+	bits := make([]byte, len(arr)*8)
+	for i, a := range arr {
+		float64ToBytes(bits[i*8:i*8+8], a)
+	}
+	return bits[0:]
+}
+
 // HeatmapTile represents a tiling generator that produces heatmaps.
 type HeatmapTile struct {
 	Binning   *param.Binning
@@ -93,22 +101,25 @@ func (g *HeatmapTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 		return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s", xAggName, tileReq.String())
 	}
 	// allocate count buffer
-	bytes := make([]byte, binning.Resolution*binning.Resolution*8)
+	//bytes := make([]byte, binning.Resolution*binning.Resolution*8)
+	counts := make([]float64, binning.Resolution*binning.Resolution)
 	// fill count buffer
 	for _, xBucket := range xAgg.Buckets {
 		x := xBucket.Key
-		xBin := (x - tiling.Left) / binning.BinSizeX
+		xBin := binning.GetXBin(x)
 		yAgg, ok := xBucket.Histogram(yAggName)
 		if !ok {
 			return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s", yAggName, tileReq.String())
 		}
 		for _, yBucket := range yAgg.Buckets {
 			y := yBucket.Key
-			yBin := (y - tiling.Top) / binning.BinSizeY
+			yBin := binning.GetYBin(y)
 			index := xBin + binning.Resolution*yBin
 			// encode count
-			float64ToBytes(bytes[index*8:index*8+8], float64(yBucket.DocCount))
+			counts[index] += float64(yBucket.DocCount)
+			//float64ToBytes(bytes[index*8:index*8+8], float64(yBucket.DocCount))
 		}
 	}
-	return bytes, nil
+	return float64ToByteSlice(counts), nil
+	//return bytes, nil
 }

@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	"github.com/fanliao/go-promise"
+
+	"github.com/unchartedsoftware/prism/store"
 )
 
 var (
@@ -24,7 +26,7 @@ func getFailurePromise(tileReq *Request, err error) *promise.Promise {
 	return p
 }
 
-func getTilePromise(tileHash string, tileReq *Request, tileGen Generator) *promise.Promise {
+func getTilePromise(tileHash string, tileReq *Request, storeReq *store.Request, tileGen Generator) *promise.Promise {
 	mutex.Lock()
 	p, ok := tilePromises[tileHash]
 	if ok {
@@ -37,7 +39,7 @@ func getTilePromise(tileHash string, tileReq *Request, tileGen Generator) *promi
 	mutex.Unlock()
 	runtime.Gosched()
 	go func() {
-		tileRes := GenerateAndStoreTile(tileHash, tileReq, tileGen)
+		tileRes := GenerateAndStoreTile(tileHash, tileReq, storeReq, tileGen)
 		p.Resolve(tileRes)
 		mutex.Lock()
 		delete(tilePromises, tileHash)

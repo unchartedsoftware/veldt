@@ -5,18 +5,18 @@ import (
 
 	"github.com/fanliao/go-promise"
 
-	"github.com/unchartedsoftware/prism/store"
 	"github.com/unchartedsoftware/prism/log"
+	"github.com/unchartedsoftware/prism/store"
 )
 
 // Request represents a meta data request.
 type Request struct {
-	Store 	 string `json:"store"`
 	Type     string `json:"type"`
 	Index    string `json:"index"`
 	Endpoint string `json:"endpoint"`
 }
 
+// String returns the request formatted as a string.
 func (r *Request) String() string {
 	return fmt.Sprintf("%s/%s/%s",
 		r.Endpoint,
@@ -65,28 +65,39 @@ func getMetaHash(metaReq *Request) string {
 
 // GetMeta returns a promise which will be fulfilled when the meta generation
 // has completed.
-func GetMeta(metaReq *Request) *promise.Promise {
+func GetMeta(metaReq *Request, storeReq *store.Request) *promise.Promise {
 	metaHash := getMetaHash(metaReq)
-	// check if meta exists in store
-	exists, err := store.Exists(metaHash)
+	// get store connection
+	conn, err := store.GetConnection(storeReq)
 	if err != nil {
+		// only log warning, we can still generate meta, we just can't store it
 		log.Warn(err)
+		return getMetaPromise(metaHash, metaReq, storeReq)
+	}
+	// check if meta exists in store
+	exists, err := conn.Exists(metaHash)
+	if err != nil {
+		// only log warning, we can still generate meta, we just can't store it
+		log.Warn(err)
+		conn.Close()
+		return getMetaPromise(metaHash, metaReq, storeReq)
 	}
 	// if it exists, return success promise
 	if exists {
-		meta, err := store.Get(metaHash)
+		meta, err := conn.Get(metaHash)
+		conn.Close()
 		if err == nil && meta != nil {
 			// if no error, return promise
 			return getSuccessPromise(metaReq, meta)
 		}
 	}
 	// otherwise, generate the metadata and return promise
-	return getMetaPromise(metaHash, metaReq)
+	return getMetaPromise(metaHash, metaReq, storeReq)
 }
 
 // GenerateAndStoreMeta returns a meta data response based on the provided hash and
 // request object.
-func GenerateAndStoreMeta(metaHash string, metaReq *Request) *Response {
+func GenerateAndStoreMeta(metaHash string, metaReq *Request, storeReq *store.Request) *Response {
 	// get meta generator by id
 	metaGen, err := GetGenerator(metaReq)
 	if err != nil {
@@ -97,10 +108,18 @@ func GenerateAndStoreMeta(metaHash string, metaReq *Request) *Response {
 	if err != nil {
 		return getFailureResponse(metaReq, err)
 	}
-	// add tile to store
-	err = store.Set(metaHash, meta)
+	// get store connection
+	conn, err := store.GetConnection(storeReq)
 	if err != nil {
+		// only log warning, we can still generate meta, we just can't store it
 		log.Warn(err)
+	} else {
+		// add tile to store
+		err := conn.Set(metaHash, meta)
+		conn.Close()
+		if err != nil {
+			log.Warn(err)
+		}
 	}
 	return getSuccessResponse(metaReq, meta)
 }
