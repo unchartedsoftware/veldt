@@ -14,15 +14,15 @@ var (
 	tilePromises = make(map[string]*promise.Promise)
 )
 
-func getSuccessPromise(tileReq *Request) *promise.Promise {
+func getSuccessPromise() *promise.Promise {
 	p := promise.NewPromise()
-	p.Resolve(getSuccessResponse(tileReq))
+	p.Resolve(nil)
 	return p
 }
 
-func getFailurePromise(tileReq *Request, err error) *promise.Promise {
+func getFailurePromise(err error) *promise.Promise {
 	p := promise.NewPromise()
-	p.Resolve(getFailureResponse(tileReq, err))
+	p.Resolve(err)
 	return p
 }
 
@@ -39,8 +39,8 @@ func getTilePromise(tileHash string, tileReq *Request, storeReq *store.Request, 
 	mutex.Unlock()
 	runtime.Gosched()
 	go func() {
-		tileRes := GenerateAndStoreTile(tileHash, tileReq, storeReq, tileGen)
-		p.Resolve(tileRes)
+		err := GenerateAndStoreTile(tileHash, tileReq, storeReq, tileGen)
+		p.Resolve(err)
 		mutex.Lock()
 		delete(tilePromises, tileHash)
 		mutex.Unlock()

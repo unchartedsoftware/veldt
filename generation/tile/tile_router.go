@@ -32,41 +32,6 @@ func (r *Request) String() string {
 		r.Coord.Y)
 }
 
-// Response represents the tile response data.
-type Response struct {
-	Coord    *binning.TileCoord     `json:"coord"`
-	Type     string                 `json:"type"`
-	Index    string                 `json:"index"`
-	Endpoint string                 `json:"endpoint"`
-	Params   map[string]interface{} `json:"params"`
-	Success  bool                   `json:"success"`
-	Error    error                  `json:"-"` // ignore field
-}
-
-func getFailureResponse(tileReq *Request, err error) *Response {
-	return &Response{
-		Coord:    tileReq.Coord,
-		Type:     tileReq.Type,
-		Index:    tileReq.Index,
-		Endpoint: tileReq.Endpoint,
-		Params:   tileReq.Params,
-		Success:  false,
-		Error:    err,
-	}
-}
-
-func getSuccessResponse(tileReq *Request) *Response {
-	return &Response{
-		Coord:    tileReq.Coord,
-		Type:     tileReq.Type,
-		Index:    tileReq.Index,
-		Endpoint: tileReq.Endpoint,
-		Params:   tileReq.Params,
-		Success:  true,
-		Error:    nil,
-	}
-}
-
 func isNil(a interface{}) bool {
 	defer func() { recover() }()
 	return a == nil || reflect.ValueOf(a).IsNil()
@@ -102,12 +67,12 @@ func GetTile(tileReq *Request, storeReq *store.Request) *promise.Promise {
 	// get parameters
 	tileGen, err := GetGenerator(tileReq)
 	if err != nil {
-		return getFailurePromise(tileReq, err)
+		return getFailurePromise(err)
 	}
 	// get store connection
 	conn, err := store.GetConnection(storeReq)
 	if err != nil {
-		return getFailurePromise(tileReq, err)
+		return getFailurePromise(err)
 	}
 	// get tile hash
 	tileHash := getTileHash(tileReq, tileGen)
@@ -119,31 +84,31 @@ func GetTile(tileReq *Request, storeReq *store.Request) *promise.Promise {
 	}
 	// if it exists, return success promise
 	if exists {
-		return getSuccessPromise(tileReq)
+		return getSuccessPromise()
 	}
 	// otherwise, initiate the tiling job and return promise
 	return getTilePromise(tileHash, tileReq, storeReq, tileGen)
 }
 
 // GenerateAndStoreTile generates a new tile and then puts it in the store.
-func GenerateAndStoreTile(tileHash string, tileReq *Request, storeReq *store.Request, tileGen Generator) *Response {
+func GenerateAndStoreTile(tileHash string, tileReq *Request, storeReq *store.Request, tileGen Generator) error {
 	// generate the tile
 	tileData, err := tileGen.GetTile(tileReq)
 	if err != nil {
-		return getFailureResponse(tileReq, err)
+		return err
 	}
 	// get store connection
 	conn, err := store.GetConnection(storeReq)
 	if err != nil {
-		return getFailureResponse(tileReq, err)
+		return err
 	}
 	// add tile to store
 	err = conn.Set(tileHash, tileData[0:])
 	conn.Close()
 	if err != nil {
-		return getFailureResponse(tileReq, err)
+		return err
 	}
-	return getSuccessResponse(tileReq)
+	return nil
 }
 
 // GetTileFromStore returns a serialized tile from store.
