@@ -14,9 +14,15 @@ var (
 	metaPromises = make(map[string]*promise.Promise)
 )
 
-func getSuccessPromise(metaReq *Request, meta []byte) *promise.Promise {
+func getSuccessPromise() *promise.Promise {
 	p := promise.NewPromise()
-	p.Resolve(getSuccessResponse(metaReq, meta))
+	p.Resolve(nil)
+	return p
+}
+
+func getFailurePromise(err error) *promise.Promise {
+	p := promise.NewPromise()
+	p.Resolve(err)
 	return p
 }
 
@@ -33,8 +39,8 @@ func getMetaPromise(metaHash string, metaReq *Request, storeReq *store.Request) 
 	mutex.Unlock()
 	runtime.Gosched()
 	go func() {
-		meta := GenerateAndStoreMeta(metaHash, metaReq, storeReq)
-		p.Resolve(meta)
+		err := generateAndStoreMeta(metaHash, metaReq, storeReq)
+		p.Resolve(err)
 		mutex.Lock()
 		delete(metaPromises, metaHash)
 		mutex.Unlock()

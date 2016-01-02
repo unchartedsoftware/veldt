@@ -39,7 +39,7 @@ func getTilePromise(tileHash string, tileReq *Request, storeReq *store.Request, 
 	mutex.Unlock()
 	runtime.Gosched()
 	go func() {
-		err := GenerateAndStoreTile(tileHash, tileReq, storeReq, tileGen)
+		err := generateAndStoreTile(tileHash, tileReq, storeReq, tileGen)
 		p.Resolve(err)
 		mutex.Lock()
 		delete(tilePromises, tileHash)

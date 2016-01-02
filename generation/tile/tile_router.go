@@ -8,7 +8,6 @@ import (
 	"github.com/fanliao/go-promise"
 
 	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/log"
 	"github.com/unchartedsoftware/prism/store"
 )
 
@@ -61,37 +60,8 @@ func getTileHash(tileReq *Request, tileGen Generator) string {
 	return strings.Join(hashes, ":")
 }
 
-// GetTile returns a promise which will be fulfilled when the tile generation
-// has completed and the tile is ready.
-func GetTile(tileReq *Request, storeReq *store.Request) *promise.Promise {
-	// get parameters
-	tileGen, err := GetGenerator(tileReq)
-	if err != nil {
-		return getFailurePromise(err)
-	}
-	// get store connection
-	conn, err := store.GetConnection(storeReq)
-	if err != nil {
-		return getFailurePromise(err)
-	}
-	// get tile hash
-	tileHash := getTileHash(tileReq, tileGen)
-	// check if tile exists in store
-	exists, err := conn.Exists(tileHash)
-	conn.Close()
-	if err != nil {
-		log.Warn(err)
-	}
-	// if it exists, return success promise
-	if exists {
-		return getSuccessPromise()
-	}
-	// otherwise, initiate the tiling job and return promise
-	return getTilePromise(tileHash, tileReq, storeReq, tileGen)
-}
-
-// GenerateAndStoreTile generates a new tile and then puts it in the store.
-func GenerateAndStoreTile(tileHash string, tileReq *Request, storeReq *store.Request, tileGen Generator) error {
+// generateAndStoreTile generates the tile and puts it in the store.
+func generateAndStoreTile(tileHash string, tileReq *Request, storeReq *store.Request, tileGen Generator) error {
 	// generate the tile
 	tileData, err := tileGen.GetTile(tileReq)
 	if err != nil {
@@ -111,6 +81,35 @@ func GenerateAndStoreTile(tileHash string, tileReq *Request, storeReq *store.Req
 	return nil
 }
 
+// GenerateTile returns a promise which will be fulfilled when the tile
+// generation has completed and the tile is ready.
+func GenerateTile(tileReq *Request, storeReq *store.Request) *promise.Promise {
+	// get parameters
+	tileGen, err := GetGenerator(tileReq)
+	if err != nil {
+		return getFailurePromise(err)
+	}
+	// get store connection
+	conn, err := store.GetConnection(storeReq)
+	if err != nil {
+		return getFailurePromise(err)
+	}
+	// get tile hash
+	tileHash := getTileHash(tileReq, tileGen)
+	// check if tile exists in store
+	exists, err := conn.Exists(tileHash)
+	conn.Close()
+	if err != nil {
+		return getFailurePromise(err)
+	}
+	// if it exists, return success promise
+	if exists {
+		return getSuccessPromise()
+	}
+	// otherwise, initiate the tiling job and return promise
+	return getTilePromise(tileHash, tileReq, storeReq, tileGen)
+}
+
 // GetTileFromStore returns a serialized tile from store.
 func GetTileFromStore(tileReq *Request, storeReq *store.Request) ([]byte, error) {
 	// get parameters
@@ -128,7 +127,7 @@ func GetTileFromStore(tileReq *Request, storeReq *store.Request) ([]byte, error)
 	// get tile data from store
 	tile, err := conn.Get(tileHash)
 	conn.Close()
-	if tile == nil || err != nil {
+	if err != nil {
 		return nil, err
 	}
 	return tile, nil
