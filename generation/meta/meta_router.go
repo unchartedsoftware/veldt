@@ -74,7 +74,7 @@ func GenerateMeta(metaReq *Request, storeReq *store.Request) error {
 		return nil
 	}
 	// otherwise, generate the metadata and return promise
-	return <-getMetaPromise(metaHash, metaReq, storeReq)
+	return getMetaPromise(metaHash, metaReq, storeReq)
 }
 
 // GetMetaFromStore returns serialized meta data from store.

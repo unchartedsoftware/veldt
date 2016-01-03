@@ -9,7 +9,7 @@ var (
 	promises = promise.NewMap()
 )
 
-func getTilePromise(tileHash string, tileReq *Request, storeReq *store.Request, tileGen Generator) chan error {
+func getTilePromise(tileHash string, tileReq *Request, storeReq *store.Request, tileGen Generator) error {
 	p, ok := promises.Get(tileHash)
 	if ok {
 		return p.Wait()

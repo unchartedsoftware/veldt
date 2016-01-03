@@ -105,7 +105,7 @@ func GenerateTile(tileReq *Request, storeReq *store.Request) error {
 		return nil
 	}
 	// otherwise, initiate the tiling job and return promise
-	return <-getTilePromise(tileHash, tileReq, storeReq, tileGen)
+	return getTilePromise(tileHash, tileReq, storeReq, tileGen)
 }
 
 // GetTileFromStore returns a serialized tile from store.
