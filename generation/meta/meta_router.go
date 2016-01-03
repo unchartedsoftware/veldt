@@ -3,8 +3,6 @@ package meta
 import (
 	"fmt"
 
-	"github.com/fanliao/go-promise"
-
 	"github.com/unchartedsoftware/prism/store"
 )
 
@@ -59,24 +57,24 @@ func generateAndStoreMeta(metaHash string, metaReq *Request, storeReq *store.Req
 
 // GenerateMeta returns a promise which will be fulfilled when the meta
 // generation has completed.
-func GenerateMeta(metaReq *Request, storeReq *store.Request) *promise.Promise {
+func GenerateMeta(metaReq *Request, storeReq *store.Request) error {
 	metaHash := getMetaHash(metaReq)
 	// get store connection
 	conn, err := store.GetConnection(storeReq)
 	if err != nil {
-		return getFailurePromise(err)
+		return err
 	}
 	// check if meta exists in store
 	exists, err := conn.Exists(metaHash)
 	if err != nil {
-		return getFailurePromise(err)
+		return err
 	}
 	// if it exists, return success promise
 	if exists {
-		return getSuccessPromise()
+		return nil
 	}
 	// otherwise, generate the metadata and return promise
-	return getMetaPromise(metaHash, metaReq, storeReq)
+	return <-getMetaPromise(metaHash, metaReq, storeReq)
 }
 
 // GetMetaFromStore returns serialized meta data from store.

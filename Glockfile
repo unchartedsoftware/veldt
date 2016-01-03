@@ -1,5 +1,4 @@
 github.com/Sirupsen/logrus a22723f16efea2e89b7bd67d10ed077c47c14eb4
-github.com/fanliao/go-promise 1890db352a72f9e6c6219c20111355cddc795297
 github.com/garyburd/redigo 6ece6e0a09f28cc399b21550cbf37ab39ba63cce
 github.com/mgutz/ansi c286dcecd19ff979eeb73ea444e479b903f2cfcb
 github.com/olivere/elastic a8215e0b307af4727033f0cbc52e42600c5baebc

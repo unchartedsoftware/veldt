@@ -1,50 +1,25 @@
 package meta
 
 import (
-	"runtime"
-	"sync"
-
-	"github.com/fanliao/go-promise"
-
 	"github.com/unchartedsoftware/prism/store"
+	"github.com/unchartedsoftware/prism/util/promise"
 )
 
 var (
-	mutex        = sync.Mutex{}
-	metaPromises = make(map[string]*promise.Promise)
+	promises = promise.NewMap()
 )
 
-func getSuccessPromise() *promise.Promise {
-	p := promise.NewPromise()
-	p.Resolve(nil)
-	return p
-}
-
-func getFailurePromise(err error) *promise.Promise {
-	p := promise.NewPromise()
-	p.Resolve(err)
-	return p
-}
-
-func getMetaPromise(metaHash string, metaReq *Request, storeReq *store.Request) *promise.Promise {
-	mutex.Lock()
-	p, ok := metaPromises[metaHash]
+func getMetaPromise(metaHash string, metaReq *Request, storeReq *store.Request) chan error {
+	p, ok := promises.Get(metaHash)
 	if ok {
-		mutex.Unlock()
-		runtime.Gosched()
-		return p
+		return p.Wait()
 	}
 	p = promise.NewPromise()
-	metaPromises[metaHash] = p
-	mutex.Unlock()
-	runtime.Gosched()
+	promises.Set(metaHash, p)
 	go func() {
 		err := generateAndStoreMeta(metaHash, metaReq, storeReq)
 		p.Resolve(err)
-		mutex.Lock()
-		delete(metaPromises, metaHash)
-		mutex.Unlock()
-		runtime.Gosched()
+		promises.Remove(metaHash)
 	}()
-	return p
+	return p.Wait()
 }

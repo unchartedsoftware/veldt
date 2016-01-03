@@ -1,50 +1,25 @@
 package tile
 
 import (
-	"runtime"
-	"sync"
-
-	"github.com/fanliao/go-promise"
-
 	"github.com/unchartedsoftware/prism/store"
+	"github.com/unchartedsoftware/prism/util/promise"
 )
 
 var (
-	mutex        = sync.Mutex{}
-	tilePromises = make(map[string]*promise.Promise)
+	promises = promise.NewMap()
 )
 
-func getSuccessPromise() *promise.Promise {
-	p := promise.NewPromise()
-	p.Resolve(nil)
-	return p
-}
-
-func getFailurePromise(err error) *promise.Promise {
-	p := promise.NewPromise()
-	p.Resolve(err)
-	return p
-}
-
-func getTilePromise(tileHash string, tileReq *Request, storeReq *store.Request, tileGen Generator) *promise.Promise {
-	mutex.Lock()
-	p, ok := tilePromises[tileHash]
+func getTilePromise(tileHash string, tileReq *Request, storeReq *store.Request, tileGen Generator) chan error {
+	p, ok := promises.Get(tileHash)
 	if ok {
-		mutex.Unlock()
-		runtime.Gosched()
-		return p
+		return p.Wait()
 	}
 	p = promise.NewPromise()
-	tilePromises[tileHash] = p
-	mutex.Unlock()
-	runtime.Gosched()
+	promises.Set(tileHash, p)
 	go func() {
 		err := generateAndStoreTile(tileHash, tileReq, storeReq, tileGen)
 		p.Resolve(err)
-		mutex.Lock()
-		delete(tilePromises, tileHash)
-		mutex.Unlock()
-		runtime.Gosched()
+		promises.Remove(tileHash)
 	}()
-	return p
+	return p.Wait()
 }

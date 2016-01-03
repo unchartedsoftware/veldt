@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/fanliao/go-promise"
-
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/store"
 )
@@ -83,16 +81,16 @@ func generateAndStoreTile(tileHash string, tileReq *Request, storeReq *store.Req
 
 // GenerateTile returns a promise which will be fulfilled when the tile
 // generation has completed and the tile is ready.
-func GenerateTile(tileReq *Request, storeReq *store.Request) *promise.Promise {
+func GenerateTile(tileReq *Request, storeReq *store.Request) error {
 	// get parameters
 	tileGen, err := GetGenerator(tileReq)
 	if err != nil {
-		return getFailurePromise(err)
+		return err
 	}
 	// get store connection
 	conn, err := store.GetConnection(storeReq)
 	if err != nil {
-		return getFailurePromise(err)
+		return err
 	}
 	// get tile hash
 	tileHash := getTileHash(tileReq, tileGen)
@@ -100,14 +98,14 @@ func GenerateTile(tileReq *Request, storeReq *store.Request) *promise.Promise {
 	exists, err := conn.Exists(tileHash)
 	conn.Close()
 	if err != nil {
-		return getFailurePromise(err)
+		return err
 	}
 	// if it exists, return success promise
 	if exists {
-		return getSuccessPromise()
+		return nil
 	}
 	// otherwise, initiate the tiling job and return promise
-	return getTilePromise(tileHash, tileReq, storeReq, tileGen)
+	return <-getTilePromise(tileHash, tileReq, storeReq, tileGen)
 }
 
 // GetTileFromStore returns a serialized tile from store.
