@@ -55,8 +55,8 @@ func generateAndStoreMeta(metaHash string, metaReq *Request, storeReq *store.Req
 	return nil
 }
 
-// GenerateMeta returns a promise which will be fulfilled when the meta
-// generation has completed.
+// GenerateMeta issues a generation request and returns an error when it has
+// completed.
 func GenerateMeta(metaReq *Request, storeReq *store.Request) error {
 	metaHash := getMetaHash(metaReq)
 	// get store connection
@@ -69,11 +69,11 @@ func GenerateMeta(metaReq *Request, storeReq *store.Request) error {
 	if err != nil {
 		return err
 	}
-	// if it exists, return success promise
+	// if it exists, return as success
 	if exists {
 		return nil
 	}
-	// otherwise, generate the metadata and return promise
+	// otherwise, generate the metadata and return error
 	return getMetaPromise(metaHash, metaReq, storeReq)
 }
 

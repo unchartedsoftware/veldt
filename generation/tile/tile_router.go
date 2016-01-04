@@ -79,8 +79,8 @@ func generateAndStoreTile(tileHash string, tileReq *Request, storeReq *store.Req
 	return nil
 }
 
-// GenerateTile returns a promise which will be fulfilled when the tile
-// generation has completed and the tile is ready.
+// GenerateTile issues a generation request and returns an error when it has
+// completed.
 func GenerateTile(tileReq *Request, storeReq *store.Request) error {
 	// get parameters
 	tileGen, err := GetGenerator(tileReq)
@@ -100,11 +100,11 @@ func GenerateTile(tileReq *Request, storeReq *store.Request) error {
 	if err != nil {
 		return err
 	}
-	// if it exists, return success promise
+	// if it exists, return as success
 	if exists {
 		return nil
 	}
-	// otherwise, initiate the tiling job and return promise
+	// otherwise, initiate the tiling job and return error
 	return getTilePromise(tileHash, tileReq, storeReq, tileGen)
 }
 
