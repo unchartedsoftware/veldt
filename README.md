@@ -23,7 +23,7 @@ cd $GOPATH/src/github.com/unchartedsoftware/prism && git pull
 Install all dependencies:
 
 ```bash
-	make deps
+make deps
 ```
 
 ## Usage
