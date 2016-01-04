@@ -8,10 +8,10 @@ all:
 	@echo "commands:"
 	@echo "  build         - build the dist binary"
 	@echo "  lint          - lint the source code"
+	@echo "  test          - test the source code"
 	@echo "  fmt           - format the code with gofmt"
 	@echo "  clean         - clean the dist build"
 	@echo ""
-	@echo "  tools         - go gets a bunch of tools for dev"
 	@echo "  deps          - pull and setup dependencies"
 	@echo "  update_deps   - update deps lock file"
 
@@ -32,11 +32,9 @@ build: clean lint
 	@go build ./...
 
 deps:
+	@go get github.com/robfig/glock
+	@go get github.com/golang/lint/golint
 	@glock sync -n github.com/unchartedsoftware/prism < Glockfile
 
 update_deps:
 	@glock save -n github.com/unchartedsoftware/prism > Glockfile
-
-tools:
-	go get github.com/robfig/glock
-	go get github.com/golang/lint/golint
