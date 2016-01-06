@@ -12,7 +12,7 @@ type Promise struct {
 	count    int
 	resolved bool
 	response error
-	mutex    sync.RWMutex
+	mutex    sync.Mutex
 }
 
 // NewPromise instantiates and returns a new promise.
@@ -22,21 +22,21 @@ func NewPromise() *Promise {
 		count:    0,
 		resolved: false,
 		response: nil,
-		mutex:    sync.RWMutex{},
+		mutex:    sync.Mutex{},
 	}
 }
 
 // Wait returns a channel that the response will be passed once the promise is
 // resolved.
 func (p *Promise) Wait() error {
-	p.mutex.RLock()
+	p.mutex.Lock()
 	if p.resolved {
-		p.mutex.RUnlock()
+		p.mutex.Unlock()
 		runtime.Gosched()
 		return p.response
 	}
 	p.count++
-	p.mutex.RUnlock()
+	p.mutex.Unlock()
 	runtime.Gosched()
 	return <-p.Chan
 }
@@ -44,15 +44,13 @@ func (p *Promise) Wait() error {
 // Resolve waits the reponse and sends it to all clients waiting on the channel.
 func (p *Promise) Resolve(res error) {
 	p.mutex.Lock()
+    defer runtime.Gosched()
+    defer p.mutex.Unlock()
 	if p.resolved {
-		p.mutex.Unlock()
-		runtime.Gosched()
 		return
 	}
 	p.resolved = true
 	p.response = res
-	p.mutex.Unlock()
-	runtime.Gosched()
 	for i := 0; i < p.count; i++ {
 		p.Chan <- res
 	}
