@@ -99,10 +99,17 @@ func (g *TopicFrequencyTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request %s", timeAggName, tileReq.String())
 		}
 		topicCounts := make([]int64, len(timeAgg.Buckets))
+		topicExists := false
 		for i, bucket := range timeAgg.Buckets {
 			topicCounts[i] = bucket.DocCount
+			if bucket.DocCount > 0 {
+				topicExists = true
+			}
 		}
-		topicFrequencies[topic] = topicCounts
+		// only add topics if they have at least one count
+		if topicExists {
+			topicFrequencies[topic] = topicCounts
+		}
 	}
 	// marshal results map
 	return json.Marshal(topicFrequencies)
