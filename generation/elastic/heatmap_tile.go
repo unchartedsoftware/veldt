@@ -8,6 +8,7 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
+	"github.com/unchartedsoftware/prism/generation/elastic/throttle"
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
@@ -83,15 +84,16 @@ func (g *HeatmapTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 	if topic != nil {
 		boolQuery.Must(topic.GetTopicQuery())
 	}
-	// query
-	result, err := client.
+	// build query
+	query := client.
 		Search(tileReq.Index).
 		Size(0).
 		Query(boolQuery).
 		Aggregation(xAggName,
 		binning.GetXAgg().
-			SubAggregation(yAggName, binning.GetYAgg())).
-		Do()
+			SubAggregation(yAggName, binning.GetYAgg()))
+	// send query through equalizer
+	result, err := throttle.Send(query)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +103,6 @@ func (g *HeatmapTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 		return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s", xAggName, tileReq.String())
 	}
 	// allocate count buffer
-	//bytes := make([]byte, binning.Resolution*binning.Resolution*8)
 	counts := make([]float64, binning.Resolution*binning.Resolution)
 	// fill count buffer
 	for _, xBucket := range xAgg.Buckets {
@@ -117,9 +118,7 @@ func (g *HeatmapTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 			index := xBin + binning.Resolution*yBin
 			// encode count
 			counts[index] += float64(yBucket.DocCount)
-			//float64ToBytes(bytes[index*8:index*8+8], float64(yBucket.DocCount))
 		}
 	}
 	return float64ToByteSlice(counts), nil
-	//return bytes, nil
 }

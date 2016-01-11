@@ -7,6 +7,7 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
+	"github.com/unchartedsoftware/prism/generation/elastic/throttle"
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
@@ -82,8 +83,8 @@ func (g *TopicFrequencyTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 	for topic, topicAgg := range topicAggs {
 		query.Aggregation(topic, topicAgg.SubAggregation(timeAggName, timeAgg))
 	}
-	// send query
-	result, err := query.Do()
+	// send query through equalizer
+	result, err := throttle.Send(query)
 	if err != nil {
 		return nil, err
 	}

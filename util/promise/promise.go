@@ -44,8 +44,8 @@ func (p *Promise) Wait() error {
 // Resolve waits the reponse and sends it to all clients waiting on the channel.
 func (p *Promise) Resolve(res error) {
 	p.mutex.Lock()
-    defer runtime.Gosched()
-    defer p.mutex.Unlock()
+	defer runtime.Gosched()
+	defer p.mutex.Unlock()
 	if p.resolved {
 		return
 	}
