@@ -12,8 +12,7 @@ all:
 	@echo "  fmt           - format the code with gofmt"
 	@echo "  clean         - clean the dist build"
 	@echo ""
-	@echo "  deps          - pull and setup dependencies"
-	@echo "  update_deps   - update deps lock file"
+	@echo "  deps          - pull and install tool dependencies"
 
 clean:
 	@rm -rf ./build
@@ -32,9 +31,4 @@ build: clean lint
 	@go build ./...
 
 deps:
-	@go get github.com/robfig/glock
 	@go get github.com/golang/lint/golint
-	@glock sync -n github.com/unchartedsoftware/prism < Glockfile
-
-update_deps:
-	@glock save -n github.com/unchartedsoftware/prism > Glockfile
