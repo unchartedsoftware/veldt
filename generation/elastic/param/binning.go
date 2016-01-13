@@ -14,6 +14,7 @@ import (
 // Binning represents params for binning the data within the tile.
 type Binning struct {
 	Tiling     *Tiling
+	Z          string
 	Resolution int64
 	BinSizeX   float64
 	BinSizeY   float64
@@ -36,6 +37,7 @@ func NewBinning(tileReq *tile.Request) (*Binning, error) {
 	binSizeY := yRange / resolution
 	return &Binning{
 		Tiling:     tiling,
+		Z:          json.GetStringDefault(params, "z", ""),
 		Resolution: int64(resolution),
 		BinSizeX:   binSizeX,
 		BinSizeY:   binSizeY,
@@ -58,8 +60,9 @@ func (p *Binning) clampBinToResolution(bin int64) int64 {
 
 // GetHash returns a string hash of the parameter state.
 func (p *Binning) GetHash() string {
-	return fmt.Sprintf("%s:%d",
+	return fmt.Sprintf("%s:%s:%d",
 		p.Tiling.GetHash(),
+		p.Z,
 		p.Resolution)
 }
 
@@ -77,6 +80,12 @@ func (p *Binning) GetYAgg() *elastic.HistogramAggregation {
 		Field(p.Tiling.Y).
 		Interval(p.yInterval).
 		MinDocCount(1)
+}
+
+// GetZAgg returns an elastic aggregation.
+func (p *Binning) GetZAgg() *elastic.SumAggregation {
+	return elastic.NewSumAggregation().
+		Field(p.Z)
 }
 
 // GetXBin given an x value, returns the corresponding bin.

@@ -15,6 +15,7 @@ import (
 const (
 	xAggName = "x"
 	yAggName = "y"
+	zAggName = "z"
 )
 
 func float64ToBytes(bytes []byte, float float64) {
@@ -84,41 +85,62 @@ func (g *HeatmapTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 	if topic != nil {
 		boolQuery.Must(topic.GetTopicQuery())
 	}
+	// create x aggregation
+	xAgg := binning.GetXAgg()
+	// create y aggregation, add it as a sub-agg to xAgg
+	yAgg := binning.GetYAgg()
+	xAgg.SubAggregation(yAggName, yAgg)
+	// if there is a z field to sum, add sum agg to yAgg
+	if binning.Z != "" {
+		fmt.Println("SUMMING FIELD")
+		zAgg := binning.GetZAgg()
+		yAgg.SubAggregation(zAggName, zAgg)
+	} else {
+		fmt.Println("SUMMING COUNT")
+	}
 	// build query
 	query := client.
 		Search(tileReq.Index).
 		Size(0).
 		Query(boolQuery).
-		Aggregation(xAggName,
-		binning.GetXAgg().
-			SubAggregation(yAggName, binning.GetYAgg()))
+		Aggregation(xAggName, xAgg)
 	// send query through equalizer
 	result, err := throttle.Send(query)
 	if err != nil {
 		return nil, err
 	}
 	// parse aggregations
-	xAgg, ok := result.Aggregations.Histogram(xAggName)
+	xAggRes, ok := result.Aggregations.Histogram(xAggName)
 	if !ok {
 		return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s", xAggName, tileReq.String())
 	}
-	// allocate count buffer
-	counts := make([]float64, binning.Resolution*binning.Resolution)
-	// fill count buffer
-	for _, xBucket := range xAgg.Buckets {
+	// allocate bins buffer
+	bins := make([]float64, binning.Resolution*binning.Resolution)
+	// fill bins buffer
+	for _, xBucket := range xAggRes.Buckets {
 		x := xBucket.Key
 		xBin := binning.GetXBin(x)
-		yAgg, ok := xBucket.Histogram(yAggName)
+		yAggRes, ok := xBucket.Histogram(yAggName)
 		if !ok {
 			return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s", yAggName, tileReq.String())
 		}
-		for _, yBucket := range yAgg.Buckets {
+		for _, yBucket := range yAggRes.Buckets {
 			y := yBucket.Key
 			yBin := binning.GetYBin(y)
 			index := xBin + binning.Resolution*yBin
-			// encode count
-			counts[index] += float64(yBucket.DocCount)
+			if binning.Z != "" {
+				// extract sum
+				zAggRes, ok := yBucket.Sum(zAggName)
+				if !ok {
+					return nil, fmt.Errorf("Sum aggregation '%s' was not found in response for request %s", zAggName, tileReq.String())
+				}
+				// encode sum
+				bins[index] += *zAggRes.Value
+			} else {
+				// encode count
+				bins[index] += float64(yBucket.DocCount)
+			}
 		}
 	}
-	return float64ToByteSlice(counts), nil
+	return float64ToByteSlice(bins), nil
 }
