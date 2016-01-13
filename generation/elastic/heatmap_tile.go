@@ -92,11 +92,8 @@ func (g *HeatmapTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 	xAgg.SubAggregation(yAggName, yAgg)
 	// if there is a z field to sum, add sum agg to yAgg
 	if binning.Z != "" {
-		fmt.Println("SUMMING FIELD")
 		zAgg := binning.GetZAgg()
 		yAgg.SubAggregation(zAggName, zAgg)
-	} else {
-		fmt.Println("SUMMING COUNT")
 	}
 	// build query
 	query := client.
