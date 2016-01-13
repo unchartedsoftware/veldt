@@ -4,9 +4,8 @@ import (
 	"runtime"
 	"sync"
 
+	log "github.com/unchartedsoftware/plog"
 	"gopkg.in/olivere/elastic.v3"
-
-	"github.com/unchartedsoftware/prism/log"
 )
 
 var (

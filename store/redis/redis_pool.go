@@ -6,8 +6,7 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-
-	"github.com/unchartedsoftware/prism/log"
+	log "github.com/unchartedsoftware/plog"
 )
 
 const (
