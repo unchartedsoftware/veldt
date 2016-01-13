@@ -21,6 +21,15 @@ The package provides facilities to implement and connect custom tiling and analy
 This minimalistic application shows how to register tile and meta data generators and connect them to a redis store.
 
 ```go
+package main
+
+import (
+    "github.com/unchartedsoftware/prism/generation/elastic"
+	"github.com/unchartedsoftware/prism/generation/meta"
+    "github.com/unchartedsoftware/prism/generation/tile"
+    "github.com/unchartedsoftware/prism/store"
+    "github.com/unchartedsoftware/prism/store/redis"
+)
 
 func GenerateMetaData(m *meta.Request, s *store.Request) ([]byte, error) {
     // Generate meta data, this call will block until the response is ready
