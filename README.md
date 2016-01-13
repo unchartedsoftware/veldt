@@ -8,22 +8,8 @@ Requires the [Go](https://golang.org/) programming language binaries with the `G
 
 ## Installation
 
-Typically a Go package installation is as simple as:
-
 ```bash
 go get github.com/unchartedsoftware/prism
-```
-
-However, as this is hosted as a private repository, the following is required:
-
-```bash
-cd $GOPATH/src/github.com/unchartedsoftware/prism && git pull
-```
-
-Install all dependencies:
-
-```bash
-make deps
 ```
 
 ## Usage
