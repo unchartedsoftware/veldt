@@ -10,12 +10,12 @@ var (
 )
 
 func getTilePromise(tileHash string, tileReq *Request, storeReq *store.Request, tileGen Generator) error {
-	p, ok := promises.Get(tileHash)
+	p, ok := promises.GetOrCreate(tileHash)
 	if ok {
+		// promise already existed, return it
 		return p.Wait()
 	}
-	p = promise.NewPromise()
-	promises.Set(tileHash, p)
+	// promise had to be created, generate tile
 	go func() {
 		err := generateAndStoreTile(tileHash, tileReq, storeReq, tileGen)
 		p.Resolve(err)

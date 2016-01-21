@@ -10,12 +10,12 @@ var (
 )
 
 func getMetaPromise(metaHash string, metaReq *Request, storeReq *store.Request) error {
-	p, ok := promises.Get(metaHash)
+	p, ok := promises.GetOrCreate(metaHash)
 	if ok {
+		// promise already existed, return it
 		return p.Wait()
 	}
-	p = promise.NewPromise()
-	promises.Set(metaHash, p)
+	// promise had to be created, generate meta data
 	go func() {
 		err := generateAndStoreMeta(metaHash, metaReq, storeReq)
 		p.Resolve(err)
