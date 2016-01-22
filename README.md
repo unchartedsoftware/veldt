@@ -34,7 +34,7 @@ import (
 func GenerateMetaData(m *meta.Request, s *store.Request) ([]byte, error) {
     // Generate meta data, this call will block until the response is ready
     // in the store.
-    err = meta.GenerateMeta(m, s)
+    err := meta.GenerateMeta(m, s)
     if err != nil {
     	return nil, err
     }
@@ -44,7 +44,7 @@ func GenerateMetaData(m *meta.Request, s *store.Request) ([]byte, error) {
 
 func GenerateTileData(t *tile.Request, s *store.Request) ([]byte, error) {
     // Generate a tile, this call will block until the tile is ready in the store.
-    err = tile.GenerateTile(t, s)
+    err := tile.GenerateTile(t, s)
     if err != nil {
     	return nil, err
     }
@@ -89,6 +89,6 @@ func main() {
     md, err := GenerateMetaData(m, s)
 
     // Generate tile data
-    td, err := GenerateMetaData(t, s)
+    td, err := GenerateTileData(t, s)
 }
 ```
