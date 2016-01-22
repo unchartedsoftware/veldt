@@ -11,7 +11,7 @@ import (
 // GetExtrema returns the extrema of a numeric field for the provided index.
 func GetExtrema(endpoint string, index string, field string) (*binning.Extrema, error) {
 	// get client
-	client, err := getClient(endpoint)
+	client, err := GetClient(endpoint)
 	if err != nil {
 		return nil, err
 	}

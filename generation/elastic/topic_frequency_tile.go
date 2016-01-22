@@ -60,7 +60,7 @@ func (g *TopicFrequencyTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 	timeRange := timeBucket.TimeRange
 	topic := g.Topic
 	// get client
-	client, err := getClient(tileReq.Endpoint)
+	client, err := GetClient(tileReq.Endpoint)
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,7 @@ package elastic
 // GetMapping returns the mapping for a particular elasticsearch index.
 func GetMapping(endpoint string, index string) (map[string]interface{}, error) {
 	// get client
-	client, err := getClient(endpoint)
+	client, err := GetClient(endpoint)
 	if err != nil {
 		return nil, err
 	}

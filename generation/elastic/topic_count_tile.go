@@ -51,7 +51,7 @@ func (g *TopicCountTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 	timeRange := g.TimeRange
 	topic := g.Topic
 	// get client
-	client, err := getClient(tileReq.Endpoint)
+	client, err := GetClient(tileReq.Endpoint)
 	if err != nil {
 		return nil, err
 	}
