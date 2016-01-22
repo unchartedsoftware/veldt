@@ -32,3 +32,5 @@ build: clean lint
 
 deps:
 	@go get github.com/golang/lint/golint
+	@go get github.com/onsi/ginkgo
+	@go get github.com/onsi/gomega
