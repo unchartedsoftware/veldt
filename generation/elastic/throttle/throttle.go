@@ -10,9 +10,9 @@ import (
 
 const (
 	// max number of concurrent requests
-	maxPendingRequests = 8
+	maxPendingRequests = 32
 	// max number of queries to queue until returning errors
-	maxQueueLength = 64
+	maxQueueLength = 256 * 8
 )
 
 var (
