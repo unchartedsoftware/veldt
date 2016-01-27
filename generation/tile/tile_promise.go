@@ -10,8 +10,8 @@ var (
 )
 
 func getTilePromise(tileHash string, tileReq *Request, storeReq *store.Request, tileGen Generator) error {
-	p, ok := promises.GetOrCreate(tileHash)
-	if ok {
+	p, exists := promises.GetOrCreate(tileHash)
+	if exists {
 		// promise already existed, return it
 		return p.Wait()
 	}

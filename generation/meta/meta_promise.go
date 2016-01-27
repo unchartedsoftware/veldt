@@ -10,8 +10,8 @@ var (
 )
 
 func getMetaPromise(metaHash string, metaReq *Request, storeReq *store.Request) error {
-	p, ok := promises.GetOrCreate(metaHash)
-	if ok {
+	p, exists := promises.GetOrCreate(metaHash)
+	if exists {
 		// promise already existed, return it
 		return p.Wait()
 	}
