@@ -38,6 +38,10 @@ func GetExtrema(endpoint string, index string, field string) (*binning.Extrema, 
 	if !ok {
 		return nil, fmt.Errorf("Max '%s' aggregation was not found in response for %s/%s", field, endpoint, index)
 	}
+	// it seems if the mapping exists, but no documents have the attribute, the min / max are null
+	if min.Value == nil || max.Value == nil {
+		return nil, nil
+	}
 	return &binning.Extrema{
 		Min: *min.Value,
 		Max: *max.Value,
