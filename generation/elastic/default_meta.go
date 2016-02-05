@@ -88,6 +88,8 @@ func (g *DefaultMeta) GetMeta(metaReq *meta.Request) ([]byte, error) {
 		return nil, err
 	}
 	// get nested 'properties' attribute of mappings payload
+	// TODO: this fails if running on an aliased index as the properties will
+	// be under the original index name...
 	props, ok := jsonutil.GetChild(mapping, metaReq.Index, "mappings", "datum", "properties")
 	if !ok {
 		return nil, fmt.Errorf("Unable to parse properties from mappings response for %s/%s",

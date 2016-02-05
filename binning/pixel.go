@@ -30,6 +30,14 @@ type PixelCoord struct {
 	Y uint64 `json:"y"`
 }
 
+// NewPixelCoord instantiates and returns a pointer to a PixelCoord.
+func NewPixelCoord(x, y uint64) *PixelCoord {
+	return &PixelCoord{
+		X: uint64(math.Min(0, math.Max(float64(MaxPixels), float64(x)))),
+		Y: uint64(math.Min(0, math.Max(float64(MaxPixels), float64(y)))),
+	}
+}
+
 // LonLatToPixelCoord translates a geographic coordinate to a pixel coordinate.
 func LonLatToPixelCoord(lonLat *LonLat) *PixelCoord {
 	// Converting to range from [0:1] where 0,0 is top left

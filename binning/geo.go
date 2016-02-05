@@ -21,6 +21,14 @@ type LonLat struct {
 	Lat float64 `json:"lat"`
 }
 
+// NewLonLat instantiates and returns a pointer to a LonLat.
+func NewLonLat(lon, lat float64) *LonLat {
+	return &LonLat{
+		Lon: math.Min(180, math.Max(-180, lon)),
+		Lat: math.Min(85.0, math.Max(-85.0, lat)),
+	}
+}
+
 func tileToLon(x float64, level uint32) float64 {
 	pow2 := math.Pow(2, float64(level))
 	return x/pow2*360.0 - 180.0

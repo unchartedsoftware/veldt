@@ -22,6 +22,14 @@ type Extrema struct {
 	Max float64 `json:"max"`
 }
 
+// NewCoord instantiates and returns a pointer to a Coord.
+func NewCoord(x, y float64) *Coord {
+	return &Coord{
+		X: x,
+		Y: y,
+	}
+}
+
 // CoordToFractionalTile converts a data coordinate to a floating point tile coordinate.
 func CoordToFractionalTile(coord *Coord, level uint32, bounds *Bounds) *FractionalTileCoord {
 	pow2 := math.Pow(2, float64(level))
