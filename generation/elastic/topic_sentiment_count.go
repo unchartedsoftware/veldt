@@ -68,6 +68,7 @@ func (g *TopicSentimentCountTile) GetTile(tileReq *tile.Request) ([]byte, error)
 	tiling := g.Tiling
 	timeRange := g.TimeRange
 	topic := g.Topic
+	sentiment := g.Sentiment
 	// get client
 	client, err := GetClient(tileReq.Endpoint)
 	if err != nil {
@@ -89,6 +90,8 @@ func (g *TopicSentimentCountTile) GetTile(tileReq *tile.Request) ([]byte, error)
 	// add all filter aggregations
 	topicAggs := topic.GetTopicAggregations()
 	for topic, topicAgg := range topicAggs {
+		// add sentiment agg
+		topicAgg.SubAggregation(sentimentAggName, sentiment.GetSentimentAgg())
 		query.Aggregation(topic, topicAgg)
 	}
 	// send query through equalizer
@@ -104,8 +107,9 @@ func (g *TopicSentimentCountTile) GetTile(tileReq *tile.Request) ([]byte, error)
 			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s", topic, tileReq.String())
 		}
 		if filter.DocCount > 0 {
+			fmt.Printf("%v", filter)
 			sentimentAgg, ok := filter.Aggregations.Histogram(sentimentAggName)
-			if !ok || len(sentimentAgg.Buckets) != numSentiments {
+			if !ok { // || len(sentimentAgg.Buckets) != numSentiments {
 				return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s", sentimentAggName, tileReq.String())
 			}
 			counts := sentimentCounts{}
