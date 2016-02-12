@@ -12,9 +12,8 @@ import (
 )
 
 const (
-	xAggName = "x"
 	sentimentAggName = "sentiment"
-	numSentiments = 3
+	numSentiments    = 3
 )
 
 // TopicSentimentCountTile represents a tiling generator that produces topic counts.
@@ -27,8 +26,8 @@ type TopicSentimentCountTile struct {
 
 type sentimentCounts struct {
 	Positive uint64 `json:"positive"`
-	Neutral uint64 `json:"neutral"`
-	Negative uint64	`json:"negative"`
+	Neutral  uint64 `json:"neutral"`
+	Negative uint64 `json:"negative"`
 }
 
 // NewTopicSentimentCountTile instantiates and returns a pointer to a new generator.
@@ -46,7 +45,7 @@ func NewTopicSentimentCountTile(tileReq *tile.Request) (tile.Generator, error) {
 		return nil, err
 	}
 	time, _ := param.NewTimeRange(tileReq)
-	return &TopicCountTile{
+	return &TopicSentimentCountTile{
 		Tiling:    tiling,
 		Topic:     topic,
 		TimeRange: time,
@@ -55,7 +54,7 @@ func NewTopicSentimentCountTile(tileReq *tile.Request) (tile.Generator, error) {
 }
 
 // GetParams returns a slice of tiling parameters.
-func (g *TopicCountTile) GetParams() []tile.Param {
+func (g *TopicSentimentCountTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Tiling,
 		g.Topic,
@@ -65,7 +64,7 @@ func (g *TopicCountTile) GetParams() []tile.Param {
 }
 
 // GetTile returns the marshalled tile data.
-func (g *TopicCountTile) GetTile(tileReq *tile.Request) ([]byte, error) {
+func (g *TopicSentimentCountTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 	tiling := g.Tiling
 	timeRange := g.TimeRange
 	topic := g.Topic
@@ -98,26 +97,26 @@ func (g *TopicCountTile) GetTile(tileReq *tile.Request) ([]byte, error) {
 		return nil, err
 	}
 	// build map of topics and counts
-	topicCounts := make(map[string]SentimentCounts)
+	topicCounts := make(map[string]sentimentCounts)
 	for _, topic := range topic.Topics {
 		filter, ok := result.Aggregations.Filter(topic)
 		if !ok {
 			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s", topic, tileReq.String())
 		}
 		if filter.DocCount > 0 {
-			sentimentAgg, ok = filter.Aggregations.Histogram(sentimentAggName)
+			sentimentAgg, ok := filter.Aggregations.Histogram(sentimentAggName)
 			if !ok || len(sentimentAgg.Buckets) != numSentiments {
 				return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s", sentimentAggName, tileReq.String())
 			}
 			counts := sentimentCounts{}
-			for _, bucket := range yAggRes.Buckets {
-				switch (bucket.Key) {
+			for _, bucket := range sentimentAgg.Buckets {
+				switch bucket.Key {
 				case 1:
-					counts.Positive = bucket.DocCount
+					counts.Positive = uint64(bucket.DocCount)
 				case 0:
-					counts.Neutral = bucket.DocCount
+					counts.Neutral = uint64(bucket.DocCount)
 				case -1:
-					counts.Negative = bucket.DocCount
+					counts.Negative = uint64(bucket.DocCount)
 				}
 			}
 			topicCounts[topic] = counts

@@ -1,17 +1,13 @@
 package param
 
 import (
-	"fmt"
-	"strings"
-
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/generation/tile"
-	"github.com/unchartedsoftware/prism/util/json"
 )
 
 const (
-	field = "sentiment"
+	field    = "sentiment"
 	interval = 1
 )
 
@@ -21,17 +17,16 @@ type Sentiment struct {
 
 // NewSentiment instantiates and returns a new sentiment parameter object.
 func NewSentiment(tileReq *tile.Request) (*Sentiment, error) {
-	return &NewSentiment{
-	}, nil
+	return &Sentiment{}, nil
 }
 
 // GetHash returns a string hash of the parameter state.
-func (p *Topic) GetHash() string {
+func (p *Sentiment) GetHash() string {
 	return "sentiment"
 }
 
 // GetSentimentAgg returns an elastic query.
-func (p *Topic) GetSentimentAgg() *elastic.HistogramAggregation {
+func (p *Sentiment) GetSentimentAgg() *elastic.HistogramAggregation {
 	return elastic.NewHistogramAggregation().
 		Field(field).
 		Interval(interval).
