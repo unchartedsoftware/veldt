@@ -117,7 +117,9 @@ func (g *HeatmapTile) GetTile() ([]byte, error) {
 	// parse aggregations
 	xAggRes, ok := result.Aggregations.Histogram(xAggName)
 	if !ok {
-		return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s", xAggName, tileReq.String())
+		return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
+			xAggName,
+			tileReq.String())
 	}
 	// allocate bins buffer
 	bins := make([]float64, binning.Resolution*binning.Resolution)
@@ -127,20 +129,27 @@ func (g *HeatmapTile) GetTile() ([]byte, error) {
 		xBin := binning.GetXBin(x)
 		yAggRes, ok := xBucket.Histogram(yAggName)
 		if !ok {
-			return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s", yAggName, tileReq.String())
+			return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
+				yAggName,
+				tileReq.String())
 		}
 		for _, yBucket := range yAggRes.Buckets {
 			y := yBucket.Key
 			yBin := binning.GetYBin(y)
 			index := xBin + binning.Resolution*yBin
 			if binning.Z != "" {
-				// extract sum
-				zAggRes, ok := yBucket.Sum(zAggName)
+				// extract metric
+				zAggRes, ok := binning.GetZAggValue(zAggName, yBucket)
 				if !ok {
-					return nil, fmt.Errorf("Sum aggregation '%s' was not found in response for request %s", zAggName, tileReq.String())
+					return nil, fmt.Errorf("'%s' aggregation '%s' was not found in response for request %s",
+						binning.Metric,
+						zAggName,
+						tileReq.String())
 				}
-				// encode sum
-				bins[index] += *zAggRes.Value
+				// encode metric
+				if (zAggRes.Value != nil) {
+					bins[index] += *zAggRes.Value
+				}
 			} else {
 				// encode count
 				bins[index] += float64(yBucket.DocCount)

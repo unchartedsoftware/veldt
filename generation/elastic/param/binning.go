@@ -15,6 +15,7 @@ import (
 type Binning struct {
 	Tiling     *Tiling
 	Z          string
+	Metric     string
 	Resolution int64
 	BinSizeX   float64
 	BinSizeY   float64
@@ -38,6 +39,7 @@ func NewBinning(tileReq *tile.Request) (*Binning, error) {
 	return &Binning{
 		Tiling:     tiling,
 		Z:          json.GetStringDefault(params, "z", ""),
+		Metric:     json.GetStringDefault(params, "metric", "sum"),
 		Resolution: int64(resolution),
 		BinSizeX:   binSizeX,
 		BinSizeY:   binSizeY,
@@ -60,9 +62,10 @@ func (p *Binning) clampBinToResolution(bin int64) int64 {
 
 // GetHash returns a string hash of the parameter state.
 func (p *Binning) GetHash() string {
-	return fmt.Sprintf("%s:%s:%d",
+	return fmt.Sprintf("%s:%s:%s:%d",
 		p.Tiling.GetHash(),
 		p.Z,
+		p.Metric,
 		p.Resolution)
 }
 
@@ -83,9 +86,21 @@ func (p *Binning) GetYAgg() *elastic.HistogramAggregation {
 }
 
 // GetZAgg returns an elastic aggregation.
-func (p *Binning) GetZAgg() *elastic.SumAggregation {
-	return elastic.NewSumAggregation().
-		Field(p.Z)
+func (p *Binning) GetZAgg() elastic.Aggregation {
+	switch p.Metric {
+	case "min":
+		return elastic.NewMinAggregation().
+			Field(p.Z)
+	case "max":
+		return elastic.NewMaxAggregation().
+			Field(p.Z)
+	case "avg":
+		return elastic.NewAvgAggregation().
+			Field(p.Z)
+	default:
+		return elastic.NewSumAggregation().
+			Field(p.Z)
+	}
 }
 
 // GetXBin given an x value, returns the corresponding bin.
@@ -114,4 +129,19 @@ func (p *Binning) GetYBin(y int64) int64 {
 		bin = int64((fy - bounds.TopLeft.Y) / p.BinSizeY)
 	}
 	return bin
+}
+
+// GetZAggValue extracts the value metric based on the type of operation
+// specified.
+func (p *Binning) GetZAggValue(aggName string, aggs *elastic.AggregationBucketHistogramItem) (*elastic.AggregationValueMetric, bool) {
+	switch p.Metric {
+	case "min":
+		return aggs.Min(aggName)
+	case "max":
+		return aggs.Max(aggName)
+	case "avg":
+		return aggs.Avg(aggName)
+	default:
+		return aggs.Sum(aggName)
+	}
 }
