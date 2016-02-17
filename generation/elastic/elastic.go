@@ -19,8 +19,9 @@ var (
 	clients = make(map[string]*elastic.Client)
 )
 
-// GetClient returns an elasticsearch client from the pool.
-func GetClient(endpoint string) (*elastic.Client, error) {
+// NewClient returns an elasticsearch client from the pool.
+func NewClient(host string, port string) (*elastic.Client, error) {
+	endpoint := host + ":" + port
 	mutex.Lock()
 	client, ok := clients[endpoint]
 	if !ok {

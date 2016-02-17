@@ -12,10 +12,12 @@ type Connection struct {
 }
 
 // NewConnection instantiates and returns a new redis store connection.
-func NewConnection(req *store.Request) (store.Connection, error) {
-	return &Connection{
-		conn: getConnection(req.Endpoint),
-	}, nil
+func NewConnection(host string, port string) store.ConnectionConstructor {
+	return func() (store.Connection, error) {
+		return &Connection{
+			conn: getConnection(host, port),
+		}, nil
+	}
 }
 
 // Get when given a string key will return a byte slice of data from redis.

@@ -33,24 +33,35 @@ func float64ToByteSlice(arr []float64) []byte {
 
 // HeatmapTile represents a tiling generator that produces heatmaps.
 type HeatmapTile struct {
+	TileGenerator
 	Binning   *param.Binning
 	Topic     *param.Topic
 	TimeRange *param.TimeRange
 }
 
 // NewHeatmapTile instantiates and returns a pointer to a new generator.
-func NewHeatmapTile(tileReq *tile.Request) (tile.Generator, error) {
-	binning, err := param.NewBinning(tileReq)
-	if err != nil {
-		return nil, err
+func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
+	return func(tileReq *tile.Request) (tile.Generator, error) {
+		client, err := NewClient(host, port)
+		if err != nil {
+			return nil, err
+		}
+		binning, err := param.NewBinning(tileReq)
+		if err != nil {
+			return nil, err
+		}
+		topic, _ := param.NewTopic(tileReq)
+		time, _ := param.NewTimeRange(tileReq)
+		t := &HeatmapTile{}
+		t.Binning = binning
+		t.Topic = topic
+		t.TimeRange = time
+		t.req = tileReq
+		t.host = host
+		t.port = port
+		t.client = client
+		return t, nil
 	}
-	topic, _ := param.NewTopic(tileReq)
-	time, _ := param.NewTimeRange(tileReq)
-	return &HeatmapTile{
-		Binning:   binning,
-		Topic:     topic,
-		TimeRange: time,
-	}, nil
 }
 
 // GetParams returns a slice of tiling parameters.
@@ -63,16 +74,13 @@ func (g *HeatmapTile) GetParams() []tile.Param {
 }
 
 // GetTile returns the marshalled tile data.
-func (g *HeatmapTile) GetTile(tileReq *tile.Request) ([]byte, error) {
+func (g *HeatmapTile) GetTile() ([]byte, error) {
 	binning := g.Binning
 	tiling := binning.Tiling
 	timeRange := g.TimeRange
 	topic := g.Topic
-	// get client
-	client, err := GetClient(tileReq.Endpoint)
-	if err != nil {
-		return nil, err
-	}
+	tileReq := g.req
+	client := g.client
 	// create x and y range queries
 	boolQuery := elastic.NewBoolQuery().Must(
 		tiling.GetXQuery(),

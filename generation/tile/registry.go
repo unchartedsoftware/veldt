@@ -16,8 +16,9 @@ type Param interface {
 
 // Generator represents an interface for generating tile data.
 type Generator interface {
-	GetTile(*Request) ([]byte, error)
+	GetTile() ([]byte, error)
 	GetParams() []Param
+	GetHash() string
 }
 
 // GeneratorConstructor represents a function to instantiate a new generator

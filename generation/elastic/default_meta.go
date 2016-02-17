@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"gopkg.in/olivere/elastic.v3"
+
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/generation/meta"
 	jsonutil "github.com/unchartedsoftware/prism/util/json"
@@ -15,13 +17,13 @@ type PropertyMeta struct {
 	Extrema *binning.Extrema `json:"extrema,omitempty"`
 }
 
-func getPropertyMeta(endpoint string, index string, field string, typ string) (*PropertyMeta, error) {
+func getPropertyMeta(client *elastic.Client, index string, field string, typ string) (*PropertyMeta, error) {
 	p := PropertyMeta{
 		Type: typ,
 	}
 	// if field is 'numeric', get the extrema
 	if typ == "long" || typ == "double" || typ == "date" {
-		extrema, err := GetExtrema(endpoint, index, field)
+		extrema, err := GetExtrema(client, index, field)
 		if err != nil {
 			return nil, err
 		}
@@ -30,7 +32,7 @@ func getPropertyMeta(endpoint string, index string, field string, typ string) (*
 	return &p, nil
 }
 
-func parsePropertiesRecursive(meta map[string]PropertyMeta, endpoint string, index string, p map[string]interface{}, path string) error {
+func parsePropertiesRecursive(meta map[string]PropertyMeta, client *elastic.Client, index string, p map[string]interface{}, path string) error {
 	children, ok := jsonutil.GetChildren(p)
 	if ok {
 		for key, props := range children {
@@ -41,7 +43,7 @@ func parsePropertiesRecursive(meta map[string]PropertyMeta, endpoint string, ind
 			subprops, hasProps := jsonutil.GetChild(props, "properties")
 			if hasProps {
 				// recurse further
-				err := parsePropertiesRecursive(meta, endpoint, index, subprops, subpath)
+				err := parsePropertiesRecursive(meta, client, index, subprops, subpath)
 				if err != nil {
 					return err
 				}
@@ -49,7 +51,7 @@ func parsePropertiesRecursive(meta map[string]PropertyMeta, endpoint string, ind
 				typ, hasType := jsonutil.GetString(props, "type")
 				// we don't support nested types
 				if hasType && typ != "nested" {
-					prop, err := getPropertyMeta(endpoint, index, subpath, typ)
+					prop, err := getPropertyMeta(client, index, subpath, typ)
 					if err != nil {
 						return err
 					}
@@ -61,10 +63,10 @@ func parsePropertiesRecursive(meta map[string]PropertyMeta, endpoint string, ind
 	return nil
 }
 
-func parseProperties(endpoint string, index string, props map[string]interface{}) (map[string]PropertyMeta, error) {
+func parseProperties(client *elastic.Client, index string, props map[string]interface{}) (map[string]PropertyMeta, error) {
 	// create empty map
 	meta := make(map[string]PropertyMeta)
-	err := parsePropertiesRecursive(meta, endpoint, index, props, "")
+	err := parsePropertiesRecursive(meta, client, index, props, "")
 	if err != nil {
 		return nil, err
 	}
@@ -73,17 +75,32 @@ func parseProperties(endpoint string, index string, props map[string]interface{}
 
 // DefaultMeta represents a meta data generator that produces default
 // metadata with property types and extrema.
-type DefaultMeta struct{}
+type DefaultMeta struct {
+	MetaGenerator
+}
 
 // NewDefaultMeta instantiates and returns a pointer to a new generator.
-func NewDefaultMeta(metaReq *meta.Request) (meta.Generator, error) {
-	return &DefaultMeta{}, nil
+func NewDefaultMeta(host string, port string) meta.GeneratorConstructor {
+	return func(metaReq *meta.Request) (meta.Generator, error) {
+		client, err := NewClient(host, port)
+		if err != nil {
+			return nil, err
+		}
+		m := &DefaultMeta{}
+		m.host = host
+		m.port = port
+		m.req = metaReq
+		m.client = client
+		return m, nil
+	}
 }
 
 // GetMeta returns the meta data for a given index.
-func (g *DefaultMeta) GetMeta(metaReq *meta.Request) ([]byte, error) {
+func (g *DefaultMeta) GetMeta() ([]byte, error) {
+	client := g.client
+	metaReq := g.req
 	// get the raw mappings
-	mapping, err := GetMapping(metaReq.Endpoint, metaReq.Index)
+	mapping, err := GetMapping(client, metaReq.Index)
 	if err != nil {
 		return nil, err
 	}
@@ -92,12 +109,11 @@ func (g *DefaultMeta) GetMeta(metaReq *meta.Request) ([]byte, error) {
 	// be under the original index name...
 	props, ok := jsonutil.GetChild(mapping, metaReq.Index, "mappings", "datum", "properties")
 	if !ok {
-		return nil, fmt.Errorf("Unable to parse properties from mappings response for %s/%s",
-			metaReq.Endpoint,
+		return nil, fmt.Errorf("Unable to parse properties from mappings response for %s",
 			metaReq.Index)
 	}
 	// parse json mappings into the property map
-	meta, err := parseProperties(metaReq.Endpoint, metaReq.Index, props)
+	meta, err := parseProperties(client, metaReq.Index, props)
 	if err != nil {
 		return nil, err
 	}

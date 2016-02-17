@@ -11,7 +11,8 @@ var (
 
 // Generator represents an interface for generating meta data.
 type Generator interface {
-	GetMeta(*Request) ([]byte, error)
+	GetMeta() ([]byte, error)
+	GetHash() string
 }
 
 // GeneratorConstructor represents a function to instantiate a new generator

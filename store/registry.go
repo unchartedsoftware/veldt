@@ -9,19 +9,6 @@ var (
 	registry = make(map[string]ConnectionConstructor)
 )
 
-// Request represents a storage request.
-type Request struct {
-	Type     string `json:"type"`
-	Endpoint string `json:"endpoint"`
-}
-
-// String returns the request formatted as a string.
-func (r *Request) String() string {
-	return fmt.Sprintf("%s/%s/",
-		r.Endpoint,
-		r.Type)
-}
-
 // Connection represents an interface for connecting to, setting, and retreiving
 // values from a key-value database or in-memory storage server.
 type Connection interface {
@@ -31,9 +18,9 @@ type Connection interface {
 	Close()
 }
 
-// ConnectionConstructor represents a function to instantiate a new generator
-// from a meta data request.
-type ConnectionConstructor func(*Request) (Connection, error)
+// ConnectionConstructor represents a function to instantiate a new Store
+// connection.
+type ConnectionConstructor func() (Connection, error)
 
 // Register registers a meta data generator under the provided type id string.
 func Register(typeID string, conn ConnectionConstructor) {
@@ -41,10 +28,10 @@ func Register(typeID string, conn ConnectionConstructor) {
 }
 
 // GetConnection instantiates a and returns a store connection.
-func GetConnection(req *Request) (Connection, error) {
-	ctor, ok := registry[req.Type]
+func GetConnection(typeID string) (Connection, error) {
+	ctor, ok := registry[typeID]
 	if !ok {
-		return nil, fmt.Errorf("Store connection type '%s' is not recognized in request %s", req.Type, req.String())
+		return nil, fmt.Errorf("Store connection type '%s' is not recognized in request", typeID)
 	}
-	return ctor(req)
+	return ctor()
 }

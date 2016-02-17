@@ -31,47 +31,48 @@ import (
     "github.com/unchartedsoftware/prism/store/redis"
 )
 
-func GenerateMetaData(m *meta.Request, s *store.Request) ([]byte, error) {
+func GenerateMetaData(m *meta.Request) ([]byte, error) {
     // Generate meta data, this call will block until the response is ready
     // in the store.
-    err := meta.GenerateMeta(m, s)
+    err := meta.GenerateMeta(m)
     if err != nil {
     	return nil, err
     }
     // Retrieve the meta data form the store.
-    return meta.GetMetaFromStore(m, s)
+    return meta.GetMetaFromStore(m)
 }
 
-func GenerateTileData(t *tile.Request, s *store.Request) ([]byte, error) {
+func GenerateTileData(t *tile.Request) ([]byte, error) {
     // Generate a tile, this call will block until the tile is ready in the store.
-    err := tile.GenerateTile(t, s)
+    err := tile.GenerateTile(t)
     if err != nil {
     	return nil, err
     }
     // Retrieve the tile form the store.
-    return tile.GetTileFromStore(t, s)
+    return tile.GetTileFromStore(t)
 }
 
 func main() {    
     // Register the in-memory store to use the redis implementation.
-    store.Register("redis", redis.NewConnection)
+    store.Register("redis", redis.NewConnection("localhost", "6379"))
 
-    // Register tile and meta data generators
-    tile.Register("heatmap", elastic.NewHeatmapTile)
-    meta.Register("default", elastic.NewDefaultMeta)
+    // Register meta data generator
+    meta.Register("default", elastic.NewDefaultMeta("http://localhost", "9200"))
+
+    // Register tile data generator
+    tile.Register("heatmap", elastic.NewHeatmapTile("http://localhost", "9200"))
 
     // Create a request for a `heatmap` tile.
     m := &meta.Request{
         Type: "default",
-        Endpoint: "http://localhost:9200",
         Index: "test_index",
     }
 
     // Create a request for a `heatmap` tile.
     t := &tile.Request{
         Type: "heatmap",
-        Endpoint: "http://localhost:9200",
         Index: "test_index",
+        Store: "redis"
         Coord: &binning.TileCoord{
             Z: 4,
             X: 12,
@@ -79,16 +80,10 @@ func main() {
         }
     }
 
-    // Create the request to store the generated tile in the `redis` store.
-    s := &store.Request{
-        Type: "redis",
-        Endpoint: "localhost:6379",
-    }
-
     // Generate meta data
-    md, err := GenerateMetaData(m, s)
+    md, err := GenerateMetaData(m)
 
     // Generate tile data
-    td, err := GenerateTileData(t, s)
+    td, err := GenerateTileData(t)
 }
 ```

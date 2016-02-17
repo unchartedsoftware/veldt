@@ -18,30 +18,41 @@ const (
 // TopicFrequencyTile represents a tiling generator that produces topic
 // frequency counts.
 type TopicFrequencyTile struct {
+	TileGenerator
 	Tiling     *param.Tiling
 	Topic      *param.Topic
 	TimeBucket *param.TimeBucket
 }
 
 // NewTopicFrequencyTile instantiates and returns a pointer to a new generator.
-func NewTopicFrequencyTile(tileReq *tile.Request) (tile.Generator, error) {
-	tiling, err := param.NewTiling(tileReq)
-	if err != nil {
-		return nil, err
+func NewTopicFrequencyTile(host, port string) tile.GeneratorConstructor {
+	return func(tileReq *tile.Request) (tile.Generator, error) {
+		client, err := NewClient(host, port)
+		if err != nil {
+			return nil, err
+		}
+		tiling, err := param.NewTiling(tileReq)
+		if err != nil {
+			return nil, err
+		}
+		topic, err := param.NewTopic(tileReq)
+		if err != nil {
+			return nil, err
+		}
+		time, err := param.NewTimeBucket(tileReq)
+		if err != nil {
+			return nil, err
+		}
+		t := &TopicFrequencyTile{}
+		t.Tiling = tiling
+		t.Topic = topic
+		t.TimeBucket = time
+		t.req = tileReq
+		t.host = host
+		t.port = port
+		t.client = client
+		return t, nil
 	}
-	topic, err := param.NewTopic(tileReq)
-	if err != nil {
-		return nil, err
-	}
-	time, err := param.NewTimeBucket(tileReq)
-	if err != nil {
-		return nil, err
-	}
-	return &TopicFrequencyTile{
-		Tiling:     tiling,
-		Topic:      topic,
-		TimeBucket: time,
-	}, nil
 }
 
 // GetParams returns a slice of tiling parameters.
@@ -54,16 +65,13 @@ func (g *TopicFrequencyTile) GetParams() []tile.Param {
 }
 
 // GetTile returns the marshalled tile data.
-func (g *TopicFrequencyTile) GetTile(tileReq *tile.Request) ([]byte, error) {
+func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
 	tiling := g.Tiling
 	timeBucket := g.TimeBucket
 	timeRange := timeBucket.TimeRange
 	topic := g.Topic
-	// get client
-	client, err := GetClient(tileReq.Endpoint)
-	if err != nil {
-		return nil, err
-	}
+	tileReq := g.req
+	client := g.client
 	// create x and y range queries
 	boolQuery := elastic.NewBoolQuery().Must(
 		tiling.GetXQuery(),

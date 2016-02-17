@@ -19,7 +19,8 @@ var (
 	pools = make(map[string]*redis.Pool)
 )
 
-func getConnection(endpoint string) redis.Conn {
+func getConnection(host string, port string) redis.Conn {
+	endpoint := host + ":" + port
 	mutex.Lock()
 	pool, ok := pools[endpoint]
 	if !ok {

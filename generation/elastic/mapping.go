@@ -1,12 +1,11 @@
 package elastic
 
+import (
+	"gopkg.in/olivere/elastic.v3"
+)
+
 // GetMapping returns the mapping for a particular elasticsearch index.
-func GetMapping(endpoint string, index string) (map[string]interface{}, error) {
-	// get client
-	client, err := GetClient(endpoint)
-	if err != nil {
-		return nil, err
-	}
+func GetMapping(client *elastic.Client, index string) (map[string]interface{}, error) {
 	// get mapping
 	result, err := client.
 		GetMapping().

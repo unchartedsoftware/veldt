@@ -9,12 +9,7 @@ import (
 )
 
 // GetExtrema returns the extrema of a numeric field for the provided index.
-func GetExtrema(endpoint string, index string, field string) (*binning.Extrema, error) {
-	// get client
-	client, err := GetClient(endpoint)
-	if err != nil {
-		return nil, err
-	}
+func GetExtrema(client *elastic.Client, index string, field string) (*binning.Extrema, error) {
 	// query
 	result, err := client.
 		Search(index).
@@ -32,11 +27,11 @@ func GetExtrema(endpoint string, index string, field string) (*binning.Extrema, 
 	// parse aggregations
 	min, ok := result.Aggregations.Min("min")
 	if !ok {
-		return nil, fmt.Errorf("Min '%s' aggregation was not found in response for %s/%s", field, endpoint, index)
+		return nil, fmt.Errorf("Min '%s' aggregation was not found in response for %s", field, index)
 	}
 	max, ok := result.Aggregations.Max("max")
 	if !ok {
-		return nil, fmt.Errorf("Max '%s' aggregation was not found in response for %s/%s", field, endpoint, index)
+		return nil, fmt.Errorf("Max '%s' aggregation was not found in response for %s", field, index)
 	}
 	// it seems if the mapping exists, but no documents have the attribute, the min / max are null
 	if min.Value == nil || max.Value == nil {
