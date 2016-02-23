@@ -13,7 +13,6 @@ import (
 
 const (
 	sentimentAggName = "sentiment"
-	numSentiments    = 3
 )
 
 // TopicSentimentCountTile represents a tiling generator that produces topic counts.
@@ -23,12 +22,6 @@ type TopicSentimentCountTile struct {
 	Topic     *param.Topic
 	Sentiment *param.Sentiment
 	TimeRange *param.TimeRange
-}
-
-type sentimentCounts struct {
-	Positive uint64 `json:"positive"`
-	Neutral  uint64 `json:"neutral"`
-	Negative uint64 `json:"negative"`
 }
 
 // NewTopicSentimentCountTile instantiates and returns a pointer to a new generator.
@@ -46,7 +39,7 @@ func NewTopicSentimentCountTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		sentiment, _ := param.NewSentiment(tileReq)
+		sentiment, err := param.NewSentiment(tileReq)
 		if err != nil {
 			return nil, err
 		}
@@ -108,30 +101,19 @@ func (g *TopicSentimentCountTile) GetTile() ([]byte, error) {
 		return nil, err
 	}
 	// build map of topics and counts
-	topicCounts := make(map[string]sentimentCounts)
+	topicCounts := make(map[string]*param.SentimentCounts)
 	for _, topic := range topic.Topics {
 		filter, ok := result.Aggregations.Filter(topic)
 		if !ok {
 			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s", topic, tileReq.String())
 		}
 		if filter.DocCount > 0 {
-			fmt.Printf("%v", filter)
 			sentimentAgg, ok := filter.Aggregations.Histogram(sentimentAggName)
-			if !ok { // || len(sentimentAgg.Buckets) != numSentiments {
+			if !ok {
 				return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s", sentimentAggName, tileReq.String())
 			}
-			counts := sentimentCounts{}
-			for _, bucket := range sentimentAgg.Buckets {
-				switch bucket.Key {
-				case 1:
-					counts.Positive = uint64(bucket.DocCount)
-				case 0:
-					counts.Neutral = uint64(bucket.DocCount)
-				case -1:
-					counts.Negative = uint64(bucket.DocCount)
-				}
-			}
-			topicCounts[topic] = counts
+			// extract sentiment counts
+			topicCounts[topic] = sentiment.GetSentimentCounts(sentimentAgg)
 		}
 	}
 	// marshal results map

@@ -147,7 +147,7 @@ func (g *HeatmapTile) GetTile() ([]byte, error) {
 						tileReq.String())
 				}
 				// encode metric
-				if (zAggRes.Value != nil) {
+				if zAggRes.Value != nil {
 					bins[index] += *zAggRes.Value
 				}
 			} else {

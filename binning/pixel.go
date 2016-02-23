@@ -11,11 +11,8 @@ const (
 	MaxLevelSupported = float64(24)
 	// MaxTileResolution represents the maximum bin resolution of a tile
 	MaxTileResolution = float64(256)
-)
-
-var (
 	// MaxPixels represents the maximum value of the pixel coordinates
-	MaxPixels = MaxTileResolution * math.Pow(2, MaxLevelSupported)
+	MaxPixels = MaxTileResolution * (1 << uint64(MaxLevelSupported))
 )
 
 // PixelBounds represents a bounding box in pixel coordinates.
