@@ -11,6 +11,15 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
+const (
+	defaultXField = "pixel.x"
+	defaultYField = "pixel.y"
+	defaultLeft   = 0.0
+	defaultTop    = 0.0
+	defaultRight  = binning.MaxPixels
+	defaultBottom = binning.MaxPixels
+)
+
 // Tiling represents params for tiling data.
 type Tiling struct {
 	X      string
@@ -24,21 +33,21 @@ type Tiling struct {
 
 // NewTiling instantiates and returns a new tiling parameter object.
 func NewTiling(tileReq *tile.Request) (*Tiling, error) {
-	params := tileReq.Params
+	params := json.GetChildOrEmpty(tileReq.Params, "binning")
 	extents := &binning.Bounds{
 		TopLeft: &binning.Coord{
-			X: json.GetNumberDefault(params, "left", 0.0),
-			Y: json.GetNumberDefault(params, "top", 0.0),
+			X: json.GetNumberDefault(params, "left", defaultLeft),
+			Y: json.GetNumberDefault(params, "top", defaultTop),
 		},
 		BottomRight: &binning.Coord{
-			X: json.GetNumberDefault(params, "right", binning.MaxPixels),
-			Y: json.GetNumberDefault(params, "bottom", binning.MaxPixels),
+			X: json.GetNumberDefault(params, "right", defaultRight),
+			Y: json.GetNumberDefault(params, "bottom", defaultBottom),
 		},
 	}
 	bounds := binning.GetTileBounds(tileReq.Coord, extents)
 	return &Tiling{
-		X:      json.GetStringDefault(params, "x", "pixel.x"),
-		Y:      json.GetStringDefault(params, "y", "pixel.y"),
+		X:      json.GetStringDefault(params, "x", defaultXField),
+		Y:      json.GetStringDefault(params, "y", defaultYField),
 		Bounds: bounds,
 		minX:   int64(math.Min(bounds.TopLeft.X, bounds.BottomRight.X)),
 		maxX:   int64(math.Max(bounds.TopLeft.X, bounds.BottomRight.X)),
