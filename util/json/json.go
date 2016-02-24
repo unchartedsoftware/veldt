@@ -68,6 +68,16 @@ func GetChild(json Node, path ...string) (Node, bool) {
 	return child, true
 }
 
+// GetChildOrEmpty returns the child under the given path, if it doesn't
+// exist, it will return the provided default.
+func GetChildOrEmpty(json Node, path ...string) Node {
+	v, ok := GetChild(json, path...)
+	if ok {
+		return v
+	}
+	return Node{}
+}
+
 // GetChildren returns a map of all child nodes under a given path.
 func GetChildren(json Node, path ...string) (map[string]Node, bool) {
 	sub, ok := GetChild(json, path...)
@@ -151,17 +161,39 @@ func GetArray(json Node, key string) ([]interface{}, bool) {
 	return val, true
 }
 
+// GetChildrenArray returns an []map[string]interface{} property under the given
+// key.
+func GetChildrenArray(json Node, key string) ([]Node, bool) {
+	v, ok := json[key]
+	if !ok {
+		return nil, false
+	}
+	val, ok := v.([]Node)
+	if !ok {
+		return nil, false
+	}
+	return val, true
+}
+
 // GetNumberArray returns an []float64 property under the given key.
 func GetNumberArray(json Node, key string) ([]float64, bool) {
 	v, ok := json[key]
 	if !ok {
 		return nil, false
 	}
-	val, ok := v.([]float64)
+	vs, ok := v.([]interface{})
 	if !ok {
 		return nil, false
 	}
-	return val, true
+	flts := make([]float64, len(vs))
+	for i, v := range vs {
+		val, ok := v.(float64)
+		if !ok {
+			return nil, false
+		}
+		flts[i] = val
+	}
+	return flts, true
 }
 
 // GetStringArray returns an []string property under the given key.
@@ -170,9 +202,17 @@ func GetStringArray(json Node, key string) ([]string, bool) {
 	if !ok {
 		return nil, false
 	}
-	val, ok := v.([]string)
+	vs, ok := v.([]interface{})
 	if !ok {
 		return nil, false
 	}
-	return val, true
+	strs := make([]string, len(vs))
+	for i, v := range vs {
+		val, ok := v.(string)
+		if !ok {
+			return nil, false
+		}
+		strs[i] = val
+	}
+	return strs, true
 }
