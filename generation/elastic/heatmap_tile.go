@@ -34,9 +34,10 @@ func float64ToByteSlice(arr []float64) []byte {
 // HeatmapTile represents a tiling generator that produces heatmaps.
 type HeatmapTile struct {
 	TileGenerator
-	Binning   *param.Binning
-	Topic     *param.Topic
-	TimeRange *param.TimeRange
+	Binning  *param.Binning
+	Terms    *param.TermsFilter
+	Prefixes *param.PrefixFilter
+	Range    *param.Range
 }
 
 // NewHeatmapTile instantiates and returns a pointer to a new generator.
@@ -50,12 +51,14 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		topic, _ := param.NewTopic(tileReq)
-		time, _ := param.NewTimeRange(tileReq)
+		terms, _ := param.NewTermsFilter(tileReq)
+		prefixes, _ := param.NewPrefixFilter(tileReq)
+		rang, _ := param.NewRange(tileReq)
 		t := &HeatmapTile{}
 		t.Binning = binning
-		t.Topic = topic
-		t.TimeRange = time
+		t.Terms = terms
+		t.Prefixes = prefixes
+		t.Range = rang
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -68,8 +71,9 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 func (g *HeatmapTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Binning,
-		g.Topic,
-		g.TimeRange,
+		g.Terms,
+		g.Prefixes,
+		g.Range,
 	}
 }
 
@@ -77,21 +81,29 @@ func (g *HeatmapTile) GetParams() []tile.Param {
 func (g *HeatmapTile) GetTile() ([]byte, error) {
 	binning := g.Binning
 	tiling := binning.Tiling
-	timeRange := g.TimeRange
-	topic := g.Topic
 	tileReq := g.req
 	client := g.client
 	// create x and y range queries
 	boolQuery := elastic.NewBoolQuery().Must(
 		tiling.GetXQuery(),
 		tiling.GetYQuery())
-	// if time params are provided, add time range query
-	if timeRange != nil {
-		boolQuery.Must(timeRange.GetTimeQuery())
+	// if range param is provided, add range queries
+	if g.Range != nil {
+		for _, query := range g.Range.GetQueries() {
+			boolQuery.Must(query)
+		}
 	}
-	// if topic params are provided, add terms query
-	if topic != nil {
-		boolQuery.Must(topic.GetTopicQuery())
+	// if terms param is provided, add terms queries
+	if g.Terms != nil {
+		for _, query := range g.Terms.GetQueries() {
+			boolQuery.Must(query)
+		}
+	}
+	// if prefixes param is provided, add prefix queries
+	if g.Prefixes != nil {
+		for _, query := range g.Prefixes.GetQueries() {
+			boolQuery.Must(query)
+		}
 	}
 	// create x aggregation
 	xAgg := binning.GetXAgg()

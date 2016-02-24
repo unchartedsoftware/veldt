@@ -11,6 +11,12 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
+const (
+	defaultResolution = binning.MaxTileResolution
+	defaultZField     = ""
+	defaultMetric     = "sum"
+)
+
 // Binning represents params for binning the data within the tile.
 type Binning struct {
 	Tiling     *Tiling
@@ -25,7 +31,7 @@ type Binning struct {
 
 // NewBinning instantiates and returns a new binning parameter object.
 func NewBinning(tileReq *tile.Request) (*Binning, error) {
-	params := tileReq.Params
+	params := json.GetChildOrEmpty(tileReq.Params, "binning")
 	tiling, err := NewTiling(tileReq)
 	if err != nil {
 		return nil, err
@@ -33,13 +39,13 @@ func NewBinning(tileReq *tile.Request) (*Binning, error) {
 	bounds := tiling.Bounds
 	xRange := math.Abs(bounds.BottomRight.X - bounds.TopLeft.X)
 	yRange := math.Abs(bounds.BottomRight.Y - bounds.TopLeft.Y)
-	resolution := json.GetNumberDefault(params, "resolution", binning.MaxTileResolution)
+	resolution := json.GetNumberDefault(params, "resolution", defaultResolution)
 	binSizeX := xRange / resolution
 	binSizeY := yRange / resolution
 	return &Binning{
 		Tiling:     tiling,
-		Z:          json.GetStringDefault(params, "z", ""),
-		Metric:     json.GetStringDefault(params, "metric", "sum"),
+		Z:          json.GetStringDefault(params, "z", defaultZField),
+		Metric:     json.GetStringDefault(params, "metric", defaultMetric),
 		Resolution: int64(resolution),
 		BinSizeX:   binSizeX,
 		BinSizeY:   binSizeY,

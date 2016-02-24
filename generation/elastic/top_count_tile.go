@@ -15,16 +15,18 @@ const (
 	termsAggName = "topterms"
 )
 
-// TopTermsTile represents a tiling generator that produces topic counts.
-type TopTermsTile struct {
+// TopCountTile represents a tiling generator that produces top term counts.
+type TopCountTile struct {
 	TileGenerator
-	Tiling    *param.Tiling
-	TopTerms  *param.TopTerms
-	TimeRange *param.TimeRange
+	Tiling   *param.Tiling
+	TopCount *param.TopTerms
+	Terms    *param.TermsFilter
+	Prefixes *param.PrefixFilter
+	Range    *param.Range
 }
 
-// NewTopTermsTile instantiates and returns a pointer to a new generator.
-func NewTopTermsTile(host, port string) tile.GeneratorConstructor {
+// NewTopCountTile instantiates and returns a pointer to a new generator.
+func NewTopCountTile(host, port string) tile.GeneratorConstructor {
 	return func(tileReq *tile.Request) (tile.Generator, error) {
 		client, err := NewClient(host, port)
 		if err != nil {
@@ -38,11 +40,15 @@ func NewTopTermsTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		time, _ := param.NewTimeRange(tileReq)
-		t := &TopTermsTile{}
+		terms, _ := param.NewTermsFilter(tileReq)
+		prefixes, _ := param.NewPrefixFilter(tileReq)
+		rang, _ := param.NewRange(tileReq)
+		t := &TopCountTile{}
 		t.Tiling = tiling
-		t.TopTerms = topTerms
-		t.TimeRange = time
+		t.TopCount = topTerms
+		t.Range = rang
+		t.Terms = terms
+		t.Prefixes = prefixes
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -52,35 +58,49 @@ func NewTopTermsTile(host, port string) tile.GeneratorConstructor {
 }
 
 // GetParams returns a slice of tiling parameters.
-func (g *TopTermsTile) GetParams() []tile.Param {
+func (g *TopCountTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Tiling,
-		g.TopTerms,
-		g.TimeRange,
+		g.TopCount,
+		g.Prefixes,
+		g.Terms,
+		g.Range,
 	}
 }
 
 // GetTile returns the marshalled tile data.
-func (g *TopTermsTile) GetTile() ([]byte, error) {
+func (g *TopCountTile) GetTile() ([]byte, error) {
 	tiling := g.Tiling
-	timeRange := g.TimeRange
-	topTerms := g.TopTerms
 	tileReq := g.req
 	client := g.client
 	// create x and y range queries
 	boolQuery := elastic.NewBoolQuery().Must(
 		tiling.GetXQuery(),
 		tiling.GetYQuery())
-	// if time params are provided, add time range query
-	if timeRange != nil {
-		boolQuery.Must(timeRange.GetTimeQuery())
+	// if range param is provided, add range queries
+	if g.Range != nil {
+		for _, query := range g.Range.GetQueries() {
+			boolQuery.Must(query)
+		}
+	}
+	// if terms param is provided, add terms queries
+	if g.Terms != nil {
+		for _, query := range g.Terms.GetQueries() {
+			boolQuery.Must(query)
+		}
+	}
+	// if prefixes param is provided, add prefix queries
+	if g.Prefixes != nil {
+		for _, query := range g.Prefixes.GetQueries() {
+			boolQuery.Must(query)
+		}
 	}
 	// build query
 	query := client.
 		Search(tileReq.Index).
 		Size(0).
 		Query(boolQuery).
-		Aggregation(termsAggName, topTerms.GetTermsAggregation())
+		Aggregation(termsAggName, g.TopCount.GetAggregation())
 	// send query through equalizer
 	result, err := throttle.Send(query)
 	if err != nil {

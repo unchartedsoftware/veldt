@@ -11,22 +11,20 @@ import (
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
-const (
-	timeAggName = "time"
-)
-
-// TopicFrequencyTile represents a tiling generator that produces term
+// TopFrequencyTile represents a tiling generator that produces top term
 // frequency counts.
-type TopicFrequencyTile struct {
+type TopFrequencyTile struct {
 	TileGenerator
-	Tiling *param.Tiling
-	Terms  *param.TermsAgg
-	Range  *param.Range
-	Time   *param.DateHistogram
+	Tiling   *param.Tiling
+	TopTerms *param.TopTerms
+	Terms    *param.TermsFilter
+	Prefixes *param.PrefixFilter
+	Range    *param.Range
+	Time     *param.DateHistogram
 }
 
-// NewTopicFrequencyTile instantiates and returns a pointer to a new generator.
-func NewTopicFrequencyTile(host, port string) tile.GeneratorConstructor {
+// NewTopFrequencyTile instantiates and returns a pointer to a new generator.
+func NewTopFrequencyTile(host, port string) tile.GeneratorConstructor {
 	return func(tileReq *tile.Request) (tile.Generator, error) {
 		client, err := NewClient(host, port)
 		if err != nil {
@@ -36,7 +34,7 @@ func NewTopicFrequencyTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		terms, err := param.NewTermsAgg(tileReq)
+		topTerms, err := param.NewTopTerms(tileReq)
 		if err != nil {
 			return nil, err
 		}
@@ -44,10 +42,14 @@ func NewTopicFrequencyTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
+		terms, _ := param.NewTermsFilter(tileReq)
+		prefixes, _ := param.NewPrefixFilter(tileReq)
 		rang, _ := param.NewRange(tileReq)
-		t := &TopicFrequencyTile{}
+		t := &TopFrequencyTile{}
 		t.Tiling = tiling
+		t.TopTerms = topTerms
 		t.Terms = terms
+		t.Prefixes = prefixes
 		t.Time = time
 		t.Range = rang
 		t.req = tileReq
@@ -59,17 +61,19 @@ func NewTopicFrequencyTile(host, port string) tile.GeneratorConstructor {
 }
 
 // GetParams returns a slice of tiling parameters.
-func (g *TopicFrequencyTile) GetParams() []tile.Param {
+func (g *TopFrequencyTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Tiling,
 		g.Terms,
+		g.TopTerms,
+		g.Prefixes,
 		g.Range,
 		g.Time,
 	}
 }
 
 // GetTile returns the marshalled tile data.
-func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
+func (g *TopFrequencyTile) GetTile() ([]byte, error) {
 	tiling := g.Tiling
 	time := g.Time
 	tileReq := g.req
@@ -86,7 +90,15 @@ func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
 	}
 	// if terms param is provided, add terms queries
 	if g.Terms != nil {
-		boolQuery.Must(g.Terms.GetQuery())
+		for _, query := range g.Terms.GetQueries() {
+			boolQuery.Must(query)
+		}
+	}
+	// if prefixes param is provided, add prefix queries
+	if g.Prefixes != nil {
+		for _, query := range g.Prefixes.GetQueries() {
+			boolQuery.Must(query)
+		}
 	}
 	// add time range query
 	boolQuery.Must(time.GetQuery())
@@ -94,42 +106,40 @@ func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
 	query := client.
 		Search(tileReq.Index).
 		Size(0).
-		Query(boolQuery)
-	// add all filter aggregations
-	timeAgg := time.GetAggregation()
-	termAggs := g.Terms.GetAggregations()
-	for term, termAgg := range termAggs {
-		query.Aggregation(term, termAgg.SubAggregation(timeAggName, timeAgg))
-	}
+		Query(boolQuery).
+		Aggregation(termsAggName, g.TopTerms.GetAggregation().
+		SubAggregation(timeAggName, time.GetAggregation()))
 	// send query through equalizer
 	result, err := throttle.Send(query)
 	if err != nil {
 		return nil, err
 	}
 	// build map of topics and frequency arrays
-	termFrequencies := make(map[string][]int64)
-	for _, term := range g.Terms.Terms {
-		filter, ok := result.Aggregations.Filter(term)
+	topTermFrequencies := make(map[string][]int64)
+	termsRes, ok := result.Aggregations.Terms(termsAggName)
+	if !ok {
+		return nil, fmt.Errorf("Terms aggregation '%s' was not found in response for request %s",
+			termsAggName,
+			tileReq.String())
+	}
+	for _, bucket := range termsRes.Buckets {
+		term, ok := bucket.Key.(string)
 		if !ok {
-			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s", term, tileReq.String())
+			return nil, fmt.Errorf("Terms aggregation key was not of type `string` '%s' in response for request %s",
+				termsAggName,
+				tileReq.String())
 		}
-		timeAgg, ok := filter.DateHistogram(timeAggName)
+		timeAgg, ok := bucket.Aggregations.DateHistogram(timeAggName)
 		if !ok {
 			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request %s", timeAggName, tileReq.String())
 		}
 		termCounts := make([]int64, len(timeAgg.Buckets))
-		topicExists := false
 		for i, bucket := range timeAgg.Buckets {
 			termCounts[i] = bucket.DocCount
-			if bucket.DocCount > 0 {
-				topicExists = true
-			}
 		}
-		// only add topics if they have at least one count
-		if topicExists {
-			termFrequencies[term] = termCounts
-		}
+		// add counts to frequencies map
+		topTermFrequencies[term] = termCounts
 	}
 	// marshal results map
-	return json.Marshal(termFrequencies)
+	return json.Marshal(topTermFrequencies)
 }

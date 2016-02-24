@@ -11,12 +11,12 @@ import (
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
-// TopicCountTile represents a tiling generator that produces topic counts.
+// TopicCountTile represents a tiling generator that produces terms counts.
 type TopicCountTile struct {
 	TileGenerator
-	Tiling    *param.Tiling
-	Topic     *param.Topic
-	TimeRange *param.TimeRange
+	Tiling *param.Tiling
+	Terms  *param.TermsAgg
+	Range  *param.Range
 }
 
 // NewTopicCountTile instantiates and returns a pointer to a new generator.
@@ -30,15 +30,15 @@ func NewTopicCountTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		topic, err := param.NewTopic(tileReq)
+		terms, err := param.NewTermsAgg(tileReq)
 		if err != nil {
 			return nil, err
 		}
-		time, _ := param.NewTimeRange(tileReq)
+		rang, _ := param.NewRange(tileReq)
 		t := &TopicCountTile{}
 		t.Tiling = tiling
-		t.Topic = topic
-		t.TimeRange = time
+		t.Terms = terms
+		t.Range = rang
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -51,25 +51,30 @@ func NewTopicCountTile(host, port string) tile.GeneratorConstructor {
 func (g *TopicCountTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Tiling,
-		g.Topic,
-		g.TimeRange,
+		g.Terms,
+		g.Range,
 	}
 }
 
 // GetTile returns the marshalled tile data.
 func (g *TopicCountTile) GetTile() ([]byte, error) {
 	tiling := g.Tiling
-	timeRange := g.TimeRange
-	topic := g.Topic
+	terms := g.Terms
 	tileReq := g.req
 	client := g.client
 	// create x and y range queries
 	boolQuery := elastic.NewBoolQuery().Must(
 		tiling.GetXQuery(),
 		tiling.GetYQuery())
-	// if time params are provided, add time range query
-	if timeRange != nil {
-		boolQuery.Must(timeRange.GetTimeQuery())
+	// if range param is provided, add range queries
+	if g.Range != nil {
+		for _, query := range g.Range.GetQueries() {
+			boolQuery.Must(query)
+		}
+	}
+	// if terms param is provided, add terms query
+	if g.Terms != nil {
+		boolQuery.Must(g.Terms.GetQuery())
 	}
 	// build query
 	query := client.
@@ -77,9 +82,9 @@ func (g *TopicCountTile) GetTile() ([]byte, error) {
 		Size(0).
 		Query(boolQuery)
 	// add all filter aggregations
-	topicAggs := topic.GetTopicAggregations()
-	for topic, topicAgg := range topicAggs {
-		query.Aggregation(topic, topicAgg)
+	termsAggs := g.Terms.GetAggregations()
+	for term, termAgg := range termsAggs {
+		query.Aggregation(term, termAgg)
 	}
 	// send query through equalizer
 	result, err := throttle.Send(query)
@@ -87,16 +92,16 @@ func (g *TopicCountTile) GetTile() ([]byte, error) {
 		return nil, err
 	}
 	// build map of topics and counts
-	topicCounts := make(map[string]int64)
-	for _, topic := range topic.Topics {
-		filter, ok := result.Aggregations.Filter(topic)
+	termCounts := make(map[string]int64)
+	for _, terms := range terms.Terms {
+		filter, ok := result.Aggregations.Filter(terms)
 		if !ok {
-			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s", topic, tileReq.String())
+			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s", terms, tileReq.String())
 		}
 		if filter.DocCount > 0 {
-			topicCounts[topic] = filter.DocCount
+			termCounts[terms] = filter.DocCount
 		}
 	}
 	// marshal results map
-	return json.Marshal(topicCounts)
+	return json.Marshal(termCounts)
 }
