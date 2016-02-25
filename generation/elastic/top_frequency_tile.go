@@ -15,12 +15,13 @@ import (
 // frequency counts.
 type TopFrequencyTile struct {
 	TileGenerator
-	Tiling   *param.Tiling
-	TopTerms *param.TopTerms
-	Terms    *param.TermsFilter
-	Prefixes *param.PrefixFilter
-	Range    *param.Range
-	Time     *param.DateHistogram
+	Tiling    *param.Tiling
+	TopTerms  *param.TopTerms
+	Terms     *param.TermsFilter
+	Prefixes  *param.PrefixFilter
+	Range     *param.Range
+	Time      *param.DateHistogram
+	Histogram *param.Histogram
 }
 
 // NewTopFrequencyTile instantiates and returns a pointer to a new generator.
@@ -45,6 +46,7 @@ func NewTopFrequencyTile(host, port string) tile.GeneratorConstructor {
 		terms, _ := param.NewTermsFilter(tileReq)
 		prefixes, _ := param.NewPrefixFilter(tileReq)
 		rang, _ := param.NewRange(tileReq)
+		histogram, _ := param.NewHistogram(tileReq)
 		t := &TopFrequencyTile{}
 		t.Tiling = tiling
 		t.TopTerms = topTerms
@@ -52,6 +54,7 @@ func NewTopFrequencyTile(host, port string) tile.GeneratorConstructor {
 		t.Prefixes = prefixes
 		t.Time = time
 		t.Range = rang
+		t.Histogram = histogram
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -69,6 +72,7 @@ func (g *TopFrequencyTile) GetParams() []tile.Param {
 		g.Prefixes,
 		g.Range,
 		g.Time,
+		g.Histogram,
 	}
 }
 
@@ -102,20 +106,26 @@ func (g *TopFrequencyTile) GetTile() ([]byte, error) {
 	}
 	// add time range query
 	boolQuery.Must(time.GetQuery())
+	// get date histogram agg
+	timeAgg := time.GetAggregation()
+	// if histogram param is provided, add histogram agg
+	if g.Histogram != nil {
+		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
+	}
 	// build query
 	query := client.
 		Search(tileReq.Index).
 		Size(0).
 		Query(boolQuery).
 		Aggregation(termsAggName, g.TopTerms.GetAggregation().
-		SubAggregation(timeAggName, time.GetAggregation()))
+		SubAggregation(timeAggName, timeAgg))
 	// send query through equalizer
 	result, err := throttle.Send(query)
 	if err != nil {
 		return nil, err
 	}
 	// build map of topics and frequency arrays
-	topTermFrequencies := make(map[string][]int64)
+	topTermFrequencies := make(map[string][]interface{})
 	termsRes, ok := result.Aggregations.Terms(termsAggName)
 	if !ok {
 		return nil, fmt.Errorf("Terms aggregation '%s' was not found in response for request %s",
@@ -133,9 +143,19 @@ func (g *TopFrequencyTile) GetTile() ([]byte, error) {
 		if !ok {
 			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request %s", timeAggName, tileReq.String())
 		}
-		termCounts := make([]int64, len(timeAgg.Buckets))
+		termCounts := make([]interface{}, len(timeAgg.Buckets))
 		for i, bucket := range timeAgg.Buckets {
-			termCounts[i] = bucket.DocCount
+			if g.Histogram != nil {
+				histogramAgg, ok := bucket.Aggregations.Histogram(histogramAggName)
+				if !ok {
+					return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
+						histogramAggName,
+						tileReq.String())
+				}
+				termCounts[i] = g.Histogram.GetBucketMap(histogramAgg)
+			} else {
+				termCounts[i] = bucket.DocCount
+			}
 		}
 		// add counts to frequencies map
 		topTermFrequencies[term] = termCounts

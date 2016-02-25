@@ -46,3 +46,12 @@ func (p *Histogram) GetAggregation() *elastic.HistogramAggregation {
 		Interval(p.Interval).
 		MinDocCount(0)
 }
+
+// GetBucketMap parses the histogram buckets into a map of keys to counts.
+func (p *Histogram) GetBucketMap(agg *elastic.AggregationBucketHistogramItems) map[string]uint64 {
+	m := make(map[string]uint64)
+	for _, bucket := range agg.Buckets {
+		m[fmt.Sprintf("%d", bucket.Key)] = uint64(bucket.DocCount)
+	}
+	return m
+}

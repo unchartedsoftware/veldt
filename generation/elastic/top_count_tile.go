@@ -12,17 +12,19 @@ import (
 )
 
 const (
-	termsAggName = "topterms"
+	termsAggName     = "topterms"
+	histogramAggName = "histogramAgg"
 )
 
 // TopCountTile represents a tiling generator that produces top term counts.
 type TopCountTile struct {
 	TileGenerator
-	Tiling   *param.Tiling
-	TopCount *param.TopTerms
-	Terms    *param.TermsFilter
-	Prefixes *param.PrefixFilter
-	Range    *param.Range
+	Tiling    *param.Tiling
+	TopCount  *param.TopTerms
+	Terms     *param.TermsFilter
+	Prefixes  *param.PrefixFilter
+	Range     *param.Range
+	Histogram *param.Histogram
 }
 
 // NewTopCountTile instantiates and returns a pointer to a new generator.
@@ -43,12 +45,14 @@ func NewTopCountTile(host, port string) tile.GeneratorConstructor {
 		terms, _ := param.NewTermsFilter(tileReq)
 		prefixes, _ := param.NewPrefixFilter(tileReq)
 		rang, _ := param.NewRange(tileReq)
+		histogram, _ := param.NewHistogram(tileReq)
 		t := &TopCountTile{}
 		t.Tiling = tiling
 		t.TopCount = topTerms
 		t.Range = rang
 		t.Terms = terms
 		t.Prefixes = prefixes
+		t.Histogram = histogram
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -65,6 +69,7 @@ func (g *TopCountTile) GetParams() []tile.Param {
 		g.Prefixes,
 		g.Terms,
 		g.Range,
+		g.Histogram,
 	}
 }
 
@@ -95,19 +100,25 @@ func (g *TopCountTile) GetTile() ([]byte, error) {
 			boolQuery.Must(query)
 		}
 	}
+	// get top terms agg
+	topTermsAgg := g.TopCount.GetAggregation()
+	// if histogram param is provided, add histogram agg
+	if g.Histogram != nil {
+		topTermsAgg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
+	}
 	// build query
 	query := client.
 		Search(tileReq.Index).
 		Size(0).
 		Query(boolQuery).
-		Aggregation(termsAggName, g.TopCount.GetAggregation())
+		Aggregation(termsAggName, topTermsAgg)
 	// send query through equalizer
 	result, err := throttle.Send(query)
 	if err != nil {
 		return nil, err
 	}
 	// build map of topics and counts
-	topTermCounts := make(map[string]int64)
+	topTermCounts := make(map[string]interface{})
 	termsRes, ok := result.Aggregations.Terms(termsAggName)
 	if !ok {
 		return nil, fmt.Errorf("Terms aggregation '%s' was not found in response for request %s",
@@ -121,9 +132,16 @@ func (g *TopCountTile) GetTile() ([]byte, error) {
 				termsAggName,
 				tileReq.String())
 		}
-		count := bucket.DocCount
-		if count > 0 {
-			topTermCounts[term] = count
+		if g.Histogram != nil {
+			histogramAgg, ok := bucket.Aggregations.Histogram(histogramAggName)
+			if !ok {
+				return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
+					histogramAggName,
+					tileReq.String())
+			}
+			topTermCounts[term] = g.Histogram.GetBucketMap(histogramAgg)
+		} else {
+			topTermCounts[term] = bucket.DocCount
 		}
 	}
 	// marshal results map

@@ -19,10 +19,11 @@ const (
 // frequency counts.
 type TopicFrequencyTile struct {
 	TileGenerator
-	Tiling *param.Tiling
-	Terms  *param.TermsAgg
-	Range  *param.Range
-	Time   *param.DateHistogram
+	Tiling    *param.Tiling
+	Terms     *param.TermsAgg
+	Range     *param.Range
+	Time      *param.DateHistogram
+	Histogram *param.Histogram
 }
 
 // NewTopicFrequencyTile instantiates and returns a pointer to a new generator.
@@ -45,11 +46,13 @@ func NewTopicFrequencyTile(host, port string) tile.GeneratorConstructor {
 			return nil, err
 		}
 		rang, _ := param.NewRange(tileReq)
+		histogram, _ := param.NewHistogram(tileReq)
 		t := &TopicFrequencyTile{}
 		t.Tiling = tiling
 		t.Terms = terms
 		t.Time = time
 		t.Range = rang
+		t.Histogram = histogram
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -65,6 +68,7 @@ func (g *TopicFrequencyTile) GetParams() []tile.Param {
 		g.Terms,
 		g.Range,
 		g.Time,
+		g.Histogram,
 	}
 }
 
@@ -97,6 +101,10 @@ func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
 		Query(boolQuery)
 	// add all filter aggregations
 	timeAgg := time.GetAggregation()
+	// if histogram param is provided, add histogram agg
+	if g.Histogram != nil {
+		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
+	}
 	termAggs := g.Terms.GetAggregations()
 	for term, termAgg := range termAggs {
 		query.Aggregation(term, termAgg.SubAggregation(timeAggName, timeAgg))
@@ -107,7 +115,7 @@ func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
 		return nil, err
 	}
 	// build map of topics and frequency arrays
-	termFrequencies := make(map[string][]int64)
+	termFrequencies := make(map[string][]interface{})
 	for _, term := range g.Terms.Terms {
 		filter, ok := result.Aggregations.Filter(term)
 		if !ok {
@@ -117,11 +125,21 @@ func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
 		if !ok {
 			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request %s", timeAggName, tileReq.String())
 		}
-		termCounts := make([]int64, len(timeAgg.Buckets))
+		termCounts := make([]interface{}, len(timeAgg.Buckets))
 		topicExists := false
 		for i, bucket := range timeAgg.Buckets {
-			termCounts[i] = bucket.DocCount
 			if bucket.DocCount > 0 {
+				if g.Histogram != nil {
+					histogramAgg, ok := bucket.Aggregations.Histogram(histogramAggName)
+					if !ok {
+						return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
+							histogramAggName,
+							tileReq.String())
+					}
+					termCounts[i] = g.Histogram.GetBucketMap(histogramAgg)
+				} else {
+					termCounts[i] = bucket.DocCount
+				}
 				topicExists = true
 			}
 		}

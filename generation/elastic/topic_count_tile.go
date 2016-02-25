@@ -14,9 +14,10 @@ import (
 // TopicCountTile represents a tiling generator that produces terms counts.
 type TopicCountTile struct {
 	TileGenerator
-	Tiling *param.Tiling
-	Terms  *param.TermsAgg
-	Range  *param.Range
+	Tiling    *param.Tiling
+	Terms     *param.TermsAgg
+	Range     *param.Range
+	Histogram *param.Histogram
 }
 
 // NewTopicCountTile instantiates and returns a pointer to a new generator.
@@ -35,10 +36,12 @@ func NewTopicCountTile(host, port string) tile.GeneratorConstructor {
 			return nil, err
 		}
 		rang, _ := param.NewRange(tileReq)
+		histogram, _ := param.NewHistogram(tileReq)
 		t := &TopicCountTile{}
 		t.Tiling = tiling
 		t.Terms = terms
 		t.Range = rang
+		t.Histogram = histogram
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -53,6 +56,7 @@ func (g *TopicCountTile) GetParams() []tile.Param {
 		g.Tiling,
 		g.Terms,
 		g.Range,
+		g.Histogram,
 	}
 }
 
@@ -84,6 +88,10 @@ func (g *TopicCountTile) GetTile() ([]byte, error) {
 	// add all filter aggregations
 	termsAggs := g.Terms.GetAggregations()
 	for term, termAgg := range termsAggs {
+		// if histogram param is provided, add histogram agg
+		if g.Histogram != nil {
+			termAgg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
+		}
 		query.Aggregation(term, termAgg)
 	}
 	// send query through equalizer
@@ -92,14 +100,24 @@ func (g *TopicCountTile) GetTile() ([]byte, error) {
 		return nil, err
 	}
 	// build map of topics and counts
-	termCounts := make(map[string]int64)
-	for _, terms := range terms.Terms {
-		filter, ok := result.Aggregations.Filter(terms)
+	termCounts := make(map[string]interface{})
+	for _, term := range terms.Terms {
+		filter, ok := result.Aggregations.Filter(term)
 		if !ok {
-			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s", terms, tileReq.String())
+			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s", term, tileReq.String())
 		}
 		if filter.DocCount > 0 {
-			termCounts[terms] = filter.DocCount
+			if g.Histogram != nil {
+				histogramAgg, ok := filter.Aggregations.Histogram(histogramAggName)
+				if !ok {
+					return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
+						histogramAggName,
+						tileReq.String())
+				}
+				termCounts[term] = g.Histogram.GetBucketMap(histogramAgg)
+			} else {
+				termCounts[term] = filter.DocCount
+			}
 		}
 	}
 	// marshal results map

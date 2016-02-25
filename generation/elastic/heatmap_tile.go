@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	xAggName = "x"
-	yAggName = "y"
-	zAggName = "z"
+	xAggName      = "x"
+	yAggName      = "y"
+	metricAggName = "metric"
 )
 
 func float64ToBytes(bytes []byte, float float64) {
@@ -38,6 +38,7 @@ type HeatmapTile struct {
 	Terms    *param.TermsFilter
 	Prefixes *param.PrefixFilter
 	Range    *param.Range
+	Metric   *param.MetricAgg
 }
 
 // NewHeatmapTile instantiates and returns a pointer to a new generator.
@@ -54,11 +55,13 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 		terms, _ := param.NewTermsFilter(tileReq)
 		prefixes, _ := param.NewPrefixFilter(tileReq)
 		rang, _ := param.NewRange(tileReq)
+		metric, _ := param.NewMetricAgg(tileReq)
 		t := &HeatmapTile{}
 		t.Binning = binning
 		t.Terms = terms
 		t.Prefixes = prefixes
 		t.Range = rang
+		t.Metric = metric
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -74,6 +77,7 @@ func (g *HeatmapTile) GetParams() []tile.Param {
 		g.Terms,
 		g.Prefixes,
 		g.Range,
+		g.Metric,
 	}
 }
 
@@ -111,9 +115,8 @@ func (g *HeatmapTile) GetTile() ([]byte, error) {
 	yAgg := binning.GetYAgg()
 	xAgg.SubAggregation(yAggName, yAgg)
 	// if there is a z field to sum, add sum agg to yAgg
-	if binning.Z != "" {
-		zAgg := binning.GetZAgg()
-		yAgg.SubAggregation(zAggName, zAgg)
+	if g.Metric != nil {
+		yAgg.SubAggregation(metricAggName, g.Metric.GetAgg())
 	}
 	// build query
 	query := client.
@@ -149,19 +152,17 @@ func (g *HeatmapTile) GetTile() ([]byte, error) {
 			y := yBucket.Key
 			yBin := binning.GetYBin(y)
 			index := xBin + binning.Resolution*yBin
-			if binning.Z != "" {
+			if g.Metric != nil {
 				// extract metric
-				zAggRes, ok := binning.GetZAggValue(zAggName, yBucket)
+				value, ok := g.Metric.GetAggValue(metricAggName, yBucket)
 				if !ok {
 					return nil, fmt.Errorf("'%s' aggregation '%s' was not found in response for request %s",
-						binning.Metric,
-						zAggName,
+						g.Metric.Type,
+						metricAggName,
 						tileReq.String())
 				}
 				// encode metric
-				if zAggRes.Value != nil {
-					bins[index] += *zAggRes.Value
-				}
+				bins[index] += value
 			} else {
 				// encode count
 				bins[index] += float64(yBucket.DocCount)
