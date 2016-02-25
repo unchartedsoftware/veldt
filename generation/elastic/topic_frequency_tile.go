@@ -128,18 +128,18 @@ func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
 		termCounts := make([]interface{}, len(timeAgg.Buckets))
 		topicExists := false
 		for i, bucket := range timeAgg.Buckets {
-			if bucket.DocCount > 0 {
-				if g.Histogram != nil {
-					histogramAgg, ok := bucket.Aggregations.Histogram(histogramAggName)
-					if !ok {
-						return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
-							histogramAggName,
-							tileReq.String())
-					}
-					termCounts[i] = g.Histogram.GetBucketMap(histogramAgg)
-				} else {
-					termCounts[i] = bucket.DocCount
+			if g.Histogram != nil {
+				histogramAgg, ok := bucket.Aggregations.Histogram(histogramAggName)
+				if !ok {
+					return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
+						histogramAggName,
+						tileReq.String())
 				}
+				termCounts[i] = g.Histogram.GetBucketMap(histogramAgg)
+			} else {
+				termCounts[i] = bucket.DocCount
+			}
+			if bucket.DocCount > 0 {
 				topicExists = true
 			}
 		}

@@ -20,7 +20,7 @@ const (
 type TopCountTile struct {
 	TileGenerator
 	Tiling    *param.Tiling
-	TopCount  *param.TopTerms
+	TopTerms  *param.TopTerms
 	Terms     *param.TermsFilter
 	Prefixes  *param.PrefixFilter
 	Range     *param.Range
@@ -48,7 +48,7 @@ func NewTopCountTile(host, port string) tile.GeneratorConstructor {
 		histogram, _ := param.NewHistogram(tileReq)
 		t := &TopCountTile{}
 		t.Tiling = tiling
-		t.TopCount = topTerms
+		t.TopTerms = topTerms
 		t.Range = rang
 		t.Terms = terms
 		t.Prefixes = prefixes
@@ -65,7 +65,7 @@ func NewTopCountTile(host, port string) tile.GeneratorConstructor {
 func (g *TopCountTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Tiling,
-		g.TopCount,
+		g.TopTerms,
 		g.Prefixes,
 		g.Terms,
 		g.Range,
@@ -101,7 +101,7 @@ func (g *TopCountTile) GetTile() ([]byte, error) {
 		}
 	}
 	// get top terms agg
-	topTermsAgg := g.TopCount.GetAggregation()
+	topTermsAgg := g.TopTerms.GetAggregation()
 	// if histogram param is provided, add histogram agg
 	if g.Histogram != nil {
 		topTermsAgg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
