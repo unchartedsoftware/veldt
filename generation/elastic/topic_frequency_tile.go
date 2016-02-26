@@ -90,7 +90,7 @@ func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
 	}
 	// if terms param is provided, add terms queries
 	if g.Terms != nil {
-		boolQuery.Must(g.Terms.GetQuery())
+		boolQuery.Should(g.Terms.GetQuery())
 	}
 	// add time range query
 	boolQuery.Must(time.GetQuery())

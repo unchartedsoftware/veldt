@@ -95,13 +95,13 @@ func (g *TopFrequencyTile) GetTile() ([]byte, error) {
 	// if terms param is provided, add terms queries
 	if g.Terms != nil {
 		for _, query := range g.Terms.GetQueries() {
-			boolQuery.Must(query)
+			boolQuery.Should(query)
 		}
 	}
 	// if prefixes param is provided, add prefix queries
 	if g.Prefixes != nil {
 		for _, query := range g.Prefixes.GetQueries() {
-			boolQuery.Must(query)
+			boolQuery.Should(query)
 		}
 	}
 	// add time range query

@@ -78,7 +78,7 @@ func (g *TopicCountTile) GetTile() ([]byte, error) {
 	}
 	// if terms param is provided, add terms query
 	if g.Terms != nil {
-		boolQuery.Must(g.Terms.GetQuery())
+		boolQuery.Should(g.Terms.GetQuery())
 	}
 	// build query
 	query := client.
