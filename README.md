@@ -62,7 +62,7 @@ func main() {
     // Register tile data generator
     tile.Register("heatmap", elastic.NewHeatmapTile("http://localhost", "9200"))
 
-    // Create a request for a `heatmap` tile.
+    // Create a request for `default` meta data.
     m := &meta.Request{
         Type: "default",
         Index: "test_index",
