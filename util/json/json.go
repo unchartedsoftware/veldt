@@ -168,11 +168,19 @@ func GetChildrenArray(json Node, key string) ([]Node, bool) {
 	if !ok {
 		return nil, false
 	}
-	val, ok := v.([]Node)
+	vs, ok := v.([]interface{})
 	if !ok {
 		return nil, false
 	}
-	return val, true
+	nodes := make([]Node, len(vs))
+	for i, v := range vs {
+		val, ok := v.(map[string]interface{})
+		if !ok {
+			return nil, false
+		}
+		nodes[i] = val
+	}
+	return nodes, true
 }
 
 // GetNumberArray returns an []float64 property under the given key.
