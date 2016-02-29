@@ -156,5 +156,5 @@ func (g *TopCountTile) GetTile() ([]byte, error) {
 		return nil, err
 	}
 	// parse and return results
-	return g.parseResult(res);
+	return g.parseResult(res)
 }

@@ -72,7 +72,6 @@ func (g *TopicFrequencyTile) GetParams() []tile.Param {
 	}
 }
 
-
 func (g *TopicFrequencyTile) getQuery() elastic.Query {
 	// optional filters
 	filters := elastic.NewBoolQuery()
@@ -149,7 +148,6 @@ func (g *TopicFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, err
 	// marshal results map
 	return json.Marshal(frequencies)
 }
-
 
 // GetTile returns the marshalled tile data.
 func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
