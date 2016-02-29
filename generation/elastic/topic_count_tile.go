@@ -60,51 +60,46 @@ func (g *TopicCountTile) GetParams() []tile.Param {
 	}
 }
 
-// GetTile returns the marshalled tile data.
-func (g *TopicCountTile) GetTile() ([]byte, error) {
-	tiling := g.Tiling
-	terms := g.Terms
-	tileReq := g.req
-	client := g.client
-	// create x and y range queries
-	boolQuery := elastic.NewBoolQuery().Must(
-		tiling.GetXQuery(),
-		tiling.GetYQuery())
+func (g *TopicCountTile) getQuery() elastic.Query {
+	// optional filters
+	filters := elastic.NewBoolQuery()
 	// if range param is provided, add range queries
 	if g.Range != nil {
 		for _, query := range g.Range.GetQueries() {
-			boolQuery.Must(query)
+			filters.Must(query)
 		}
 	}
 	// if terms param is provided, add terms query
 	if g.Terms != nil {
-		boolQuery.Should(g.Terms.GetQuery())
+		filters.Should(g.Terms.GetQuery())
 	}
-	// build query
-	query := client.
-		Search(tileReq.Index).
-		Size(0).
-		Query(boolQuery)
+	return elastic.NewBoolQuery().
+		Must(g.Tiling.GetXQuery()).
+		Must(g.Tiling.GetYQuery()).
+		Must(filters)
+}
+
+func (g *TopicCountTile) addAggs(query *elastic.SearchService) *elastic.SearchService {
 	// add all filter aggregations
-	termsAggs := g.Terms.GetAggregations()
-	for term, termAgg := range termsAggs {
+	for term, agg := range g.Terms.GetAggregations() {
 		// if histogram param is provided, add histogram agg
 		if g.Histogram != nil {
-			termAgg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
+			agg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
 		}
-		query.Aggregation(term, termAgg)
+		query.Aggregation(term, agg)
 	}
-	// send query through equalizer
-	result, err := throttle.Send(query)
-	if err != nil {
-		return nil, err
-	}
+	return query
+}
+
+func (g *TopicCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 	// build map of topics and counts
-	termCounts := make(map[string]interface{})
-	for _, term := range terms.Terms {
-		filter, ok := result.Aggregations.Filter(term)
+	counts := make(map[string]interface{})
+	for _, term := range g.Terms.Terms {
+		filter, ok := res.Aggregations.Filter(term)
 		if !ok {
-			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s", term, tileReq.String())
+			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s",
+				term,
+				g.req.String())
 		}
 		if filter.DocCount > 0 {
 			if g.Histogram != nil {
@@ -112,14 +107,32 @@ func (g *TopicCountTile) GetTile() ([]byte, error) {
 				if !ok {
 					return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
 						histogramAggName,
-						tileReq.String())
+						g.req.String())
 				}
-				termCounts[term] = g.Histogram.GetBucketMap(histogramAgg)
+				counts[term] = g.Histogram.GetBucketMap(histogramAgg)
 			} else {
-				termCounts[term] = filter.DocCount
+				counts[term] = filter.DocCount
 			}
 		}
 	}
 	// marshal results map
-	return json.Marshal(termCounts)
+	return json.Marshal(counts)
+}
+
+// GetTile returns the marshalled tile data.
+func (g *TopicCountTile) GetTile() ([]byte, error) {
+	// build query
+	query := g.client.
+		Search(g.req.Index).
+		Size(0).
+		Query(g.getQuery())
+	// add all filter aggregations
+	query = g.addAggs(query)
+	// send query through equalizer
+	res, err := throttle.Send(query)
+	if err != nil {
+		return nil, err
+	}
+	// parse and return results
+	return g.parseResult(res)
 }

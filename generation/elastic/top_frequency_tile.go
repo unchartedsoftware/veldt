@@ -76,90 +76,102 @@ func (g *TopFrequencyTile) GetParams() []tile.Param {
 	}
 }
 
-// GetTile returns the marshalled tile data.
-func (g *TopFrequencyTile) GetTile() ([]byte, error) {
-	tiling := g.Tiling
-	time := g.Time
-	tileReq := g.req
-	client := g.client
-	// create x and y range queries
-	boolQuery := elastic.NewBoolQuery().Must(
-		tiling.GetXQuery(),
-		tiling.GetYQuery())
+func (g *TopFrequencyTile) getQuery() elastic.Query {
+	// optional filters
+	filters := elastic.NewBoolQuery()
 	// if range param is provided, add range queries
 	if g.Range != nil {
 		for _, query := range g.Range.GetQueries() {
-			boolQuery.Must(query)
+			filters.Must(query)
 		}
 	}
 	// if terms param is provided, add terms queries
 	if g.Terms != nil {
 		for _, query := range g.Terms.GetQueries() {
-			boolQuery.Should(query)
+			filters.Should(query)
 		}
 	}
 	// if prefixes param is provided, add prefix queries
 	if g.Prefixes != nil {
 		for _, query := range g.Prefixes.GetQueries() {
-			boolQuery.Should(query)
+			filters.Should(query)
 		}
 	}
-	// add time range query
-	boolQuery.Must(time.GetQuery())
+	return elastic.NewBoolQuery().
+		Must(g.Tiling.GetXQuery()).
+		Must(g.Tiling.GetYQuery()).
+		Must(g.Time.GetQuery()).
+		Must(filters)
+}
+
+func (g *TopFrequencyTile) getAgg() elastic.Aggregation {
+	// get top terms agg
+	agg := g.TopTerms.GetAggregation()
 	// get date histogram agg
-	timeAgg := time.GetAggregation()
+	timeAgg := g.Time.GetAggregation()
 	// if histogram param is provided, add histogram agg
 	if g.Histogram != nil {
 		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
 	}
-	// build query
-	query := client.
-		Search(tileReq.Index).
-		Size(0).
-		Query(boolQuery).
-		Aggregation(termsAggName, g.TopTerms.GetAggregation().
-		SubAggregation(timeAggName, timeAgg))
-	// send query through equalizer
-	result, err := throttle.Send(query)
-	if err != nil {
-		return nil, err
-	}
+	// add date histogram agg
+	agg.SubAggregation(timeAggName, timeAgg)
+	return agg
+}
+
+func (g *TopFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 	// build map of topics and frequency arrays
-	topTermFrequencies := make(map[string][]interface{})
-	termsRes, ok := result.Aggregations.Terms(termsAggName)
+	frequencies := make(map[string][]interface{})
+	terms, ok := res.Aggregations.Terms(termsAggName)
 	if !ok {
 		return nil, fmt.Errorf("Terms aggregation '%s' was not found in response for request %s",
 			termsAggName,
-			tileReq.String())
+			g.req.String())
 	}
-	for _, bucket := range termsRes.Buckets {
+	for _, bucket := range terms.Buckets {
 		term, ok := bucket.Key.(string)
 		if !ok {
 			return nil, fmt.Errorf("Terms aggregation key was not of type `string` '%s' in response for request %s",
 				termsAggName,
-				tileReq.String())
+				g.req.String())
 		}
-		timeAgg, ok := bucket.Aggregations.DateHistogram(timeAggName)
+		time, ok := bucket.Aggregations.DateHistogram(timeAggName)
 		if !ok {
-			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request %s", timeAggName, tileReq.String())
+			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request %s", timeAggName, g.req.String())
 		}
-		termCounts := make([]interface{}, len(timeAgg.Buckets))
-		for i, bucket := range timeAgg.Buckets {
+		counts := make([]interface{}, len(time.Buckets))
+		for i, bucket := range time.Buckets {
 			if g.Histogram != nil {
-				histogramAgg, ok := bucket.Aggregations.Histogram(histogramAggName)
+				histogram, ok := bucket.Aggregations.Histogram(histogramAggName)
 				if !ok {
 					return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
 						histogramAggName,
-						tileReq.String())
+						g.req.String())
 				}
-				termCounts[i] = g.Histogram.GetBucketMap(histogramAgg)
+				counts[i] = g.Histogram.GetBucketMap(histogram)
 			} else {
-				termCounts[i] = bucket.DocCount
+				counts[i] = bucket.DocCount
 			}
 		}
 		// add counts to frequencies map
-		topTermFrequencies[term] = termCounts
+		frequencies[term] = counts
 	}
 	// marshal results map
-	return json.Marshal(topTermFrequencies)
+	return json.Marshal(frequencies)
+}
+
+// GetTile returns the marshalled tile data.
+func (g *TopFrequencyTile) GetTile() ([]byte, error) {
+	// build query
+	query := g.client.
+		Search(g.req.Index).
+		Size(0).
+		Query(g.getQuery()).
+		Aggregation(termsAggName, g.getAgg())
+	// send query through equalizer
+	res, err := throttle.Send(query)
+	if err != nil {
+		return nil, err
+	}
+	// parse and return results
+	return g.parseResult(res);
 }

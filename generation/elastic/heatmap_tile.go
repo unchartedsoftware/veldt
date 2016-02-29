@@ -81,60 +81,54 @@ func (g *HeatmapTile) GetParams() []tile.Param {
 	}
 }
 
-// GetTile returns the marshalled tile data.
-func (g *HeatmapTile) GetTile() ([]byte, error) {
-	binning := g.Binning
-	tiling := binning.Tiling
-	tileReq := g.req
-	client := g.client
-	// create x and y range queries
-	boolQuery := elastic.NewBoolQuery().Must(
-		tiling.GetXQuery(),
-		tiling.GetYQuery())
+func (g *HeatmapTile) getQuery() elastic.Query {
+	// optional filters
+	filters := elastic.NewBoolQuery()
 	// if range param is provided, add range queries
 	if g.Range != nil {
 		for _, query := range g.Range.GetQueries() {
-			boolQuery.Must(query)
+			filters.Must(query)
 		}
 	}
 	// if terms param is provided, add terms queries
 	if g.Terms != nil {
 		for _, query := range g.Terms.GetQueries() {
-			boolQuery.Should(query)
+			filters.Should(query)
 		}
 	}
 	// if prefixes param is provided, add prefix queries
 	if g.Prefixes != nil {
 		for _, query := range g.Prefixes.GetQueries() {
-			boolQuery.Should(query)
+			filters.Should(query)
 		}
 	}
+	return elastic.NewBoolQuery().
+		Must(g.Binning.Tiling.GetXQuery()).
+		Must(g.Binning.Tiling.GetYQuery()).
+		Must(filters)
+}
+
+func (g *HeatmapTile) getAgg() elastic.Aggregation {
 	// create x aggregation
-	xAgg := binning.GetXAgg()
+	xAgg := g.Binning.GetXAgg()
 	// create y aggregation, add it as a sub-agg to xAgg
-	yAgg := binning.GetYAgg()
+	yAgg := g.Binning.GetYAgg()
 	xAgg.SubAggregation(yAggName, yAgg)
 	// if there is a z field to sum, add sum agg to yAgg
 	if g.Metric != nil {
 		yAgg.SubAggregation(metricAggName, g.Metric.GetAgg())
 	}
-	// build query
-	query := client.
-		Search(tileReq.Index).
-		Size(0).
-		Query(boolQuery).
-		Aggregation(xAggName, xAgg)
-	// send query through equalizer
-	result, err := throttle.Send(query)
-	if err != nil {
-		return nil, err
-	}
+	return xAgg
+}
+
+func (g *HeatmapTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
+	binning := g.Binning
 	// parse aggregations
-	xAggRes, ok := result.Aggregations.Histogram(xAggName)
+	xAggRes, ok := res.Aggregations.Histogram(xAggName)
 	if !ok {
 		return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
 			xAggName,
-			tileReq.String())
+			g.req.String())
 	}
 	// allocate bins buffer
 	bins := make([]float64, binning.Resolution*binning.Resolution)
@@ -146,7 +140,7 @@ func (g *HeatmapTile) GetTile() ([]byte, error) {
 		if !ok {
 			return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
 				yAggName,
-				tileReq.String())
+				g.req.String())
 		}
 		for _, yBucket := range yAggRes.Buckets {
 			y := yBucket.Key
@@ -159,7 +153,7 @@ func (g *HeatmapTile) GetTile() ([]byte, error) {
 					return nil, fmt.Errorf("'%s' aggregation '%s' was not found in response for request %s",
 						g.Metric.Type,
 						metricAggName,
-						tileReq.String())
+						g.req.String())
 				}
 				// encode metric
 				bins[index] += value
@@ -170,4 +164,21 @@ func (g *HeatmapTile) GetTile() ([]byte, error) {
 		}
 	}
 	return float64ToByteSlice(bins), nil
+}
+
+// GetTile returns the marshalled tile data.
+func (g *HeatmapTile) GetTile() ([]byte, error) {
+	// build query
+	query := g.client.
+		Search(g.req.Index).
+		Size(0).
+		Query(g.getQuery()).
+		Aggregation(xAggName, g.getAgg())
+	// send query through equalizer
+	res, err := throttle.Send(query)
+	if err != nil {
+		return nil, err
+	}
+	// parse and return results
+	return g.parseResult(res);
 }

@@ -72,60 +72,58 @@ func (g *TopicFrequencyTile) GetParams() []tile.Param {
 	}
 }
 
-// GetTile returns the marshalled tile data.
-func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
-	tiling := g.Tiling
-	time := g.Time
-	tileReq := g.req
-	client := g.client
-	// create x and y range queries
-	boolQuery := elastic.NewBoolQuery().Must(
-		tiling.GetXQuery(),
-		tiling.GetYQuery())
+
+func (g *TopicFrequencyTile) getQuery() elastic.Query {
+	// optional filters
+	filters := elastic.NewBoolQuery()
 	// if range param is provided, add range queries
 	if g.Range != nil {
 		for _, query := range g.Range.GetQueries() {
-			boolQuery.Must(query)
+			filters.Must(query)
 		}
 	}
-	// if terms param is provided, add terms queries
+	// if terms param is provided, add terms query
 	if g.Terms != nil {
-		boolQuery.Should(g.Terms.GetQuery())
+		filters.Should(g.Terms.GetQuery())
 	}
-	// add time range query
-	boolQuery.Must(time.GetQuery())
-	// build query
-	query := client.
-		Search(tileReq.Index).
-		Size(0).
-		Query(boolQuery)
-	// add all filter aggregations
-	timeAgg := time.GetAggregation()
+	return elastic.NewBoolQuery().
+		Must(g.Tiling.GetXQuery()).
+		Must(g.Tiling.GetYQuery()).
+		Must(g.Time.GetQuery()).
+		Must(filters)
+}
+
+func (g *TopicFrequencyTile) addAggs(query *elastic.SearchService) *elastic.SearchService {
+	// date histogram aggregation
+	timeAgg := g.Time.GetAggregation()
 	// if histogram param is provided, add histogram agg
 	if g.Histogram != nil {
 		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
 	}
-	termAggs := g.Terms.GetAggregations()
-	for term, termAgg := range termAggs {
+	// add all filter aggregations
+	for term, termAgg := range g.Terms.GetAggregations() {
 		query.Aggregation(term, termAgg.SubAggregation(timeAggName, timeAgg))
 	}
-	// send query through equalizer
-	result, err := throttle.Send(query)
-	if err != nil {
-		return nil, err
-	}
+	return query
+}
+
+func (g *TopicFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 	// build map of topics and frequency arrays
-	termFrequencies := make(map[string][]interface{})
+	frequencies := make(map[string][]interface{})
 	for _, term := range g.Terms.Terms {
-		filter, ok := result.Aggregations.Filter(term)
+		filter, ok := res.Aggregations.Filter(term)
 		if !ok {
-			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s", term, tileReq.String())
+			return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s",
+				term,
+				g.req.String())
 		}
 		timeAgg, ok := filter.DateHistogram(timeAggName)
 		if !ok {
-			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request %s", timeAggName, tileReq.String())
+			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request %s",
+				timeAggName,
+				g.req.String())
 		}
-		termCounts := make([]interface{}, len(timeAgg.Buckets))
+		counts := make([]interface{}, len(timeAgg.Buckets))
 		topicExists := false
 		for i, bucket := range timeAgg.Buckets {
 			if g.Histogram != nil {
@@ -133,11 +131,11 @@ func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
 				if !ok {
 					return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
 						histogramAggName,
-						tileReq.String())
+						g.req.String())
 				}
-				termCounts[i] = g.Histogram.GetBucketMap(histogramAgg)
+				counts[i] = g.Histogram.GetBucketMap(histogramAgg)
 			} else {
-				termCounts[i] = bucket.DocCount
+				counts[i] = bucket.DocCount
 			}
 			if bucket.DocCount > 0 {
 				topicExists = true
@@ -145,9 +143,28 @@ func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
 		}
 		// only add topics if they have at least one count
 		if topicExists {
-			termFrequencies[term] = termCounts
+			frequencies[term] = counts
 		}
 	}
 	// marshal results map
-	return json.Marshal(termFrequencies)
+	return json.Marshal(frequencies)
+}
+
+
+// GetTile returns the marshalled tile data.
+func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
+	// build query
+	query := g.client.
+		Search(g.req.Index).
+		Size(0).
+		Query(g.getQuery())
+	// add all filter aggregations
+	query = g.addAggs(query)
+	// send query through equalizer
+	res, err := throttle.Send(query)
+	if err != nil {
+		return nil, err
+	}
+	// parse and return results
+	return g.parseResult(res)
 }
