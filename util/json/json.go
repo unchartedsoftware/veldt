@@ -68,6 +68,24 @@ func GetChild(json Node, path ...string) (Node, bool) {
 	return child, true
 }
 
+// GetRandomChild returns the first key found in the object that is a nested
+// json object.
+func GetRandomChild(json Node) (Node, bool) {
+	if len(json) == 0 {
+		return nil, false
+	}
+	var child Node
+	for _, val := range json {
+		c, ok := val.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		child = c
+		break
+	}
+	return child, true
+}
+
 // GetChildOrEmpty returns the child under the given path, if it doesn't
 // exist, it will return the provided default.
 func GetChildOrEmpty(json Node, path ...string) Node {

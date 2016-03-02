@@ -105,9 +105,16 @@ func (g *DefaultMeta) GetMeta() ([]byte, error) {
 		return nil, err
 	}
 	// get nested 'properties' attribute of mappings payload
-	// TODO: this fails if running on an aliased index as the properties will
-	// be under the original index name...
-	props, ok := jsonutil.GetChild(mapping, metaReq.Index, "mappings", "datum", "properties")
+	// NOTE: If running a `mapping` query on an aliased index, the mapping
+	// response will be nested under the original index name. Since we are only
+	// getting the mapping of a single index at a time, we can simply get the
+	// 'first' and only node.
+	index, ok := jsonutil.GetRandomChild(mapping)
+	if !ok {
+		return nil, fmt.Errorf("Unable to retreive the mappings response for %s",
+			metaReq.Index)
+	}
+	props, ok := jsonutil.GetChild(index, "mappings", "datum", "properties")
 	if !ok {
 		return nil, fmt.Errorf("Unable to parse properties from mappings response for %s",
 			metaReq.Index)
