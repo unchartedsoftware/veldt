@@ -24,7 +24,7 @@ func getConnection(host string, port string) redis.Conn {
 	mutex.Lock()
 	pool, ok := pools[endpoint]
 	if !ok {
-		log.Debugf("Connecting to redis 'tcp://%s'", endpoint)
+		log.Infof("Connecting to redis `tcp://%s`", endpoint)
 		pool = newPool(endpoint)
 		pools[endpoint] = pool
 	}

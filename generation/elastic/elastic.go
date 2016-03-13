@@ -25,7 +25,7 @@ func NewClient(host string, port string) (*elastic.Client, error) {
 	mutex.Lock()
 	client, ok := clients[endpoint]
 	if !ok {
-		log.Debugf("Connecting to elasticsearch '%s'", endpoint)
+		log.Infof("Connecting to elasticsearch `%s`", endpoint)
 		c, err := elastic.NewClient(
 			elastic.SetHttpClient(&http.Client{
 				Timeout: timeout,
