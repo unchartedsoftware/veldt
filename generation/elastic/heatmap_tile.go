@@ -34,11 +34,12 @@ func float64ToByteSlice(arr []float64) []byte {
 // HeatmapTile represents a tiling generator that produces heatmaps.
 type HeatmapTile struct {
 	TileGenerator
-	Binning  *param.Binning
-	Terms    *param.TermsFilter
-	Prefixes *param.PrefixFilter
-	Range    *param.Range
-	Metric   *param.MetricAgg
+	Binning      *param.Binning
+	Terms        *param.TermsFilter
+	Prefixes     *param.PrefixFilter
+	QueryStrings *param.QueryString
+	Range        *param.Range
+	Metric       *param.MetricAgg
 }
 
 // NewHeatmapTile instantiates and returns a pointer to a new generator.
@@ -56,11 +57,13 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 		prefixes, _ := param.NewPrefixFilter(tileReq)
 		rang, _ := param.NewRange(tileReq)
 		metric, _ := param.NewMetricAgg(tileReq)
+		queries, _ := param.NewQueryString(tileReq)
 		t := &HeatmapTile{}
 		t.Binning = binning
 		t.Terms = terms
 		t.Prefixes = prefixes
 		t.Range = rang
+		t.QueryStrings = queries
 		t.Metric = metric
 		t.req = tileReq
 		t.host = host
@@ -99,6 +102,12 @@ func (g *HeatmapTile) getQuery() elastic.Query {
 	// if prefixes param is provided, add prefix queries
 	if g.Prefixes != nil {
 		for _, query := range g.Prefixes.GetQueries() {
+			filters.Should(query)
+		}
+	}
+	// if query strings param is provided, add prefix queries
+	if g.QueryStrings != nil {
+		for _, query := range g.QueryStrings.GetQueries() {
 			filters.Should(query)
 		}
 	}
