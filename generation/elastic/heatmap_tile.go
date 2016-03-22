@@ -37,8 +37,8 @@ type HeatmapTile struct {
 	Binning      *param.Binning
 	Terms        *param.TermsFilter
 	Prefixes     *param.PrefixFilter
-	QueryStrings *param.QueryString
 	Range        *param.Range
+	QueryStrings *param.QueryString
 	Metric       *param.MetricAgg
 }
 
@@ -80,6 +80,7 @@ func (g *HeatmapTile) GetParams() []tile.Param {
 		g.Terms,
 		g.Prefixes,
 		g.Range,
+		g.QueryString,
 		g.Metric,
 	}
 }
