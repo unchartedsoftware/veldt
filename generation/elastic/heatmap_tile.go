@@ -80,7 +80,7 @@ func (g *HeatmapTile) GetParams() []tile.Param {
 		g.Terms,
 		g.Prefixes,
 		g.Range,
-		g.QueryString,
+		g.QueryStrings,
 		g.Metric,
 	}
 }
