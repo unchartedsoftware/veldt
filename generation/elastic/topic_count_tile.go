@@ -71,7 +71,7 @@ func (g *TopicCountTile) getQuery() elastic.Query {
 	}
 	// if terms param is provided, add terms query
 	if g.Terms != nil {
-		filters.Should(g.Terms.GetQuery())
+		filters.Must(g.Terms.GetQuery())
 	}
 	return elastic.NewBoolQuery().
 		Must(g.Tiling.GetXQuery()).

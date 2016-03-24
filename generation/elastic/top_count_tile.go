@@ -82,17 +82,25 @@ func (g *TopCountTile) getQuery() elastic.Query {
 			filters.Must(query)
 		}
 	}
-	// if terms param is provided, add terms queries
-	if g.Terms != nil {
-		for _, query := range g.Terms.GetQueries() {
-			filters.Should(query)
+	// the following filters need to be wrapped in a `must` otherwise the
+	// above `must` query will override them.
+	if g.Terms != nil || g.Prefixes != nil {
+		// create sub-filter
+		subfilters := elastic.NewBoolQuery()
+		// if terms param is provided, add terms queries
+		if g.Terms != nil {
+			for _, query := range g.Terms.GetQueries() {
+				filters.Should(query)
+			}
 		}
-	}
-	// if prefixes param is provided, add prefix queries
-	if g.Prefixes != nil {
-		for _, query := range g.Prefixes.GetQueries() {
-			filters.Should(query)
+		// if prefixes param is provided, add prefix queries
+		if g.Prefixes != nil {
+			for _, query := range g.Prefixes.GetQueries() {
+				filters.Should(query)
+			}
 		}
+		// add sub-filter to the parent filter
+		filters.Must(subfilters)
 	}
 	return elastic.NewBoolQuery().
 		Must(g.Tiling.GetXQuery()).
