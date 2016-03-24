@@ -12,8 +12,8 @@ import (
 
 type rangeQuery struct {
 	Field string
-	From  float64
-	To    float64
+	From  interface{}
+	To    interface{}
 }
 
 func (q *rangeQuery) getQuery() *elastic.RangeQuery {
@@ -47,11 +47,11 @@ func NewRange(tileReq *tile.Request) (*Range, error) {
 		if !ok {
 			return nil, fmt.Errorf("Range `field` parameter missing from tiling request %s", tileReq.String())
 		}
-		from, ok := json.GetNumber(param, "from")
+		from, ok := json.GetInterface(param, "from")
 		if !ok {
 			return nil, fmt.Errorf("Range `from` parameter missing from tiling request %s", tileReq.String())
 		}
-		to, ok := json.GetNumber(param, "to")
+		to, ok := json.GetInterface(param, "to")
 		if !ok {
 			return nil, fmt.Errorf("Range `to` parameter missing from tiling request %s", tileReq.String())
 		}

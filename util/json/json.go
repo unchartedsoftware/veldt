@@ -112,6 +112,15 @@ func GetChildren(json Node, path ...string) (map[string]Node, bool) {
 	return children, true
 }
 
+// GetInterface returns an interface{} property under the given key.
+func GetInterface(json Node, key string) (interface{}, bool) {
+	val, ok := json[key]
+	if !ok {
+		return nil, false
+	}
+	return val, true
+}
+
 // GetString returns a string property under the given key.
 func GetString(json Node, key string) (string, bool) {
 	v, ok := json[key]
