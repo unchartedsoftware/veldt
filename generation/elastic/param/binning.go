@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	defaultResolution = binning.MaxTileResolution
-	defaultZField     = ""
-	defaultMetric     = "sum"
+	defaultResolution  = binning.MaxTileResolution
+	defaultZField      = ""
+	defaultMetric      = "sum"
+	intervalResolution = 256
 )
 
 // Binning represents params for binning the data within the tile.
@@ -25,8 +26,8 @@ type Binning struct {
 	Resolution int64
 	BinSizeX   float64
 	BinSizeY   float64
-	xInterval  int64
-	yInterval  int64
+	intervalX  int64
+	intervalY  int64
 }
 
 // NewBinning instantiates and returns a new binning parameter object.
@@ -47,24 +48,22 @@ func NewBinning(tileReq *tile.Request) (*Binning, error) {
 		Z:          json.GetStringDefault(params, "z", defaultZField),
 		Metric:     json.GetStringDefault(params, "metric", defaultMetric),
 		Resolution: int64(resolution),
+		intervalX:  int64(xRange / intervalResolution),
+		intervalY:  int64(yRange / intervalResolution),
 		BinSizeX:   binSizeX,
 		BinSizeY:   binSizeY,
-		xInterval:  int64(binSizeX),
-		yInterval:  int64(binSizeY),
 	}, nil
 }
 
-/*
-func (p *Binning) clampBinToResolution(bin int64) int64 {
+func (p *Binning) clampBin(bin int64) int64 {
 	if bin > p.Resolution-1 {
-		return p.Resolution-1
+		return p.Resolution - 1
 	}
 	if bin < 0 {
 		return 0
 	}
 	return bin
 }
-*/
 
 // GetHash returns a string hash of the parameter state.
 func (p *Binning) GetHash() string {
@@ -79,7 +78,8 @@ func (p *Binning) GetHash() string {
 func (p *Binning) GetXAgg() *elastic.HistogramAggregation {
 	return elastic.NewHistogramAggregation().
 		Field(p.Tiling.X).
-		Interval(p.xInterval).
+		Offset(p.Tiling.minX).
+		Interval(p.intervalX).
 		MinDocCount(1)
 }
 
@@ -87,7 +87,8 @@ func (p *Binning) GetXAgg() *elastic.HistogramAggregation {
 func (p *Binning) GetYAgg() *elastic.HistogramAggregation {
 	return elastic.NewHistogramAggregation().
 		Field(p.Tiling.Y).
-		Interval(p.yInterval).
+		Offset(p.Tiling.minY).
+		Interval(p.intervalY).
 		MinDocCount(1)
 }
 
@@ -115,12 +116,11 @@ func (p *Binning) GetXBin(x int64) int64 {
 	fx := float64(x)
 	var bin int64
 	if bounds.TopLeft.X > bounds.BottomRight.X {
-		maxBin := float64(p.Resolution - 1)
-		bin = int64(maxBin - ((fx - bounds.BottomRight.X) / p.BinSizeX))
+		bin = int64(float64(p.Resolution) - ((fx - bounds.BottomRight.X) / p.BinSizeX))
 	} else {
 		bin = int64((fx - bounds.TopLeft.X) / p.BinSizeX)
 	}
-	return bin
+	return p.clampBin(bin)
 }
 
 // GetYBin given an y value, returns the corresponding bin.
@@ -129,12 +129,11 @@ func (p *Binning) GetYBin(y int64) int64 {
 	fy := float64(y)
 	var bin int64
 	if bounds.TopLeft.Y > bounds.BottomRight.Y {
-		maxBin := float64(p.Resolution - 1)
-		bin = int64(maxBin - ((fy - bounds.BottomRight.Y) / p.BinSizeY))
+		bin = int64(float64(p.Resolution) - ((fy - bounds.BottomRight.Y) / p.BinSizeY))
 	} else {
 		bin = int64((fy - bounds.TopLeft.Y) / p.BinSizeY)
 	}
-	return bin
+	return p.clampBin(bin)
 }
 
 // GetZAggValue extracts the value metric based on the type of operation
