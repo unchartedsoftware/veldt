@@ -37,6 +37,7 @@ type HeatmapTile struct {
 	Binning      *param.Binning
 	Terms        *param.TermsFilter
 	Prefixes     *param.PrefixFilter
+	Bool         *param.BoolQuery
 	Range        *param.Range
 	QueryStrings *param.QueryString
 	Metric       *param.MetricAgg
@@ -55,6 +56,7 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 		}
 		terms, _ := param.NewTermsFilter(tileReq)
 		prefixes, _ := param.NewPrefixFilter(tileReq)
+		boolQ, _ := param.NewBoolQuery(tileReq)
 		rang, _ := param.NewRange(tileReq)
 		metric, _ := param.NewMetricAgg(tileReq)
 		queries, _ := param.NewQueryString(tileReq)
@@ -62,6 +64,7 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 		t.Binning = binning
 		t.Terms = terms
 		t.Prefixes = prefixes
+		t.Bool = boolQ
 		t.Range = rang
 		t.QueryStrings = queries
 		t.Metric = metric
@@ -79,6 +82,7 @@ func (g *HeatmapTile) GetParams() []tile.Param {
 		g.Binning,
 		g.Terms,
 		g.Prefixes,
+		g.Bool,
 		g.Range,
 		g.QueryStrings,
 		g.Metric,
@@ -94,6 +98,13 @@ func (g *HeatmapTile) getQuery() elastic.Query {
 			filters.Must(query)
 		}
 	}
+
+	fmt.Println("whaddup")
+	fmt.Println(g.Bool.Query.Source())
+	// if g.Bool != nil {
+	// 	fmt.Println("in da bidness")
+	// }
+
 	// the following filters need to be wrapped in a `must` otherwise the
 	// above `must` query will override them.
 	if g.Terms != nil || g.Prefixes != nil || g.QueryStrings != nil {
