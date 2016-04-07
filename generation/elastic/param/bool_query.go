@@ -31,22 +31,21 @@ func NewBoolQuery(tileReq *tile.Request) (*BoolQuery, error) {
 	}
 	// allocate a new list of term queries the size of musts
 	mustQueries := make([]elastic.Query, len(musts))
+
 	for i, must := range musts {
 		termQueryDef, ok := json.GetChild(must, "term")
 		if ok {
 			field, _ := json.GetString(termQueryDef, "field")
 			termsList, _ := json.GetStringArray(termQueryDef, "terms")
 			mustQueries[i] = elastic.NewTermsQuery(field, termsList)
-
 			continue
 		}
 		rangeQueryDef, ok := json.GetChild(must, "range")
 		if ok {
 			field, _ := json.GetString(rangeQueryDef, "field")
-			from, _ := json.GetNumber(rangeQueryDef, "from")
+			from, _ := json.GetNumber(rangeQueryDef, "from") // really only need one of 'from' or 'to'
 			to, _ := json.GetNumber(rangeQueryDef, "to")
 			mustQueries[i] = elastic.NewRangeQuery(field).From(from).To(to)
-
 			continue
 		}
 	}
@@ -69,6 +68,15 @@ func NewBoolQuery(tileReq *tile.Request) (*BoolQuery, error) {
 
 // GetHash will return a hash of params
 func (bq *BoolQuery) GetHash() string {
-
-	return "this-is-not-a-real-hash"
+	q, _ := bq.Query.Source()
+	if value, ok := q.(map[string]interface{}); ok {
+		// fmt.Println(value)
+		s := fmt.Sprintf("1-- %v", value)
+		s2 := fmt.Sprintf("2-- %v", value)
+		fmt.Println(s)
+		fmt.Println(s2)
+		return s
+	}
+	fmt.Println("Unable to get hash of bool query params")
+	return "not-a-hash:()"
 }
