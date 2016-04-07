@@ -99,11 +99,9 @@ func (g *HeatmapTile) getQuery() elastic.Query {
 		}
 	}
 
-	fmt.Println("whaddup")
-	fmt.Println(g.Bool.Query.Source())
-	// if g.Bool != nil {
-	// 	fmt.Println("in da bidness")
-	// }
+	if g.Bool != nil {
+		filters.Must(g.Bool.Query)
+	}
 
 	// the following filters need to be wrapped in a `must` otherwise the
 	// above `must` query will override them.
