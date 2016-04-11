@@ -2,6 +2,7 @@ package param
 
 import (
 	"fmt"
+	"strings"
 
 	"gopkg.in/olivere/elastic.v3"
 
@@ -69,14 +70,36 @@ func NewBoolQuery(tileReq *tile.Request) (*BoolQuery, error) {
 // GetHash will return a hash of params
 func (bq *BoolQuery) GetHash() string {
 	q, _ := bq.Query.Source()
-	if value, ok := q.(map[string]interface{}); ok {
-		// fmt.Println(value)
-		s := fmt.Sprintf("1-- %v", value)
-		s2 := fmt.Sprintf("2-- %v", value)
-		fmt.Println(s)
-		fmt.Println(s2)
-		return s
+	// fmt.Println(q)
+	top := q.(map[string]interface{})
+
+	var hashes []string
+
+	// get a list of the nodes available under must
+	nodes, found := json.GetChildrenArray(top, "bool", "must")
+
+	if found {
+		for _, node := range nodes {
+			term, ok := json.GetChild(node, "terms")
+			if ok {
+				for field, list := range term {
+					actualTerms := list.([]interface{})[0]
+					hash := fmt.Sprintf("%s:%v", field, actualTerms)
+					hashes = append(hashes, hash)
+				}
+			}
+			rangeJSON, ok := json.GetChild(node, "range")
+			if ok {
+				for key, val := range rangeJSON {
+					rangeBlob := val.(map[string]interface{})
+					hash := fmt.Sprintf("%s:%v:%v", key, rangeBlob["from"], rangeBlob["to"])
+					hashes = append(hashes, hash)
+				}
+			}
+		}
+		return strings.Join(hashes, ":")
 	}
+
 	fmt.Println("Unable to get hash of bool query params")
-	return "not-a-hash:()"
+	return "not-a-hash"
 }
