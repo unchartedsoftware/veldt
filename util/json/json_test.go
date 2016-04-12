@@ -63,9 +63,19 @@ var _ = Describe("json", func() {
 	Describe("GetChildrenArray", func() {
 		It("Should return a list of nodes", func() {
 
-			jsonObject, ok := json.GetChildrenArray(jsonNode, "bool_query", "must")
+			jsonChildArray, ok := json.GetChildrenArray(jsonNode, "bool_query", "must")
 			Expect(ok).To(Equal(true))
-			Expect(len(jsonObject)).To(Equal(2))
+			Expect(len(jsonChildArray)).To(Equal(2))
 		})
+
+		It("should work with only a single path element", func() {
+			jsonChild, ok := json.GetChild(jsonNode, "bool_query")
+			Expect(ok).To(Equal(true))
+			jsonChildArray, ok := json.GetChildrenArray(jsonChild, "must")
+			Expect(ok).To(Equal(true))
+			Expect(len(jsonChildArray)).To(Equal(2))
+
+		})
+
 	})
 })
