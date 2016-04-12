@@ -10,9 +10,6 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
-type boolQuery struct {
-}
-
 // BoolQuery represents params for a boolean query on a tile
 type BoolQuery struct {
 	Query *elastic.BoolQuery
@@ -44,7 +41,7 @@ func NewBoolQuery(tileReq *tile.Request) (*BoolQuery, error) {
 		rangeQueryDef, ok := json.GetChild(must, "range")
 		if ok {
 			field, _ := json.GetString(rangeQueryDef, "field")
-			from, _ := json.GetNumber(rangeQueryDef, "from") // really only need one of 'from' or 'to'
+			from, _ := json.GetNumber(rangeQueryDef, "from") // TODO really only need one of 'from' or 'to'
 			to, _ := json.GetNumber(rangeQueryDef, "to")
 			mustQueries[i] = elastic.NewRangeQuery(field).From(from).To(to)
 			continue
@@ -70,36 +67,44 @@ func NewBoolQuery(tileReq *tile.Request) (*BoolQuery, error) {
 // GetHash will return a hash of params
 func (bq *BoolQuery) GetHash() string {
 	q, _ := bq.Query.Source()
-	// fmt.Println(q)
 	top := q.(map[string]interface{})
 
 	var hashes []string
 
-	// get a list of the nodes available under must
-	nodes, found := json.GetChildrenArray(top, "bool", "must")
+	nodes, ok := json.GetChildrenArray(top, "bool", "must")
 
-	if found {
+	if ok {
 		for _, node := range nodes {
-			term, ok := json.GetChild(node, "terms")
-			if ok {
-				for field, list := range term {
-					actualTerms := list.([]interface{})[0]
-					hash := fmt.Sprintf("%s:%v", field, actualTerms)
-					hashes = append(hashes, hash)
-				}
-			}
-			rangeJSON, ok := json.GetChild(node, "range")
-			if ok {
-				for key, val := range rangeJSON {
-					rangeBlob := val.(map[string]interface{})
-					hash := fmt.Sprintf("%s:%v:%v", key, rangeBlob["from"], rangeBlob["to"])
-					hashes = append(hashes, hash)
-				}
-			}
+			hashes = append(hashes, hashHelper(node))
 		}
 		return strings.Join(hashes, ":")
 	}
-
+	node, ok := json.GetChild(top, "bool", "must")
+	if ok {
+		hashes = append(hashes, hashHelper(node))
+		return strings.Join(hashes, ":")
+	}
 	fmt.Println("Unable to get hash of bool query params")
 	return "not-a-hash"
+}
+
+func hashHelper(node json.Node) string {
+
+	term, ok := json.GetChild(node, "terms")
+	if ok {
+		for field, list := range term {
+			actualTerms := list.([]interface{})[0]
+			hash := fmt.Sprintf("%s:%v", field, actualTerms)
+			return hash
+		}
+	}
+	rangeJSON, ok := json.GetChild(node, "range")
+	if ok {
+		for key, val := range rangeJSON {
+			rangeBlob := val.(map[string]interface{})
+			hash := fmt.Sprintf("%s:%v:%v", key, rangeBlob["from"], rangeBlob["to"])
+			return hash
+		}
+	}
+	return "err"
 }
