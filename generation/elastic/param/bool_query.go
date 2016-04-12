@@ -19,7 +19,6 @@ type BoolQuery struct {
 func NewBoolQuery(tileReq *tile.Request) (*BoolQuery, error) {
 	param, ok := json.GetChild(tileReq.Params, "bool_query")
 	if !ok {
-		fmt.Printf("bool_query parameter missing from tiling request %s\n", tileReq.String())
 		return nil, fmt.Errorf("BoolQuery parameter missing from tiling request %s", tileReq.String())
 	}
 
