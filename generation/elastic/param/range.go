@@ -16,7 +16,7 @@ type rangeQuery struct {
 	To    interface{}
 }
 
-func (q *rangeQuery) getQuery() *elastic.RangeQuery {
+func (q *rangeQuery) getQuery() elastic.Query {
 	return elastic.NewRangeQuery(q.Field).
 		Gte(q.From).
 		Lte(q.To)
@@ -76,8 +76,8 @@ func (p *Range) GetHash() string {
 }
 
 // GetQueries returns a slice of elastic queries.
-func (p *Range) GetQueries() []*elastic.RangeQuery {
-	queries := make([]*elastic.RangeQuery, len(p.Queries))
+func (p *Range) GetQueries() []elastic.Query {
+	queries := make([]elastic.Query, len(p.Queries))
 	for i, query := range p.Queries {
 		queries[i] = query.getQuery()
 	}
