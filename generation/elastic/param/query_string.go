@@ -15,7 +15,7 @@ type queryStringQuery struct {
 	String string
 }
 
-func (q *queryStringQuery) getQuery() *elastic.QueryStringQuery {
+func (q *queryStringQuery) getQuery() elastic.Query {
 	return elastic.NewQueryStringQuery(q.String).
 		Field(q.Field)
 }
@@ -68,8 +68,8 @@ func (p *QueryString) GetHash() string {
 }
 
 // GetQueries returns a slice of elastic queries.
-func (p *QueryString) GetQueries() []*elastic.QueryStringQuery {
-	queries := make([]*elastic.QueryStringQuery, len(p.Queries))
+func (p *QueryString) GetQueries() []elastic.Query {
+	queries := make([]elastic.Query, len(p.Queries))
 	for i, query := range p.Queries {
 		queries[i] = query.getQuery()
 	}
