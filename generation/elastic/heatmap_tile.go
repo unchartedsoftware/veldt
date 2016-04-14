@@ -100,7 +100,7 @@ func (g *HeatmapTile) getQuery() elastic.Query {
 	}
 
 	if g.Bool != nil {
-		filters.Must(g.Bool.Query)
+		filters.Must(g.Bool.GetQuery())
 	}
 
 	// the following filters need to be wrapped in a `must` otherwise the

@@ -12,8 +12,8 @@ import (
 
 // BoolQuery represents params for a boolean query on a tile
 type BoolQuery struct {
-	Query *elastic.BoolQuery
-	Hash  string
+	query *elastic.BoolQuery
+	hash  string
 }
 
 type queryComponent interface {
@@ -65,12 +65,17 @@ func NewBoolQuery(tileReq *tile.Request) (*BoolQuery, error) {
 	// filters, ok := json.GetChildrenArray(param, "filters")
 
 	return &BoolQuery{
-		Query: bq,
-		Hash:  hash,
+		query: bq,
+		hash:  hash,
 	}, nil
 }
 
 // GetHash will return the calculated hash of bool query params
 func (bq *BoolQuery) GetHash() string {
-	return bq.Hash
+	return bq.hash
+}
+
+// GetQuery will return the elastic query object
+func (bq *BoolQuery) GetQuery() elastic.Query {
+	return bq.query
 }
