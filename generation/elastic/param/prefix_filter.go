@@ -38,7 +38,7 @@ type PrefixFilter struct {
 func NewPrefixFilter(tileReq *tile.Request) (*PrefixFilter, error) {
 	params, ok := json.GetChildrenArray(tileReq.Params, "prefix_filter")
 	if !ok {
-		return nil, fmt.Errorf("PrefixFilter parameter missing from tiling request %s", tileReq.String())
+		return nil, ErrMissing
 	}
 	// parse each range query
 	queries := make([]*prefixQuery, len(params))

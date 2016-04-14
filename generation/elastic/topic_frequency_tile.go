@@ -44,8 +44,14 @@ func NewTopicFrequencyTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		rang, _ := param.NewRange(tileReq)
-		histogram, _ := param.NewHistogram(tileReq)
+		rang, err := param.NewRange(tileReq)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
+		histogram, err := param.NewHistogram(tileReq)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
 		t := &TopicFrequencyTile{}
 		t.Tiling = tiling
 		t.Terms = terms

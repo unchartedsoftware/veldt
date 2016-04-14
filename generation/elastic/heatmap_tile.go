@@ -52,11 +52,26 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		terms, _ := param.NewTermsFilter(tileReq)
-		prefixes, _ := param.NewPrefixFilter(tileReq)
-		rang, _ := param.NewRange(tileReq)
-		metric, _ := param.NewMetricAgg(tileReq)
-		queries, _ := param.NewQueryString(tileReq)
+		terms, err := param.NewTermsFilter(tileReq)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
+		prefixes, err := param.NewPrefixFilter(tileReq)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
+		rang, err := param.NewRange(tileReq)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
+		metric, err := param.NewMetricAgg(tileReq)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
+		queries, err := param.NewQueryString(tileReq)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
 		t := &HeatmapTile{}
 		t.Binning = binning
 		t.Terms = terms

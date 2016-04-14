@@ -9,7 +9,7 @@ var (
 	registry = make(map[string]ConnectionConstructor)
 )
 
-// Connection represents an interface for connecting to, setting, and retreiving
+// Connection represents an interface for connecting to, setting, and retrieving
 // values from a key-value database or in-memory storage server.
 type Connection interface {
 	Set(string, []byte) error

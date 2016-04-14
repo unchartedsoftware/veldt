@@ -17,7 +17,10 @@ type MetricAgg struct {
 
 // NewMetricAgg instantiates and returns a new metric aggregation parameter.
 func NewMetricAgg(tileReq *tile.Request) (*MetricAgg, error) {
-	params := json.GetChildOrEmpty(tileReq.Params, "metric_agg")
+	params, ok := json.GetChild(tileReq.Params, "metric_agg")
+	if !ok {
+		return nil, ErrMissing
+	}
 	field, ok := json.GetString(params, "field")
 	if !ok {
 		return nil, fmt.Errorf("MetricAgg `field` parameter missing from tiling request %s", tileReq.String())

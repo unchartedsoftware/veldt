@@ -22,7 +22,10 @@ type TermsAgg struct {
 
 // NewTermsAgg instantiates and returns a new parameter object.
 func NewTermsAgg(tileReq *tile.Request) (*TermsAgg, error) {
-	params := json.GetChildOrEmpty(tileReq.Params, "terms_agg")
+	params, ok := json.GetChild(tileReq.Params, "terms_agg")
+	if !ok {
+		return nil, ErrMissing
+	}
 	field, ok := json.GetString(params, "field")
 	if !ok {
 		return nil, fmt.Errorf("TermsAgg `field` parameter missing from tiling request %s", tileReq.String())

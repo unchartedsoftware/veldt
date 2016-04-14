@@ -26,7 +26,10 @@ type TopHits struct {
 
 // NewTopHits instantiates and returns a new metric aggregation parameter.
 func NewTopHits(tileReq *tile.Request) (*TopHits, error) {
-	params := json.GetChildOrEmpty(tileReq.Params, "top_hits")
+	params, ok := json.GetChild(tileReq.Params, "top_hits")
+	if !ok {
+		return nil, ErrMissing
+	}
 	size := int(json.GetNumberDefault(params, "size", defaultHitsSize))
 	srt := json.GetStringDefault(params, "sort", "")
 	order := json.GetStringDefault(params, "order", defaultOrder)

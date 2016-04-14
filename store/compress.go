@@ -8,7 +8,7 @@ var (
 )
 
 // Compressor represents an interface for compressing and decompressing the
-// generated tile data before adding and after retreiving it from the store.
+// generated tile data before adding and after retrieving it from the store.
 type Compressor interface {
 	Compress([]byte) ([]byte, error)
 	Decompress([]byte) ([]byte, error)
