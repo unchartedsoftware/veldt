@@ -33,16 +33,31 @@ func NewBoolQuery(tileReq *tile.Request) (*BoolQuery, error) {
 	for i, must := range musts {
 		termQueryDef, ok := json.GetChild(must, "term")
 		if ok {
-			field, _ := json.GetString(termQueryDef, "field")
-			termsList, _ := json.GetStringArray(termQueryDef, "terms")
+			field, ok := json.GetString(termQueryDef, "field")
+			if !ok {
+				return nil, fmt.Errorf("Invalid query structure, error retrieving terms query field name. %s", tileReq.String())
+			}
+			termsList, ok := json.GetStringArray(termQueryDef, "terms")
+			if !ok {
+				return nil, fmt.Errorf("Invalid query structure, error retrieving terms list. %s", tileReq.String())
+			}
 			mustQueryComponents[i] = &termQuery{field, termsList}
 			continue
 		}
 		rangeQueryDef, ok := json.GetChild(must, "range")
 		if ok {
-			field, _ := json.GetString(rangeQueryDef, "field")
-			from, _ := json.GetNumber(rangeQueryDef, "from") // TODO really only need one of 'from' or 'to'
-			to, _ := json.GetNumber(rangeQueryDef, "to")
+			field, ok := json.GetString(rangeQueryDef, "field")
+			if !ok {
+				return nil, fmt.Errorf("Invalid query structure, error retrieving range query field name. %s", tileReq.String())
+			}
+			from, ok := json.GetNumber(rangeQueryDef, "from") // TODO really only need one of 'from' or 'to'
+			if !ok {
+				return nil, fmt.Errorf("Invalid query structure, error retrieving range query 'from' key. %s", tileReq.String())
+			}
+			to, ok := json.GetNumber(rangeQueryDef, "to")
+			if !ok {
+				return nil, fmt.Errorf("Invalid query structure, error retrieving range query 'to' key. %s", tileReq.String())
+			}
 			mustQueryComponents[i] = &rangeQuery{field, from, to}
 			continue
 		}
