@@ -15,57 +15,60 @@ var _ = Describe("bool_query", func() {
 
 	const (
 		jsonParams1 = `{
-	    "binning":{
-	        "x":"locality_bag.dateBegin",
-	        "left":1350416916775,
-	        "right":1446058904529,
-	        "y":"feature.author_firstmessage_rank",
-	        "bottom":0,
-	        "top":78891,
-	        "resolution":256
-	    },
-	    "bool_query":{
-	        "must": [
-	            {
-	                "term": {
-	                    "field": "feature.firearm_type",
-	                    "terms":  ["Rifle", "Handgun"]
-	                }
-	            },
-	            {
-	                "range": {
-	                    "field": "feature.indicator_risky",
-	                    "from": 0.5,
-	                    "to": 3
-	                }
+	   "binning":{
+	      "x":"locality_bag.dateBegin",
+	      "left":1350416916775,
+	      "right":1446058904529,
+	      "y":"feature.author_firstmessage_rank",
+	      "bottom":0,
+	      "top":78891,
+	      "resolution":256
+	   },
+	   "bool_query":{
+	      "must":[
+	         {
+	            "term":{
+	               "field":"feature.firearm_type",
+	               "terms":[
+	                  "Rifle",
+	                  "Handgun"
+	               ]
 	            }
-	        ],
-	        "must_not": [],
-	        "should": [],
-	        "filter": []
-	    }
+	         },
+	         {
+	            "range":{
+	               "field":"feature.indicator_risky",
+	               "from":0.5,
+	               "to":3
+	            }
+	         }
+	      ]
+	   }
 	}`
 		jsonParams2 = `{
-			"binning":{
-					"x":"locality_bag.dateBegin",
-					"left":1350416916775,
-					"right":1446058904529,
-					"y":"feature.author_firstmessage_rank",
-					"bottom":0,
-					"top":78891,
-					"resolution":256
-			},
-			"bool_query":{
-					"must": [
-							{
-									"term": {
-											"field": "feature.author",
-											"terms":  ["Penn", "Teller"]
-									}
-							}
-					]
-			}
-	}`
+		   "binning":{
+		      "x":"locality_bag.dateBegin",
+		      "left":1350416916775,
+		      "right":1446058904529,
+		      "y":"feature.author_firstmessage_rank",
+		      "bottom":0,
+		      "top":78891,
+		      "resolution":256
+		   },
+		   "bool_query":{
+		      "must":[
+		         {
+		            "term":{
+		               "field":"feature.author",
+		               "terms":[
+		                  "Penn",
+		                  "Teller"
+		               ]
+		            }
+		         }
+		      ]
+		   }
+		}`
 	)
 
 	var (
