@@ -7,7 +7,6 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
-	"github.com/unchartedsoftware/prism/generation/elastic/throttle"
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
@@ -42,10 +41,22 @@ func NewTopCountTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		terms, _ := param.NewTermsFilter(tileReq)
-		prefixes, _ := param.NewPrefixFilter(tileReq)
-		rang, _ := param.NewRange(tileReq)
-		histogram, _ := param.NewHistogram(tileReq)
+		terms, err := param.NewTermsFilter(tileReq)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
+		prefixes, err := param.NewPrefixFilter(tileReq)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
+		rang, err := param.NewRange(tileReq)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
+		histogram, err := param.NewHistogram(tileReq)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
 		t := &TopCountTile{}
 		t.Tiling = tiling
 		t.TopTerms = topTerms
@@ -159,7 +170,7 @@ func (g *TopCountTile) GetTile() ([]byte, error) {
 		Query(g.getQuery()).
 		Aggregation(termsAggName, g.getAgg())
 	// send query through equalizer
-	res, err := throttle.Send(query)
+	res, err := query.Do()
 	if err != nil {
 		return nil, err
 	}

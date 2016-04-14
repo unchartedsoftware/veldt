@@ -25,7 +25,7 @@ type queryComponent interface {
 func NewBoolQuery(tileReq *tile.Request) (*BoolQuery, error) {
 	musts, ok := json.GetChildrenArray(tileReq.Params, "bool_query", "must")
 	if !ok {
-		return nil, fmt.Errorf("bool_query/must clause path not found in request params %s", tileReq.String())
+		return nil, ErrMissing
 	}
 	// allocate a new list of term queries the size of musts
 	mustQueryComponents := make([]queryComponent, len(musts))

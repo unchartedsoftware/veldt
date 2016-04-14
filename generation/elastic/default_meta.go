@@ -111,7 +111,7 @@ func (g *DefaultMeta) GetMeta() ([]byte, error) {
 	// 'first' and only node.
 	index, ok := jsonutil.GetRandomChild(mapping)
 	if !ok {
-		return nil, fmt.Errorf("Unable to retreive the mappings response for %s",
+		return nil, fmt.Errorf("Unable to retrieve the mappings response for %s",
 			metaReq.Index)
 	}
 	props, ok := jsonutil.GetChild(index, "mappings", "datum", "properties")

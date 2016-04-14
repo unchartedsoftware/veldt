@@ -38,7 +38,7 @@ type Range struct {
 func NewRange(tileReq *tile.Request) (*Range, error) {
 	params, ok := json.GetChildrenArray(tileReq.Params, "range")
 	if !ok {
-		return nil, fmt.Errorf("Range parameter missing from tiling request %s", tileReq.String())
+		return nil, ErrMissing
 	}
 	// parse each range query
 	queries := make([]*rangeQuery, len(params))

@@ -35,7 +35,7 @@ type QueryString struct {
 func NewQueryString(tileReq *tile.Request) (*QueryString, error) {
 	params, ok := json.GetChildrenArray(tileReq.Params, "query_string")
 	if !ok {
-		return nil, fmt.Errorf("QueryString parameter missing from tiling request %s", tileReq.String())
+		return nil, ErrMissing
 	}
 	// parse each range query
 	queries := make([]*queryStringQuery, len(params))

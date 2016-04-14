@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defaultSize = 10
+	defaultTermsSize = 10
 )
 
 // TopTerms represents params for extracting particular topics.
@@ -21,14 +21,17 @@ type TopTerms struct {
 
 // NewTopTerms instantiates and returns a new topic parameter object.
 func NewTopTerms(tileReq *tile.Request) (*TopTerms, error) {
-	params := json.GetChildOrEmpty(tileReq.Params, "top_terms")
+	params, ok := json.GetChild(tileReq.Params, "top_terms")
+	if !ok {
+		return nil, ErrMissing
+	}
 	field, ok := json.GetString(params, "field")
 	if !ok {
 		return nil, fmt.Errorf("TopTerms `field` parameter missing from tiling request %s", tileReq.String())
 	}
 	return &TopTerms{
 		Field: field,
-		Size:  uint32(json.GetNumberDefault(params, "size", defaultSize)),
+		Size:  uint32(json.GetNumberDefault(params, "size", defaultTermsSize)),
 	}, nil
 }
 

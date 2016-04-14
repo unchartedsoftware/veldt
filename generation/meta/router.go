@@ -21,50 +21,35 @@ func (r *Request) String() string {
 }
 
 // getMetaHash returns a unique hash string for the given type.
-func getMetaHash(metaReq *Request, metaGen Generator) string {
+func getMetaHash(req *Request, gen Generator) string {
 	return fmt.Sprintf("meta:%s:%s:%s",
-		metaGen.GetHash(),
-		metaReq.Type,
-		metaReq.Index)
+		gen.GetHash(),
+		req.Type,
+		req.Index)
 }
 
 // generateAndStoreMeta generates the meta data and puts it in the store.
-func generateAndStoreMeta(metaHash string, metaReq *Request, metaGen Generator) error {
+func generateAndStoreMeta(hash string, req *Request, gen Generator) error {
 	// generate meta
-	meta, err := metaGen.GetMeta()
+	meta, err := gen.GetMeta()
 	if err != nil {
 		return err
 	}
-	// get store connection
-	conn, err := store.GetConnection(metaReq.Store)
-	if err != nil {
-		return err
-	}
-	// add tile to store
-	err = conn.Set(metaHash, meta)
-	conn.Close()
-	if err != nil {
-		return err
-	}
-	return nil
+	// add meta data to store
+	return store.Set(req.Store, hash, meta[0:])
 }
 
 // GenerateMeta issues a generation request and returns an error when it has
 // completed.
-func GenerateMeta(metaReq *Request) error {
+func GenerateMeta(req *Request) error {
 	// get meta generator by id
-	metaGen, err := GetGenerator(metaReq)
+	gen, err := GetGenerator(req)
 	if err != nil {
 		return err
 	}
-	metaHash := getMetaHash(metaReq, metaGen)
-	// get store connection
-	conn, err := store.GetConnection(metaReq.Store)
-	if err != nil {
-		return err
-	}
-	// check if meta exists in store
-	exists, err := conn.Exists(metaHash)
+	hash := getMetaHash(req, gen)
+	// check if meta data already exists in store
+	exists, err := store.Exists(req.Store, hash)
 	if err != nil {
 		return err
 	}
@@ -73,27 +58,17 @@ func GenerateMeta(metaReq *Request) error {
 		return nil
 	}
 	// otherwise, generate the metadata and return error
-	return getMetaPromise(metaHash, metaReq, metaGen)
+	return getMetaPromise(hash, req, gen)
 }
 
 // GetMetaFromStore returns serialized meta data from store.
-func GetMetaFromStore(metaReq *Request) ([]byte, error) {
+func GetMetaFromStore(req *Request) ([]byte, error) {
 	// get meta generator by id
-	metaGen, err := GetGenerator(metaReq)
+	gen, err := GetGenerator(req)
 	if err != nil {
 		return nil, err
 	}
-	metaHash := getMetaHash(metaReq, metaGen)
-	// get store connection
-	conn, err := store.GetConnection(metaReq.Store)
-	if err != nil {
-		return nil, err
-	}
+	hash := getMetaHash(req, gen)
 	// get meta data from store
-	meta, err := conn.Get(metaHash)
-	conn.Close()
-	if err != nil {
-		return nil, err
-	}
-	return meta, nil
+	return store.Get(req.Store, hash)
 }

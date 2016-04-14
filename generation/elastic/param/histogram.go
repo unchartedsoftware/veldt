@@ -17,7 +17,10 @@ type Histogram struct {
 
 // NewHistogram instantiates and returns a new sentiment parameter object.
 func NewHistogram(tileReq *tile.Request) (*Histogram, error) {
-	params := json.GetChildOrEmpty(tileReq.Params, "histogram")
+	params, ok := json.GetChild(tileReq.Params, "histogram")
+	if !ok {
+		return nil, ErrMissing
+	}
 	field, ok := json.GetString(params, "field")
 	if !ok {
 		return nil, fmt.Errorf("Histogram `field` parameter missing from tiling request %s", tileReq.String())

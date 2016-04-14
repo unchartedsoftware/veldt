@@ -38,7 +38,7 @@ type TermsFilter struct {
 func NewTermsFilter(tileReq *tile.Request) (*TermsFilter, error) {
 	params, ok := json.GetChildrenArray(tileReq.Params, "terms_filter")
 	if !ok {
-		return nil, fmt.Errorf("TermsFilter parameter missing from tiling request %s", tileReq.String())
+		return nil, ErrMissing
 	}
 	// parse each range query
 	queries := make([]*termQuery, len(params))
