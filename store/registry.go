@@ -23,15 +23,14 @@ type Connection interface {
 type ConnectionConstructor func() (Connection, error)
 
 // Register registers a meta data generator under the provided type id string.
-func Register(typeID string, conn ConnectionConstructor) {
-	registry[typeID] = conn
+func Register(id string, conn ConnectionConstructor) {
+	registry[id] = conn
 }
 
-// GetConnection instantiates a and returns a store connection.
-func GetConnection(typeID string) (Connection, error) {
-	ctor, ok := registry[typeID]
+func getConnection(id string) (Connection, error) {
+	ctor, ok := registry[id]
 	if !ok {
-		return nil, fmt.Errorf("Store connection type '%s' is not recognized in request", typeID)
+		return nil, fmt.Errorf("Store connection type '%s' is not recognized in request", id)
 	}
 	return ctor()
 }
