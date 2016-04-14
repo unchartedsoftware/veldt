@@ -8,17 +8,17 @@ var (
 	promises = promise.NewMap()
 )
 
-func getTilePromise(tileHash string, tileReq *Request, tileGen Generator) error {
-	p, exists := promises.GetOrCreate(tileHash)
+func getTilePromise(hash string, req *Request, gen Generator) error {
+	p, exists := promises.GetOrCreate(hash)
 	if exists {
 		// promise already existed, return it
 		return p.Wait()
 	}
 	// promise had to be created, generate tile
 	go func() {
-		err := generateAndStoreTile(tileHash, tileReq, tileGen)
+		err := generateAndStoreTile(hash, req, gen)
 		p.Resolve(err)
-		promises.Remove(tileHash)
+		promises.Remove(hash)
 	}()
 	return p.Wait()
 }

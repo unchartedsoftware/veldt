@@ -28,27 +28,23 @@ func (r *Request) String() string {
 		r.Coord.Y)
 }
 
-func isNil(a interface{}) bool {
-	defer func() { recover() }()
-	return a == nil || reflect.ValueOf(a).IsNil()
-}
-
-func getTileHash(tileReq *Request, tileGen Generator) string {
-	tileParams := tileGen.GetParams()
+func getTileHash(req *Request, gen Generator) string {
+	tileParams := gen.GetParams()
 	// create hashes array
 	var hashes []string
 	// add tile req hash first
 	hash := fmt.Sprintf("tile:%s:%s:%s:%d:%d:%d",
-		tileGen.GetHash(),
-		tileReq.Type,
-		tileReq.Index,
-		tileReq.Coord.Z,
-		tileReq.Coord.X,
-		tileReq.Coord.Y)
+		gen.GetHash(),
+		req.Type,
+		req.Index,
+		req.Coord.Z,
+		req.Coord.X,
+		req.Coord.Y)
 	hashes = append(hashes, hash)
 	// add individual param hashes
 	for _, p := range tileParams {
-		if isNil(p) {
+		// check if the value held by the typed interface is null (a typed interface itself is never null)
+		if reflect.ValueOf(p).IsNil() {
 			hashes = append(hashes, "-")
 		} else {
 			hashes = append(hashes, p.GetHash())
@@ -58,44 +54,28 @@ func getTileHash(tileReq *Request, tileGen Generator) string {
 }
 
 // generateAndStoreTile generates the tile and puts it in the store.
-func generateAndStoreTile(tileHash string, tileReq *Request, tileGen Generator) error {
-	// generate the tile
-	tileData, err := tileGen.GetTile()
-	if err != nil {
-		return err
-	}
-	// get store connection
-	conn, err := store.GetConnection(tileReq.Store)
+func generateAndStoreTile(hash string, req *Request, gen Generator) error {
+	// queue the tile to be generated
+	tile, err := queue(gen)
 	if err != nil {
 		return err
 	}
 	// add tile to store
-	err = conn.Set(tileHash, tileData[0:])
-	conn.Close()
-	if err != nil {
-		return err
-	}
-	return nil
+	return store.Set(req.Store, hash, tile[0:])
 }
 
 // GenerateTile issues a generation request and returns an error when it has
 // completed.
-func GenerateTile(tileReq *Request) error {
+func GenerateTile(req *Request) error {
 	// get parameters
-	tileGen, err := GetGenerator(tileReq)
-	if err != nil {
-		return err
-	}
-	// get store connection
-	conn, err := store.GetConnection(tileReq.Store)
+	gen, err := GetGenerator(req)
 	if err != nil {
 		return err
 	}
 	// get tile hash
-	tileHash := getTileHash(tileReq, tileGen)
-	// check if tile exists in store
-	exists, err := conn.Exists(tileHash)
-	conn.Close()
+	hash := getTileHash(req, gen)
+	// check if tile already exists in store
+	exists, err := store.Exists(req.Store, hash)
 	if err != nil {
 		return err
 	}
@@ -104,28 +84,18 @@ func GenerateTile(tileReq *Request) error {
 		return nil
 	}
 	// otherwise, initiate the tiling job and return error
-	return getTilePromise(tileHash, tileReq, tileGen)
+	return getTilePromise(hash, req, gen)
 }
 
 // GetTileFromStore returns a serialized tile from store.
-func GetTileFromStore(tileReq *Request) ([]byte, error) {
+func GetTileFromStore(req *Request) ([]byte, error) {
 	// get parameters
-	tileGen, err := GetGenerator(tileReq)
+	gen, err := GetGenerator(req)
 	if err != nil {
 		return nil, err
 	}
 	// get tile hash
-	tileHash := getTileHash(tileReq, tileGen)
-	// get store connection
-	conn, err := store.GetConnection(tileReq.Store)
-	if err != nil {
-		return nil, err
-	}
+	hash := getTileHash(req, gen)
 	// get tile data from store
-	tile, err := conn.Get(tileHash)
-	conn.Close()
-	if err != nil {
-		return nil, err
-	}
-	return tile, nil
+	return store.Get(req.Store, hash)
 }
