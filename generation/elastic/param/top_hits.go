@@ -1,0 +1,69 @@
+package param
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+
+	"gopkg.in/olivere/elastic.v3"
+
+	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/util/json"
+)
+
+const (
+	defaultHitsSize = 25
+	defaultOrder    = "desc"
+)
+
+// TopHits represents params for binning the data within the tile.
+type TopHits struct {
+	Size    int
+	Include []string
+	Sort    string
+	Order   string
+}
+
+// NewTopHits instantiates and returns a new metric aggregation parameter.
+func NewTopHits(tileReq *tile.Request) (*TopHits, error) {
+	params := json.GetChildOrEmpty(tileReq.Params, "top_hits")
+	size := int(json.GetNumberDefault(params, "size", defaultHitsSize))
+	srt := json.GetStringDefault(params, "sort", "")
+	order := json.GetStringDefault(params, "order", defaultOrder)
+	include, ok := json.GetStringArray(params, "include")
+	if !ok {
+		include = nil
+	} else {
+		sort.Strings(include)
+	}
+	return &TopHits{
+		Size:    size,
+		Include: include,
+		Sort:    srt,
+		Order:   order,
+	}, nil
+}
+
+// GetHash returns a string hash of the parameter state.
+func (p *TopHits) GetHash() string {
+	return fmt.Sprintf("%d:%s:%s:%s",
+		p.Size,
+		p.Sort,
+		p.Order,
+		strings.Join(p.Include, ":"))
+}
+
+// GetAgg returns an elastic aggregation.
+func (p *TopHits) GetAgg() elastic.Aggregation {
+	agg := elastic.NewTopHitsAggregation().
+		Size(p.Size)
+	if len(p.Sort) > 0 {
+		if p.Order == "desc" {
+			agg.Sort(p.Sort, false)
+		} else {
+			agg.Sort(p.Sort, true)
+		}
+	}
+	// ...
+	return agg
+}

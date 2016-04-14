@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defaultSize = 10
+	defaultTermsSize = 10
 )
 
 // TopTerms represents params for extracting particular topics.
@@ -28,7 +28,7 @@ func NewTopTerms(tileReq *tile.Request) (*TopTerms, error) {
 	}
 	return &TopTerms{
 		Field: field,
-		Size:  uint32(json.GetNumberDefault(params, "size", defaultSize)),
+		Size:  uint32(json.GetNumberDefault(params, "size", defaultTermsSize)),
 	}, nil
 }
 

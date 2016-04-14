@@ -7,7 +7,6 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
-	"github.com/unchartedsoftware/prism/generation/elastic/throttle"
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
@@ -159,7 +158,7 @@ func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
 	// add all filter aggregations
 	query = g.addAggs(query)
 	// send query through equalizer
-	res, err := throttle.Send(query)
+	res, err := query.Do()
 	if err != nil {
 		return nil, err
 	}
