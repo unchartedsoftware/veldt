@@ -1,8 +1,6 @@
 package json
 
-import (
-	"strconv"
-)
+import "strconv"
 
 // Node represents a single json node as a map[string]interface{}
 type Node map[string]interface{}
@@ -190,23 +188,31 @@ func GetArray(json Node, key string) ([]interface{}, bool) {
 
 // GetChildrenArray returns an []map[string]interface{} property under the given
 // key.
-func GetChildrenArray(json Node, key string) ([]Node, bool) {
-	v, ok := json[key]
+func GetChildrenArray(json Node, path ...string) ([]Node, bool) {
+
+	pathLength := len(path)
+	slicedPath := path[0 : pathLength-1]
+	lastKey := path[pathLength-1]
+
+	child, ok := GetChild(json, slicedPath...)
+
 	if !ok {
 		return nil, false
 	}
-	vs, ok := v.([]interface{})
+
+	takeAway := child[lastKey]
+	ls, ok := takeAway.([]interface{})
+
 	if !ok {
 		return nil, false
 	}
-	nodes := make([]Node, len(vs))
-	for i, v := range vs {
-		val, ok := v.(map[string]interface{})
-		if !ok {
-			return nil, false
-		}
-		nodes[i] = val
+
+	nodes := make([]Node, len(ls))
+
+	for i, v := range ls {
+		nodes[i] = v.(map[string]interface{})
 	}
+
 	return nodes, true
 }
 
