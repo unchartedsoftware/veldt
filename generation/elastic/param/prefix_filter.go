@@ -15,8 +15,8 @@ type prefixQuery struct {
 	Prefixes []string
 }
 
-func (q *prefixQuery) getQueries() []*elastic.PrefixQuery {
-	prefixes := make([]*elastic.PrefixQuery, len(q.Prefixes))
+func (q *prefixQuery) getQueries() []elastic.Query {
+	prefixes := make([]elastic.Query, len(q.Prefixes))
 	for i, prefix := range q.Prefixes {
 		prefixes[i] = elastic.NewPrefixQuery(q.Field, prefix)
 	}
@@ -71,8 +71,8 @@ func (p *PrefixFilter) GetHash() string {
 }
 
 // GetQueries returns a slice of elastic queries.
-func (p *PrefixFilter) GetQueries() []*elastic.PrefixQuery {
-	var queries []*elastic.PrefixQuery
+func (p *PrefixFilter) GetQueries() []elastic.Query {
+	var queries []elastic.Query
 	for _, query := range p.Queries {
 		queries = append(queries, query.getQueries()...)
 	}

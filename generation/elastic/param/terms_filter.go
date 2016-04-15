@@ -15,7 +15,7 @@ type termQuery struct {
 	Terms []string
 }
 
-func (q *termQuery) getQuery() *elastic.TermsQuery {
+func (q *termQuery) getQuery() elastic.Query {
 	terms := make([]interface{}, len(q.Terms))
 	for i, term := range q.Terms {
 		terms[i] = term
@@ -71,8 +71,8 @@ func (p *TermsFilter) GetHash() string {
 }
 
 // GetQueries returns a slice of elastic queries.
-func (p *TermsFilter) GetQueries() []*elastic.TermsQuery {
-	queries := make([]*elastic.TermsQuery, len(p.Queries))
+func (p *TermsFilter) GetQueries() []elastic.Query {
+	queries := make([]elastic.Query, len(p.Queries))
 	for i, query := range p.Queries {
 		queries[i] = query.getQuery()
 	}
