@@ -7,6 +7,8 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
+	"github.com/unchartedsoftware/prism/generation/elastic/param/agg"
+	"github.com/unchartedsoftware/prism/generation/elastic/param/query"
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
@@ -15,12 +17,10 @@ import (
 type TopFrequencyTile struct {
 	TileGenerator
 	Tiling    *param.Tiling
-	TopTerms  *param.TopTerms
-	Terms     *param.TermsFilter
-	Prefixes  *param.PrefixFilter
-	Range     *param.Range
-	Time      *param.DateHistogram
-	Histogram *param.Histogram
+	TopTerms  *agg.TopTerms
+	Time      *agg.DateHistogram
+	Query     *query.Bool
+	Histogram *agg.Histogram
 }
 
 // NewTopFrequencyTile instantiates and returns a pointer to a new generator.
@@ -30,41 +30,33 @@ func NewTopFrequencyTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
+		// required
 		tiling, err := param.NewTiling(tileReq)
 		if err != nil {
 			return nil, err
 		}
-		topTerms, err := param.NewTopTerms(tileReq)
+		topTerms, err := agg.NewTopTerms(tileReq.Params)
 		if err != nil {
 			return nil, err
 		}
-		time, err := param.NewDateHistogram(tileReq)
+		time, err := agg.NewDateHistogram(tileReq.Params)
 		if err != nil {
 			return nil, err
 		}
-		terms, err := param.NewTermsFilter(tileReq)
+		// optional
+		query, err := query.NewBool(tileReq.Params)
 		if param.IsOptionalErr(err) {
 			return nil, err
 		}
-		prefixes, err := param.NewPrefixFilter(tileReq)
-		if param.IsOptionalErr(err) {
-			return nil, err
-		}
-		rang, err := param.NewRange(tileReq)
-		if param.IsOptionalErr(err) {
-			return nil, err
-		}
-		histogram, err := param.NewHistogram(tileReq)
+		histogram, err := agg.NewHistogram(tileReq.Params)
 		if param.IsOptionalErr(err) {
 			return nil, err
 		}
 		t := &TopFrequencyTile{}
 		t.Tiling = tiling
 		t.TopTerms = topTerms
-		t.Terms = terms
-		t.Prefixes = prefixes
 		t.Time = time
-		t.Range = rang
+		t.Query = query
 		t.Histogram = histogram
 		t.req = tileReq
 		t.host = host
@@ -78,49 +70,19 @@ func NewTopFrequencyTile(host, port string) tile.GeneratorConstructor {
 func (g *TopFrequencyTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Tiling,
-		g.Terms,
 		g.TopTerms,
-		g.Prefixes,
-		g.Range,
 		g.Time,
+		g.Query,
 		g.Histogram,
 	}
 }
 
 func (g *TopFrequencyTile) getQuery() elastic.Query {
-	// optional filters
-	filters := elastic.NewBoolQuery()
-	// if range param is provided, add range queries
-	if g.Range != nil {
-		for _, query := range g.Range.GetQueries() {
-			filters.Must(query)
-		}
-	}
-	// the following filters need to be wrapped in a `must` otherwise the
-	// above `must` query will override them.
-	if g.Terms != nil || g.Prefixes != nil {
-		// create sub-filter
-		subfilters := elastic.NewBoolQuery()
-		// if terms param is provided, add terms queries
-		if g.Terms != nil {
-			for _, query := range g.Terms.GetQueries() {
-				subfilters.Should(query)
-			}
-		}
-		// if prefixes param is provided, add prefix queries
-		if g.Prefixes != nil {
-			for _, query := range g.Prefixes.GetQueries() {
-				subfilters.Should(query)
-			}
-		}
-		// add sub-filter to the parent filter
-		filters.Must(subfilters)
-	}
 	return elastic.NewBoolQuery().
 		Must(g.Tiling.GetXQuery()).
 		Must(g.Tiling.GetYQuery()).
 		Must(g.Time.GetQuery()).
-		Must(filters)
+		Must(g.Query.GetQuery())
 }
 
 func (g *TopFrequencyTile) getAgg() elastic.Aggregation {

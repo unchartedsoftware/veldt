@@ -1,11 +1,11 @@
-package param
+package agg
 
 import (
 	"fmt"
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/generation/elastic/param"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -20,14 +20,14 @@ type TopTerms struct {
 }
 
 // NewTopTerms instantiates and returns a new topic parameter object.
-func NewTopTerms(tileReq *tile.Request) (*TopTerms, error) {
-	params, ok := json.GetChild(tileReq.Params, "top_terms")
+func NewTopTerms(params map[string]interface{}) (*TopTerms, error) {
+	params, ok := json.GetChild(params, "top_terms")
 	if !ok {
-		return nil, ErrMissing
+		return nil, param.ErrMissing
 	}
 	field, ok := json.GetString(params, "field")
 	if !ok {
-		return nil, fmt.Errorf("TopTerms `field` parameter missing from tiling request %s", tileReq.String())
+		return nil, fmt.Errorf("TopTerms `field` parameter missing from tiling param %v", params)
 	}
 	return &TopTerms{
 		Field: field,

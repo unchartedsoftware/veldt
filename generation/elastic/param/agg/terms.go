@@ -1,4 +1,4 @@
-package param
+package agg
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/generation/elastic/param"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -14,41 +14,41 @@ const (
 	defaultTextField = "text"
 )
 
-// TermsAgg represents params for extracting term counts.
-type TermsAgg struct {
+// Terms represents params for extracting term counts.
+type Terms struct {
 	Field string
 	Terms []string
 }
 
-// NewTermsAgg instantiates and returns a new parameter object.
-func NewTermsAgg(tileReq *tile.Request) (*TermsAgg, error) {
-	params, ok := json.GetChild(tileReq.Params, "terms_agg")
+// NewTerms instantiates and returns a new parameter object.
+func NewTerms(params map[string]interface{}) (*Terms, error) {
+	params, ok := json.GetChild(params, "terms_agg")
 	if !ok {
-		return nil, ErrMissing
+		return nil, param.ErrMissing
 	}
 	field, ok := json.GetString(params, "field")
 	if !ok {
-		return nil, fmt.Errorf("TermsAgg `field` parameter missing from tiling request %s", tileReq.String())
+		return nil, fmt.Errorf("Terms `field` parameter missing from tiling param %v", params)
 	}
 	terms, ok := json.GetStringArray(params, "terms")
 	if !ok {
-		return nil, fmt.Errorf("TermsAgg `terms` parameter missing from tiling request %s", tileReq.String())
+		return nil, fmt.Errorf("Terms `terms` parameter missing from tiling param %v", params)
 	}
-	return &TermsAgg{
+	return &Terms{
 		Field: field,
 		Terms: terms,
 	}, nil
 }
 
 // GetHash returns a string hash of the parameter state.
-func (p *TermsAgg) GetHash() string {
+func (p *Terms) GetHash() string {
 	return fmt.Sprintf("%s:%s",
 		p.Field,
 		strings.Join(p.Terms, ":"))
 }
 
 // GetQuery returns an elastic query.
-func (p *TermsAgg) GetQuery() *elastic.TermsQuery {
+func (p *Terms) GetQuery() *elastic.TermsQuery {
 	terms := make([]interface{}, len(p.Terms))
 	for i, term := range p.Terms {
 		terms[i] = term
@@ -57,7 +57,7 @@ func (p *TermsAgg) GetQuery() *elastic.TermsQuery {
 }
 
 // GetAggregations returns an elastic aggregation.
-func (p *TermsAgg) GetAggregations() map[string]*elastic.FilterAggregation {
+func (p *Terms) GetAggregations() map[string]*elastic.FilterAggregation {
 	aggs := make(map[string]*elastic.FilterAggregation, len(p.Terms))
 	// add all filter aggregations
 	for _, term := range p.Terms {

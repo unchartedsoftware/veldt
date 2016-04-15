@@ -7,6 +7,8 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
+	"github.com/unchartedsoftware/prism/generation/elastic/param/agg"
+	"github.com/unchartedsoftware/prism/generation/elastic/param/query"
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
@@ -14,9 +16,9 @@ import (
 type TopicCountTile struct {
 	TileGenerator
 	Tiling    *param.Tiling
-	Terms     *param.TermsAgg
-	Range     *param.Range
-	Histogram *param.Histogram
+	Terms     *agg.Terms
+	Query     *query.Bool
+	Histogram *agg.Histogram
 }
 
 // NewTopicCountTile instantiates and returns a pointer to a new generator.
@@ -26,26 +28,28 @@ func NewTopicCountTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
+		// required
 		tiling, err := param.NewTiling(tileReq)
 		if err != nil {
 			return nil, err
 		}
-		terms, err := param.NewTermsAgg(tileReq)
+		terms, err := agg.NewTerms(tileReq.Params)
 		if err != nil {
 			return nil, err
 		}
-		rang, err := param.NewRange(tileReq)
+		// optional
+		query, err := query.NewBool(tileReq.Params)
 		if param.IsOptionalErr(err) {
 			return nil, err
 		}
-		histogram, err := param.NewHistogram(tileReq)
+		histogram, err := agg.NewHistogram(tileReq.Params)
 		if param.IsOptionalErr(err) {
 			return nil, err
 		}
 		t := &TopicCountTile{}
 		t.Tiling = tiling
 		t.Terms = terms
-		t.Range = rang
+		t.Query = query
 		t.Histogram = histogram
 		t.req = tileReq
 		t.host = host
@@ -60,28 +64,16 @@ func (g *TopicCountTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Tiling,
 		g.Terms,
-		g.Range,
+		g.Query,
 		g.Histogram,
 	}
 }
 
 func (g *TopicCountTile) getQuery() elastic.Query {
-	// optional filters
-	filters := elastic.NewBoolQuery()
-	// if range param is provided, add range queries
-	if g.Range != nil {
-		for _, query := range g.Range.GetQueries() {
-			filters.Must(query)
-		}
-	}
-	// if terms param is provided, add terms query
-	if g.Terms != nil {
-		filters.Must(g.Terms.GetQuery())
-	}
 	return elastic.NewBoolQuery().
 		Must(g.Tiling.GetXQuery()).
 		Must(g.Tiling.GetYQuery()).
-		Must(filters)
+		Must(g.Query.GetQuery())
 }
 
 func (g *TopicCountTile) addAggs(query *elastic.SearchService) *elastic.SearchService {

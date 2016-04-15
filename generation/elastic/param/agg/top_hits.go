@@ -1,4 +1,4 @@
-package param
+package agg
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/generation/elastic/param"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -25,10 +25,10 @@ type TopHits struct {
 }
 
 // NewTopHits instantiates and returns a new metric aggregation parameter.
-func NewTopHits(tileReq *tile.Request) (*TopHits, error) {
-	params, ok := json.GetChild(tileReq.Params, "top_hits")
+func NewTopHits(params map[string]interface{}) (*TopHits, error) {
+	params, ok := json.GetChild(params, "top_hits")
 	if !ok {
-		return nil, ErrMissing
+		return nil, param.ErrMissing
 	}
 	size := int(json.GetNumberDefault(params, "size", defaultHitsSize))
 	srt := json.GetStringDefault(params, "sort", "")
