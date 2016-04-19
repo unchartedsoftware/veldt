@@ -28,7 +28,7 @@ type TopHits struct {
 func NewTopHits(params map[string]interface{}) (*TopHits, error) {
 	params, ok := json.GetChild(params, "top_hits")
 	if !ok {
-		return nil, param.ErrMissing
+		return nil, fmt.Errorf("%s `top_hits` aggregation parameter", param.MissingPrefix)
 	}
 	size := int(json.GetNumberDefault(params, "size", defaultHitsSize))
 	srt := json.GetStringDefault(params, "sort", "")

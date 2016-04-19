@@ -19,7 +19,7 @@ type Metric struct {
 func NewMetric(params map[string]interface{}) (*Metric, error) {
 	params, ok := json.GetChild(params, "metric")
 	if !ok {
-		return nil, param.ErrMissing
+		return nil, fmt.Errorf("%s `metric` aggregation parameter", param.MissingPrefix)
 	}
 	field, ok := json.GetString(params, "field")
 	if !ok {

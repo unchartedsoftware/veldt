@@ -43,11 +43,11 @@ func NewTopFrequencyTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		// optional
 		query, err := query.NewBool(tileReq.Params)
-		if param.IsOptionalErr(err) {
+		if err != nil {
 			return nil, err
 		}
+		// optional
 		histogram, err := agg.NewHistogram(tileReq.Params)
 		if param.IsOptionalErr(err) {
 			return nil, err

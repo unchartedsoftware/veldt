@@ -19,7 +19,7 @@ type Histogram struct {
 func NewHistogram(params map[string]interface{}) (*Histogram, error) {
 	params, ok := json.GetChild(params, "histogram")
 	if !ok {
-		return nil, param.ErrMissing
+		return nil, fmt.Errorf("%s `histogram` aggregation parameter", param.MissingPrefix)
 	}
 	field, ok := json.GetString(params, "field")
 	if !ok {

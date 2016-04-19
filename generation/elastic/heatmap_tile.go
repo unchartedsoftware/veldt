@@ -47,16 +47,15 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		// required
 		binning, err := param.NewBinning(tileReq)
 		if err != nil {
 			return nil, err
 		}
-		// optional
 		query, err := query.NewBool(tileReq.Params)
-		if param.IsOptionalErr(err) {
+		if err != nil {
 			return nil, err
 		}
+		// optional
 		metric, err := agg.NewMetric(tileReq.Params)
 		if param.IsOptionalErr(err) {
 			return nil, err

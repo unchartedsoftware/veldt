@@ -23,7 +23,7 @@ type TopTerms struct {
 func NewTopTerms(params map[string]interface{}) (*TopTerms, error) {
 	params, ok := json.GetChild(params, "top_terms")
 	if !ok {
-		return nil, param.ErrMissing
+		return nil, fmt.Errorf("%s `top_terms` aggregation parameter", param.MissingPrefix)
 	}
 	field, ok := json.GetString(params, "field")
 	if !ok {

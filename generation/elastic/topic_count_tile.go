@@ -38,11 +38,11 @@ func NewTopicCountTile(host, port string) tile.GeneratorConstructor {
 			fmt.Printf("Derp %v\n", tileReq.Params)
 			return nil, err
 		}
-		// optional
 		query, err := query.NewBool(tileReq.Params)
-		if param.IsOptionalErr(err) {
+		if err != nil {
 			return nil, err
 		}
+		// optional
 		histogram, err := agg.NewHistogram(tileReq.Params)
 		if param.IsOptionalErr(err) {
 			return nil, err

@@ -25,7 +25,7 @@ type Terms struct {
 func NewTerms(params map[string]interface{}) (*Terms, error) {
 	params, ok := json.GetChild(params, "terms")
 	if !ok {
-		return nil, param.ErrMissing
+		return nil, fmt.Errorf("%s `terms` aggregation parameter", param.MissingPrefix)
 	}
 	field, ok := json.GetString(params, "field")
 	if !ok {
