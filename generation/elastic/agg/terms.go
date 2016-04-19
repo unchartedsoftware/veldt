@@ -2,6 +2,7 @@ package agg
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"gopkg.in/olivere/elastic.v3"
@@ -34,6 +35,7 @@ func NewTerms(params map[string]interface{}) (*Terms, error) {
 	if !ok {
 		return nil, fmt.Errorf("Terms `terms` parameter missing from tiling param %v", params)
 	}
+	sort.Strings(terms)
 	return &Terms{
 		Field: field,
 		Terms: terms,
