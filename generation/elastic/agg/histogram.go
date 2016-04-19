@@ -1,11 +1,11 @@
-package param
+package agg
 
 import (
 	"fmt"
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/generation/elastic/param"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -16,18 +16,18 @@ type Histogram struct {
 }
 
 // NewHistogram instantiates and returns a new sentiment parameter object.
-func NewHistogram(tileReq *tile.Request) (*Histogram, error) {
-	params, ok := json.GetChild(tileReq.Params, "histogram")
+func NewHistogram(params map[string]interface{}) (*Histogram, error) {
+	params, ok := json.GetChild(params, "histogram")
 	if !ok {
-		return nil, ErrMissing
+		return nil, fmt.Errorf("%s `histogram` aggregation parameter", param.MissingPrefix)
 	}
 	field, ok := json.GetString(params, "field")
 	if !ok {
-		return nil, fmt.Errorf("Histogram `field` parameter missing from tiling request %s", tileReq.String())
+		return nil, fmt.Errorf("Histogram `field` parameter missing from tiling param %v", params)
 	}
 	interval, ok := json.GetNumber(params, "interval")
 	if !ok {
-		return nil, fmt.Errorf("Histogram `interval` parameter missing from tiling request %s", tileReq.String())
+		return nil, fmt.Errorf("Histogram `interval` parameter missing from tiling param %v", params)
 	}
 	return &Histogram{
 		Field:    field,

@@ -1,11 +1,10 @@
-package param
+package agg
 
 import (
 	"fmt"
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/generation/tile"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -23,8 +22,8 @@ type DateHistogram struct {
 }
 
 // NewDateHistogram instantiates and returns a new time bucketing parameter object.
-func NewDateHistogram(tileReq *tile.Request) (*DateHistogram, error) {
-	params := json.GetChildOrEmpty(tileReq.Params, "date_histogram")
+func NewDateHistogram(params map[string]interface{}) (*DateHistogram, error) {
+	params = json.GetChildOrEmpty(params, "date_histogram")
 	field := json.GetStringDefault(params, "field", defaultField)
 	from := int64(json.GetNumberDefault(params, "from", -1))
 	to := int64(json.GetNumberDefault(params, "to", -1))

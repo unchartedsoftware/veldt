@@ -15,11 +15,11 @@ func GetExtrema(client *elastic.Client, index string, field string) (*binning.Ex
 		Search(index).
 		Size(0).
 		Aggregation("min",
-			elastic.NewMinAggregation().
-				Field(field)).
+		elastic.NewMinAggregation().
+			Field(field)).
 		Aggregation("max",
-			elastic.NewMaxAggregation().
-				Field(field)).
+		elastic.NewMaxAggregation().
+			Field(field)).
 		Do()
 	if err != nil {
 		return nil, err

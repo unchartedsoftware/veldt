@@ -7,7 +7,9 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
+	"github.com/unchartedsoftware/prism/generation/elastic/agg"
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
+	"github.com/unchartedsoftware/prism/generation/elastic/query"
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
@@ -33,13 +35,9 @@ func float64ToByteSlice(arr []float64) []byte {
 // HeatmapTile represents a tiling generator that produces heatmaps.
 type HeatmapTile struct {
 	TileGenerator
-	Binning      *param.Binning
-	Terms        *param.TermsFilter
-	Prefixes     *param.PrefixFilter
-	Bool         *param.BoolQuery
-	Range        *param.Range
-	QueryStrings *param.QueryString
-	Metric       *param.MetricAgg
+	Binning *param.Binning
+	Query   *query.Bool
+	Metric  *agg.Metric
 }
 
 // NewHeatmapTile instantiates and returns a pointer to a new generator.
@@ -53,38 +51,18 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		boolQuery, err := param.NewBoolQuery(tileReq)
+		query, err := query.NewBool(tileReq.Params)
+		if err != nil {
+			return nil, err
+		}
+		// optional
+		metric, err := agg.NewMetric(tileReq.Params)
 		if param.IsOptionalErr(err) {
 			return nil, err
 		}
-		terms, err := param.NewTermsFilter(tileReq)
-		if param.IsOptionalErr(err) {
-			return nil, err
-		}
-		prefixes, err := param.NewPrefixFilter(tileReq)
-		if param.IsOptionalErr(err) {
-			return nil, err
-		}
-		rang, err := param.NewRange(tileReq)
-		if param.IsOptionalErr(err) {
-			return nil, err
-		}
-		metric, err := param.NewMetricAgg(tileReq)
-		if param.IsOptionalErr(err) {
-			return nil, err
-		}
-		queries, err := param.NewQueryString(tileReq)
-		if param.IsOptionalErr(err) {
-			return nil, err
-		}
-
 		t := &HeatmapTile{}
 		t.Binning = binning
-		t.Terms = terms
-		t.Prefixes = prefixes
-		t.Bool = boolQuery
-		t.Range = rang
-		t.QueryStrings = queries
+		t.Query = query
 		t.Metric = metric
 		t.req = tileReq
 		t.host = host
@@ -98,59 +76,16 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 func (g *HeatmapTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Binning,
-		g.Terms,
-		g.Prefixes,
-		g.Bool,
-		g.Range,
-		g.QueryStrings,
+		g.Query,
 		g.Metric,
 	}
 }
 
 func (g *HeatmapTile) getQuery() elastic.Query {
-	// optional filters
-	filters := elastic.NewBoolQuery()
-	// if range param is provided, add range queries
-	if g.Range != nil {
-		for _, query := range g.Range.GetQueries() {
-			filters.Must(query)
-		}
-	}
-
-	if g.Bool != nil {
-		filters.Must(g.Bool.GetQuery())
-	}
-
-	// the following filters need to be wrapped in a `must` otherwise the
-	// above `must` query will override them.
-	if g.Terms != nil || g.Prefixes != nil || g.QueryStrings != nil {
-		// create sub-filter
-		subfilters := elastic.NewBoolQuery()
-		// if terms param is provided, add terms queries
-		if g.Terms != nil {
-			for _, query := range g.Terms.GetQueries() {
-				subfilters.Should(query)
-			}
-		}
-		// if prefixes param is provided, add prefix queries
-		if g.Prefixes != nil {
-			for _, query := range g.Prefixes.GetQueries() {
-				subfilters.Should(query)
-			}
-		}
-		// if query strings param is provided, add prefix queries
-		if g.QueryStrings != nil {
-			for _, query := range g.QueryStrings.GetQueries() {
-				subfilters.Should(query)
-			}
-		}
-		// add sub-filter to the parent filter
-		filters.Must(subfilters)
-	}
 	return elastic.NewBoolQuery().
 		Must(g.Binning.Tiling.GetXQuery()).
 		Must(g.Binning.Tiling.GetYQuery()).
-		Must(filters)
+		Must(g.Query.GetQuery())
 }
 
 func (g *HeatmapTile) getAgg() elastic.Aggregation {
