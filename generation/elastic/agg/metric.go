@@ -17,7 +17,7 @@ type Metric struct {
 
 // NewMetric instantiates and returns a new metric aggregation parameter.
 func NewMetric(params map[string]interface{}) (*Metric, error) {
-	params, ok := json.GetChild(params, "metric_agg")
+	params, ok := json.GetChild(params, "metric")
 	if !ok {
 		return nil, param.ErrMissing
 	}

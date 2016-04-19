@@ -22,7 +22,7 @@ type Terms struct {
 
 // NewTerms instantiates and returns a new parameter object.
 func NewTerms(params map[string]interface{}) (*Terms, error) {
-	params, ok := json.GetChild(params, "terms_agg")
+	params, ok := json.GetChild(params, "terms")
 	if !ok {
 		return nil, param.ErrMissing
 	}

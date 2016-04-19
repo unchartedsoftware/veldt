@@ -2,6 +2,7 @@ package query
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"gopkg.in/olivere/elastic.v3"
@@ -25,6 +26,8 @@ func NewPrefix(params map[string]interface{}) (*Prefix, error) {
 	if !ok {
 		return nil, fmt.Errorf("Prefix `prefixes` parameter missing from tiling param %v", params)
 	}
+	// sort prefixes
+	sort.Strings(prefixes)
 	return &Prefix{
 		Field:    field,
 		Prefixes: prefixes,

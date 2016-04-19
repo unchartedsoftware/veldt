@@ -6,9 +6,9 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
+	"github.com/unchartedsoftware/prism/generation/elastic/agg"
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
-	"github.com/unchartedsoftware/prism/generation/elastic/param/agg"
-	"github.com/unchartedsoftware/prism/generation/elastic/param/query"
+	"github.com/unchartedsoftware/prism/generation/elastic/query"
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
