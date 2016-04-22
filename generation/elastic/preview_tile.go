@@ -6,20 +6,19 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"encoding/json"
+	"github.com/unchartedsoftware/prism/generation/elastic/agg"
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
-	"github.com/unchartedsoftware/prism/generation/elastic/throttle"
+	"github.com/unchartedsoftware/prism/generation/elastic/query"
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
-// PreviewTile represents a tiling generator that produces preview tiles.
+// PreviewTile represents a tiling generator that produces an n x n tile containing
+// preview data.
 type PreviewTile struct {
 	TileGenerator
-	Binning      *param.Binning
-	Terms        *param.TermsFilter
-	Prefixes     *param.PrefixFilter
-	Range        *param.Range
-	QueryStrings *param.QueryString
-	Metric       *param.MetricAgg
+	Binning *param.Binning
+	Query   *query.Bool
+	Metric  *agg.Metric
 }
 
 // NewPreviewTile instantiates and returns a pointer to a new generator.
@@ -33,16 +32,19 @@ func NewPreviewTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		terms, _ := param.NewTermsFilter(tileReq)
-		prefixes, _ := param.NewPrefixFilter(tileReq)
-		rang, _ := param.NewRange(tileReq)
-		queries, _ := param.NewQueryString(tileReq)
+		query, err := query.NewBool(tileReq.Params)
+		if err != nil {
+			return nil, err
+		}
+		// optional
+		metric, err := agg.NewMetric(tileReq.Params)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
 		t := &PreviewTile{}
 		t.Binning = binning
-		t.Terms = terms
-		t.Prefixes = prefixes
-		t.Range = rang
-		t.QueryStrings = queries
+		t.Query = query
+		t.Metric = metric
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -55,52 +57,16 @@ func NewPreviewTile(host, port string) tile.GeneratorConstructor {
 func (g *PreviewTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Binning,
-		g.Terms,
-		g.Prefixes,
-		g.Range,
-		g.QueryStrings,
+		g.Query,
+		g.Metric,
 	}
 }
 
 func (g *PreviewTile) getQuery() elastic.Query {
-	// optional filters
-	filters := elastic.NewBoolQuery()
-	// if range param is provided, add range queries
-	if g.Range != nil {
-		for _, query := range g.Range.GetQueries() {
-			filters.Must(query)
-		}
-	}
-	// the following filters need to be wrapped in a `must` otherwise the
-	// above `must` query will override them.
-	if g.Terms != nil || g.Prefixes != nil || g.QueryStrings != nil {
-		// create sub-filter
-		subfilters := elastic.NewBoolQuery()
-		// if terms param is provided, add terms queries
-		if g.Terms != nil {
-			for _, query := range g.Terms.GetQueries() {
-				subfilters.Should(query)
-			}
-		}
-		// if prefixes param is provided, add prefix queries
-		if g.Prefixes != nil {
-			for _, query := range g.Prefixes.GetQueries() {
-				subfilters.Should(query)
-			}
-		}
-		// if query strings param is provided, add prefix queries
-		if g.QueryStrings != nil {
-			for _, query := range g.QueryStrings.GetQueries() {
-				subfilters.Should(query)
-			}
-		}
-		// add sub-filter to the parent filter
-		filters.Must(subfilters)
-	}
 	return elastic.NewBoolQuery().
 		Must(g.Binning.Tiling.GetXQuery()).
 		Must(g.Binning.Tiling.GetYQuery()).
-		Must(filters)
+		Must(g.Query.GetQuery())
 }
 
 func (g *PreviewTile) getAgg() elastic.Aggregation {
@@ -116,8 +82,8 @@ func (g *PreviewTile) getAgg() elastic.Aggregation {
 		elastic.NewTopHitsAggregation().
 			Size(1).
 			FetchSourceContext(
-			elastic.NewFetchSourceContext(true).
-				Include("text", "username", "timestamp")).
+				elastic.NewFetchSourceContext(true).
+					Include("text", "username", "timestamp")).
 			Sort("timestamp", true))
 	return xAgg
 }
@@ -174,7 +140,7 @@ func (g *PreviewTile) GetTile() ([]byte, error) {
 		Query(g.getQuery()).
 		Aggregation("x", g.getAgg())
 	// send query through equalizer
-	res, err := throttle.Send(query)
+	res, err := query.Do()
 	if err != nil {
 		return nil, err
 	}
