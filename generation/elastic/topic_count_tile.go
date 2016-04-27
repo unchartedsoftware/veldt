@@ -16,7 +16,7 @@ import (
 type TopicCountTile struct {
 	TileGenerator
 	Tiling    *param.Tiling
-	Terms     *agg.Terms
+	Terms     *agg.TermsFilter
 	Query     *query.Bool
 	Histogram *agg.Histogram
 }
@@ -33,7 +33,7 @@ func NewTopicCountTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		terms, err := agg.NewTerms(tileReq.Params)
+		terms, err := agg.NewTermsFilter(tileReq.Params)
 		if err != nil {
 			fmt.Printf("Derp %v\n", tileReq.Params)
 			return nil, err
@@ -79,10 +79,10 @@ func (g *TopicCountTile) getQuery() elastic.Query {
 
 func (g *TopicCountTile) addAggs(query *elastic.SearchService) *elastic.SearchService {
 	// add all filter aggregations
-	for term, agg := range g.Terms.GetAggregations() {
+	for term, agg := range g.Terms.GetAggs() {
 		// if histogram param is provided, add histogram agg
 		if g.Histogram != nil {
-			agg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
+			agg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
 		}
 		query.Aggregation(term, agg)
 	}

@@ -33,7 +33,7 @@ func getPropertyMeta(client *elastic.Client, index string, field string, typ str
 }
 
 func parsePropertiesRecursive(meta map[string]PropertyMeta, client *elastic.Client, index string, p map[string]interface{}, path string) error {
-	children, ok := jsonutil.GetChildren(p)
+	children, ok := jsonutil.GetChildMap(p)
 	if ok {
 		for key, props := range children {
 			subpath := key

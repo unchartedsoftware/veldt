@@ -24,10 +24,10 @@ type DateHistogram struct {
 // NewDateHistogram instantiates and returns a new time bucketing parameter object.
 func NewDateHistogram(params map[string]interface{}) (*DateHistogram, error) {
 	params = json.GetChildOrEmpty(params, "date_histogram")
-	field := json.GetStringDefault(params, "field", defaultField)
-	from := int64(json.GetNumberDefault(params, "from", -1))
-	to := int64(json.GetNumberDefault(params, "to", -1))
-	interval := json.GetStringDefault(params, "interval", defaultInterval)
+	field := json.GetStringDefault(params, defaultField, "field")
+	from := int64(json.GetNumberDefault(params, -1, "from"))
+	to := int64(json.GetNumberDefault(params, -1, "to"))
+	interval := json.GetStringDefault(params, defaultInterval, "interval")
 	return &DateHistogram{
 		Field:    field,
 		From:     from,
@@ -57,8 +57,8 @@ func (p *DateHistogram) GetQuery() *elastic.RangeQuery {
 	return query
 }
 
-// GetAggregation returns an elastic query.
-func (p *DateHistogram) GetAggregation() *elastic.DateHistogramAggregation {
+// GetAgg returns an elastic query.
+func (p *DateHistogram) GetAgg() *elastic.DateHistogramAggregation {
 	agg := elastic.NewDateHistogramAggregation().
 		Field(p.Field).
 		Interval(p.Interval).

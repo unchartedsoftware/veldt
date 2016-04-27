@@ -21,7 +21,7 @@ const (
 type TopicFrequencyTile struct {
 	TileGenerator
 	Tiling    *param.Tiling
-	Terms     *agg.Terms
+	Terms     *agg.TermsFilter
 	Time      *agg.DateHistogram
 	Query     *query.Bool
 	Histogram *agg.Histogram
@@ -39,7 +39,7 @@ func NewTopicFrequencyTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		terms, err := agg.NewTerms(tileReq.Params)
+		terms, err := agg.NewTermsFilter(tileReq.Params)
 		if err != nil {
 			return nil, err
 		}
@@ -91,13 +91,13 @@ func (g *TopicFrequencyTile) getQuery() elastic.Query {
 
 func (g *TopicFrequencyTile) addAggs(query *elastic.SearchService) *elastic.SearchService {
 	// date histogram aggregation
-	timeAgg := g.Time.GetAggregation()
+	timeAgg := g.Time.GetAgg()
 	// if histogram param is provided, add histogram agg
 	if g.Histogram != nil {
-		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
+		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
 	}
 	// add all filter aggregations
-	for term, termAgg := range g.Terms.GetAggregations() {
+	for term, termAgg := range g.Terms.GetAggs() {
 		query.Aggregation(term, termAgg.SubAggregation(timeAggName, timeAgg))
 	}
 	return query

@@ -87,12 +87,12 @@ func (g *TopFrequencyTile) getQuery() elastic.Query {
 
 func (g *TopFrequencyTile) getAgg() elastic.Aggregation {
 	// get top terms agg
-	agg := g.TopTerms.GetAggregation()
+	agg := g.TopTerms.GetAgg()
 	// get date histogram agg
-	timeAgg := g.Time.GetAggregation()
+	timeAgg := g.Time.GetAgg()
 	// if histogram param is provided, add histogram agg
 	if g.Histogram != nil {
-		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
+		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
 	}
 	// add date histogram agg
 	agg.SubAggregation(timeAggName, timeAgg)

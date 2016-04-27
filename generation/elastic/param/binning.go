@@ -40,13 +40,13 @@ func NewBinning(tileReq *tile.Request) (*Binning, error) {
 	bounds := tiling.Bounds
 	xRange := math.Abs(bounds.BottomRight.X - bounds.TopLeft.X)
 	yRange := math.Abs(bounds.BottomRight.Y - bounds.TopLeft.Y)
-	resolution := json.GetNumberDefault(params, "resolution", defaultResolution)
+	resolution := json.GetNumberDefault(params, defaultResolution, "resolution")
 	binSizeX := xRange / resolution
 	binSizeY := yRange / resolution
 	return &Binning{
 		Tiling:     tiling,
-		Z:          json.GetStringDefault(params, "z", defaultZField),
-		Metric:     json.GetStringDefault(params, "metric", defaultMetric),
+		Z:          json.GetStringDefault(params, defaultZField, "z"),
+		Metric:     json.GetStringDefault(params, defaultMetric, "metric"),
 		Resolution: int64(resolution),
 		intervalX:  int64(xRange / intervalResolution),
 		intervalY:  int64(yRange / intervalResolution),

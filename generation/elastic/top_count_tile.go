@@ -83,10 +83,10 @@ func (g *TopCountTile) getQuery() elastic.Query {
 
 func (g *TopCountTile) getAgg() elastic.Aggregation {
 	// get top terms agg
-	agg := g.TopTerms.GetAggregation()
+	agg := g.TopTerms.GetAgg()
 	// if histogram param is provided, add histogram agg
 	if g.Histogram != nil {
-		agg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
+		agg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
 	}
 	return agg
 }
