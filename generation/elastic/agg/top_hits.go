@@ -67,6 +67,10 @@ func (p *TopHits) GetAgg() elastic.Aggregation {
 			agg.Sort(p.Sort, true)
 		}
 	}
+	if p.Include != nil {
+		agg.FetchSourceContext(elastic.NewFetchSourceContext(true).
+			Include(p.Include...))
+	}
 	// ...
 	return agg
 }

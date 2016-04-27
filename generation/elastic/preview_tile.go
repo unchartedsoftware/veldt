@@ -13,12 +13,13 @@ import (
 )
 
 // PreviewTile represents a tiling generator that produces an n x n tile containing
-// preview data.
+// preview data.  Preview data is the result of a top-n hits query for a given bucket,
+// where the caller
 type PreviewTile struct {
 	TileGenerator
 	Binning *param.Binning
 	Query   *query.Bool
-	Metric  *agg.Metric
+	TopHits *agg.TopHits
 }
 
 // NewPreviewTile instantiates and returns a pointer to a new generator.
@@ -37,14 +38,14 @@ func NewPreviewTile(host, port string) tile.GeneratorConstructor {
 			return nil, err
 		}
 		// optional
-		metric, err := agg.NewMetric(tileReq.Params)
+		topHits, err := agg.NewTopHits(tileReq.Params)
 		if param.IsOptionalErr(err) {
 			return nil, err
 		}
 		t := &PreviewTile{}
 		t.Binning = binning
 		t.Query = query
-		t.Metric = metric
+		t.TopHits = topHits
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -58,7 +59,7 @@ func (g *PreviewTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Binning,
 		g.Query,
-		g.Metric,
+		g.TopHits,
 	}
 }
 
@@ -77,14 +78,7 @@ func (g *PreviewTile) getAgg() elastic.Aggregation {
 	xAgg.SubAggregation(yAggName, yAgg)
 
 	// if there is a z field to sum, add sum agg to yAgg
-	yAgg.SubAggregation(
-		"tophits",
-		elastic.NewTopHitsAggregation().
-			Size(1).
-			FetchSourceContext(
-				elastic.NewFetchSourceContext(true).
-					Include("text", "username", "timestamp")).
-			Sort("timestamp", true))
+	yAgg.SubAggregation("tophits", g.TopHits.GetAgg())
 	return xAgg
 }
 
@@ -99,7 +93,7 @@ func (g *PreviewTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 	}
 
 	// allocate bins buffer
-	bins := make([]map[string]interface{}, binning.Resolution*binning.Resolution)
+	bins := make([][]map[string]interface{}, binning.Resolution*binning.Resolution)
 
 	// fill bins buffer
 	for _, xBucket := range xAggRes.Buckets {
@@ -116,16 +110,21 @@ func (g *PreviewTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 			yBin := binning.GetYBin(y)
 			index := xBin + binning.Resolution*yBin
 
-			// extract top hits from each bucket
-			var topHitsMap map[string]interface{}
+			// extract results from each bucket
 			topHitsResult, ok := yBucket.TopHits("tophits")
-			json.Unmarshal(*topHitsResult.Hits.Hits[0].Source, &topHitsMap)
 			if !ok {
 				return nil, fmt.Errorf("Top hits were not found in response for request %s", g.req.String())
 			}
 
-			// encode count
-			bins[index] = topHitsMap
+			// loop over raw hit results for the bin and unmarshall them into a list
+			topHitsList := make([]map[string]interface{}, len(topHitsResult.Hits.Hits))
+			for idx, hit := range topHitsResult.Hits.Hits {
+				if err := json.Unmarshal(*hit.Source, &(topHitsList[idx])); err != nil {
+					return nil, fmt.Errorf("Top hits could not be unmarshalled from response for request %s",
+						g.req.String())
+				}
+			}
+			bins[index] = topHitsList
 		}
 	}
 	return json.Marshal(bins)
