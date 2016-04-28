@@ -126,7 +126,7 @@ func (g *TopicCountTile) GetTile() ([]byte, error) {
 		Query(g.getQuery())
 	// add all filter aggregations
 	query = g.addAggs(query)
-	// send query through equalizer
+	// send query
 	res, err := query.Do()
 	if err != nil {
 		return nil, err

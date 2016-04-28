@@ -125,14 +125,13 @@ func (g *TopCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 
 // GetTile returns the marshalled tile data.
 func (g *TopCountTile) GetTile() ([]byte, error) {
-	// build query
-	query := g.client.
+	// send query
+	res, err := g.client.
 		Search(g.req.Index).
 		Size(0).
 		Query(g.getQuery()).
-		Aggregation(termsAggName, g.getAgg())
-	// send query through equalizer
-	res, err := query.Do()
+		Aggregation(termsAggName, g.getAgg()).
+		Do()
 	if err != nil {
 		return nil, err
 	}

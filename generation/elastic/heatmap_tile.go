@@ -148,14 +148,13 @@ func (g *HeatmapTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 
 // GetTile returns the marshalled tile data.
 func (g *HeatmapTile) GetTile() ([]byte, error) {
-	// build query
-	query := g.client.
+	// send query
+	res, err := g.client.
 		Search(g.req.Index).
 		Size(0).
 		Query(g.getQuery()).
-		Aggregation(xAggName, g.getAgg())
-	// send query through equalizer
-	res, err := query.Do()
+		Aggregation(xAggName, g.getAgg()).
+		Do()
 	if err != nil {
 		return nil, err
 	}

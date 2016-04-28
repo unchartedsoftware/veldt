@@ -3,7 +3,6 @@ package elastic
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 
 	"gopkg.in/olivere/elastic.v3"
 
@@ -19,29 +18,8 @@ type TopTrailsTile struct {
 	Binning *param.Binning
 	Query   *query.Bool
 	Terms   *agg.Terms
+	Filter     *agg.TermsFilter
 }
-
-func rankByCount(counts map[string]int64) pairs {
-	pl := make(pairs, len(counts))
-	i := 0
-	for k, v := range counts {
-		pl[i] = pair{k, v}
-		i++
-	}
-	sort.Sort(sort.Reverse(pl))
-	return pl
-}
-
-type pair struct {
-	Key   string
-	Value int64
-}
-
-type pairs []pair
-
-func (p pairs) Len() int           { return len(p) }
-func (p pairs) Less(i, j int) bool { return p[i].Value < p[j].Value }
-func (p pairs) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // NewTopTrailsTile instantiates and returns a pointer to a new generator.
 func NewTopTrailsTile(host, port string) tile.GeneratorConstructor {
@@ -83,10 +61,18 @@ func (g *TopTrailsTile) GetParams() []tile.Param {
 	}
 }
 
-func (g *TopTrailsTile) getQuery() elastic.Query {
+func (g *TopTrailsTile) getFirstQuery() elastic.Query {
 	return elastic.NewBoolQuery().
 		Must(g.Binning.Tiling.GetXQuery()).
 		Must(g.Binning.Tiling.GetYQuery()).
+		Must(g.Query.GetQuery())
+}
+
+func (g *TopTrailsTile) getSecondQuery() elastic.Query {
+	return elastic.NewBoolQuery().
+		Must(g.Binning.Tiling.GetXQuery()).
+		Must(g.Binning.Tiling.GetYQuery()).
+		Must(g.Filter.GetQuery()).
 		Must(g.Query.GetQuery())
 }
 
@@ -96,8 +82,10 @@ func (g *TopTrailsTile) getAgg() elastic.Aggregation {
 	// create y aggregation, add it as a sub-agg to xAgg
 	yAgg := g.Binning.GetYAgg()
 	xAgg.SubAggregation(yAggName, yAgg)
-	// create top hits aggregation
-	yAgg.SubAggregation(termsAggName, g.Terms.GetAgg())
+	// add all filter aggregations
+	for id, agg := range g.Filter.GetAggs() {
+		yAgg.SubAggregation(id, agg)
+	}
 	return xAgg
 }
 
@@ -111,7 +99,6 @@ func (g *TopTrailsTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 			g.req.String())
 	}
 	// the bins coords per document key
-	counts := make(map[string]int64)
 	bins := make(map[string]map[int64]map[int64]bool)
 	// fill bins buffer
 	for _, xBucket := range xAggRes.Buckets {
@@ -126,46 +113,35 @@ func (g *TopTrailsTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 		for _, yBucket := range yAggRes.Buckets {
 			y := yBucket.Key
 			yBin := binning.GetYBin(y)
-			// extract terms
-			terms, ok := yBucket.Terms(termsAggName)
-			if !ok {
-				return nil, fmt.Errorf("Terms aggregation '%s' was not found in response for request %s",
-					termsAggName,
-					g.req.String())
-			}
-			// get term buckets
-			for _, bucket := range terms.Buckets {
-				key, ok := bucket.Key.(string)
+			// extract ids
+			for _, id := range g.Filter.Terms {
+				filter, ok := yBucket.Aggregations.Filter(id)
 				if !ok {
-					return nil, fmt.Errorf("Term bucket key was not of type `string` for request %s",
+					return nil, fmt.Errorf("Filter aggregation '%s' was not found in response for request %s",
+						id,
 						g.req.String())
 				}
-				// add bin location under key
-				if bins[key] == nil {
-					bins[key] = make(map[int64]map[int64]bool)
+				if filter.DocCount > 0 {
+					// add bin location under key
+					if bins[id] == nil {
+						bins[id] = make(map[int64]map[int64]bool)
+					}
+					if bins[id][xBin] == nil {
+						bins[id][xBin] = make(map[int64]bool)
+					}
+					bins[id][xBin][yBin] = true
 				}
-				if bins[key][xBin] == nil {
-					bins[key][xBin] = make(map[int64]bool)
-				}
-				bins[key][xBin][yBin] = true
-				counts[key] += bucket.DocCount
 			}
 		}
 	}
-	// rank the counts
-	ranked := rankByCount(counts)
-	length := g.Terms.Size
-	if len(ranked) < g.Terms.Size {
-		length = len(ranked)
-	}
 	// create map of bin positions for top N docs
 	top := make(map[string][][]int64)
-	for i := 0; i < length; i++ {
-		key := ranked[i].Key
-		top[key] = make([][]int64, 0)
-		for x, xs := range bins[key] {
+	for _, id := range g.Filter.Terms {
+		bin := bins[id]
+		top[id] = make([][]int64, 0)
+		for x, xs := range bin {
 			for y := range xs {
-				top[key] = append(top[key], []int64{x, y})
+				top[id] = append(top[id], []int64{x, y})
 			}
 		}
 	}
@@ -175,14 +151,44 @@ func (g *TopTrailsTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 
 // GetTile returns the marshalled tile data.
 func (g *TopTrailsTile) GetTile() ([]byte, error) {
-	// build query
-	query := g.client.
+	// first pass to get the top N ids
+	res, err := g.client.
 		Search(g.req.Index).
 		Size(0).
-		Query(g.getQuery()).
-		Aggregation(xAggName, g.getAgg())
-	// send query through equalizer
-	res, err := query.Do()
+		Query(g.getFirstQuery()).
+		Aggregation(termsAggName, g.Terms.GetAgg()).
+		Do()
+	if err != nil {
+		return nil, err
+	}
+	terms, ok := res.Aggregations.Terms(termsAggName)
+	if !ok {
+		return nil, fmt.Errorf("Terms aggregation '%s' was not found in response for request %s",
+			termsAggName,
+			g.req.String())
+	}
+	// if no ids exit early
+	if len(terms.Buckets) == 0 {
+		return json.Marshal(make(map[string]interface{}))
+	}
+	// other wise, let's get the bin locations
+	top := make([]string, len(terms.Buckets))
+	// get term buckets
+	for i, bucket := range terms.Buckets {
+		top[i] = bucket.Key.(string)
+	}
+	// make id filter agg
+	g.Filter = &agg.TermsFilter{
+		Field: g.Terms.Field,
+		Terms: top,
+	}
+	// second pass to pull by bin
+	res, err = g.client.
+		Search(g.req.Index).
+		Size(0).
+		Query(g.getSecondQuery()).
+		Aggregation(xAggName, g.getAgg()).
+		Do()
 	if err != nil {
 		return nil, err
 	}
