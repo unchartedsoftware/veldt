@@ -12,6 +12,10 @@ import (
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
+const (
+	topHitsAggName = "tophits"
+)
+
 // PreviewTile represents a tiling generator that produces an n x n tile containing
 // preview data.  Preview data is the result of a top-n hits query for a given bucket,
 // where the caller
@@ -76,9 +80,8 @@ func (g *PreviewTile) getAgg() elastic.Aggregation {
 	// create y aggregation, add it as a sub-agg to xAgg
 	yAgg := g.Binning.GetYAgg()
 	xAgg.SubAggregation(yAggName, yAgg)
-
 	// if there is a z field to sum, add sum agg to yAgg
-	yAgg.SubAggregation("tophits", g.TopHits.GetAgg())
+	yAgg.SubAggregation(topHitsAggName, g.TopHits.GetAgg())
 	return xAgg
 }
 
@@ -111,7 +114,7 @@ func (g *PreviewTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 			index := xBin + binning.Resolution*yBin
 
 			// extract results from each bucket
-			topHitsResult, ok := yBucket.TopHits("tophits")
+			topHitsResult, ok := yBucket.TopHits(topHitsAggName)
 			if !ok {
 				return nil, fmt.Errorf("Top hits were not found in response for request %s", g.req.String())
 			}
@@ -137,7 +140,7 @@ func (g *PreviewTile) GetTile() ([]byte, error) {
 		Search(g.req.Index).
 		Size(1).
 		Query(g.getQuery()).
-		Aggregation("x", g.getAgg())
+		Aggregation(xAggName, g.getAgg())
 	// send query through equalizer
 	res, err := query.Do()
 	if err != nil {
