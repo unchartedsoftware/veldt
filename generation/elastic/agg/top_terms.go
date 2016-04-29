@@ -31,7 +31,7 @@ func NewTopTerms(params map[string]interface{}) (*TopTerms, error) {
 	}
 	return &TopTerms{
 		Field: field,
-		Size:  uint32(json.GetNumberDefault(params, "size", defaultTermsSize)),
+		Size:  uint32(json.GetNumberDefault(params, defaultTermsSize, "size")),
 	}, nil
 }
 
@@ -40,8 +40,8 @@ func (p *TopTerms) GetHash() string {
 	return fmt.Sprintf("%s:%d", p.Field, p.Size)
 }
 
-// GetAggregation returns an elastic aggregation.
-func (p *TopTerms) GetAggregation() *elastic.TermsAggregation {
+// GetAgg returns an elastic aggregation.
+func (p *TopTerms) GetAgg() *elastic.TermsAggregation {
 	return elastic.NewTermsAggregation().
 		Field(p.Field).
 		Size(int(p.Size))

@@ -21,11 +21,11 @@ func NewRange(params map[string]interface{}) (*Range, error) {
 	if !ok {
 		return nil, fmt.Errorf("Range `field` parameter missing from tiling param %v", params)
 	}
-	from, ok := json.GetInterface(params, "from")
+	from, ok := json.Get(params, "from")
 	if !ok {
 		return nil, fmt.Errorf("Range `from` parameter missing from tiling param %v", params)
 	}
-	to, ok := json.GetInterface(params, "to")
+	to, ok := json.Get(params, "to")
 	if !ok {
 		return nil, fmt.Errorf("Range `to` parameter missing from tiling param %v", params)
 	}

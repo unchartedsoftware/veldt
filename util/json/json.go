@@ -1,37 +1,13 @@
 package json
 
-import "strconv"
-
-// Node represents a single json node as a map[string]interface{}
-type Node map[string]interface{}
-
-// Exists returns true if something exists under the provided path.
-func Exists(json Node, path ...string) bool {
-	child := json
-	lastIndex := len(path) - 1
-	for index, key := range path {
-		// does a child exists?
-		v, ok := child[key]
-		if !ok {
-			return false
-		}
-		// is it the target?
-		if index == lastIndex {
-			break
-		}
-		// if not, does it have children to traverse?
-		c, ok := v.(map[string]interface{})
-		if !ok {
-			return false
-		}
-		child = c
-	}
-	return true
-}
+import (
+	"fmt"
+	"strconv"
+)
 
 // Set sets the value under a given path, creating intermediate nodes along the
 // way if they do not exist.
-func Set(json Node, v interface{}, path ...string) {
+func Set(json map[string]interface{}, v interface{}, path ...string) {
 	child := json
 	last := len(path) - 1
 	for _, key := range path[:last] {
@@ -49,36 +25,68 @@ func Set(json Node, v interface{}, path ...string) {
 	child[path[last]] = v
 }
 
-// GetChild returns the child under the given path.
-func GetChild(json Node, path ...string) (Node, bool) {
+// Get returns an interface{} under the given path.
+func Get(json map[string]interface{}, path ...string) (interface{}, bool) {
 	child := json
-	for _, key := range path {
+	last := len(path) - 1
+	var val interface{} = child
+	for index, key := range path {
+		// does a child exists?
 		v, ok := child[key]
 		if !ok {
 			return nil, false
 		}
+		// is it the target?
+		if index == last {
+			val = v
+			break
+		}
+		// if not, does it have children to traverse?
 		c, ok := v.(map[string]interface{})
 		if !ok {
 			return nil, false
 		}
+		fmt.Printf(".")
 		child = c
+	}
+	return val, true
+}
+
+// Exists returns true if something exists under the provided path.
+func Exists(json map[string]interface{}, path ...string) bool {
+	_, ok := Get(json, path...)
+	return ok
+}
+
+// GetChild returns the child under the given path.
+func GetChild(json map[string]interface{}, path ...string) (map[string]interface{}, bool) {
+	c, ok := Get(json, path...)
+	if !ok {
+		return nil, false
+	}
+	child, ok := c.(map[string]interface{})
+	if !ok {
+		return nil, false
 	}
 	return child, true
 }
 
 // GetRandomChild returns the first key found in the object that is a nested
 // json object.
-func GetRandomChild(json Node) (Node, bool) {
-	if len(json) == 0 {
+func GetRandomChild(json map[string]interface{}, path ...string) (map[string]interface{}, bool) {
+	child, ok := GetChild(json, path...)
+	if !ok {
 		return nil, false
 	}
-	var child Node
-	for _, val := range json {
-		c, ok := val.(map[string]interface{})
+	if len(child) == 0 {
+		return nil, false
+	}
+	for _, v := range child {
+		val, ok := v.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		child = c
+		child = val
 		break
 	}
 	return child, true
@@ -86,42 +94,17 @@ func GetRandomChild(json Node) (Node, bool) {
 
 // GetChildOrEmpty returns the child under the given path, if it doesn't
 // exist, it will return the provided default.
-func GetChildOrEmpty(json Node, path ...string) Node {
+func GetChildOrEmpty(json map[string]interface{}, path ...string) map[string]interface{} {
 	v, ok := GetChild(json, path...)
 	if ok {
 		return v
 	}
-	return Node{}
+	return make(map[string]interface{})
 }
 
-// GetChildren returns a map of all child nodes under a given path.
-func GetChildren(json Node, path ...string) (map[string]Node, bool) {
-	sub, ok := GetChild(json, path...)
-	if !ok {
-		return nil, false
-	}
-	children := make(map[string]Node, len(sub))
-	for k, v := range sub {
-		c, ok := v.(map[string]interface{})
-		if ok {
-			children[k] = c
-		}
-	}
-	return children, true
-}
-
-// GetInterface returns an interface{} property under the given key.
-func GetInterface(json Node, key string) (interface{}, bool) {
-	val, ok := json[key]
-	if !ok {
-		return nil, false
-	}
-	return val, true
-}
-
-// GetString returns a string property under the given key.
-func GetString(json Node, key string) (string, bool) {
-	v, ok := json[key]
+// GetString returns a string property under the given path.
+func GetString(json map[string]interface{}, path ...string) (string, bool) {
+	v, ok := Get(json, path...)
 	if !ok {
 		return "", false
 	}
@@ -134,8 +117,31 @@ func GetString(json Node, key string) (string, bool) {
 
 // GetStringDefault returns a string property under the given key, if it doesn't
 // exist, it will return the provided default.
-func GetStringDefault(json Node, key string, def string) string {
-	v, ok := GetString(json, key)
+func GetStringDefault(json map[string]interface{}, def string, path ...string) string {
+	v, ok := GetString(json, path...)
+	if ok {
+		return v
+	}
+	return def
+}
+
+// GetBool returns a bool property under the given key.
+func GetBool(json map[string]interface{}, path ...string) (bool, bool) {
+	v, ok := Get(json, path...)
+	if !ok {
+		return false, false
+	}
+	val, ok := v.(bool)
+	if !ok {
+		return false, false
+	}
+	return val, true
+}
+
+// GetBoolDefault returns a bool property under the given key, if it doesn't
+// exist, it will return the provided default.
+func GetBoolDefault(json map[string]interface{}, def bool, path ...string) bool {
+	v, ok := GetBool(json, path...)
 	if ok {
 		return v
 	}
@@ -143,8 +149,8 @@ func GetStringDefault(json Node, key string, def string) string {
 }
 
 // GetNumber returns a float property under the given key.
-func GetNumber(json Node, key string) (float64, bool) {
-	v, ok := json[key]
+func GetNumber(json map[string]interface{}, path ...string) (float64, bool) {
+	v, ok := Get(json, path...)
 	if !ok {
 		return 0, false
 	}
@@ -165,8 +171,8 @@ func GetNumber(json Node, key string) (float64, bool) {
 
 // GetNumberDefault returns a float property under the given key, if it doesn't
 // exist, it will return the provided default.
-func GetNumberDefault(json Node, key string, def float64) float64 {
-	v, ok := GetNumber(json, key)
+func GetNumberDefault(json map[string]interface{}, def float64, path ...string) float64 {
+	v, ok := GetNumber(json, path...)
 	if ok {
 		return v
 	}
@@ -174,8 +180,8 @@ func GetNumberDefault(json Node, key string, def float64) float64 {
 }
 
 // GetArray returns an []interface{} property under the given key.
-func GetArray(json Node, key string) ([]interface{}, bool) {
-	v, ok := json[key]
+func GetArray(json map[string]interface{}, path ...string) ([]interface{}, bool) {
+	v, ok := Get(json, path...)
 	if !ok {
 		return nil, false
 	}
@@ -186,43 +192,43 @@ func GetArray(json Node, key string) ([]interface{}, bool) {
 	return val, true
 }
 
-// GetChildrenArray returns an []map[string]interface{} property under the given
-// key.
-func GetChildrenArray(json Node, path ...string) ([]Node, bool) {
-
-	pathLength := len(path)
-	slicedPath := path[0 : pathLength-1]
-	lastKey := path[pathLength-1]
-
-	child, ok := GetChild(json, slicedPath...)
-
+// GetChildArray returns a []map[string]interface{} from the given path.
+func GetChildArray(json map[string]interface{}, path ...string) ([]map[string]interface{}, bool) {
+	vs, ok := GetArray(json, path...)
 	if !ok {
 		return nil, false
 	}
-
-	takeAway := child[lastKey]
-	ls, ok := takeAway.([]interface{})
-
-	if !ok {
-		return nil, false
+	nodes := make([]map[string]interface{}, len(vs))
+	for i, v := range vs {
+		val, ok := v.(map[string]interface{})
+		if !ok {
+			return nil, false
+		}
+		nodes[i] = val
 	}
-
-	nodes := make([]Node, len(ls))
-
-	for i, v := range ls {
-		nodes[i] = v.(map[string]interface{})
-	}
-
 	return nodes, true
 }
 
-// GetNumberArray returns an []float64 property under the given key.
-func GetNumberArray(json Node, key string) ([]float64, bool) {
-	v, ok := json[key]
+// GetChildMap returns a map[string]map[string]interface{} of all child nodes
+// under the given path.
+func GetChildMap(json map[string]interface{}, path ...string) (map[string]map[string]interface{}, bool) {
+	sub, ok := GetChild(json, path...)
 	if !ok {
 		return nil, false
 	}
-	vs, ok := v.([]interface{})
+	children := make(map[string]map[string]interface{}, len(sub))
+	for k, v := range sub {
+		c, ok := v.(map[string]interface{})
+		if ok {
+			children[k] = c
+		}
+	}
+	return children, true
+}
+
+// GetNumberArray returns an []float64 property under the given key.
+func GetNumberArray(json map[string]interface{}, path ...string) ([]float64, bool) {
+	vs, ok := GetArray(json, path...)
 	if !ok {
 		return nil, false
 	}
@@ -238,12 +244,8 @@ func GetNumberArray(json Node, key string) ([]float64, bool) {
 }
 
 // GetStringArray returns an []string property under the given key.
-func GetStringArray(json Node, key string) ([]string, bool) {
-	v, ok := json[key]
-	if !ok {
-		return nil, false
-	}
-	vs, ok := v.([]interface{})
+func GetStringArray(json map[string]interface{}, path ...string) ([]string, bool) {
+	vs, ok := GetArray(json, path...)
 	if !ok {
 		return nil, false
 	}

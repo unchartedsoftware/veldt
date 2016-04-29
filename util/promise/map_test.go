@@ -119,7 +119,7 @@ var _ = Describe("map", func() {
 					p, ok := m.GetOrCreate("test")
 					if !ok {
 						// creator will resolve it
-						time.Sleep(time.Second)
+						time.Sleep(time.Millisecond * 100)
 						p.Resolve(err)
 					} else {
 						Expect(p.Wait()).To(Equal(err))

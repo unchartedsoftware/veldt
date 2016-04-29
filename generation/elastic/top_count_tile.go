@@ -83,10 +83,10 @@ func (g *TopCountTile) getQuery() elastic.Query {
 
 func (g *TopCountTile) getAgg() elastic.Aggregation {
 	// get top terms agg
-	agg := g.TopTerms.GetAggregation()
+	agg := g.TopTerms.GetAgg()
 	// if histogram param is provided, add histogram agg
 	if g.Histogram != nil {
-		agg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
+		agg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
 	}
 	return agg
 }
@@ -125,14 +125,13 @@ func (g *TopCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 
 // GetTile returns the marshalled tile data.
 func (g *TopCountTile) GetTile() ([]byte, error) {
-	// build query
-	query := g.client.
+	// send query
+	res, err := g.client.
 		Search(g.req.Index).
 		Size(0).
 		Query(g.getQuery()).
-		Aggregation(termsAggName, g.getAgg())
-	// send query through equalizer
-	res, err := query.Do()
+		Aggregation(termsAggName, g.getAgg()).
+		Do()
 	if err != nil {
 		return nil, err
 	}

@@ -41,7 +41,7 @@ var _ = Describe("promise", func() {
 		It("should block until promise is resolved", func() {
 			p := promise.NewPromise()
 			go func() {
-				time.Sleep(time.Second)
+				time.Sleep(time.Millisecond * 100)
 				p.Resolve(nil)
 			}()
 			Expect(p.Wait()).To(BeNil())
@@ -64,7 +64,7 @@ var _ = Describe("promise", func() {
 					wg.Done()
 				}()
 			}
-			time.Sleep(time.Second)
+			time.Sleep(time.Millisecond * 100)
 			p.Resolve(err)
 			wg.Wait()
 		})

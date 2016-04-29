@@ -36,18 +36,18 @@ func NewTiling(tileReq *tile.Request) (*Tiling, error) {
 	params := json.GetChildOrEmpty(tileReq.Params, "binning")
 	extents := &binning.Bounds{
 		TopLeft: &binning.Coord{
-			X: json.GetNumberDefault(params, "left", defaultLeft),
-			Y: json.GetNumberDefault(params, "top", defaultTop),
+			X: json.GetNumberDefault(params, defaultLeft, "left"),
+			Y: json.GetNumberDefault(params, defaultTop, "top"),
 		},
 		BottomRight: &binning.Coord{
-			X: json.GetNumberDefault(params, "right", defaultRight),
-			Y: json.GetNumberDefault(params, "bottom", defaultBottom),
+			X: json.GetNumberDefault(params, defaultRight, "right"),
+			Y: json.GetNumberDefault(params, defaultBottom, "bottom"),
 		},
 	}
 	bounds := binning.GetTileBounds(tileReq.Coord, extents)
 	return &Tiling{
-		X:      json.GetStringDefault(params, "x", defaultXField),
-		Y:      json.GetStringDefault(params, "y", defaultYField),
+		X:      json.GetStringDefault(params, defaultXField, "x"),
+		Y:      json.GetStringDefault(params, defaultYField, "y"),
 		Bounds: bounds,
 		minX:   int64(math.Min(bounds.TopLeft.X, bounds.BottomRight.X)),
 		maxX:   int64(math.Max(bounds.TopLeft.X, bounds.BottomRight.X)),

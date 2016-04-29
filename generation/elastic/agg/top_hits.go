@@ -30,9 +30,9 @@ func NewTopHits(params map[string]interface{}) (*TopHits, error) {
 	if !ok {
 		return nil, fmt.Errorf("%s `top_hits` aggregation parameter", param.MissingPrefix)
 	}
-	size := int(json.GetNumberDefault(params, "size", defaultHitsSize))
-	srt := json.GetStringDefault(params, "sort", "")
-	order := json.GetStringDefault(params, "order", defaultOrder)
+	size := int(json.GetNumberDefault(params, defaultHitsSize, "size"))
+	srt := json.GetStringDefault(params, "", "sort")
+	order := json.GetStringDefault(params, defaultOrder, "order")
 	include, ok := json.GetStringArray(params, "include")
 	if !ok {
 		include = nil
@@ -60,6 +60,7 @@ func (p *TopHits) GetHash() string {
 func (p *TopHits) GetAgg() elastic.Aggregation {
 	agg := elastic.NewTopHitsAggregation().
 		Size(p.Size)
+	// sort
 	if len(p.Sort) > 0 {
 		if p.Order == "desc" {
 			agg.Sort(p.Sort, false)
@@ -67,10 +68,11 @@ func (p *TopHits) GetAgg() elastic.Aggregation {
 			agg.Sort(p.Sort, true)
 		}
 	}
+	// add includes
 	if p.Include != nil {
-		agg.FetchSourceContext(elastic.NewFetchSourceContext(true).
-			Include(p.Include...))
+		agg.FetchSourceContext(
+			elastic.NewFetchSourceContext(true).
+				Include(p.Include...))
 	}
-	// ...
 	return agg
 }
