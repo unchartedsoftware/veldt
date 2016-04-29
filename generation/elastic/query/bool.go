@@ -54,7 +54,7 @@ func getQueryByType(query map[string]interface{}) (Query, error) {
 // NewBool instantiates and returns a new parameter object.
 func NewBool(params map[string]interface{}) (*Bool, error) {
 	// must queries
-	must, ok := json.GetChildrenArray(params, "must")
+	must, ok := json.GetChildArray(params, "must")
 	var musts []Query
 	if ok {
 		musts = make([]Query, len(must))
@@ -69,7 +69,7 @@ func NewBool(params map[string]interface{}) (*Bool, error) {
 		musts = make([]Query, 0)
 	}
 	// must not queries
-	mustNot, ok := json.GetChildrenArray(params, "must_not")
+	mustNot, ok := json.GetChildArray(params, "must_not")
 	var mustNots []Query
 	if ok {
 		mustNots = make([]Query, len(mustNot))
@@ -84,7 +84,7 @@ func NewBool(params map[string]interface{}) (*Bool, error) {
 		mustNots = make([]Query, 0)
 	}
 	// should queries
-	should, ok := json.GetChildrenArray(params, "should")
+	should, ok := json.GetChildArray(params, "should")
 	var shoulds []Query
 	if ok {
 		shoulds = make([]Query, len(should))

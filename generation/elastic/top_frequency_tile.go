@@ -87,12 +87,12 @@ func (g *TopFrequencyTile) getQuery() elastic.Query {
 
 func (g *TopFrequencyTile) getAgg() elastic.Aggregation {
 	// get top terms agg
-	agg := g.TopTerms.GetAggregation()
+	agg := g.TopTerms.GetAgg()
 	// get date histogram agg
-	timeAgg := g.Time.GetAggregation()
+	timeAgg := g.Time.GetAgg()
 	// if histogram param is provided, add histogram agg
 	if g.Histogram != nil {
-		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAggregation())
+		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
 	}
 	// add date histogram agg
 	agg.SubAggregation(timeAggName, timeAgg)
@@ -142,14 +142,13 @@ func (g *TopFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, error
 
 // GetTile returns the marshalled tile data.
 func (g *TopFrequencyTile) GetTile() ([]byte, error) {
-	// build query
-	query := g.client.
+	// send query
+	res, err := g.client.
 		Search(g.req.Index).
 		Size(0).
 		Query(g.getQuery()).
-		Aggregation(termsAggName, g.getAgg())
-	// send query through equalizer
-	res, err := query.Do()
+		Aggregation(termsAggName, g.getAgg()).
+		Do()
 	if err != nil {
 		return nil, err
 	}

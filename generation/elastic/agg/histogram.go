@@ -42,8 +42,8 @@ func (p *Histogram) GetHash() string {
 		p.Interval)
 }
 
-// GetAggregation returns an elastic query.
-func (p *Histogram) GetAggregation() *elastic.HistogramAggregation {
+// GetAgg returns an elastic query.
+func (p *Histogram) GetAgg() *elastic.HistogramAggregation {
 	return elastic.NewHistogramAggregation().
 		Field(p.Field).
 		Interval(p.Interval).

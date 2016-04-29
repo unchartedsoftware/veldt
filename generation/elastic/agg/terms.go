@@ -2,8 +2,6 @@ package agg
 
 import (
 	"fmt"
-	"sort"
-	"strings"
 
 	"gopkg.in/olivere/elastic.v3"
 
@@ -12,13 +10,13 @@ import (
 )
 
 const (
-	defaultTextField = "text"
+	defaultSize = 10
 )
 
-// Terms represents params for extracting term counts.
+// Terms represents a terms aggregation.
 type Terms struct {
 	Field string
-	Terms []string
+	Size  int
 }
 
 // NewTerms instantiates and returns a new parameter object.
@@ -31,40 +29,24 @@ func NewTerms(params map[string]interface{}) (*Terms, error) {
 	if !ok {
 		return nil, fmt.Errorf("Terms `field` parameter missing from tiling param %v", params)
 	}
-	terms, ok := json.GetStringArray(params, "terms")
-	if !ok {
-		return nil, fmt.Errorf("Terms `terms` parameter missing from tiling param %v", params)
-	}
-	sort.Strings(terms)
+	size := int(json.GetNumberDefault(params, defaultSize, "size"))
 	return &Terms{
 		Field: field,
-		Terms: terms,
+		Size:  size,
 	}, nil
 }
 
 // GetHash returns a string hash of the parameter state.
 func (p *Terms) GetHash() string {
-	return fmt.Sprintf("%s:%s",
+	return fmt.Sprintf("%s:%d",
 		p.Field,
-		strings.Join(p.Terms, ":"))
+		p.Size,
+	)
 }
 
-// GetQuery returns an elastic query.
-func (p *Terms) GetQuery() *elastic.TermsQuery {
-	terms := make([]interface{}, len(p.Terms))
-	for i, term := range p.Terms {
-		terms[i] = term
-	}
-	return elastic.NewTermsQuery(p.Field, terms...)
-}
-
-// GetAggregations returns an elastic aggregation.
-func (p *Terms) GetAggregations() map[string]*elastic.FilterAggregation {
-	aggs := make(map[string]*elastic.FilterAggregation, len(p.Terms))
-	// add all filter aggregations
-	for _, term := range p.Terms {
-		aggs[term] = elastic.NewFilterAggregation().
-			Filter(elastic.NewTermQuery(p.Field, term))
-	}
-	return aggs
+// GetAgg returns an elastic aggregation.
+func (p *Terms) GetAgg() *elastic.TermsAggregation {
+	return elastic.NewTermsAggregation().
+		Field(p.Field).
+		Size(p.Size)
 }
