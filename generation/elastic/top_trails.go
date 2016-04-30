@@ -18,7 +18,7 @@ type TopTrailsTile struct {
 	Binning *param.Binning
 	Query   *query.Bool
 	Terms   *agg.Terms
-	Filter     *agg.TermsFilter
+	Filter  *agg.TermsFilter
 }
 
 // NewTopTrailsTile instantiates and returns a pointer to a new generator.
