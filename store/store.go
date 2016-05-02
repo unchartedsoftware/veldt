@@ -12,7 +12,7 @@ func Set(id string, hash string, data []byte) error {
 		return err
 	}
 	// get tile data from store
-	err = conn.Set(hash, data[0:])
+	err = conn.Set(addHash(hash), data[0:])
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func Get(id string, hash string) ([]byte, error) {
 		return nil, err
 	}
 	// get tile data from store
-	data, err := conn.Get(hash)
+	data, err := conn.Get(addHash(hash))
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func Exists(id string, hash string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	exists, err := conn.Exists(hash)
+	exists, err := conn.Exists(addHash(hash))
 	conn.Close()
 	if err != nil {
 		return false, err
