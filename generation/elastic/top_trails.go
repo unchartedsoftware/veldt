@@ -12,13 +12,14 @@ import (
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
-// TopTrailsTile represents a tiling generator that produces heatmaps.
+// TopTrailsTile represents a tiling generator that produces a top trails tile.
 type TopTrailsTile struct {
 	TileGenerator
 	Binning *param.Binning
 	Query   *query.Bool
 	Terms   *agg.Terms
-	Filter  *agg.TermsFilter
+	// NOTE: this param is generated internally, rather than inside the request
+	Filter *agg.TermsFilter
 }
 
 // NewTopTrailsTile instantiates and returns a pointer to a new generator.

@@ -1,33 +1,28 @@
 package elastic
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"encoding/json"
 	"github.com/unchartedsoftware/prism/generation/elastic/agg"
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
 	"github.com/unchartedsoftware/prism/generation/elastic/query"
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
-const (
-	topHitsAggName = "tophits"
-)
-
-// PreviewTile represents a tiling generator that produces an n x n tile containing
-// preview data.  Preview data is the result of a top-n hits query for a given bucket,
-// where the caller
-type PreviewTile struct {
+// MacroMicroTile represents a tiling generator that produces a tile.
+type MacroMicroTile struct {
 	TileGenerator
-	Binning *param.Binning
-	Query   *query.Bool
-	TopHits *agg.TopHits
+	Binning    *param.Binning
+	Query      *query.Bool
+	MacroMicro *param.MacroMicro
+	TopHits    *agg.TopHits
 }
 
-// NewPreviewTile instantiates and returns a pointer to a new generator.
-func NewPreviewTile(host, port string) tile.GeneratorConstructor {
+// NewMacroMicroTile instantiates and returns a pointer to a new generator.
+func NewMacroMicroTile(host, port string) tile.GeneratorConstructor {
 	return func(tileReq *tile.Request) (tile.Generator, error) {
 		client, err := NewClient(host, port)
 		if err != nil {
@@ -37,17 +32,21 @@ func NewPreviewTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
+		macromicro, err := param.NewMacroMicro(tileReq)
+		if err != nil {
+			return nil, err
+		}
 		query, err := query.NewBool(tileReq.Params)
 		if err != nil {
 			return nil, err
 		}
-		// optional
 		topHits, err := agg.NewTopHits(tileReq.Params)
-		if param.IsOptionalErr(err) {
+		if err != nil {
 			return nil, err
 		}
-		t := &PreviewTile{}
+		t := &MacroMicroTile{}
 		t.Binning = binning
+		t.MacroMicro = macromicro
 		t.Query = query
 		t.TopHits = topHits
 		t.req = tileReq
@@ -59,22 +58,61 @@ func NewPreviewTile(host, port string) tile.GeneratorConstructor {
 }
 
 // GetParams returns a slice of tiling parameters.
-func (g *PreviewTile) GetParams() []tile.Param {
+func (g *MacroMicroTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Binning,
+		g.MacroMicro,
 		g.Query,
 		g.TopHits,
 	}
 }
 
-func (g *PreviewTile) getQuery() elastic.Query {
+func (g *MacroMicroTile) getQuery() elastic.Query {
 	return elastic.NewBoolQuery().
 		Must(g.Binning.Tiling.GetXQuery()).
 		Must(g.Binning.Tiling.GetYQuery()).
 		Must(g.Query.GetQuery())
 }
 
-func (g *PreviewTile) getAgg() elastic.Aggregation {
+func (g *MacroMicroTile) getMacroAgg() elastic.Aggregation {
+	// create x aggregation
+	return g.Binning.GetXAgg().
+		SubAggregation(yAggName, g.Binning.GetYAgg())
+}
+
+func (g *MacroMicroTile) parseMacroResult(res *elastic.SearchResult) ([]byte, error) {
+	binning := g.Binning
+	// parse aggregations
+	xAggRes, ok := res.Aggregations.Histogram(xAggName)
+	if !ok {
+		return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
+			xAggName,
+			g.req.String())
+	}
+	// allocate bins buffer
+	bins := make([]float64, binning.Resolution*binning.Resolution)
+	// fill bins buffer
+	for _, xBucket := range xAggRes.Buckets {
+		x := xBucket.Key
+		xBin := binning.GetXBin(x)
+		yAggRes, ok := xBucket.Histogram(yAggName)
+		if !ok {
+			return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
+				yAggName,
+				g.req.String())
+		}
+		for _, yBucket := range yAggRes.Buckets {
+			y := yBucket.Key
+			yBin := binning.GetYBin(y)
+			index := xBin + binning.Resolution*yBin
+			// encode count
+			bins[index] += float64(yBucket.DocCount)
+		}
+	}
+	return float64ToByteSlice(bins), nil
+}
+
+func (g *MacroMicroTile) getMicroAgg() elastic.Aggregation {
 	// create x aggregation
 	xAgg := g.Binning.GetXAgg()
 	// create y aggregation, add it as a sub-agg to xAgg
@@ -85,7 +123,7 @@ func (g *PreviewTile) getAgg() elastic.Aggregation {
 	return xAgg
 }
 
-func (g *PreviewTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
+func (g *MacroMicroTile) parseMicroResult(res *elastic.SearchResult) ([]byte, error) {
 	binning := g.Binning
 	// parse aggregations
 	xAggRes, ok := res.Aggregations.Histogram(xAggName)
@@ -130,18 +168,41 @@ func (g *PreviewTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 }
 
 // GetTile returns the marshalled tile data.
-func (g *PreviewTile) GetTile() ([]byte, error) {
-	// build query
+func (g *MacroMicroTile) GetTile() ([]byte, error) {
+	// first pass to get the count for the tile
+	res, err := g.client.
+		Search(g.req.Index).
+		Size(0).
+		Query(g.getQuery()).
+		Do()
+	if err != nil {
+		return nil, err
+	}
+	if res.Hits.TotalHits > g.MacroMicro.Threshold {
+		// generate macro tile
+		res, err := g.client.
+			Search(g.req.Index).
+			Size(0).
+			Query(g.getQuery()).
+			Aggregation(xAggName, g.getMacroAgg()).
+			Do()
+		if err != nil {
+			return nil, err
+		}
+		// parse and return results
+		return g.parseMacroResult(res)
+	}
+	// generate micro tile
 	query := g.client.
 		Search(g.req.Index).
 		Size(0).
 		Query(g.getQuery()).
-		Aggregation(xAggName, g.getAgg())
+		Aggregation(xAggName, g.getMicroAgg())
 	// send query through equalizer
-	res, err := query.Do()
+	res, err = query.Do()
 	if err != nil {
 		return nil, err
 	}
 	// parse and return results
-	return g.parseResult(res)
+	return g.parseMicroResult(res)
 }
