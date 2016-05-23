@@ -1,7 +1,6 @@
 package json
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -46,7 +45,6 @@ func Get(json map[string]interface{}, path ...string) (interface{}, bool) {
 		if !ok {
 			return nil, false
 		}
-		fmt.Printf(".")
 		child = c
 	}
 	return val, true

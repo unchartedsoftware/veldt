@@ -35,7 +35,6 @@ func NewTopicCountTile(host, port string) tile.GeneratorConstructor {
 		}
 		terms, err := agg.NewTermsFilter(tileReq.Params)
 		if err != nil {
-			fmt.Printf("Derp %v\n", tileReq.Params)
 			return nil, err
 		}
 		query, err := query.NewBool(tileReq.Params)
