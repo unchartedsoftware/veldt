@@ -94,10 +94,8 @@ func (g *PreviewTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 			xAggName,
 			g.req.String())
 	}
-
 	// allocate bins buffer
 	bins := make([][]map[string]interface{}, binning.Resolution*binning.Resolution)
-
 	// fill bins buffer
 	for _, xBucket := range xAggRes.Buckets {
 		x := xBucket.Key
@@ -112,13 +110,11 @@ func (g *PreviewTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 			y := yBucket.Key
 			yBin := binning.GetYBin(y)
 			index := xBin + binning.Resolution*yBin
-
 			// extract results from each bucket
 			topHitsResult, ok := yBucket.TopHits(topHitsAggName)
 			if !ok {
 				return nil, fmt.Errorf("Top hits were not found in response for request %s", g.req.String())
 			}
-
 			// loop over raw hit results for the bin and unmarshall them into a list
 			topHitsList := make([]map[string]interface{}, len(topHitsResult.Hits.Hits))
 			for idx, hit := range topHitsResult.Hits.Hits {
@@ -138,7 +134,7 @@ func (g *PreviewTile) GetTile() ([]byte, error) {
 	// build query
 	query := g.client.
 		Search(g.req.Index).
-		Size(1).
+		Size(0).
 		Query(g.getQuery()).
 		Aggregation(xAggName, g.getAgg())
 	// send query through equalizer

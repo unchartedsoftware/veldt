@@ -12,6 +12,24 @@ Requires the [Go](https://golang.org/) programming language binaries with the `G
 go get github.com/unchartedsoftware/prism
 ```
 
+## Development
+
+Clone the repository;
+
+```bash
+    mkdir $GOPATH/src/github.com/unchartedsoftware
+    cd $GOPATH/src/github.com/unchartedsoftware
+    git clone git@github.com:unchartedsoftware/prism.git
+```
+
+Install dependencies
+
+```bash
+    cd prism
+    go get ./...
+    make deps
+```
+
 ## Usage
 
 The package provides facilities to implement and connect custom tiling and analytics to persistent in-memory storage services.
