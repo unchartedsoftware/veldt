@@ -109,7 +109,7 @@ func (g *MicroTile) GetTile() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if res.Hits.TotalHits < g.MacroMicro.Threshold {
+	if res.Hits.TotalHits <= g.MacroMicro.Threshold {
 		// generate micro tile
 		query := g.client.
 			Search(g.req.Index).
