@@ -47,6 +47,10 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
+		elastic, err := param.NewElastic(tileReq)
+		if err != nil {
+			return nil, err
+		}
 		binning, err := param.NewBinning(tileReq)
 		if err != nil {
 			return nil, err
@@ -61,6 +65,7 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 			return nil, err
 		}
 		t := &HeatmapTile{}
+		t.Elastic = elastic
 		t.Binning = binning
 		t.Query = query
 		t.Metric = metric
@@ -149,8 +154,8 @@ func (g *HeatmapTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 // GetTile returns the marshalled tile data.
 func (g *HeatmapTile) GetTile() ([]byte, error) {
 	// send query
-	res, err := g.client.
-		Search(g.req.Index).
+	res, err := g.Elastic.GetSearchService(g.client).
+		Index(g.req.Index).
 		Size(0).
 		Query(g.getQuery()).
 		Aggregation(xAggName, g.getAgg()).

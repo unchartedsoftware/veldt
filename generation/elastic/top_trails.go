@@ -29,6 +29,10 @@ func NewTopTrailsTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
+		elastic, err := param.NewElastic(tileReq)
+		if err != nil {
+			return nil, err
+		}
 		binning, err := param.NewBinning(tileReq)
 		if err != nil {
 			return nil, err
@@ -42,6 +46,7 @@ func NewTopTrailsTile(host, port string) tile.GeneratorConstructor {
 			return nil, err
 		}
 		t := &TopTrailsTile{}
+		t.Elastic = elastic
 		t.Binning = binning
 		t.Query = query
 		t.Terms = terms
@@ -153,8 +158,8 @@ func (g *TopTrailsTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 // GetTile returns the marshalled tile data.
 func (g *TopTrailsTile) GetTile() ([]byte, error) {
 	// first pass to get the top N ids
-	res, err := g.client.
-		Search(g.req.Index).
+	res, err := g.Elastic.GetSearchService(g.client).
+		Index(g.req.Index).
 		Size(0).
 		Query(g.getFirstQuery()).
 		Aggregation(termsAggName, g.Terms.GetAgg()).
@@ -184,8 +189,8 @@ func (g *TopTrailsTile) GetTile() ([]byte, error) {
 		Terms: top,
 	}
 	// second pass to pull by bin
-	res, err = g.client.
-		Search(g.req.Index).
+	res, err = g.Elastic.GetSearchService(g.client).
+		Index(g.req.Index).
 		Size(0).
 		Query(g.getSecondQuery()).
 		Aggregation(xAggName, g.getAgg()).

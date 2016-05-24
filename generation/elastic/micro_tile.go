@@ -28,6 +28,10 @@ func NewMicroTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
+		elastic, err := param.NewElastic(tileReq)
+		if err != nil {
+			return nil, err
+		}
 		binning, err := param.NewBinning(tileReq)
 		if err != nil {
 			return nil, err
@@ -45,6 +49,7 @@ func NewMicroTile(host, port string) tile.GeneratorConstructor {
 			return nil, err
 		}
 		t := &MicroTile{}
+		t.Elastic = elastic
 		t.Binning = binning
 		t.MacroMicro = macromicro
 		t.Query = query
@@ -101,8 +106,8 @@ func (g *MicroTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 // GetTile returns the marshalled tile data.
 func (g *MicroTile) GetTile() ([]byte, error) {
 	// first pass to get the count for the tile
-	res, err := g.client.
-		Search(g.req.Index).
+	res, err := g.Elastic.GetSearchService(g.client).
+		Index(g.req.Index).
 		Size(0).
 		Query(g.getQuery()).
 		Do()
@@ -111,8 +116,8 @@ func (g *MicroTile) GetTile() ([]byte, error) {
 	}
 	if res.Hits.TotalHits <= g.MacroMicro.Threshold {
 		// generate micro tile
-		query := g.client.
-			Search(g.req.Index).
+		query := g.Elastic.GetSearchService(g.client).
+			Index(g.req.Index).
 			Size(0).
 			Query(g.getQuery()).
 			Aggregation(topHitsAggName, g.getAgg())

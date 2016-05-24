@@ -33,6 +33,10 @@ func NewPreviewTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
+		elastic, err := param.NewElastic(tileReq)
+		if err != nil {
+			return nil, err
+		}
 		binning, err := param.NewBinning(tileReq)
 		if err != nil {
 			return nil, err
@@ -47,6 +51,7 @@ func NewPreviewTile(host, port string) tile.GeneratorConstructor {
 			return nil, err
 		}
 		t := &PreviewTile{}
+		t.Elastic = elastic
 		t.Binning = binning
 		t.Query = query
 		t.TopHits = topHits
@@ -132,8 +137,8 @@ func (g *PreviewTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 // GetTile returns the marshalled tile data.
 func (g *PreviewTile) GetTile() ([]byte, error) {
 	// build query
-	query := g.client.
-		Search(g.req.Index).
+	query := g.Elastic.GetSearchService(g.client).
+		Index(g.req.Index).
 		Size(0).
 		Query(g.getQuery()).
 		Aggregation(xAggName, g.getAgg())

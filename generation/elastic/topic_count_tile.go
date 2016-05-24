@@ -28,6 +28,10 @@ func NewTopicCountTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
+		elastic, err := param.NewElastic(tileReq)
+		if err != nil {
+			return nil, err
+		}
 		// required
 		tiling, err := param.NewTiling(tileReq)
 		if err != nil {
@@ -47,6 +51,7 @@ func NewTopicCountTile(host, port string) tile.GeneratorConstructor {
 			return nil, err
 		}
 		t := &TopicCountTile{}
+		t.Elastic = elastic
 		t.Tiling = tiling
 		t.Terms = terms
 		t.Query = query
@@ -119,8 +124,8 @@ func (g *TopicCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) 
 // GetTile returns the marshalled tile data.
 func (g *TopicCountTile) GetTile() ([]byte, error) {
 	// build query
-	query := g.client.
-		Search(g.req.Index).
+	query := g.Elastic.GetSearchService(g.client).
+		Index(g.req.Index).
 		Size(0).
 		Query(g.getQuery())
 	// add all filter aggregations

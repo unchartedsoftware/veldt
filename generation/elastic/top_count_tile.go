@@ -33,6 +33,10 @@ func NewTopCountTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
+		elastic, err := param.NewElastic(tileReq)
+		if err != nil {
+			return nil, err
+		}
 		// required
 		tiling, err := param.NewTiling(tileReq)
 		if err != nil {
@@ -52,6 +56,7 @@ func NewTopCountTile(host, port string) tile.GeneratorConstructor {
 			return nil, err
 		}
 		t := &TopCountTile{}
+		t.Elastic = elastic
 		t.Tiling = tiling
 		t.TopTerms = topTerms
 		t.Query = query
@@ -126,8 +131,8 @@ func (g *TopCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 // GetTile returns the marshalled tile data.
 func (g *TopCountTile) GetTile() ([]byte, error) {
 	// send query
-	res, err := g.client.
-		Search(g.req.Index).
+	res, err := g.Elastic.GetSearchService(g.client).
+		Index(g.req.Index).
 		Size(0).
 		Query(g.getQuery()).
 		Aggregation(termsAggName, g.getAgg()).

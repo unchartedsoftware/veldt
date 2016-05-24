@@ -114,15 +114,28 @@ func (g *DefaultMeta) GetMeta() ([]byte, error) {
 		return nil, fmt.Errorf("Unable to retrieve the mappings response for %s",
 			metaReq.Index)
 	}
-	props, ok := jsonutil.GetChild(index, "mappings", "datum", "properties")
+	// get mappings node
+	mappings, ok := jsonutil.GetChildMap(index, "mappings")
 	if !ok {
-		return nil, fmt.Errorf("Unable to parse properties from mappings response for %s",
+		return nil, fmt.Errorf("Unable to parse `mappings` from mappings response for %s",
 			metaReq.Index)
 	}
-	// parse json mappings into the property map
-	meta, err := parseProperties(client, metaReq.Index, props)
-	if err != nil {
-		return nil, err
+	// for each type, parse the mapping
+	meta := make(map[string]interface{})
+	for key, typ := range mappings {
+		props, ok := jsonutil.GetChild(typ, "properties")
+		if !ok {
+			return nil, fmt.Errorf("Unable to parse `properties` from mappings response for type `%s` for %s",
+				typ,
+				metaReq.Index)
+		}
+		// parse json mappings into the property map
+		typeMeta, err := parseProperties(client, metaReq.Index, props)
+		if err != nil {
+			return nil, err
+		}
+		meta[key] = typeMeta
 	}
+	// return
 	return json.Marshal(meta)
 }
