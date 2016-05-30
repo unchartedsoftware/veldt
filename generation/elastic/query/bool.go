@@ -28,6 +28,11 @@ func getQueryByType(query map[string]interface{}) (Query, error) {
 	if ok {
 		return NewBool(params)
 	}
+	// exists
+	params, ok = json.GetChild(query , "exists")
+	if (ok) {
+		return NewExists(params)
+	}
 	// terms
 	params, ok = json.GetChild(query, "terms")
 	if ok {
