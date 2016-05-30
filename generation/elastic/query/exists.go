@@ -8,12 +8,12 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
-// Exists represents an elasticsearch terms exists.
+// Exists represents an elasticsearch exists query.
 type Exists struct {
 	Field string
 }
 
-// NewTerms instantiates and returns a terms query object.
+// NewExists instantiates and returns an exists query object.
 func NewExists(params map[string]interface{}) (*Exists, error) {
 	field, ok := json.GetString(params, "field")
 	if !ok {
