@@ -2,6 +2,7 @@ package param
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"gopkg.in/olivere/elastic.v3"
@@ -19,6 +20,7 @@ type Elastic struct {
 func NewElastic(tileReq *tile.Request) (*Elastic, error) {
 	params := json.GetChildOrEmpty(tileReq.Params, "elastic")
 	types, _ := json.GetStringArray(params, "types")
+	sort.Strings(types)
 	return &Elastic{
 		Types: types,
 	}, nil
