@@ -1,0 +1,11 @@
+package: github.com/unchartedsoftware/prism
+import:
+- package: github.com/coocood/freecache
+- package: github.com/garyburd/redigo
+  subpackages:
+  - redis
+- package: github.com/unchartedsoftware/plog
+- package: gopkg.in/olivere/elastic.v3
+- package: gopkg.in/gemnasium/logrus-airbrake-hook.v2
+- package: gopkg.in/airbrake/gobrake.v2
+- package: github.com/mattn/go-colorable
