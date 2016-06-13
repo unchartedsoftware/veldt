@@ -15,7 +15,7 @@ type Histogram struct {
 	Interval int64
 }
 
-// NewHistogram instantiates and returns a new sentiment parameter object.
+// NewHistogram instantiates and returns a new histogram aggregation object.
 func NewHistogram(params map[string]interface{}) (*Histogram, error) {
 	params, ok := json.GetChild(params, "histogram")
 	if !ok {

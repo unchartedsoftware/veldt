@@ -48,8 +48,8 @@ func NewBinning(tileReq *tile.Request) (*Binning, error) {
 		Z:          json.GetStringDefault(params, defaultZField, "z"),
 		Metric:     json.GetStringDefault(params, defaultMetric, "metric"),
 		Resolution: int64(resolution),
-		intervalX:  int64(math.Max(1, xRange / intervalResolution)),
-		intervalY:  int64(math.Max(1, yRange / intervalResolution)),
+		intervalX:  int64(math.Max(1, xRange/intervalResolution)),
+		intervalY:  int64(math.Max(1, yRange/intervalResolution)),
 		BinSizeX:   binSizeX,
 		BinSizeY:   binSizeY,
 	}, nil
