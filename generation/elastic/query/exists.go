@@ -26,7 +26,7 @@ func NewExists(params map[string]interface{}) (*Exists, error) {
 
 // GetHash returns a string hash of the query.
 func (q *Exists) GetHash() string {
-	return fmt.Sprintf("%s:%s", q.Field)
+	return fmt.Sprintf("%s", q.Field)
 }
 
 // GetQuery returns the elastic query object.
