@@ -4,7 +4,7 @@
 
 ## Dependencies
 
-Requires the [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified.
+1. Requires the [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified.
 
 ## Installation
 
@@ -26,8 +26,8 @@ Install dependencies
 
 ```bash
 cd prism
-go get ./...
 make deps
+govendor sync 
 ```
 
 ## Usage

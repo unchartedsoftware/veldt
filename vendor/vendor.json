@@ -1,0 +1,127 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "HWrbirRhfqPP4UgcCVopHBNwA60=",
+			"path": "github.com/Sirupsen/logrus",
+			"revision": "f3cfb454f4c209e6668c95216c4744b8fddb2356",
+			"revisionTime": "2016-06-01T11:32:10Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "BiyaeMQMQ0bD5JvjBoJGYKLbUr4=",
+			"path": "github.com/coocood/freecache",
+			"revision": "1aa53c26cb85c33eef6d832305447982e95f844c",
+			"revisionTime": "2016-03-30T15:18:51Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "5FSvqcgf72hHuMBUKZC7aa0XBzs=",
+			"path": "github.com/garyburd/redigo/internal",
+			"revision": "b8dc90050f24c1a73a52f107f3f575be67b21b7c",
+			"revisionTime": "2016-05-25T16:57:06Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "507OiSqTxfGCje7xDT5eq9CCaNQ=",
+			"path": "github.com/garyburd/redigo/redis",
+			"revision": "b8dc90050f24c1a73a52f107f3f575be67b21b7c",
+			"revisionTime": "2016-05-25T16:57:06Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "zb7w9zrHw5g5IFXHe6zX2eD7q2Q=",
+			"path": "github.com/golang/protobuf/proto",
+			"revision": "8616e8ee5e20a1704615e6c8d7afcdac06087a67",
+			"revisionTime": "2016-06-08T21:55:45Z"
+		},
+		{
+			"checksumSHA1": "6wAWOVRtaH7hX48hmw9o7noyy5Q=",
+			"path": "github.com/mattn/go-colorable",
+			"revision": "9056b7a9f2d1f2d96498d6d146acd1f9d5ed3d59",
+			"revisionTime": "2016-06-02T15:08:27Z"
+		},
+		{
+			"checksumSHA1": "NkbetqlpWBi3gP08JDneC+axTKw=",
+			"path": "github.com/mattn/go-isatty",
+			"revision": "56b76bdf51f7708750eac80fa38b952bb9f32639",
+			"revisionTime": "2015-12-11T00:06:21Z"
+		},
+		{
+			"checksumSHA1": "m4iT8u+F87oKlzt3FS9OTlv50+E=",
+			"path": "github.com/mgutz/ansi",
+			"revision": "c286dcecd19ff979eeb73ea444e479b903f2cfcb",
+			"revisionTime": "2015-09-14T16:22:38Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "f0Gs25NkDAHOsixImtJ6WpnriRs=",
+			"path": "github.com/onsi/ginkgo",
+			"revision": "059cec02d342bab423425a99b191186a03255e9e",
+			"revisionTime": "2016-06-13T12:36:15Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "Qn7jVil/+jAFauIknNURV9XYGyc=",
+			"path": "github.com/onsi/gomega",
+			"revision": "3e93f011213c200aadafcb19ed56eb718381cfbd",
+			"revisionTime": "2016-06-13T12:32:53Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "bbilAC3Am0MP1lPfSKblFsIvg4Q=",
+			"path": "github.com/spaolacci/murmur3",
+			"revision": "0d12bf811670bf6a1a63828dfbd003eded177fce",
+			"revisionTime": "2015-08-29T17:28:44Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "hm1YxJRQ5qx76p1/WTnndqEaQR0=",
+			"path": "github.com/unchartedsoftware/plog",
+			"revision": "a69182e118d2df5f5c7319cab3458309400b9626",
+			"revisionTime": "2016-02-22T16:37:03Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "XdxvIIqZLQ67wuI4ngmvwHkj6XE=",
+			"path": "gopkg.in/airbrake/gobrake.v2",
+			"revision": "31c8ff1fb8b79a6947e6565e9a6df535f98a6b94",
+			"revisionTime": "2016-04-02T08:12:50Z"
+		},
+		{
+			"checksumSHA1": "YV5g4hWLzjjsc8bi/iMIw7/gAnU=",
+			"path": "gopkg.in/gemnasium/logrus-airbrake-hook.v2",
+			"revision": "31e6fd4bd5a98d8ee7673d24bc54ec73c31810dd",
+			"revisionTime": "2015-10-06T01:16:14Z"
+		},
+		{
+			"checksumSHA1": "t0aENxSpQgyEQcT2+TllQXZy5Ek=",
+			"path": "gopkg.in/olivere/elastic.v3",
+			"revision": "7a92d18eaf7a9f95d603e70970fb5adcd4dc62f1",
+			"revisionTime": "2016-06-02T11:18:17Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "lLdKOn9RPtFoTtPUNq5+sIInAiE=",
+			"path": "gopkg.in/olivere/elastic.v3/backoff",
+			"revision": "7a92d18eaf7a9f95d603e70970fb5adcd4dc62f1",
+			"revisionTime": "2016-06-02T11:18:17Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "XQg6xG6l15Ke43KolthYYnVDCYo=",
+			"path": "gopkg.in/olivere/elastic.v3/uritemplates",
+			"revision": "7a92d18eaf7a9f95d603e70970fb5adcd4dc62f1",
+			"revisionTime": "2016-06-02T11:18:17Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "+OgOXBoiQ+X+C2dsAeiOHwBIEH0=",
+			"path": "gopkg.in/yaml.v2",
+			"revision": "a83829b6f1293c91addabc89d0571c246397bbf4",
+			"revisionTime": "2016-03-01T20:40:22Z"
+		}
+	],
+	"rootPath": "github.com/unchartedsoftware/prism"
+}

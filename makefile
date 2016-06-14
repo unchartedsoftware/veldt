@@ -18,19 +18,19 @@ clean:
 	@rm -rf ./build
 
 lint:
-	@go vet ./...
-	@golint ./...
+	@govendor vet +local 
+	@go list ./... | grep -v /vendor/ | xargs -L1 golint
 
 test:
-	@go test ./...
+	@govendor test +local
 
 fmt:
-	@gofmt -l -w .
+	@govendor fmt +local
 
 build: clean lint
-	@go build ./...
+	@govendor build +local
 
 deps:
+	@go get github.com/kardianos/govendor
 	@go get github.com/golang/lint/golint
-	@go get github.com/onsi/ginkgo
-	@go get github.com/onsi/gomega
+	
