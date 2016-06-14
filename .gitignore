@@ -4,3 +4,4 @@ main
 main.exe
 *.swp
 .idea
+vendor
