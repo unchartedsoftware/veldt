@@ -8,14 +8,16 @@ import (
 
 // Connection represents a single connection to a redis server.
 type Connection struct {
-	conn redis.Conn
+	conn   redis.Conn
+	expiry string
 }
 
 // NewConnection instantiates and returns a new redis store connection.
-func NewConnection(host string, port string) store.ConnectionConstructor {
+func NewConnection(host, port, expirySeconds string) store.ConnectionConstructor {
 	return func() (store.Connection, error) {
 		return &Connection{
-			conn: getConnection(host, port),
+			conn:   getConnection(host, port),
+			expiry: expirySeconds,
 		}, nil
 	}
 }
@@ -27,7 +29,12 @@ func (r *Connection) Get(key string) ([]byte, error) {
 
 // Set will store a byte slice under a given key in redis.
 func (r *Connection) Set(key string, value []byte) error {
-	_, err := r.conn.Do("SET", key, value)
+	var err error
+	if r.expiry != "" {
+		_, err = r.conn.Do("SET", key, value, "NX", "EX", r.expiry)
+	} else {
+		_, err = r.conn.Do("SET", key, value)
+	}
 	return err
 }
 
