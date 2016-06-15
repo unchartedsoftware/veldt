@@ -26,7 +26,7 @@ Install dependencies
 
 ```bash
 cd prism
-go get ./...
+glide install
 make deps
 ```
 
