@@ -2,6 +2,8 @@ version=0.1.0
 
 .PHONY: all
 
+NOVENDOR := $(shell glide novendor)
+
 all:
 	@echo "make <cmd>"
 	@echo ""
@@ -18,19 +20,17 @@ clean:
 	@rm -rf ./build
 
 lint:
-	@go vet ./...
-	@golint ./...
+	@go vet $(NOVENDOR)
+	@go list ./... | grep -v /vendor/ | xargs -L1 golint 
 
 test:
-	@go test ./...
+	@go test $(NOVENDOR) 
 
 fmt:
-	@gofmt -l -w .
+	@go format $(NOVENDOR)
 
 build: clean lint
-	@go build ./...
+	@go build $(NOVENDOR) 
 
 deps:
 	@go get github.com/golang/lint/golint
-	@go get github.com/onsi/ginkgo
-	@go get github.com/onsi/gomega

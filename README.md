@@ -4,7 +4,8 @@
 
 ## Dependencies
 
-Requires the [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified.
+1. [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified.
+2. For development, [Glide](https://github.com/Masterminds/glide) package manager.
 
 ## Installation
 
