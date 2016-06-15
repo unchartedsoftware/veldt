@@ -1,17 +1,23 @@
-hash: 48461dd5ce7f5d3bfbf35b3d17034806b3e5c89310efc01be3964b0cb2eb744a
-updated: 2016-06-13T12:09:52.984665939-04:00
+hash: 97775139f152411d4a7ccd2fdc11820f5a61526956003049ce1590f107811e74
+updated: 2016-06-15T09:41:46.437588099-04:00
 imports:
 - name: github.com/coocood/freecache
   version: 1aa53c26cb85c33eef6d832305447982e95f844c
 - name: github.com/garyburd/redigo
-  version: b8dc90050f24c1a73a52f107f3f575be67b21b7c
+  version: 8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13
   subpackages:
   - redis
   - internal
+- name: github.com/golang/protobuf
+  version: 0c1f6d65b5a189c2250d10e71a5506f06f9fa0a0
 - name: github.com/mattn/go-colorable
   version: 9056b7a9f2d1f2d96498d6d146acd1f9d5ed3d59
 - name: github.com/mgutz/ansi
   version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
+- name: github.com/onsi/ginkgo
+  version: 462326b1628e124b23f42e87a8f2750e3c4e2d24
+- name: github.com/onsi/gomega
+  version: 3e93f011213c200aadafcb19ed56eb718381cfbd
 - name: github.com/Sirupsen/logrus
   version: f3cfb454f4c209e6668c95216c4744b8fddb2356
 - name: github.com/spaolacci/murmur3
@@ -19,7 +25,7 @@ imports:
 - name: github.com/unchartedsoftware/plog
   version: a69182e118d2df5f5c7319cab3458309400b9626
 - name: golang.org/x/sys
-  version: 7f918dd405547ecb864d14a8ecbbfe205b5f930f
+  version: 62bee037599929a6e9146f29d10dd5208c43507d
   subpackages:
   - unix
 - name: gopkg.in/airbrake/gobrake.v2
@@ -27,7 +33,7 @@ imports:
 - name: gopkg.in/gemnasium/logrus-airbrake-hook.v2
   version: 31e6fd4bd5a98d8ee7673d24bc54ec73c31810dd
 - name: gopkg.in/olivere/elastic.v3
-  version: ^3.0.40 
+  version: 7a92d18eaf7a9f95d603e70970fb5adcd4dc62f1
   subpackages:
   - backoff
   - uritemplates
