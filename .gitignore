@@ -5,4 +5,3 @@ main.exe
 *.swp
 .idea
 vendor
-glide.lock
