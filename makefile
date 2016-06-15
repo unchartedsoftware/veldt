@@ -30,7 +30,7 @@ fmt:
 	@go format $(NOVENDOR)
 
 build: clean lint
-	@go build $(NOVENDOR) 
+	@go build ./... 
 
 deps:
 	@go get github.com/golang/lint/golint
