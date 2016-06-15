@@ -21,16 +21,17 @@ clean:
 
 lint:
 	@go vet $(NOVENDOR)
-	@go list ./... | grep -v /vendor/ | xargs -L1 golint 
+	@go list ./... | grep -v /vendor/ | xargs -L1 golint
 
 test:
-	@go test $(NOVENDOR) 
+	@go test $(NOVENDOR)
 
 fmt:
 	@go format $(NOVENDOR)
 
 build: clean lint
-	@go build ./... 
+	@go build ./...
 
 deps:
 	@go get github.com/golang/lint/golint
+	@go get github.com/Masterminds/glide
