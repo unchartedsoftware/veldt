@@ -4,7 +4,7 @@
 
 ## Dependencies
 
-Requires the [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified.
+1. Requires the [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified.
 
 ## Installation
 
@@ -28,6 +28,7 @@ Install dependencies
 cd prism
 glide install
 make deps
+govendor sync 
 ```
 
 ## Usage
@@ -43,7 +44,7 @@ package main
 
 import (
     "github.com/unchartedsoftware/prism/generation/elastic"
-	"github.com/unchartedsoftware/prism/generation/meta"
+	  "github.com/unchartedsoftware/prism/generation/meta"
     "github.com/unchartedsoftware/prism/generation/tile"
     "github.com/unchartedsoftware/prism/store"
     "github.com/unchartedsoftware/prism/store/redis"
@@ -70,9 +71,9 @@ func GenerateTileData(t *tile.Request) ([]byte, error) {
     return tile.GetTileFromStore(t)
 }
 
-func main() {    
+func main() {
     // Register the in-memory store to use the redis implementation.
-    store.Register("redis", redis.NewConnection("localhost", "6379"))
+    store.Register("redis", redis.NewConnection("localhost", "6379", 3600))
 
     // Register meta data generator
     meta.Register("default", elastic.NewDefaultMeta("http://localhost", "9200"))
