@@ -2,6 +2,8 @@ version=0.1.0
 
 .PHONY: all
 
+NOVENDOR := $(shell glide novendor)
+
 all:
 	@echo "make <cmd>"
 	@echo ""
@@ -18,19 +20,19 @@ clean:
 	@rm -rf ./build
 
 lint:
-	@govendor vet +local 
+	@go vet $(NOVENDOR)
 	@go list ./... | grep -v /vendor/ | xargs -L1 golint
 
 test:
-	@govendor test +local
+	@go test $(NOVENDOR)
 
 fmt:
-	@govendor fmt +local
+	@go format $(NOVENDOR)
 
 build: clean lint
-	@govendor build +local
+	@go build ./... 
 
 deps:
 	@go get github.com/kardianos/govendor
 	@go get github.com/golang/lint/golint
-	
+	@go get github.com/Masterminds/glide
