@@ -30,7 +30,7 @@ fmt:
 	@go format $(NOVENDOR)
 
 build: clean lint
-	@govendor build +local
+	@go build ./... 
 
 deps:
 	@go get github.com/kardianos/govendor

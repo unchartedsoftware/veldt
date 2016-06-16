@@ -26,9 +26,8 @@ Install dependencies
 
 ```bash
 cd prism
-glide install
 make deps
-govendor sync 
+glide update --all-dependencies 
 ```
 
 ## Usage
