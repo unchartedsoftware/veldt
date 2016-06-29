@@ -4,7 +4,8 @@
 
 ## Dependencies
 
-1. Requires the [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified.
+1. Requires the [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified.  
+1. Use of  vendoring capabilities provided by [Glide](https://glide.sh) requires Go version 1.6, or version 1.5 with the `VENDOREXPERIMENT` environment variable set to `1`.
 
 ## Installation
 
@@ -27,7 +28,7 @@ Install dependencies
 ```bash
 cd prism
 make deps
-glide update --all-dependencies 
+glide install 
 ```
 
 ## Usage
