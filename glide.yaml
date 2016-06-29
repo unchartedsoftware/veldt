@@ -7,9 +7,10 @@ import:
   subpackages:
   - redis
 - package: github.com/unchartedsoftware/plog
+  version: a73bb790d05ea66fbb0e51b64b582d1549dbbcfd
 - package: gopkg.in/olivere/elastic.v3
   version: ~3.0
 - package: github.com/onsi/ginkgo
   version: ~1.2
 - package: github.com/onsi/gomega
-  version: 0df7b7fdb38123c12a1f569f0affb2c2a7bd72cf  
+  version: 0df7b7fdb38123c12a1f569f0affb2c2a7bd72cf

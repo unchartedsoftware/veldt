@@ -5,9 +5,11 @@
 ## Dependencies
 
 1. Requires the [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified.  
-1. Use of  vendoring capabilities provided by [Glide](https://glide.sh) requires Go version 1.6, or version 1.5 with the `GO15VENDOREXPERIMENT` environment variable set to `1`.
+1. Use of vendoring capabilities provided by [Glide](https://glide.sh) requires [Go](https://golang.org/) version 1.6, or version 1.5 with the `GO15VENDOREXPERIMENT` environment variable set to `1`.
 
 ## Installation
+
+To use the package install it like you would any other:
 
 ```bash
 go get github.com/unchartedsoftware/prism
@@ -28,12 +30,12 @@ Install dependencies
 ```bash
 cd prism
 make deps
-glide install 
+glide install
 ```
 
 ## Usage
 
-The package provides facilities to implement and connect custom tiling and analytics to persistent in-memory storage services.
+The package provides facilities to implement and connect custom tiling analytics to persistent in-memory storage services.
 
 ## Example
 
@@ -44,7 +46,7 @@ package main
 
 import (
     "github.com/unchartedsoftware/prism/generation/elastic"
-	  "github.com/unchartedsoftware/prism/generation/meta"
+    "github.com/unchartedsoftware/prism/generation/meta"
     "github.com/unchartedsoftware/prism/generation/tile"
     "github.com/unchartedsoftware/prism/store"
     "github.com/unchartedsoftware/prism/store/redis"
@@ -55,7 +57,7 @@ func GenerateMetaData(m *meta.Request) ([]byte, error) {
     // in the store.
     err := meta.GenerateMeta(m)
     if err != nil {
-    	return nil, err
+        return nil, err
     }
     // Retrieve the meta data form the store.
     return meta.GetMetaFromStore(m)
@@ -65,7 +67,7 @@ func GenerateTileData(t *tile.Request) ([]byte, error) {
     // Generate a tile, this call will block until the tile is ready in the store.
     err := tile.GenerateTile(t)
     if err != nil {
-    	return nil, err
+        return nil, err
     }
     // Retrieve the tile form the store.
     return tile.GetTileFromStore(t)
