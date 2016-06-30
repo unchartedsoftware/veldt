@@ -4,16 +4,29 @@
 
 ## Dependencies
 
-1. Requires the [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified.  
-1. Use of vendoring capabilities provided by [Glide](https://glide.sh) requires [Go](https://golang.org/) version 1.6, or version 1.5 with the `GO15VENDOREXPERIMENT` environment variable set to `1`.
+Requires the [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified.
 
 ## Installation
 
-To use the package install it like you would any other:
+### Using `go get`:
+
+If your project does not use the vendoring tool [Glide](https://glide.sh) to manage dependencies, you can install this package like you would any other:
 
 ```bash
 go get github.com/unchartedsoftware/prism
 ```
+
+While this is the simplest way to install the package, due to how `go get` resolves transitive dependencies it may result in version incompatibilities.
+
+### Using `glide get`:
+
+This is the recommended way to install the package and ensures all transitive dependencies are resolved to their compatible versions.
+
+```bash
+glide get github.com/unchartedsoftware/prism
+```
+
+NOTE: Requires [Glide](https://glide.sh) along with [Go](https://golang.org/) version 1.6, or version 1.5 with the `GO15VENDOREXPERIMENT` environment variable set to `1`.
 
 ## Development
 
@@ -30,7 +43,6 @@ Install dependencies
 ```bash
 cd prism
 make deps
-glide install
 ```
 
 ## Usage

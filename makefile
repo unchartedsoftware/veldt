@@ -13,7 +13,7 @@ all:
 	@echo "  test          - test the source code"
 	@echo "  fmt           - format the code with gofmt"
 	@echo ""
-	@echo "  deps          - install any binary dependencies"
+	@echo "  deps          - install tool dependencies"
 
 lint:
 	@go vet $(NOVENDOR)
@@ -23,7 +23,7 @@ test:
 	@go test $(NOVENDOR)
 
 fmt:
-	@gofmt $(NOVENDOR)
+	@gofmt -l -w $(NOVENDOR)
 
 build: lint
 	@go build $(NOVENDOR)
@@ -31,3 +31,4 @@ build: lint
 deps:
 	@go get github.com/golang/lint/golint
 	@go get github.com/Masterminds/glide
+	@glide install
