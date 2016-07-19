@@ -15,7 +15,6 @@ type MacroTile struct {
 	TileGenerator
 	Binning    *param.Binning
 	Query      *query.Bool
-	MacroMicro *param.MacroMicro
 }
 
 // NewMacroTile instantiates and returns a pointer to a new generator.
@@ -33,10 +32,6 @@ func NewMacroTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		macromicro, err := param.NewMacroMicro(tileReq)
-		if err != nil {
-			return nil, err
-		}
 		query, err := query.NewBool(tileReq.Params)
 		if err != nil {
 			return nil, err
@@ -44,7 +39,6 @@ func NewMacroTile(host, port string) tile.GeneratorConstructor {
 		t := &MacroTile{}
 		t.Elastic = elastic
 		t.Binning = binning
-		t.MacroMicro = macromicro
 		t.Query = query
 		t.req = tileReq
 		t.host = host
@@ -58,7 +52,6 @@ func NewMacroTile(host, port string) tile.GeneratorConstructor {
 func (g *MacroTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Binning,
-		g.MacroMicro,
 		g.Query,
 	}
 }
@@ -110,29 +103,16 @@ func (g *MacroTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 
 // GetTile returns the marshalled tile data.
 func (g *MacroTile) GetTile() ([]byte, error) {
-	// first pass to get the count for the tile
+	// generate macro tile
 	res, err := g.Elastic.GetSearchService(g.client).
 		Index(g.req.Index).
 		Size(0).
 		Query(g.getQuery()).
+		Aggregation(xAggName, g.getAgg()).
 		Do()
 	if err != nil {
 		return nil, err
 	}
-	if res.Hits.TotalHits > g.MacroMicro.Threshold {
-		// generate macro tile
-		res, err := g.Elastic.GetSearchService(g.client).
-			Index(g.req.Index).
-			Size(0).
-			Query(g.getQuery()).
-			Aggregation(xAggName, g.getAgg()).
-			Do()
-		if err != nil {
-			return nil, err
-		}
-		// parse and return results
-		return g.parseResult(res)
-	}
-	// below threshold, return nil
-	return nil, nil
+	// parse and return results
+	return g.parseResult(res)
 }

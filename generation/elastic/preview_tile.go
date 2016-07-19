@@ -118,17 +118,18 @@ func (g *PreviewTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 			// extract results from each bucket
 			topHitsResult, ok := yBucket.TopHits(topHitsAggName)
 			if !ok {
-				return nil, fmt.Errorf("Top hits were not found in response for request %s", g.req.String())
+				return nil, fmt.Errorf("Top hits were not found in response for request %s",
+					g.req.String())
 			}
 			// loop over raw hit results for the bin and unmarshall them into a list
-			topHitsList := make([]map[string]interface{}, len(topHitsResult.Hits.Hits))
-			for idx, hit := range topHitsResult.Hits.Hits {
-				if err := json.Unmarshal(*hit.Source, &(topHitsList[idx])); err != nil {
+			topHits := make([]map[string]interface{}, len(topHitsResult.Hits.Hits))
+			for index, hit := range topHitsResult.Hits.Hits {
+				if err := json.Unmarshal(*hit.Source, &(topHits[index])); err != nil {
 					return nil, fmt.Errorf("Top hits could not be unmarshalled from response for request %s",
 						g.req.String())
 				}
 			}
-			bins[index] = topHitsList
+			bins[index] = topHits
 		}
 	}
 	return json.Marshal(bins)
