@@ -73,6 +73,5 @@ func (g *CountTile) GetTile() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%v\n", res.Hits.TotalHits)
 	return []byte(fmt.Sprintf("{\"count\":%d}\n", res.Hits.TotalHits)), nil
 }
