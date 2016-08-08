@@ -23,7 +23,7 @@ test:
 	@go test $(NOVENDOR)
 
 fmt:
-	@gofmt -l -w $(NOVENDOR)
+	@go fmt $(NOVENDOR)
 
 build: lint
 	@go build $(NOVENDOR)

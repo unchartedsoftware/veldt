@@ -13,8 +13,8 @@ import (
 // MacroTile represents a tiling generator that produces a tile.
 type MacroTile struct {
 	TileGenerator
-	Binning    *param.Binning
-	Query      *query.Bool
+	Binning *param.Binning
+	Query   *query.Bool
 }
 
 // NewMacroTile instantiates and returns a pointer to a new generator.

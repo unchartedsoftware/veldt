@@ -15,9 +15,9 @@ import (
 // MicroTile represents a tiling generator that produces a tile.
 type MicroTile struct {
 	TileGenerator
-	Binning    *param.Binning
-	Query      *query.Bool
-	TopHits    *agg.TopHits
+	Binning *param.Binning
+	Query   *query.Bool
+	TopHits *agg.TopHits
 }
 
 // NewMicroTile instantiates and returns a pointer to a new generator.
