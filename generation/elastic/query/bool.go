@@ -14,6 +14,7 @@ type Bool struct {
 	musts    []Query
 	mustNots []Query
 	shoulds  []Query
+	minimumShouldMatch string
 }
 
 // Query represents a base query Query interface.
@@ -103,10 +104,14 @@ func NewBool(params map[string]interface{}) (*Bool, error) {
 	} else {
 		shoulds = make([]Query, 0)
 	}
+	// minimum_should_match
+	minimumShouldMatch := json.GetStringDefault(params, "1", "minimum_should_match")
+
 	return &Bool{
 		musts:    musts,
 		mustNots: mustNots,
 		shoulds:  shoulds,
+		minimumShouldMatch: minimumShouldMatch,
 	}, nil
 }
 
@@ -142,6 +147,10 @@ func (b *Bool) GetQuery() elastic.Query {
 	// add shoulds
 	for _, should := range b.shoulds {
 		query.Should(should.GetQuery())
+	}
+	// add minimum_should_match
+	if b.minimumShouldMatch != "" {
+		query.MinimumShouldMatch(b.minimumShouldMatch)
 	}
 	return query
 }
