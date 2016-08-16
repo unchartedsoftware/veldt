@@ -1,7 +1,6 @@
 package query
 
 import (
-	"fmt"
 	"strings"
 
 	"gopkg.in/olivere/elastic.v3"
@@ -11,50 +10,10 @@ import (
 
 // Bool represents a boolean query.
 type Bool struct {
-	musts    []Query
-	mustNots []Query
-	shoulds  []Query
+	musts              []Query
+	mustNots           []Query
+	shoulds            []Query
 	minimumShouldMatch string
-}
-
-// Query represents a base query Query interface.
-type Query interface {
-	GetQuery() elastic.Query
-	GetHash() string
-}
-
-func getQueryByType(query map[string]interface{}) (Query, error) {
-	// bool
-	params, ok := json.GetChild(query, "bool")
-	if ok {
-		return NewBool(params)
-	}
-	// exists
-	params, ok = json.GetChild(query, "exists")
-	if ok {
-		return NewExists(params)
-	}
-	// terms
-	params, ok = json.GetChild(query, "terms")
-	if ok {
-		return NewTerms(params)
-	}
-	// range
-	params, ok = json.GetChild(query, "range")
-	if ok {
-		return NewRange(params)
-	}
-	// prefix
-	params, ok = json.GetChild(query, "prefix")
-	if ok {
-		return NewPrefix(params)
-	}
-	// query_string
-	params, ok = json.GetChild(query, "query_string")
-	if ok {
-		return NewString(params)
-	}
-	return nil, fmt.Errorf("No recognized query type found in %v", query)
 }
 
 // NewBool instantiates and returns a new parameter object.
@@ -108,9 +67,9 @@ func NewBool(params map[string]interface{}) (*Bool, error) {
 	minimumShouldMatch := json.GetStringDefault(params, "1", "minimum_should_match")
 
 	return &Bool{
-		musts:    musts,
-		mustNots: mustNots,
-		shoulds:  shoulds,
+		musts:              musts,
+		mustNots:           mustNots,
+		shoulds:            shoulds,
 		minimumShouldMatch: minimumShouldMatch,
 	}, nil
 }
