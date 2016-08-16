@@ -125,9 +125,10 @@ func main() {
                 "x": "xField",
                 "y": "yField",
                 "left": 0,
-                "right": math.,
+                "right": math.Pow(2, 32),
                 "bottom": 0,
-                "top": 256,
+                "top": math.Pow(2, 32),
+                "resolution": 256,
             }
         }
     }
