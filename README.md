@@ -57,11 +57,14 @@ This minimalistic application shows how to register tile and meta data generator
 package main
 
 import (
+    "math"
+
     "github.com/unchartedsoftware/prism/generation/elastic"
     "github.com/unchartedsoftware/prism/generation/meta"
     "github.com/unchartedsoftware/prism/generation/tile"
     "github.com/unchartedsoftware/prism/store"
     "github.com/unchartedsoftware/prism/store/redis"
+	"github.com/unchartedsoftware/prism/store/compress/gzip"
 )
 
 func GenerateMetaData(m *meta.Request) ([]byte, error) {
@@ -87,13 +90,19 @@ func GenerateTileData(t *tile.Request) ([]byte, error) {
 
 func main() {
     // Register the in-memory store to use the redis implementation.
-    store.Register("redis", redis.NewConnection("localhost", "6379", 3600))
+    store.Register("redis", redis.NewConnection("localhost", "6379", 3600))    
+    // Use gzip compression when setting / getting from the store
+    store.Use(gzip.NewCompressor())
 
     // Register meta data generator
     meta.Register("default", elastic.NewDefaultMeta("http://localhost", "9200"))
 
     // Register tile data generator
     tile.Register("heatmap", elastic.NewHeatmapTile("http://localhost", "9200"))
+    // Set the maximum concurrent tile requests
+    tile.SetMaxConcurrent(32)
+    // Set the tile requests queue length
+    tile.SetQueueLength(1024)
 
     // Create a request for `default` meta data.
     m := &meta.Request{
@@ -110,6 +119,16 @@ func main() {
             Z: 4,
             X: 12,
             y: 12,
+        },
+        Params: map[string]interface{}{
+            "binning": map[string]interface{}{
+                "x": "xField",
+                "y": "yField",
+                "left": 0,
+                "right": math.,
+                "bottom": 0,
+                "top": 256,
+            }
         }
     }
 
