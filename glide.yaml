@@ -3,13 +3,14 @@ import:
 - package: github.com/coocood/freecache
   version: 1aa53c26cb85c33eef6d832305447982e95f844c
 - package: github.com/garyburd/redigo
-  version: ~1.0
+  version: 8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13
   subpackages:
   - redis
 - package: github.com/unchartedsoftware/plog
+  version: a69182e118d2df5f5c7319cab3458309400b9626
 - package: gopkg.in/olivere/elastic.v3
-  version: ~3.0
+  version: d8c80d884c60d6844d3042cf1697998f34c25e37
 - package: github.com/onsi/ginkgo
-  version: ~1.2
+  version: 462326b1628e124b23f42e87a8f2750e3c4e2d24
 - package: github.com/onsi/gomega
   version: 0df7b7fdb38123c12a1f569f0affb2c2a7bd72cf
