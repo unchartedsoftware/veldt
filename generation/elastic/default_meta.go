@@ -56,6 +56,19 @@ func parsePropertiesRecursive(meta map[string]PropertyMeta, client *elastic.Clie
 						return err
 					}
 					meta[subpath] = *prop
+
+					// Parse out multi-field mapping
+					fields, hasFields := jsonutil.GetChild(props, "fields")
+					if hasFields {
+						for fieldName, _ := range fields {
+							multiFieldPath := subpath + "." + fieldName
+							prop, err = getPropertyMeta(client, index, multiFieldPath, typ)
+							if err != nil {
+								return err
+							}
+							meta[multiFieldPath] = *prop
+						}
+					}
 				}
 			}
 		}
