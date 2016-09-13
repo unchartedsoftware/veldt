@@ -21,6 +21,7 @@ type TopFrequencyTile struct {
 	Time      *agg.DateHistogram
 	Query     *query.Bool
 	Histogram *agg.Histogram
+	TopHits   *agg.TopHits
 }
 
 // NewTopFrequencyTile instantiates and returns a pointer to a new generator.
@@ -56,6 +57,10 @@ func NewTopFrequencyTile(host, port string) tile.GeneratorConstructor {
 		if param.IsOptionalErr(err) {
 			return nil, err
 		}
+		topHits, err := agg.NewTopHits(tileReq.Params)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
 		t := &TopFrequencyTile{}
 		t.Elastic = elastic
 		t.Tiling = tiling
@@ -63,6 +68,7 @@ func NewTopFrequencyTile(host, port string) tile.GeneratorConstructor {
 		t.Time = time
 		t.Query = query
 		t.Histogram = histogram
+		t.TopHits = topHits
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -79,6 +85,7 @@ func (g *TopFrequencyTile) GetParams() []tile.Param {
 		g.Time,
 		g.Query,
 		g.Histogram,
+		g.TopHits,
 	}
 }
 
@@ -98,6 +105,10 @@ func (g *TopFrequencyTile) getAgg() elastic.Aggregation {
 	// if histogram param is provided, add histogram agg
 	if g.Histogram != nil {
 		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
+	}
+	// if topHits param is provided, add topHits agg
+	if g.TopHits != nil {
+		timeAgg.SubAggregation(topHitsAggName, g.TopHits.GetAgg())
 	}
 	// add date histogram agg
 	agg.SubAggregation(timeAggName, timeAgg)
@@ -126,6 +137,7 @@ func (g *TopFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, error
 		}
 		counts := make([]interface{}, len(time.Buckets))
 		for i, bucket := range time.Buckets {
+			var bCounts interface{}
 			if g.Histogram != nil {
 				histogram, ok := bucket.Aggregations.Histogram(histogramAggName)
 				if !ok {
@@ -133,9 +145,27 @@ func (g *TopFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, error
 						histogramAggName,
 						g.req.String())
 				}
-				counts[i] = g.Histogram.GetBucketMap(histogram)
+				bCounts = g.Histogram.GetBucketMap(histogram)
 			} else {
-				counts[i] = bucket.DocCount
+				bCounts = bucket.DocCount
+			}
+			if g.TopHits != nil {
+				topHitsAgg, ok := bucket.Aggregations.TopHits(topHitsAggName)
+				if !ok {
+					return nil, fmt.Errorf("Top hits were not found in response for request %s",
+						g.req.String())
+				}
+				topHits, ok := g.TopHits.GetHitsMap(topHitsAgg)
+				if !ok {
+					return nil, fmt.Errorf("Top hits could not be unmarshalled from response for request %s",
+						g.req.String())
+				}
+				counts[i] = map[string]interface{}{
+					"counts": bCounts,
+					"hits": topHits,
+				}
+			} else {
+				counts[i] = bCounts
 			}
 		}
 		// add counts to frequencies map

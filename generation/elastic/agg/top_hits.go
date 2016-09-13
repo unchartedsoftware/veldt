@@ -1,6 +1,7 @@
 package agg
 
 import (
+	ejson "encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -75,4 +76,15 @@ func (p *TopHits) GetAgg() elastic.Aggregation {
 				Include(p.Include...))
 	}
 	return agg
+}
+
+// GetHitsMap parses and unmarshals the top hits.
+func (p *TopHits) GetHitsMap(agg *elastic.AggregationTopHitsMetric) ([]map[string]interface{}, bool) {
+	topHits := make([]map[string]interface{}, len(agg.Hits.Hits))
+	for index, hit := range agg.Hits.Hits {
+		if err := ejson.Unmarshal(*hit.Source, &(topHits[index])); err != nil {
+			return nil, false
+		}
+	}
+	return topHits, true
 }

@@ -19,6 +19,7 @@ type TopicCountTile struct {
 	Terms     *agg.TermsFilter
 	Query     *query.Bool
 	Histogram *agg.Histogram
+	TopHits   *agg.TopHits
 }
 
 // NewTopicCountTile instantiates and returns a pointer to a new generator.
@@ -50,12 +51,17 @@ func NewTopicCountTile(host, port string) tile.GeneratorConstructor {
 		if param.IsOptionalErr(err) {
 			return nil, err
 		}
+		topHits, err := agg.NewTopHits(tileReq.Params)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
 		t := &TopicCountTile{}
 		t.Elastic = elastic
 		t.Tiling = tiling
 		t.Terms = terms
 		t.Query = query
 		t.Histogram = histogram
+		t.TopHits = topHits
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -71,6 +77,7 @@ func (g *TopicCountTile) GetParams() []tile.Param {
 		g.Terms,
 		g.Query,
 		g.Histogram,
+		g.TopHits,
 	}
 }
 
@@ -88,6 +95,10 @@ func (g *TopicCountTile) addAggs(query *elastic.SearchService) *elastic.SearchSe
 		if g.Histogram != nil {
 			agg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
 		}
+		// if topHits param is provided, add topHits agg
+		if g.TopHits != nil {
+			agg.SubAggregation(topHitsAggName, g.TopHits.GetAgg())
+		}
 		query.Aggregation(term, agg)
 	}
 	return query
@@ -104,6 +115,7 @@ func (g *TopicCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) 
 				g.req.String())
 		}
 		if filter.DocCount > 0 {
+			var bCounts interface{}
 			if g.Histogram != nil {
 				histogramAgg, ok := filter.Aggregations.Histogram(histogramAggName)
 				if !ok {
@@ -111,9 +123,27 @@ func (g *TopicCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) 
 						histogramAggName,
 						g.req.String())
 				}
-				counts[term] = g.Histogram.GetBucketMap(histogramAgg)
+				bCounts = g.Histogram.GetBucketMap(histogramAgg)
 			} else {
-				counts[term] = filter.DocCount
+				bCounts = filter.DocCount
+			}
+			if g.TopHits != nil {
+				topHitsAgg, ok := filter.Aggregations.TopHits(topHitsAggName)
+				if !ok {
+					return nil, fmt.Errorf("Top hits were not found in response for request %s",
+						g.req.String())
+				}
+				topHits, ok := g.TopHits.GetHitsMap(topHitsAgg)
+				if !ok {
+					return nil, fmt.Errorf("Top hits could not be unmarshalled from response for request %s",
+						g.req.String())
+				}
+				counts[term] = map[string]interface{}{
+					"counts": bCounts,
+					"hits": topHits,
+				}
+			} else {
+				counts[term] = bCounts
 			}
 		}
 	}

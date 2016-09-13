@@ -12,6 +12,7 @@ import (
 type Match struct {
 	Field  string
 	String string
+	Type   string
 }
 
 // NewMatch instantiates and returns a match query object.
@@ -24,9 +25,11 @@ func NewMatch(params map[string]interface{}) (*Match, error) {
 	if !ok {
 		return nil, fmt.Errorf("Match `string` parameter missing from tiling param %v", params)
 	}
+	matchType := json.GetStringDefault(params, "boolean", "type")
 	return &Match{
 		Field:  field,
 		String: str,
+		Type: matchType,
 	}, nil
 }
 
@@ -39,5 +42,7 @@ func (q *Match) GetHash() string {
 
 // GetQuery returns the elastic query object.
 func (q *Match) GetQuery() elastic.Query {
-	return elastic.NewMatchQuery(q.Field, q.String)
+	matchQuery := elastic.NewMatchQuery(q.Field, q.String)
+	matchQuery.Type(q.Type)
+	return matchQuery
 }

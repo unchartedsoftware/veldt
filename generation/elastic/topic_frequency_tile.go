@@ -25,6 +25,7 @@ type TopicFrequencyTile struct {
 	Time      *agg.DateHistogram
 	Query     *query.Bool
 	Histogram *agg.Histogram
+	TopHits   *agg.TopHits
 }
 
 // NewTopicFrequencyTile instantiates and returns a pointer to a new generator.
@@ -60,6 +61,10 @@ func NewTopicFrequencyTile(host, port string) tile.GeneratorConstructor {
 		if param.IsOptionalErr(err) {
 			return nil, err
 		}
+		topHits, err := agg.NewTopHits(tileReq.Params)
+		if param.IsOptionalErr(err) {
+			return nil, err
+		}
 		t := &TopicFrequencyTile{}
 		t.Elastic = elastic
 		t.Tiling = tiling
@@ -67,6 +72,7 @@ func NewTopicFrequencyTile(host, port string) tile.GeneratorConstructor {
 		t.Time = time
 		t.Query = query
 		t.Histogram = histogram
+		t.TopHits = topHits
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -83,6 +89,7 @@ func (g *TopicFrequencyTile) GetParams() []tile.Param {
 		g.Time,
 		g.Query,
 		g.Histogram,
+		g.TopHits,
 	}
 }
 
@@ -100,6 +107,10 @@ func (g *TopicFrequencyTile) addAggs(query *elastic.SearchService) *elastic.Sear
 	// if histogram param is provided, add histogram agg
 	if g.Histogram != nil {
 		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
+	}
+	// if topHits param is provided, add topHits agg
+	if g.TopHits != nil {
+		timeAgg.SubAggregation(topHitsAggName, g.TopHits.GetAgg())
 	}
 	// add all filter aggregations
 	for term, termAgg := range g.Terms.GetAggs() {
@@ -127,6 +138,7 @@ func (g *TopicFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, err
 		counts := make([]interface{}, len(timeAgg.Buckets))
 		topicExists := false
 		for i, bucket := range timeAgg.Buckets {
+			var bCounts interface{}
 			if g.Histogram != nil {
 				histogramAgg, ok := bucket.Aggregations.Histogram(histogramAggName)
 				if !ok {
@@ -134,12 +146,30 @@ func (g *TopicFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, err
 						histogramAggName,
 						g.req.String())
 				}
-				counts[i] = g.Histogram.GetBucketMap(histogramAgg)
+				bCounts = g.Histogram.GetBucketMap(histogramAgg)
 			} else {
-				counts[i] = bucket.DocCount
+				bCounts = bucket.DocCount
 			}
 			if bucket.DocCount > 0 {
 				topicExists = true
+			}
+			if g.TopHits != nil {
+				topHitsAgg, ok := bucket.Aggregations.TopHits(topHitsAggName)
+				if !ok {
+					return nil, fmt.Errorf("Top hits were not found in response for request %s",
+						g.req.String())
+				}
+				topHits, ok := g.TopHits.GetHitsMap(topHitsAgg)
+				if !ok {
+					return nil, fmt.Errorf("Top hits could not be unmarshalled from response for request %s",
+						g.req.String())
+				}
+				counts[i] = map[string]interface{}{
+					"counts": bCounts,
+					"hits": topHits,
+				}
+			} else {
+				counts[i] = bCounts
 			}
 		}
 		// only add topics if they have at least one count
