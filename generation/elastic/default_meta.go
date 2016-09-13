@@ -17,12 +17,22 @@ type PropertyMeta struct {
 	Extrema *binning.Extrema `json:"extrema,omitempty"`
 }
 
+func isOrdinal(typ string) {
+	return typ == "long" ||
+		typ == "integer" ||
+		typ == "short" ||
+		typ == "byte" ||
+		typ == "double" ||
+		typ == "float" ||
+		typ == "date"
+}
+
 func getPropertyMeta(client *elastic.Client, index string, field string, typ string) (*PropertyMeta, error) {
 	p := PropertyMeta{
 		Type: typ,
 	}
-	// if field is 'numeric', get the extrema
-	if typ == "long" || typ == "double" || typ == "date" {
+	// if field is 'ordinal', get the extrema
+	if isOrdinal(typ) {
 		extrema, err := GetExtrema(client, index, field)
 		if err != nil {
 			return nil, err
