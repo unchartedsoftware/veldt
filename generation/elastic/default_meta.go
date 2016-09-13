@@ -17,7 +17,7 @@ type PropertyMeta struct {
 	Extrema *binning.Extrema `json:"extrema,omitempty"`
 }
 
-func isOrdinal(typ string) {
+func isOrdinal(typ string) bool {
 	return typ == "long" ||
 		typ == "integer" ||
 		typ == "short" ||
