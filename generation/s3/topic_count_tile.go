@@ -3,8 +3,8 @@ package s3
 import (
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
+	"fmt"
 
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
@@ -35,9 +35,6 @@ func (g *TopicCountTile) GetParams() []tile.Param {
 
 // GetTile returns the marshalled tile data.
 func (g *TopicCountTile) GetTile() ([]byte, error) {
-	// send query
-	client := &http.Client{}
-
 	/* g.req.Index(s3 bucket name) is passed in from client.
 	Typically it has a slash (ex: census-hackathon-2016/types-word-cloud)
 	however having this as part of the request means the prism-server
@@ -45,18 +42,34 @@ func (g *TopicCountTile) GetTile() ([]byte, error) {
 	and the following reverses this action.
 	*/
 	bucketName := strings.Replace(g.req.Index, ":", "/", 1)
-	url := g.baseURL + "/" + bucketName + "/" + strconv.Itoa(int(g.req.Coord.X)) + "/" + strconv.Itoa(int(g.req.Coord.Y)) + "/" + strconv.Itoa(int(g.req.Coord.Z)) + ".json"
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Set("Accept", "application/json")
-	res, err := client.Do(req)
 
+	// build http request
+	url := fmt.Sprintf("%s/%s/%d/%d/%d.%s",
+		g.baseURL,
+		bucketName,
+		g.req.Coord.X,
+		g.req.Coord.Y,
+		g.req.Coord.Z,
+		g.req.Params["extension"])
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	// parse and return results
+	// set appropriate headers
+	req.Header.Set("Accept", "application/json")
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// read result
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
 
 	return body, nil
 }
