@@ -148,7 +148,7 @@ func (g *TopCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 			}
 			counts[term] = map[string]interface{}{
 				"counts": bCounts,
-				"hits": topHits,
+				"hits":   topHits,
 			}
 		} else {
 			counts[term] = bCounts

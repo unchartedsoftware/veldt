@@ -166,7 +166,7 @@ func (g *TopicFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, err
 				}
 				counts[i] = map[string]interface{}{
 					"counts": bCounts,
-					"hits": topHits,
+					"hits":   topHits,
 				}
 			} else {
 				counts[i] = bCounts

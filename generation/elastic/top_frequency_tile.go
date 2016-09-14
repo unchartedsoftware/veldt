@@ -162,7 +162,7 @@ func (g *TopFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, error
 				}
 				counts[i] = map[string]interface{}{
 					"counts": bCounts,
-					"hits": topHits,
+					"hits":   topHits,
 				}
 			} else {
 				counts[i] = bCounts

@@ -29,7 +29,7 @@ func NewMatch(params map[string]interface{}) (*Match, error) {
 	return &Match{
 		Field:  field,
 		String: str,
-		Type: matchType,
+		Type:   matchType,
 	}, nil
 }
 
