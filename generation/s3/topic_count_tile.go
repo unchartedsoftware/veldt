@@ -1,12 +1,13 @@
 package s3
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"fmt"
 
 	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/util/json"
 )
 
 const (
@@ -44,13 +45,14 @@ func (g *TopicCountTile) GetTile() ([]byte, error) {
 	bucketName := strings.Replace(g.req.Index, ":", "/", 1)
 
 	// build http request
+	extension := json.GetStringDefault(g.req.Params, "json", "extension")
 	url := fmt.Sprintf("%s/%s/%d/%d/%d.%s",
 		g.baseURL,
 		bucketName,
+		g.req.Coord.Z,
 		g.req.Coord.X,
 		g.req.Coord.Y,
-		g.req.Coord.Z,
-		g.req.Params["extension"])
+		extension)
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -58,7 +60,13 @@ func (g *TopicCountTile) GetTile() ([]byte, error) {
 	}
 
 	// set appropriate headers
-	req.Header.Set("Accept", "application/json")
+	var contentType string
+	if extension == "bin" {
+		contentType = "application/octet-stream"
+	} else {
+		contentType = "application/json"
+	}
+	req.Header.Set("Accept", contentType)
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
