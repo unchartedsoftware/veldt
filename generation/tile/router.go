@@ -13,7 +13,7 @@ import (
 type Request struct {
 	Coord  *binning.TileCoord     `json:"coord"`
 	Type   string                 `json:"type"`
-	Index  string                 `json:"index"`
+	URI    string                 `json:"uri"`
 	Store  string                 `json:"store"`
 	Params map[string]interface{} `json:"params"`
 }
@@ -22,7 +22,7 @@ type Request struct {
 func (r *Request) String() string {
 	return fmt.Sprintf("%s/%s/%d/%d/%d",
 		r.Type,
-		r.Index,
+		r.URI,
 		r.Coord.Z,
 		r.Coord.X,
 		r.Coord.Y)
@@ -36,7 +36,7 @@ func getTileHash(req *Request, gen Generator) string {
 	hash := fmt.Sprintf("tile:%s:%s:%s:%d:%d:%d",
 		gen.GetHash(),
 		req.Type,
-		req.Index,
+		req.URI,
 		req.Coord.Z,
 		req.Coord.X,
 		req.Coord.Y)

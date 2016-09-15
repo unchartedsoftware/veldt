@@ -105,7 +105,7 @@ func (g *MacroTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 func (g *MacroTile) GetTile() ([]byte, error) {
 	// generate macro tile
 	res, err := g.Elastic.GetSearchService(g.client).
-		Index(g.req.Index).
+		Index(g.req.URI).
 		Size(0).
 		Query(g.getQuery()).
 		Aggregation(xAggName, g.getAgg()).

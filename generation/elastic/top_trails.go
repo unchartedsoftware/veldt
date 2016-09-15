@@ -159,7 +159,7 @@ func (g *TopTrailsTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 func (g *TopTrailsTile) GetTile() ([]byte, error) {
 	// first pass to get the top N ids
 	res, err := g.Elastic.GetSearchService(g.client).
-		Index(g.req.Index).
+		Index(g.req.URI).
 		Size(0).
 		Query(g.getFirstQuery()).
 		Aggregation(termsAggName, g.Terms.GetAgg()).
@@ -190,7 +190,7 @@ func (g *TopTrailsTile) GetTile() ([]byte, error) {
 	}
 	// second pass to pull by bin
 	res, err = g.Elastic.GetSearchService(g.client).
-		Index(g.req.Index).
+		Index(g.req.URI).
 		Size(0).
 		Query(g.getSecondQuery()).
 		Aggregation(xAggName, g.getAgg()).

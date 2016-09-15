@@ -149,7 +149,7 @@ func (g *TopFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, error
 func (g *TopFrequencyTile) GetTile() ([]byte, error) {
 	// send query
 	res, err := g.Elastic.GetSearchService(g.client).
-		Index(g.req.Index).
+		Index(g.req.URI).
 		Size(0).
 		Query(g.getQuery()).
 		Aggregation(termsAggName, g.getAgg()).
