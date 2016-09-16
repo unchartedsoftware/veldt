@@ -9,7 +9,7 @@ import (
 // Request represents a meta data request.
 type Request struct {
 	Type  string `json:"type"`
-	Index string `json:"index"`
+	URI   string `json:"uri"`
 	Store string `json:"store"`
 }
 
@@ -17,7 +17,7 @@ type Request struct {
 func (r *Request) String() string {
 	return fmt.Sprintf("%s/%s",
 		r.Type,
-		r.Index)
+		r.URI)
 }
 
 // getMetaHash returns a unique hash string for the given type.
@@ -25,7 +25,7 @@ func getMetaHash(req *Request, gen Generator) string {
 	return fmt.Sprintf("meta:%s:%s:%s",
 		gen.GetHash(),
 		req.Type,
-		req.Index)
+		req.URI)
 }
 
 // generateAndStoreMeta generates the meta data and puts it in the store.

@@ -185,7 +185,7 @@ func (g *TopicFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, err
 func (g *TopicFrequencyTile) GetTile() ([]byte, error) {
 	// build query
 	query := g.Elastic.GetSearchService(g.client).
-		Index(g.req.Index).
+		Index(g.req.URI).
 		Size(0).
 		Query(g.getQuery())
 	// add all filter aggregations

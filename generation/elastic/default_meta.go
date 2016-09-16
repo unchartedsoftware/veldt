@@ -123,7 +123,7 @@ func (g *DefaultMeta) GetMeta() ([]byte, error) {
 	client := g.client
 	metaReq := g.req
 	// get the raw mappings
-	mapping, err := GetMapping(client, metaReq.Index)
+	mapping, err := GetMapping(client, metaReq.URI)
 	if err != nil {
 		return nil, err
 	}
@@ -135,13 +135,13 @@ func (g *DefaultMeta) GetMeta() ([]byte, error) {
 	index, ok := jsonutil.GetRandomChild(mapping)
 	if !ok {
 		return nil, fmt.Errorf("Unable to retrieve the mappings response for %s",
-			metaReq.Index)
+			metaReq.URI)
 	}
 	// get mappings node
 	mappings, ok := jsonutil.GetChildMap(index, "mappings")
 	if !ok {
 		return nil, fmt.Errorf("Unable to parse `mappings` from mappings response for %s",
-			metaReq.Index)
+			metaReq.URI)
 	}
 	// for each type, parse the mapping
 	meta := make(map[string]interface{})
@@ -150,10 +150,10 @@ func (g *DefaultMeta) GetMeta() ([]byte, error) {
 		if !ok {
 			return nil, fmt.Errorf("Unable to parse `properties` from mappings response for type `%s` for %s",
 				typ,
-				metaReq.Index)
+				metaReq.URI)
 		}
 		// parse json mappings into the property map
-		typeMeta, err := parseProperties(client, metaReq.Index, props)
+		typeMeta, err := parseProperties(client, metaReq.URI, props)
 		if err != nil {
 			return nil, err
 		}

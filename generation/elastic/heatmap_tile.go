@@ -155,7 +155,7 @@ func (g *HeatmapTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 func (g *HeatmapTile) GetTile() ([]byte, error) {
 	// send query
 	res, err := g.Elastic.GetSearchService(g.client).
-		Index(g.req.Index).
+		Index(g.req.URI).
 		Size(0).
 		Query(g.getQuery()).
 		Aggregation(xAggName, g.getAgg()).

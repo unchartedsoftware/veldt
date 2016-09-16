@@ -100,7 +100,7 @@ func (g *MicroTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 func (g *MicroTile) GetTile() ([]byte, error) {
 	// generate micro tile
 	query := g.Elastic.GetSearchService(g.client).
-		Index(g.req.Index).
+		Index(g.req.URI).
 		Size(0).
 		Query(g.getQuery()).
 		Aggregation(topHitsAggName, g.getAgg())

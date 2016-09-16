@@ -66,7 +66,7 @@ func (g *CountTile) getQuery() elastic.Query {
 // GetTile returns the marshalled tile data.
 func (g *CountTile) GetTile() ([]byte, error) {
 	res, err := g.Elastic.GetSearchService(g.client).
-		Index(g.req.Index).
+		Index(g.req.URI).
 		Size(0).
 		Query(g.getQuery()).
 		Do()
