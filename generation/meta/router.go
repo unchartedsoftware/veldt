@@ -9,7 +9,7 @@ import (
 // Request represents a meta data request.
 type Request struct {
 	Type  string `json:"type"`
-	URI string `json:"uri"`
+	URI   string `json:"uri"`
 	Store string `json:"store"`
 }
 

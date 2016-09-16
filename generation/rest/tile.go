@@ -7,7 +7,7 @@ import (
 // TileGenerator represents a base generator that uses elasticsearch for its
 // backend.
 type TileGenerator struct {
-	req     *tile.Request
+	req *tile.Request
 }
 
 // GetHash returns the hash for this generator.
