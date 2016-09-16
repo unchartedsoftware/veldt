@@ -107,13 +107,13 @@ func main() {
     // Create a request for `default` meta data.
     m := &meta.Request{
         Type: "default",
-        Index: "test_index",
+        URI: "test_index",
     }
 
     // Create a request for a `heatmap` tile.
     t := &tile.Request{
         Type: "heatmap",
-        Index: "test_index",
+        URI: "test_index",
         Store: "redis"
         Coord: &binning.TileCoord{
             Z: 4,

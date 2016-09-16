@@ -4,8 +4,6 @@ import:
   version: 1aa53c26cb85c33eef6d832305447982e95f844c
 - package: github.com/garyburd/redigo
   version: 8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13
-  subpackages:
-  - redis
 - package: github.com/unchartedsoftware/plog
   version: a69182e118d2df5f5c7319cab3458309400b9626
 - package: gopkg.in/olivere/elastic.v3
