@@ -3,6 +3,7 @@ package rest
 import (
 	"io/ioutil"
 	"net/http"
+	"errors"
 
 	"github.com/unchartedsoftware/prism/generation/tile"
 	"github.com/unchartedsoftware/prism/util/json"
@@ -31,7 +32,11 @@ func (g *Tile) GetParams() []tile.Param {
 func (g *Tile) GetTile() ([]byte, error) {
 	// build http request
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", g.req.URI, nil)
+	url, exists := json.Get(g.req.Params, "url");
+	if exists == false {
+		return nil, errors.New("Url missing from request params")
+	}
+	req, err := http.NewRequest("GET", url.(string), nil)
 	if err != nil {
 		return nil, err
 	}
