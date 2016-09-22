@@ -22,7 +22,7 @@ func NewHasParent(params map[string]interface{}) (*HasParent, error) {
 	}
 	query, ok := json.GetChild(params, "query")
 	if !ok {
-		return nil, fmt.Errorf("has_child `query` parameter missing from tiling param %v", params)
+		return nil, fmt.Errorf("has_parent `query` parameter missing from tiling param %v", params)
 	}
 	boolQuery, err := NewBool(query)
 	if err != nil {
