@@ -50,5 +50,15 @@ func getQueryByType(query map[string]interface{}) (Query, error) {
 	if ok {
 		return NewMatch(params)
 	}
-	return nil, fmt.Errorf("No recognized query type found in %v", query)
+	// has_parent
+	params, ok = json.GetChild(query, "has_parent")
+	if ok {
+		return NewHasParent(params)
+	}
+	// has_child
+	params, ok = json.GetChild(query, "has_child")
+	if ok {
+		return NewHasChild(params)
+	}
+	return nil, fmt.Errorf("No testrecognized query type found in %v", query)
 }
