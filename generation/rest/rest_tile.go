@@ -57,7 +57,6 @@ func (g *Tile) GetTile() ([]byte, error) {
 		g.req.Coord.X,
 		g.req.Coord.Y,
 		ext)
-	fmt.Println(url)
 	// build http request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

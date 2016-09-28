@@ -12,8 +12,7 @@ all:
 	@echo "  lint          - lint the source code"
 	@echo "  test          - test the source code"
 	@echo "  fmt           - format the code with gofmt"
-	@echo ""
-	@echo "  deps          - install tool dependencies"
+	@echo "  install       - install dependencies"
 
 lint:
 	@go vet $(NOVENDOR)
@@ -28,7 +27,7 @@ fmt:
 build: lint
 	@go build $(NOVENDOR)
 
-deps:
+install:
 	@go get github.com/golang/lint/golint
 	@go get github.com/Masterminds/glide
 	@glide install
