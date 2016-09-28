@@ -4,7 +4,7 @@
 
 ## Dependencies
 
-Requires the [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified.
+Requires the [Go](https://golang.org/) programming language binaries with the `GOPATH` environment variable specified and `$GOPATH/bin` in your `PATH`.
 
 ## Installation
 
@@ -33,7 +33,7 @@ NOTE: Requires [Glide](https://glide.sh) along with [Go](https://golang.org/) ve
 Clone the repository:
 
 ```bash
-mkdir $GOPATH/src/github.com/unchartedsoftware
+mkdir -p $GOPATH/src/github.com/unchartedsoftware
 cd $GOPATH/src/github.com/unchartedsoftware
 git clone git@github.com:unchartedsoftware/prism.git
 ```
