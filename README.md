@@ -42,7 +42,7 @@ Install dependencies
 
 ```bash
 cd prism
-make deps
+make install
 ```
 
 ## Usage
