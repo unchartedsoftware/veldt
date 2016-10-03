@@ -45,6 +45,36 @@ cd prism
 make install
 ```
 
+### Debug
+
+To debug queries sent to Elasticsearch by the tiles, marshall the query and aggregation sources to byte arrays, then convert to strings and print out the result. For example:
+
+```go
+func (g *FrequencyTile) GetTile() ([]byte, error) {
+	// temp debug query
+	querySource, err := g.getQuery().Source()
+	marshalledQuery, err := json.Marshal(querySource)
+	fmt.Println("=== QUERY: " + string(marshalledQuery[:]) + "\n")
+
+	aggSource, err := g.getAgg().Source()
+	marshalledAgg, err := json.Marshal(aggSource)
+	fmt.Println("=== AGG: " + string(marshalledAgg[:]) + "\n")
+
+	// send query
+	res, err := g.Elastic.GetSearchService(g.client).
+		Index(g.req.URI).
+		Size(0).
+		Query(g.getQuery()).
+		Aggregation(timeAggName, g.getAgg()).
+		Do()
+	if err != nil {
+		return nil, err
+	}
+	// parse and return results
+	return g.parseResult(res)
+}
+```
+
 ## Usage
 
 The package provides facilities to implement and connect custom tiling analytics to persistent in-memory storage services.
