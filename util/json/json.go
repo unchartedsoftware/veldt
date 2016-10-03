@@ -2,6 +2,8 @@ package json
 
 import (
 	"strconv"
+	"sort"
+	"bytes"
 )
 
 // Set sets the value under a given path, creating intermediate nodes along the
@@ -256,4 +258,46 @@ func GetStringArray(json map[string]interface{}, path ...string) ([]string, bool
 		strs[i] = val
 	}
 	return strs, true
+}
+
+// Gets a unique hash of unmarshaleld json
+func GetHash(data interface{}) string {
+	var buffer bytes.Buffer
+	getHash(data, &buffer)
+	return buffer.String()
+}
+
+func getHash(data interface{}, buffer *bytes.Buffer) {
+	switch data.(type) {
+	case map[string]interface{}:
+		jMap := data.(map[string]interface{})
+		var keys []string
+		for k := range jMap {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		for _, k := range keys {
+			buffer.WriteString(k)
+			buffer.WriteString(":")
+			getHash(jMap[k], buffer)
+		}
+	case []interface{}:
+		jArray := data.([]interface{})
+		for _, k := range jArray {
+			getHash(k, buffer)
+		}
+	case float64:
+		val := data.(float64)
+		buffer.WriteString(strconv.FormatFloat(val, 'f', 6, 64))
+		buffer.WriteString(":")
+	case string:
+		val := data.(string)
+		buffer.WriteString(val)
+		buffer.WriteString(":")
+	case bool:
+		val := data.(bool)
+		buffer.WriteString(strconv.FormatBool(val))
+		buffer.WriteString(":")
+	}
 }
