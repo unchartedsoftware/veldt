@@ -6,16 +6,18 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
+	"github.com/unchartedsoftware/prism/generation/elastic/agg"
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
+	"github.com/unchartedsoftware/prism/generation/elastic/query"
 	"github.com/unchartedsoftware/prism/generation/tile"
-	jsonp "github.com/unchartedsoftware/prism/util/json"
 )
 
 // CustomTile represents a tiling generator that produces top term counts.
 type CustomTile struct {
 	TileGenerator
 	Tiling     *param.Tiling
-	Source     map[string]interface{}
+	Query      *query.Bool
+	CustomAggs  *agg.CustomAggs
 }
 
 // NewCustomTile instantiates and returns a pointer to a new generator.
@@ -34,15 +36,19 @@ func NewCustomTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		source, ok := jsonp.GetChild(tileReq.Params, "source")
-		if !ok {
-			return nil, fmt.Errorf("Source was not of type `map[string]interface{}` in response for request %s",
-				tileReq.String())
+		query, err := query.NewBool(tileReq.Params)
+		if err != nil {
+			return nil, err
+		}
+		customAggs, err := agg.NewCustomAggs(tileReq.Params)
+		if err != nil {
+			return nil, err
 		}
 		t := &CustomTile{}
 		t.Elastic = elastic
 		t.Tiling = tiling
-		t.Source = source
+		t.CustomAggs = customAggs
+		t.Query = query
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -55,32 +61,27 @@ func NewCustomTile(host, port string) tile.GeneratorConstructor {
 func (g *CustomTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Tiling,
+		g.Query,
+		g.CustomAggs,
 	}
 }
 
+func (g *CustomTile) getQuery() elastic.Query {
+	return elastic.NewBoolQuery().
+		Must(g.Tiling.GetXQuery()).
+		Must(g.Tiling.GetYQuery()).
+		Must(g.Query.GetQuery())
+}
+
 func (g *CustomTile) GetQuerySource() (interface{}, error) {
-	xFilter, err := g.Tiling.GetXQuery().Source()
+	querySource, err := g.getQuery().Source()
 	if err != nil {
 		return nil, err
 	}
-	yFilter, err := g.Tiling.GetYQuery().Source()
-	if err != nil {
-		return nil, err
-	}
-	source := g.Source
-	must, ok := jsonp.GetArray(source, "must")
-	if !ok {
-		must = make([]interface{}, 0)
-	}
-	must = append(must, xFilter)
-	must = append(must, yFilter)
-	source["must"] = must
-	query := map[string]interface{}{
-		"query": map[string]interface{}{
-			"bool": source,
-		},
-	}
-	return query, nil
+	return map[string]interface{}{
+		"query": querySource,
+		"aggs": g.CustomAggs.GetAgg(),
+	}, nil
 }
 
 func (g *CustomTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
@@ -94,6 +95,8 @@ func (g *CustomTile) GetTile() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	msg, err := json.Marshal(source)
+	fmt.Println(string(msg[:]))
 	// send query
 	res, err := g.Elastic.GetSearchService(g.client).
 		Index(g.req.URI).
