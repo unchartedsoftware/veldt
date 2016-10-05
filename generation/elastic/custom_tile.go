@@ -100,8 +100,8 @@ func (g *CustomTile) GetTile() ([]byte, error) {
 	// send query
 	res, err := g.Elastic.GetSearchService(g.client).
 		Index(g.req.URI).
-		Size(0).
 		Source(source).
+		Size(0).
 		Do()
 	if err != nil {
 		return nil, err
