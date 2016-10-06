@@ -9,22 +9,6 @@ var (
 	registry = make(map[string]GeneratorConstructor)
 )
 
-// Param represents a single set of related tiling parameters.
-type Param interface {
-	GetHash() string
-}
-
-// Generator represents an interface for generating tile data.
-type Generator interface {
-	GetTile() ([]byte, error)
-	GetParams() []Param
-	GetHash() string
-}
-
-// GeneratorConstructor represents a function to instantiate a new generator
-// from a tile request.
-type GeneratorConstructor func(*Request) (Generator, error)
-
 // Register registers a tile generator under the provided type id string.
 func Register(typeID string, gen GeneratorConstructor) {
 	registry[typeID] = gen

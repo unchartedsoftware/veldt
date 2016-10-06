@@ -9,16 +9,6 @@ var (
 	registry = make(map[string]GeneratorConstructor)
 )
 
-// Generator represents an interface for generating meta data.
-type Generator interface {
-	GetMeta() ([]byte, error)
-	GetHash() string
-}
-
-// GeneratorConstructor represents a function to instantiate a new generator
-// from a meta data request.
-type GeneratorConstructor func(*Request) (Generator, error)
-
 // Register registers a meta data generator under the provided type id string.
 func Register(typeID string, gen GeneratorConstructor) {
 	registry[typeID] = gen

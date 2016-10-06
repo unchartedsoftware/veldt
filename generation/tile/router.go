@@ -5,28 +5,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/store"
 )
-
-// Request represents the tile type and tile coord.
-type Request struct {
-	Coord  *binning.TileCoord     `json:"coord"`
-	Type   string                 `json:"type"`
-	URI    string                 `json:"uri"`
-	Store  string                 `json:"store"`
-	Params map[string]interface{} `json:"params"`
-}
-
-// String returns the request formatted as a string.
-func (r *Request) String() string {
-	return fmt.Sprintf("%s/%s/%d/%d/%d",
-		r.Type,
-		r.URI,
-		r.Coord.Z,
-		r.Coord.X,
-		r.Coord.Y)
-}
 
 func getTileHash(req *Request, gen Generator) string {
 	tileParams := gen.GetParams()

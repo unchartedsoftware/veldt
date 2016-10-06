@@ -6,20 +6,6 @@ import (
 	"github.com/unchartedsoftware/prism/store"
 )
 
-// Request represents a meta data request.
-type Request struct {
-	Type  string `json:"type"`
-	URI   string `json:"uri"`
-	Store string `json:"store"`
-}
-
-// String returns the request formatted as a string.
-func (r *Request) String() string {
-	return fmt.Sprintf("%s/%s",
-		r.Type,
-		r.URI)
-}
-
 // getMetaHash returns a unique hash string for the given type.
 func getMetaHash(req *Request, gen Generator) string {
 	return fmt.Sprintf("meta:%s:%s:%s",
