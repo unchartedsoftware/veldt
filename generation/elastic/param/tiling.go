@@ -54,17 +54,17 @@ func NewTiling(tileReq *tile.Request) (*Tiling, error) {
 	}
 	bounds := binning.GetTileBounds(tileReq.Coord, extents)
 	return &Tiling{
-		X:              json.GetStringDefault(params, defaultXField, "x"),
-		Y:              json.GetStringDefault(params, defaultYField, "y"),
-		xType:          json.GetStringDefault(params, defaultXType, "xType"),
-		xRelationship:  json.GetStringDefault(params, defaultXRelationship, "xRelationship"),
-		yType:          json.GetStringDefault(params, defaultYType, "yType"),
-		yRelationship:  json.GetStringDefault(params, defaultYRelationship, "yRelationship"),
-		Bounds:         bounds,
-		minX:           int64(math.Min(bounds.TopLeft.X, bounds.BottomRight.X)),
-		maxX:           int64(math.Max(bounds.TopLeft.X, bounds.BottomRight.X)),
-		minY:           int64(math.Min(bounds.TopLeft.Y, bounds.BottomRight.Y)),
-		maxY:           int64(math.Max(bounds.TopLeft.Y, bounds.BottomRight.Y)),
+		X:             json.GetStringDefault(params, defaultXField, "x"),
+		Y:             json.GetStringDefault(params, defaultYField, "y"),
+		xType:         json.GetStringDefault(params, defaultXType, "xType"),
+		xRelationship: json.GetStringDefault(params, defaultXRelationship, "xRelationship"),
+		yType:         json.GetStringDefault(params, defaultYType, "yType"),
+		yRelationship: json.GetStringDefault(params, defaultYRelationship, "yRelationship"),
+		Bounds:        bounds,
+		minX:          int64(math.Min(bounds.TopLeft.X, bounds.BottomRight.X)),
+		maxX:          int64(math.Max(bounds.TopLeft.X, bounds.BottomRight.X)),
+		minY:          int64(math.Min(bounds.TopLeft.Y, bounds.BottomRight.Y)),
+		maxY:          int64(math.Max(bounds.TopLeft.Y, bounds.BottomRight.Y)),
 	}, nil
 }
 
@@ -89,11 +89,11 @@ func (p *Tiling) GetXQuery() elastic.Query {
 	}
 	if p.xRelationship == "child" {
 		return elastic.NewHasChildQuery(
-			p.xType, 
+			p.xType,
 			elastic.NewBoolQuery().Must(rangeQuery))
 	}
 	return elastic.NewHasParentQuery(
-		p.xType, 
+		p.xType,
 		elastic.NewBoolQuery().Must(rangeQuery))
 }
 
@@ -107,10 +107,10 @@ func (p *Tiling) GetYQuery() elastic.Query {
 	}
 	if p.yRelationship == "child" {
 		return elastic.NewHasChildQuery(
-			p.yType, 
+			p.yType,
 			elastic.NewBoolQuery().Must(rangeQuery))
 	}
 	return elastic.NewHasParentQuery(
-		p.yType, 
+		p.yType,
 		elastic.NewBoolQuery().Must(rangeQuery))
 }
