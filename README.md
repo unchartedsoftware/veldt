@@ -28,53 +28,6 @@ glide get github.com/unchartedsoftware/prism
 
 NOTE: Requires [Glide](https://glide.sh) along with [Go](https://golang.org/) version 1.6, or version 1.5 with the `GO15VENDOREXPERIMENT` environment variable set to `1`.
 
-## Development
-
-Clone the repository:
-
-```bash
-mkdir -p $GOPATH/src/github.com/unchartedsoftware
-cd $GOPATH/src/github.com/unchartedsoftware
-git clone git@github.com:unchartedsoftware/prism.git
-```
-
-Install dependencies
-
-```bash
-cd prism
-make install
-```
-
-### Debug
-
-To debug queries sent to Elasticsearch by the tiles, marshall the query and aggregation sources to byte arrays, then convert to strings and print out the result. For example:
-
-```go
-func (g *FrequencyTile) GetTile() ([]byte, error) {
-	// temp debug query
-	querySource, err := g.getQuery().Source()
-	marshalledQuery, err := json.Marshal(querySource)
-	fmt.Println("=== QUERY: " + string(marshalledQuery[:]) + "\n")
-
-	aggSource, err := g.getAgg().Source()
-	marshalledAgg, err := json.Marshal(aggSource)
-	fmt.Println("=== AGG: " + string(marshalledAgg[:]) + "\n")
-
-	// send query
-	res, err := g.Elastic.GetSearchService(g.client).
-		Index(g.req.URI).
-		Size(0).
-		Query(g.getQuery()).
-		Aggregation(timeAggName, g.getAgg()).
-		Do()
-	if err != nil {
-		return nil, err
-	}
-	// parse and return results
-	return g.parseResult(res)
-}
-```
-
 ## Usage
 
 The package provides facilities to implement and connect custom tiling analytics to persistent in-memory storage services.
@@ -168,5 +121,46 @@ func main() {
 
     // Generate tile data
     td, err := GenerateTileData(t)
+}
+```
+
+
+## Development
+
+Clone the repository:
+
+```bash
+mkdir -p $GOPATH/src/github.com/unchartedsoftware
+cd $GOPATH/src/github.com/unchartedsoftware
+git clone git@github.com:unchartedsoftware/prism.git
+```
+
+Install dependencies:
+
+```bash
+cd prism
+make install
+```
+
+Debugging ES queries:
+
+To debug queries sent to Elasticsearch by the tiles, marshall the query and aggregation sources to byte arrays, then convert to strings and print out the result.
+
+```go
+func (g *ExampleGenerator) GetTile() ([]byte, error) {
+	// temp debug query
+	query, err := g.getQuery().Source()
+	bytes, err := json.Marshal(query)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Debug(string(marshalledQuery))
+
+	agg, err := g.getAgg().Source()
+	marshalledAgg, err := json.Marshal(agg)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Debug(string(marshalledAgg))
 }
 ```
