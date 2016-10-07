@@ -21,7 +21,7 @@ type FrequencyTile struct {
 	Histogram *agg.Histogram
 }
 
-// FrequencyBin represents the result type in the returned array. (what is json type for Timestamp?)
+// FrequencyBin represents the result type in the returned array.
 type FrequencyBin struct {
 	Count     int64 `json:"count"`
 	Timestamp int64 `json:"timestamp"`
@@ -106,20 +106,9 @@ func (g *FrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 	bins := make([]FrequencyBin, len(time.Buckets))
 	counts := make([]interface{}, len(time.Buckets))
 	for i, bucket := range time.Buckets {
-		if g.Histogram != nil {
-			histogram, ok := bucket.Aggregations.Histogram(histogramAggName)
-			if !ok {
-				return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
-					histogramAggName,
-					g.req.String())
-			}
-			// TODO What is this case for?
-			counts[i] = g.Histogram.GetBucketMap(histogram)
-		} else {
-			counts[i] = bucket.DocCount
-			bin := FrequencyBin{Count: bucket.DocCount, Timestamp: bucket.Key}
-			bins[i] = bin
-		}
+		counts[i] = bucket.DocCount
+		bin := FrequencyBin{Count: bucket.DocCount, Timestamp: bucket.Key}
+		bins[i] = bin
 	}
 	// marshal results map
 	return json.Marshal(bins)
@@ -127,15 +116,6 @@ func (g *FrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 
 // GetTile returns the marshalled tile data.
 func (g *FrequencyTile) GetTile() ([]byte, error) {
-	// temp debug query
-	querySource, err := g.getQuery().Source()
-	marshalledQuery, err := json.Marshal(querySource)
-	fmt.Println("=== QUERY: " + string(marshalledQuery[:]) + "\n")
-
-	aggSource, err := g.getAgg().Source()
-	marshalledAgg, err := json.Marshal(aggSource)
-	fmt.Println("=== AGG: " + string(marshalledAgg[:]) + "\n")
-
 	// send query
 	res, err := g.Elastic.GetSearchService(g.client).
 		Index(g.req.URI).
