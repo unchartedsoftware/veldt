@@ -21,13 +21,10 @@ func NewRange(params map[string]interface{}) (*Range, error) {
 	if !ok {
 		return nil, fmt.Errorf("Range `field` parameter missing from tiling param %v", params)
 	}
-	from, ok := json.Get(params, "from")
-	if !ok {
-		return nil, fmt.Errorf("Range `from` parameter missing from tiling param %v", params)
-	}
-	to, ok := json.Get(params, "to")
-	if !ok {
-		return nil, fmt.Errorf("Range `to` parameter missing from tiling param %v", params)
+	from, hasFrom := json.Get(params, "from")
+	to, hasTo := json.Get(params, "to")
+	if !hasFrom && !hasTo {
+		return nil, fmt.Errorf("Range both `from` and `to` parameters missing from tiling param %v", params)
 	}
 	return &Range{
 		Field: field,
@@ -46,7 +43,12 @@ func (q *Range) GetHash() string {
 
 // GetQuery returns the elastic query object.
 func (q *Range) GetQuery() elastic.Query {
-	return elastic.NewRangeQuery(q.Field).
-		Gte(q.From).
-		Lte(q.To)
+	query := elastic.NewRangeQuery(q.Field)
+	if q.From != nil {
+		query.Gte(q.From)
+	}
+	if q.To != nil {
+		query.Lte(q.To)
+	}
+	return query
 }
