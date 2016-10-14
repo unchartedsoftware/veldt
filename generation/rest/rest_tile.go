@@ -3,7 +3,9 @@ package rest
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/unchartedsoftware/prism/generation/tile"
 	"github.com/unchartedsoftware/prism/util/json"
@@ -14,6 +16,7 @@ const (
 	defaultScheme    = "http"
 	defaultBaseURL   = ""
 	defaultIgnoreErr = false
+	defaultPadCoords = false
 )
 
 // Tile represents a tiling generator that produces heatmaps.
@@ -48,8 +51,15 @@ func (g *Tile) GetTile() ([]byte, error) {
 	scheme := json.GetStringDefault(g.req.Params, defaultScheme, "scheme")
 	// get ext
 	ext := json.GetStringDefault(g.req.Params, defaultExt, "ext")
+	// get padCoords
+	padCoords := json.GetBoolDefault(g.req.Params, defaultPadCoords, "padCoords")
 	// create URL
-	url := fmt.Sprintf("%s://%s/%s/%d/%d/%d.%s",
+	format := "%s://%s/%s/%d/%d/%d.%s"
+	if padCoords {
+		digits := strconv.Itoa(int(math.Floor(math.Log10(float64(int(1)<<g.req.Coord.Z)))) + 1)
+		format = "%s://%s/%s/%02d/%0" + digits + "d/%0" + digits + "d.%s"
+	}
+	url := fmt.Sprintf(format,
 		scheme,
 		endpoint,
 		g.req.URI,
