@@ -6,7 +6,6 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	log "github.com/unchartedsoftware/plog"
 	"github.com/unchartedsoftware/prism/generation/elastic/agg"
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
 	"github.com/unchartedsoftware/prism/generation/elastic/query"
@@ -18,7 +17,7 @@ const (
 	histogramAggName = "histogramAgg"
 )
 
-// TopTermTile represents a tiling generator that produces top term counts for numeric or string values,
+// TopTermTile represents a tiling generator that produces top term counts for numeric or string bucket keys,
 // and includes the total number of hits in the tile.
 type TopTermTile struct {
 	TileGenerator
@@ -110,14 +109,7 @@ func (g *TopTermTile) getAgg() elastic.Aggregation {
 }
 
 func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
-	// temp debug
-	bytes, err := json.Marshal(res)
-	if err != nil {
-		log.Error(err)
-	}
-	log.Debug(string(bytes))
-
-	// build map of topics and counts
+	// build response
 	response := make(map[string]interface{})
 	hits := res.Hits.TotalHits
 
@@ -129,14 +121,13 @@ func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 	}
 	counts := make([]interface{}, len(terms.Buckets))
 	for i, bucket := range terms.Buckets {
-		// TODO Handle string or numeric keys
+		// TODO Handle string or numeric keys, this only handles numeric for now
 		term, ok := bucket.Key.(float64)
 		if !ok {
-			return nil, fmt.Errorf("Terms aggregation key was not of type `string` '%s' in response for request %s",
+			return nil, fmt.Errorf("Terms aggregation key was not of type `float64` '%s' in response for request %s",
 				termsAggName,
 				g.req.String())
 		}
-		// termAsString := strconv.FormatFloat(term, 'f', -1, 64)
 		var bCounts interface{}
 		if g.Histogram != nil {
 			histogramAgg, ok := bucket.Aggregations.Histogram(histogramAggName)
@@ -166,7 +157,6 @@ func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 				"hits":   topHits,
 			}
 		} else {
-			// counts[i] = bCounts
 			counts[i] = map[string]interface{}{
 				"key":   term,
 				"value": bCounts,
@@ -175,17 +165,7 @@ func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 	}
 	response["total"] = hits
 	response["counts"] = counts
-	// TODO results should look like this (total is hits in elasticsearch response)
-	/*
-		res = {
-			"total" : 176
-			"counts" : [
-				{key: "foo", value: 23},
-				{key: "bar", value: 39},
-				...
-			]
-		}
-	*/
+
 	// marshal results map
 	return json.Marshal(response)
 }
