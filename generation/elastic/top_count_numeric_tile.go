@@ -3,6 +3,7 @@ package elastic
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"gopkg.in/olivere/elastic.v3"
 
@@ -117,12 +118,13 @@ func (g *TopCountNumericTile) parseResult(res *elastic.SearchResult) ([]byte, er
 			g.req.String())
 	}
 	for _, bucket := range terms.Buckets {
-		term, ok := bucket.Key.(string)
+		term, ok := bucket.Key.(float64)
 		if !ok {
 			return nil, fmt.Errorf("Terms aggregation key was not of type `string` '%s' in response for request %s",
 				termsAggName,
 				g.req.String())
 		}
+		termAsString := strconv.FormatFloat(term, 'f', -1, 64)
 		var bCounts interface{}
 		if g.Histogram != nil {
 			histogramAgg, ok := bucket.Aggregations.Histogram(histogramAggName)
@@ -146,12 +148,12 @@ func (g *TopCountNumericTile) parseResult(res *elastic.SearchResult) ([]byte, er
 				return nil, fmt.Errorf("Top hits could not be unmarshalled from response for request %s",
 					g.req.String())
 			}
-			counts[term] = map[string]interface{}{
+			counts[termAsString] = map[string]interface{}{
 				"counts": bCounts,
 				"hits":   topHits,
 			}
 		} else {
-			counts[term] = bCounts
+			counts[termAsString] = bCounts
 		}
 	}
 	// marshal results map
