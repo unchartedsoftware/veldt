@@ -12,13 +12,13 @@ import (
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
-// const (
-// 	termsAggName     = "topterms"
-// 	histogramAggName = "histogramAgg"
-// )
+const (
+	termsAggName     = "topterms"
+	histogramAggName = "histogramAgg"
+)
 
-// TopCountTile represents a tiling generator that produces top term counts.
-type TopCountTile struct {
+// TopCountNumericTile represents a tiling generator that produces top term counts for numeric values.
+type TopCountNumericTile struct {
 	TileGenerator
 	Tiling    *param.Tiling
 	TopTerms  *agg.TopTerms
@@ -27,8 +27,8 @@ type TopCountTile struct {
 	TopHits   *agg.TopHits
 }
 
-// NewTopCountTile instantiates and returns a pointer to a new generator.
-func NewTopCountTile(host, port string) tile.GeneratorConstructor {
+// NewTopCountNumericTile instantiates and returns a pointer to a new generator.
+func NewTopCountNumericTile(host, port string) tile.GeneratorConstructor {
 	return func(tileReq *tile.Request) (tile.Generator, error) {
 		client, err := NewClient(host, port)
 		if err != nil {
@@ -60,7 +60,7 @@ func NewTopCountTile(host, port string) tile.GeneratorConstructor {
 		if param.IsOptionalErr(err) {
 			return nil, err
 		}
-		t := &TopCountTile{}
+		t := &TopCountNumericTile{}
 		t.Elastic = elastic
 		t.Tiling = tiling
 		t.TopTerms = topTerms
@@ -76,7 +76,7 @@ func NewTopCountTile(host, port string) tile.GeneratorConstructor {
 }
 
 // GetParams returns a slice of tiling parameters.
-func (g *TopCountTile) GetParams() []tile.Param {
+func (g *TopCountNumericTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Tiling,
 		g.TopTerms,
@@ -86,14 +86,14 @@ func (g *TopCountTile) GetParams() []tile.Param {
 	}
 }
 
-func (g *TopCountTile) getQuery() elastic.Query {
+func (g *TopCountNumericTile) getQuery() elastic.Query {
 	return elastic.NewBoolQuery().
 		Must(g.Tiling.GetXQuery()).
 		Must(g.Tiling.GetYQuery()).
 		Must(g.Query.GetQuery())
 }
 
-func (g *TopCountTile) getAgg() elastic.Aggregation {
+func (g *TopCountNumericTile) getAgg() elastic.Aggregation {
 	// get top terms agg
 	agg := g.TopTerms.GetAgg()
 	// if histogram param is provided, add histogram agg
@@ -107,7 +107,7 @@ func (g *TopCountTile) getAgg() elastic.Aggregation {
 	return agg
 }
 
-func (g *TopCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
+func (g *TopCountNumericTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 	// build map of topics and counts
 	counts := make(map[string]interface{})
 	terms, ok := res.Aggregations.Terms(termsAggName)
@@ -159,7 +159,7 @@ func (g *TopCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 }
 
 // GetTile returns the marshalled tile data.
-func (g *TopCountTile) GetTile() ([]byte, error) {
+func (g *TopCountNumericTile) GetTile() ([]byte, error) {
 	// send query
 	res, err := g.Elastic.GetSearchService(g.client).
 		Index(g.req.URI).
