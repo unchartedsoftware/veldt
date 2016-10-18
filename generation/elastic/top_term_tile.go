@@ -3,7 +3,6 @@ package elastic
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"gopkg.in/olivere/elastic.v3"
 
@@ -120,7 +119,6 @@ func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 
 	// build map of topics and counts
 	response := make(map[string]interface{})
-	counts := make(map[string]interface{})
 	hits := res.Hits.TotalHits
 
 	terms, ok := res.Aggregations.Terms(termsAggName)
@@ -129,7 +127,8 @@ func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 			termsAggName,
 			g.req.String())
 	}
-	for _, bucket := range terms.Buckets {
+	counts := make([]interface{}, len(terms.Buckets))
+	for i, bucket := range terms.Buckets {
 		// TODO Handle string or numeric keys
 		term, ok := bucket.Key.(float64)
 		if !ok {
@@ -137,7 +136,7 @@ func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 				termsAggName,
 				g.req.String())
 		}
-		termAsString := strconv.FormatFloat(term, 'f', -1, 64)
+		// termAsString := strconv.FormatFloat(term, 'f', -1, 64)
 		var bCounts interface{}
 		if g.Histogram != nil {
 			histogramAgg, ok := bucket.Aggregations.Histogram(histogramAggName)
@@ -161,12 +160,17 @@ func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 				return nil, fmt.Errorf("Top hits could not be unmarshalled from response for request %s",
 					g.req.String())
 			}
-			counts[termAsString] = map[string]interface{}{
+			counts[i] = map[string]interface{}{
+				"key":    term,
 				"counts": bCounts,
 				"hits":   topHits,
 			}
 		} else {
-			counts[termAsString] = bCounts
+			// counts[i] = bCounts
+			counts[i] = map[string]interface{}{
+				"key":   term,
+				"value": bCounts,
+			}
 		}
 	}
 	response["total"] = hits
@@ -175,7 +179,7 @@ func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 	/*
 		res = {
 			"total" : 176
-			data : [
+			"counts" : [
 				{key: "foo", value: 23},
 				{key: "bar", value: 39},
 				...
