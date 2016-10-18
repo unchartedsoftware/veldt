@@ -7,6 +7,7 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
+	log "github.com/unchartedsoftware/plog"
 	"github.com/unchartedsoftware/prism/generation/elastic/agg"
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
 	"github.com/unchartedsoftware/prism/generation/elastic/query"
@@ -110,8 +111,18 @@ func (g *TopTermTile) getAgg() elastic.Aggregation {
 }
 
 func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
+	// temp debug
+	bytes, err := json.Marshal(res)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Debug(string(bytes))
+
 	// build map of topics and counts
+	response := make(map[string]interface{})
 	counts := make(map[string]interface{})
+	hits := res.Hits.TotalHits
+
 	terms, ok := res.Aggregations.Terms(termsAggName)
 	if !ok {
 		return nil, fmt.Errorf("Terms aggregation '%s' was not found in response for request %s",
@@ -158,6 +169,8 @@ func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 			counts[termAsString] = bCounts
 		}
 	}
+	response["total"] = hits
+	response["counts"] = counts
 	// TODO results should look like this (total is hits in elasticsearch response)
 	/*
 		res = {
@@ -170,7 +183,7 @@ func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 		}
 	*/
 	// marshal results map
-	return json.Marshal(counts)
+	return json.Marshal(response)
 }
 
 // GetTile returns the marshalled tile data.
