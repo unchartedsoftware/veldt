@@ -2,9 +2,9 @@ package citus
 
 import (
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
-	"strconv"
 
 	"github.com/jackc/pgx"
 	log "github.com/unchartedsoftware/plog"

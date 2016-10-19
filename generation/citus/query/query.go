@@ -2,8 +2,8 @@ package query
 
 import (
 	"fmt"
-	"strings"
 	"strconv"
+	"strings"
 
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
@@ -13,7 +13,7 @@ type Query struct {
 	WhereClauses   []string
 	GroupByClauses []string
 	Fields         []string
-	Tables		   []string
+	Tables         []string
 }
 
 func NewQuery(tileReq *tile.Request) (*Query, error) {
@@ -21,8 +21,8 @@ func NewQuery(tileReq *tile.Request) (*Query, error) {
 		WhereClauses:   []string{},
 		GroupByClauses: []string{},
 		Fields:         []string{},
-		Tables:		    []string{},
-		QueryArgs:	make([]interface{}, 0),
+		Tables:         []string{},
+		QueryArgs:      make([]interface{}, 0),
 	}, nil
 }
 
@@ -31,7 +31,7 @@ func (q *Query) GetHash() string {
 	numGroups := len(q.GroupByClauses)
 	numFields := len(q.Fields)
 	numTables := len(q.Tables)
-	numArgs   := len(q.QueryArgs)
+	numArgs := len(q.QueryArgs)
 	hashes := make([]string, numWheres+numGroups+numFields+numTables+numArgs)
 	for i, clause := range q.WhereClauses {
 		hashes[i] = clause

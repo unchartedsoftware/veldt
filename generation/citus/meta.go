@@ -3,7 +3,7 @@ package citus
 import (
 	"fmt"
 
-    "github.com/jackc/pgx"
+	"github.com/jackc/pgx"
 
 	"github.com/unchartedsoftware/prism/generation/meta"
 )

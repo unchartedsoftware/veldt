@@ -2,8 +2,8 @@ package citus
 
 import (
 	"encoding/json"
-	"strings"
 	"errors"
+	"strings"
 
 	"github.com/jackc/pgx"
 
