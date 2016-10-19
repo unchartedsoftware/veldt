@@ -17,8 +17,6 @@ type PropertyMeta struct {
 	Extrema *binning.Extrema `json:"extrema,omitempty"`
 }
 
-
-///////select table_schema, table_name, column_name, data_type from information_schema.columns where table_name='data';
 func isNumeric(typ string) bool {
 	return typ == "smallint" ||
 		typ == "integer" ||

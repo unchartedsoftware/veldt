@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/unchartedsoftware/prism/generation/tile"
-	"github.com/unchartedsoftware/plog"
 )
 
 type Query struct {
@@ -66,11 +65,6 @@ func (q *Query) GetQuery() string {
 
 	if len(q.GroupByClauses) > 0 {
 		queryString += fmt.Sprintf(" GROUP BY %s", strings.Join(q.GroupByClauses, ", "))
-	}
-
-	log.Infof("Query: %v", queryString)
-	for i:= 0 ; i < len(q.QueryArgs) ; i++ {
-		log.Infof("Arg %v: %v", i, q.QueryArgs[i])
 	}
 
 	return queryString + ";"

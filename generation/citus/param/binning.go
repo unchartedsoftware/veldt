@@ -79,7 +79,7 @@ func (p *Binning) AddXAgg(query *query.Query) *query.Query {
 	intervalXArg := query.AddParameter(p.intervalX)
 	queryString := fmt.Sprintf("((%s - %s) / %s * %s)", p.Tiling.X, minXArg, intervalXArg, intervalXArg)
 	query.AddGroupByClause(queryString)
-	query.AddField(fmt.Sprintf("%s as x", queryString))
+	query.AddField(fmt.Sprintf("%s + %s as x", minXArg, queryString))
 	//TODO: Handle the MinDocCount.
 
 	return query
@@ -91,7 +91,7 @@ func (p *Binning) AddYAgg(query *query.Query) *query.Query {
 	intervalYArg := query.AddParameter(p.intervalY)
 	queryString := fmt.Sprintf("((%s - %s) / %s * %s)", p.Tiling.Y, minYArg, intervalYArg, intervalYArg)
 	query.AddGroupByClause(queryString)
-	query.AddField(fmt.Sprintf("%s as y", queryString))
+	query.AddField(fmt.Sprintf("%s + %s as y", minYArg, queryString))
 	//TODO: Handle the MinDocCount.
 
 	return query

@@ -11,7 +11,6 @@ import (
 	"github.com/unchartedsoftware/prism/generation/citus/query"
 
 	"github.com/unchartedsoftware/prism/generation/tile"
-	"github.com/unchartedsoftware/plog"
 )
 
 const (
@@ -121,8 +120,6 @@ func (g *HeatmapTile) parseResult(rows *pgx.Rows) ([]byte, error) {
 			return nil, fmt.Errorf("Error parsing histogram aggregation: %s %v",
 				g.req.String(), err)
 		}
-
-		log.Infof("%v, %v, %v", x, y, value)
 
 		xBin := binning.GetXBin(x)
 		yBin := binning.GetYBin(y)
