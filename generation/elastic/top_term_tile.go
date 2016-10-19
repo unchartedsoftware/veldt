@@ -121,13 +121,7 @@ func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 	}
 	counts := make([]interface{}, len(terms.Buckets))
 	for i, bucket := range terms.Buckets {
-		// TODO Handle string or numeric keys, this only handles numeric for now
-		term, ok := bucket.Key.(float64)
-		if !ok {
-			return nil, fmt.Errorf("Terms aggregation key was not of type `float64` '%s' in response for request %s",
-				termsAggName,
-				g.req.String())
-		}
+		term := bucket.Key
 		var bCounts interface{}
 		if g.Histogram != nil {
 			histogramAgg, ok := bucket.Aggregations.Histogram(histogramAggName)
