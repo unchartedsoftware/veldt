@@ -1,28 +1,30 @@
 package aws
 
 import (
+	"runtime"
+	"sync"
+
   "github.com/aws/aws-sdk-go/aws/session"
-  "github.com/unchartedsoftware/plog"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-var awsSession *session.Session = nil
+var (
+	mutex   = sync.Mutex{}
+	awsSession *session.Session = nil
+)
 
-func Get() (*session.Session) {
-  return awsSession
-}
-
-func Create() (*session.Session) {
-  // AWS looks for credentials in the following places:
-  // 1) Environment variables (AWS_ACCESS_KEY_ID, AWS_ACCESS_KEY_ID)
-  // 2) Credentials file (Shared/Profile Specific)
-  // 3) IAM roles if running on EC2
-	sess, err := session.NewSession()
-	if err != nil {
-    awsSession = nil
-		log.Error(err)
-	} else {
+func NewS3Client() (*s3.S3, error) {
+  mutex.Lock()
+  if awsSession == nil {
+    sess, err := session.NewSession()
+    if err != nil {
+      mutex.Unlock()
+      runtime.Gosched()
+      return nil, err
+    }
     awsSession = sess
   }
-
-  return awsSession
+  mutex.Unlock()
+  runtime.Gosched()
+  return s3.New(awsSession), nil
 }

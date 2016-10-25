@@ -44,7 +44,10 @@ func (g *Tile) GetParams() []tile.Param {
 // GetTile returns the marshalled tile data.
 func (g *Tile) GetTile() ([]byte, error) {
 	// create s3 client
-	svc := s3.New(awsManager.Get())
+	s3Client, err := awsManager.NewS3Client()
+	if err != nil {
+		return nil, err
+	}
 	// get path
 	keyPrefix := json.GetStringDefault(g.req.Params, defaultKeyPrefix, "keyPrefix")
 	// whether to ingore error or not
@@ -73,7 +76,7 @@ func (g *Tile) GetTile() ([]byte, error) {
     Bucket: aws.String(g.req.URI),
     Key: aws.String(key),
 	}
-	res, err := svc.GetObject(params)
+	res, err := s3Client.GetObject(params)
 	// Handle response
 	if err != nil {
 		if ignoreErr {
