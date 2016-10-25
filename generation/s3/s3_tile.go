@@ -6,7 +6,7 @@ import (
 	"math"
 	"strconv"
 
-  "github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/unchartedsoftware/prism/generation/tile"
 	awsManager "github.com/unchartedsoftware/prism/util/aws"
@@ -73,8 +73,8 @@ func (g *Tile) GetTile() ([]byte, error) {
 		ext)
 	// Create request
 	params := &s3.GetObjectInput{
-    Bucket: aws.String(g.req.URI),
-    Key: aws.String(key),
+		Bucket: aws.String(g.req.URI),
+		Key:    aws.String(key),
 	}
 	res, err := s3Client.GetObject(params)
 	// Handle response

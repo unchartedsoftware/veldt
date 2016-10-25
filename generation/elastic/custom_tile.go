@@ -17,7 +17,7 @@ type CustomTile struct {
 	TileGenerator
 	Tiling     *param.Tiling
 	Query      *query.Bool
-	CustomAggs  *agg.CustomAggs
+	CustomAggs *agg.CustomAggs
 }
 
 // NewCustomTile instantiates and returns a pointer to a new generator.
@@ -80,7 +80,7 @@ func (g *CustomTile) GetQuerySource() (interface{}, error) {
 	}
 	return map[string]interface{}{
 		"query": querySource,
-		"aggs": g.CustomAggs.GetAgg(),
+		"aggs":  g.CustomAggs.GetAgg(),
 	}, nil
 }
 
