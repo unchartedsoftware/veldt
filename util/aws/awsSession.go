@@ -1,8 +1,6 @@
 package awsSession
 
 import (
-  "github.com/aws/aws-sdk-go/aws"
-  "github.com/aws/aws-sdk-go/aws/credentials"
   "github.com/aws/aws-sdk-go/aws/session"
   "github.com/unchartedsoftware/plog"
 )
@@ -14,7 +12,11 @@ func Get() (*session.Session) {
 }
 
 func Create() (*session.Session) {
-	sess, err := session.NewSession(&aws.Config{Credentials: credentials.NewEnvCredentials()})
+  // AWS looks for credentials in the following places:
+  // 1) Environment variables (AWS_ACCESS_KEY_ID, AWS_ACCESS_KEY_ID)
+  // 2) Credentials file (Shared/Profile Specific)
+  // 3) IAM roles if running on EC2
+	sess, err := session.NewSession()
 	if err != nil {
     awsSession = nil
 		log.Error(err)
