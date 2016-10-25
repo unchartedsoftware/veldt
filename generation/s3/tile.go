@@ -1,4 +1,4 @@
-package s3gen
+package s3
 
 import (
 	"github.com/unchartedsoftware/prism/generation/tile"

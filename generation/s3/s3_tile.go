@@ -1,4 +1,4 @@
-package s3gen
+package s3
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
   "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/unchartedsoftware/prism/generation/tile"
-	"github.com/unchartedsoftware/prism/util/aws"
+	awsManager "github.com/unchartedsoftware/prism/util/aws"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -44,7 +44,7 @@ func (g *Tile) GetParams() []tile.Param {
 // GetTile returns the marshalled tile data.
 func (g *Tile) GetTile() ([]byte, error) {
 	// create s3 client
-	svc := s3.New(awsSession.Get())
+	svc := s3.New(awsManager.Get())
 	// get path
 	keyPrefix := json.GetStringDefault(g.req.Params, defaultKeyPrefix, "keyPrefix")
 	// whether to ingore error or not
