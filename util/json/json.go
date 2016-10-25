@@ -1,9 +1,9 @@
 package json
 
 import (
-	"strconv"
-	"sort"
 	"bytes"
+	"sort"
+	"strconv"
 )
 
 // Set sets the value under a given path, creating intermediate nodes along the

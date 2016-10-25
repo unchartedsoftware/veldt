@@ -1,19 +1,48 @@
-hash: eb34bb46d175bd3430a71109c4b9d409bbb148692112af3e0e153356858d7c4e
-updated: 2016-06-29T11:57:42.938303355-04:00
+hash: 112c9c0819fc2cef86bbd7702548105e08730bb05c83fa23b98954cd788fb365
+updated: 2016-10-24T13:08:41.13493052-04:00
 imports:
+- name: github.com/aws/aws-sdk-go
+  version: 32cdc88aa5cd2ba4afa049da884aaf9a3d103ef4
 - name: github.com/coocood/freecache
   version: 1aa53c26cb85c33eef6d832305447982e95f844c
 - name: github.com/garyburd/redigo
   version: 8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13
   subpackages:
-  - redis
   - internal
+  - redis
 - name: github.com/mgutz/ansi
   version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
 - name: github.com/onsi/ginkgo
   version: 462326b1628e124b23f42e87a8f2750e3c4e2d24
+  subpackages:
+  - config
+  - internal/codelocation
+  - internal/containernode
+  - internal/failer
+  - internal/leafnodes
+  - internal/remote
+  - internal/spec
+  - internal/specrunner
+  - internal/suite
+  - internal/testingtproxy
+  - internal/writer
+  - reporters
+  - reporters/stenographer
+  - types
 - name: github.com/onsi/gomega
   version: 0df7b7fdb38123c12a1f569f0affb2c2a7bd72cf
+  subpackages:
+  - format
+  - internal/assertion
+  - internal/asyncassertion
+  - internal/oraclematcher
+  - internal/testingtsupport
+  - matchers
+  - matchers/support/goraph/bipartitegraph
+  - matchers/support/goraph/edge
+  - matchers/support/goraph/node
+  - matchers/support/goraph/util
+  - types
 - name: github.com/Sirupsen/logrus
   version: f3cfb454f4c209e6668c95216c4744b8fddb2356
 - name: github.com/spaolacci/murmur3
@@ -29,4 +58,6 @@ imports:
   subpackages:
   - backoff
   - uritemplates
-devImports: []
+testImports:
+- name: gopkg.in/yaml.v2
+  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
