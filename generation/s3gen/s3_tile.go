@@ -19,7 +19,7 @@ const (
 	defaultBaseURL   = ""
 	defaultIgnoreErr = false
 	defaultPadCoords = false
-	defaultPath = ""
+	defaultKeyPrefix = ""
 )
 
 // Tile represents a tiling generator that produces heatmaps.
@@ -46,7 +46,7 @@ func (g *Tile) GetTile() ([]byte, error) {
 	// create s3 client
 	svc := s3.New(awsSession.Get())
 	// get path
-	path := json.GetStringDefault(g.req.Params, defaultPath, "path")
+	keyPrefix := json.GetStringDefault(g.req.Params, defaultKeyPrefix, "keyPrefix")
 	// whether to ingore error or not
 	ignoreErr := json.GetBoolDefault(g.req.Params, defaultIgnoreErr, "ignoreErr")
 	// get ext
@@ -59,11 +59,11 @@ func (g *Tile) GetTile() ([]byte, error) {
 		digits := strconv.Itoa(int(math.Floor(math.Log10(float64(int(1)<<g.req.Coord.Z)))) + 1)
 		format = "%02d/%0" + digits + "d/%0" + digits + "d.%s"
 	}
-	if path != defaultPath {
+	if keyPrefix != defaultKeyPrefix {
 		format = "%s/" + format
 	}
 	key := fmt.Sprintf(format,
-		path,
+		keyPrefix,
 		g.req.Coord.Z,
 		g.req.Coord.X,
 		g.req.Coord.Y,
