@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
 type Query struct {
@@ -14,14 +12,18 @@ type Query struct {
 	GroupByClauses []string
 	Fields         []string
 	Tables         []string
+	OrderByClauses []string
+	Limit		   uint32
 }
 
-func NewQuery(tileReq *tile.Request) (*Query, error) {
+func NewQuery() (*Query, error) {
 	return &Query{
 		WhereClauses:   []string{},
 		GroupByClauses: []string{},
 		Fields:         []string{},
 		Tables:         []string{},
+		OrderByClauses: []string{},
+		Limit:			0,
 		QueryArgs:      make([]interface{}, 0),
 	}, nil
 }
@@ -31,8 +33,9 @@ func (q *Query) GetHash() string {
 	numGroups := len(q.GroupByClauses)
 	numFields := len(q.Fields)
 	numTables := len(q.Tables)
+	numOrders := len(q.OrderByClauses)
 	numArgs := len(q.QueryArgs)
-	hashes := make([]string, numWheres+numGroups+numFields+numTables+numArgs)
+	hashes := make([]string, numWheres+numGroups+numFields+numTables+numOrders+numArgs)
 	for i, clause := range q.WhereClauses {
 		hashes[i] = clause
 	}
@@ -43,18 +46,26 @@ func (q *Query) GetHash() string {
 		hashes[i+numWheres+numGroups] = clause
 	}
 	for i, clause := range q.Tables {
-		hashes[i+numWheres+numGroups+numTables] = clause
+		hashes[i+numWheres+numGroups+numFields] = clause
+	}
+	for i, clause := range q.OrderByClauses {
+		hashes[i+numWheres+numGroups+numFields+numTables] = clause
 	}
 
 	// May want to revisit the query argument hashing.
 	for i, arg := range q.QueryArgs {
-		hashes[i+numWheres+numGroups+numFields+numTables] = fmt.Sprintf("%v", arg)
+		hashes[i+numWheres+numGroups+numFields+numOrders+numTables] = fmt.Sprintf("%v", arg)
 	}
 
-	return strings.Join(hashes, "::")
+	hash := strings.Join(hashes, "::")
+	if q.Limit > 0 {
+		hash = hash +"::Limit=" + fmt.Sprint(q.Limit)
+	}
+
+	return hash
 }
 
-func (q *Query) GetQuery() string {
+func (q *Query) GetQuery(nested bool) string {
 	queryString := fmt.Sprintf("SELECT %s", strings.Join(q.Fields, ", "))
 
 	queryString += fmt.Sprintf(" FROM %s", strings.Join(q.Tables, ", "))
@@ -67,7 +78,19 @@ func (q *Query) GetQuery() string {
 		queryString += fmt.Sprintf(" GROUP BY %s", strings.Join(q.GroupByClauses, ", "))
 	}
 
-	return queryString + ";"
+	if len(q.OrderByClauses) > 0 {
+		queryString += fmt.Sprintf(" ORDER BY %s", strings.Join(q.OrderByClauses, ", "))
+	}
+
+	if q.Limit > 0 {
+		queryString += fmt.Sprintf(" LIMIT %s", q.Limit)
+	}
+
+	if !nested {
+		queryString = queryString + ";"
+	}
+
+	return queryString
 }
 
 // AddParameter adds a parameter to the query and returns the parameter number.
@@ -90,4 +113,12 @@ func (q *Query) AddField(field string) {
 
 func (q *Query) AddTable(table string) {
 	q.Tables = append(q.Tables, table)
+}
+
+func (q *Query) AddOrderByClause(clause string) {
+	q.OrderByClauses = append(q.OrderByClauses, clause)
+}
+
+func (q *Query) SetLimit(limit uint32) {
+	q.Limit = limit
 }

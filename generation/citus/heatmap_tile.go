@@ -55,7 +55,7 @@ func NewHeatmapTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		query, err := query.NewQuery(tileReq)
+		query, err := query.NewQuery()
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +140,7 @@ func (g *HeatmapTile) GetTile() ([]byte, error) {
 	query := g.getQuery()
 	query = g.getAgg()
 	query.AddTable(heatReq.URI)
-	rows, err := g.client.Query(query.GetQuery(), query.QueryArgs...)
+	rows, err := g.client.Query(query.GetQuery(false), query.QueryArgs...)
 	if err != nil {
 		return nil, err
 	}
