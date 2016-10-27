@@ -3,6 +3,7 @@ package elastic
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"gopkg.in/olivere/elastic.v3"
 
@@ -183,6 +184,8 @@ func (g *TopTrailsTile) GetTile() ([]byte, error) {
 	for i, bucket := range terms.Buckets {
 		top[i] = bucket.Key.(string)
 	}
+	// sort terms
+	sort.Strings(top)
 	// make id filter agg
 	g.Filter = &agg.TermsFilter{
 		Field: g.Terms.Field,
