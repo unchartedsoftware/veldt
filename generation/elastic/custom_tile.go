@@ -73,6 +73,7 @@ func (g *CustomTile) getQuery() elastic.Query {
 		Must(g.Query.GetQuery())
 }
 
+// GetQuerySource returns the query source.
 func (g *CustomTile) GetQuerySource() (interface{}, error) {
 	querySource, err := g.getQuery().Source()
 	if err != nil {

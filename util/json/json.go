@@ -260,7 +260,7 @@ func GetStringArray(json map[string]interface{}, path ...string) ([]string, bool
 	return strs, true
 }
 
-// Gets a unique hash of unmarshaleld json
+// GetHash returns a deterministic hash of unmarshalled json
 func GetHash(data interface{}) string {
 	var buffer bytes.Buffer
 	getHash(data, &buffer)
