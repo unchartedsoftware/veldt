@@ -1,13 +1,15 @@
-package rest
+package s3
 
 import (
 	"fmt"
 	"io/ioutil"
 	"math"
-	"net/http"
 	"strconv"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/unchartedsoftware/prism/generation/tile"
+	awsManager "github.com/unchartedsoftware/prism/util/aws"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -17,6 +19,7 @@ const (
 	defaultBaseURL   = ""
 	defaultIgnoreErr = false
 	defaultPadCoords = false
+	defaultKeyPrefix = ""
 )
 
 // Tile represents a tiling generator that produces heatmaps.
@@ -40,62 +43,52 @@ func (g *Tile) GetParams() []tile.Param {
 
 // GetTile returns the marshalled tile data.
 func (g *Tile) GetTile() ([]byte, error) {
-	// get endpoint
-	endpoint, ok := json.GetString(g.req.Params, "endpoint")
-	if !ok {
-		return nil, fmt.Errorf("Missing `endpoint` parameter")
+	// create s3 client
+	s3Client, err := awsManager.NewS3Client()
+	if err != nil {
+		return nil, err
 	}
-	// whether to ingore error of not
+	// get path
+	keyPrefix := json.GetStringDefault(g.req.Params, defaultKeyPrefix, "keyPrefix")
+	// whether to ingore error or not
 	ignoreErr := json.GetBoolDefault(g.req.Params, defaultIgnoreErr, "ignoreErr")
-	// get scheme
-	scheme := json.GetStringDefault(g.req.Params, defaultScheme, "scheme")
 	// get ext
 	ext := json.GetStringDefault(g.req.Params, defaultExt, "ext")
 	// get padCoords
 	padCoords := json.GetBoolDefault(g.req.Params, defaultPadCoords, "padCoords")
-	// create URL
-	format := "%s://%s/%s/%d/%d/%d.%s"
+	// Format key (s3 filename)
+	format := "%d/%d/%d.%s"
 	if padCoords {
 		digits := strconv.Itoa(int(math.Floor(math.Log10(float64(int(1)<<g.req.Coord.Z)))) + 1)
-		format = "%s://%s/%s/%02d/%0" + digits + "d/%0" + digits + "d.%s"
+		format = "%02d/%0" + digits + "d/%0" + digits + "d.%s"
 	}
-	url := fmt.Sprintf(format,
-		scheme,
-		endpoint,
-		g.req.URI,
+	if keyPrefix != defaultKeyPrefix {
+		format = "%s/" + format
+	}
+	key := fmt.Sprintf(format,
+		keyPrefix,
 		g.req.Coord.Z,
 		g.req.Coord.X,
 		g.req.Coord.Y,
 		ext)
-	// build http request
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
+	// Create request
+	params := &s3.GetObjectInput{
+		Bucket: aws.String(g.req.URI),
+		Key:    aws.String(key),
 	}
-	// set appropriate headers based on extention
-	if ext == "bin" {
-		req.Header.Set("Accept", "application/octet-stream")
-	} else {
-		req.Header.Set("Accept", "application/json")
-	}
-	// build http request
-	client := &http.Client{}
-	res, err := client.Do(req)
+	res, err := s3Client.GetObject(params)
+	// Handle response
 	if err != nil {
-		return nil, err
+		if ignoreErr {
+			return []byte{}, nil
+		}
+		return nil, fmt.Errorf(err.Error())
 	}
 	// read result
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
-	}
-	// check status code
-	if res.StatusCode >= 300 {
-		if ignoreErr {
-			return []byte{}, nil
-		}
-		return nil, fmt.Errorf(string(body))
 	}
 	return body, nil
 }
