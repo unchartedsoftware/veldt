@@ -24,7 +24,11 @@ func NewHasChild(params map[string]interface{}) (*HasChild, error) {
 	if !ok {
 		return nil, fmt.Errorf("has_child `query` parameter missing from tiling param %v", params)
 	}
-	boolQuery, err := NewBool(query)
+	bool_, ok := json.GetChild(query, "bool")
+	if !ok {
+		return nil, fmt.Errorf("has_child `bool` parameter missing from tiling param %v", params)
+	}
+	boolQuery, err := NewBool(bool_)
 	if err != nil {
 		return nil, err
 	}
