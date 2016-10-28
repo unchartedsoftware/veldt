@@ -96,8 +96,6 @@ func (g *CustomTile) GetTile() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	msg, err := json.Marshal(source)
-	fmt.Println(string(msg[:]))
 	// send query
 	res, err := g.Elastic.GetSearchService(g.client).
 		Index(g.req.URI).
