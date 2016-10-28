@@ -2,7 +2,6 @@ package elastic
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"gopkg.in/olivere/elastic.v3"
 

@@ -12,11 +12,6 @@ import (
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
-// const (
-// 	termsAggName     = "topterms"
-// 	histogramAggName = "histogramAgg"
-// )
-
 // TopCountTile represents a tiling generator that produces top term counts.
 type TopCountTile struct {
 	TileGenerator
