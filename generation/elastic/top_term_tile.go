@@ -12,13 +12,14 @@ import (
 	"github.com/unchartedsoftware/prism/generation/tile"
 )
 
-// const (
-// 	termsAggName     = "topterms"
-// 	histogramAggName = "histogramAgg"
-// )
+const (
+	termsAggName     = "topterms"
+	histogramAggName = "histogramAgg"
+)
 
-// TopCountTile represents a tiling generator that produces top term counts.
-type TopCountTile struct {
+// TopTermTile represents a tiling generator that produces top term counts for numeric or string bucket keys,
+// and includes the total number of hits in the tile.
+type TopTermTile struct {
 	TileGenerator
 	Tiling    *param.Tiling
 	TopTerms  *agg.TopTerms
@@ -27,8 +28,8 @@ type TopCountTile struct {
 	TopHits   *agg.TopHits
 }
 
-// NewTopCountTile instantiates and returns a pointer to a new generator.
-func NewTopCountTile(host, port string) tile.GeneratorConstructor {
+// NewTopTermTile instantiates and returns a pointer to a new generator.
+func NewTopTermTile(host, port string) tile.GeneratorConstructor {
 	return func(tileReq *tile.Request) (tile.Generator, error) {
 		client, err := NewClient(host, port)
 		if err != nil {
@@ -60,7 +61,7 @@ func NewTopCountTile(host, port string) tile.GeneratorConstructor {
 		if param.IsOptionalErr(err) {
 			return nil, err
 		}
-		t := &TopCountTile{}
+		t := &TopTermTile{}
 		t.Elastic = elastic
 		t.Tiling = tiling
 		t.TopTerms = topTerms
@@ -76,7 +77,7 @@ func NewTopCountTile(host, port string) tile.GeneratorConstructor {
 }
 
 // GetParams returns a slice of tiling parameters.
-func (g *TopCountTile) GetParams() []tile.Param {
+func (g *TopTermTile) GetParams() []tile.Param {
 	return []tile.Param{
 		g.Tiling,
 		g.TopTerms,
@@ -86,14 +87,14 @@ func (g *TopCountTile) GetParams() []tile.Param {
 	}
 }
 
-func (g *TopCountTile) getQuery() elastic.Query {
+func (g *TopTermTile) getQuery() elastic.Query {
 	return elastic.NewBoolQuery().
 		Must(g.Tiling.GetXQuery()).
 		Must(g.Tiling.GetYQuery()).
 		Must(g.Query.GetQuery())
 }
 
-func (g *TopCountTile) getAgg() elastic.Aggregation {
+func (g *TopTermTile) getAgg() elastic.Aggregation {
 	// get top terms agg
 	agg := g.TopTerms.GetAgg()
 	// if histogram param is provided, add histogram agg
@@ -107,22 +108,20 @@ func (g *TopCountTile) getAgg() elastic.Aggregation {
 	return agg
 }
 
-func (g *TopCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
-	// build map of topics and counts
-	counts := make(map[string]interface{})
+func (g *TopTermTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
+	// build response
+	response := make(map[string]interface{})
+	hits := res.Hits.TotalHits
+
 	terms, ok := res.Aggregations.Terms(termsAggName)
 	if !ok {
 		return nil, fmt.Errorf("Terms aggregation '%s' was not found in response for request %s",
 			termsAggName,
 			g.req.String())
 	}
-	for _, bucket := range terms.Buckets {
-		term, ok := bucket.Key.(string)
-		if !ok {
-			return nil, fmt.Errorf("Terms aggregation key was not of type `string` '%s' in response for request %s",
-				termsAggName,
-				g.req.String())
-		}
+	counts := make([]interface{}, len(terms.Buckets))
+	for i, bucket := range terms.Buckets {
+		term := bucket.Key
 		var bCounts interface{}
 		if g.Histogram != nil {
 			histogramAgg, ok := bucket.Aggregations.Histogram(histogramAggName)
@@ -146,20 +145,27 @@ func (g *TopCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 				return nil, fmt.Errorf("Top hits could not be unmarshalled from response for request %s",
 					g.req.String())
 			}
-			counts[term] = map[string]interface{}{
+			counts[i] = map[string]interface{}{
+				"key":    term,
 				"counts": bCounts,
 				"hits":   topHits,
 			}
 		} else {
-			counts[term] = bCounts
+			counts[i] = map[string]interface{}{
+				"key":   term,
+				"value": bCounts,
+			}
 		}
 	}
+	response["total"] = hits
+	response["counts"] = counts
+
 	// marshal results map
-	return json.Marshal(counts)
+	return json.Marshal(response)
 }
 
 // GetTile returns the marshalled tile data.
-func (g *TopCountTile) GetTile() ([]byte, error) {
+func (g *TopTermTile) GetTile() ([]byte, error) {
 	// send query
 	res, err := g.Elastic.GetSearchService(g.client).
 		Index(g.req.URI).
