@@ -16,8 +16,8 @@ const (
 // DateHistogram represents params for restricting the time range of a tile.
 type DateHistogram struct {
 	Field    string
-	From     int64
-	To       int64
+	From     interface{}
+	To       interface{}
 	Interval string
 }
 
@@ -25,8 +25,8 @@ type DateHistogram struct {
 func NewDateHistogram(params map[string]interface{}) (*DateHistogram, error) {
 	params = json.GetChildOrEmpty(params, "date_histogram")
 	field := json.GetStringDefault(params, defaultField, "field")
-	from := int64(json.GetNumberDefault(params, -1, "from"))
-	to := int64(json.GetNumberDefault(params, -1, "to"))
+	from, _ := json.Get(params, "from")
+	to, _ := json.Get(params, "to")
 	interval := json.GetStringDefault(params, defaultInterval, "interval")
 	return &DateHistogram{
 		Field:    field,
@@ -48,10 +48,10 @@ func (p *DateHistogram) GetHash() string {
 // GetQuery returns an elastic query.
 func (p *DateHistogram) GetQuery() *elastic.RangeQuery {
 	query := elastic.NewRangeQuery(p.Field)
-	if p.From != -1 {
+	if p.From != nil {
 		query.Gte(p.From)
 	}
-	if p.To != -1 {
+	if p.To != nil {
 		query.Lte(p.To)
 	}
 	return query
@@ -63,11 +63,20 @@ func (p *DateHistogram) GetAgg() *elastic.DateHistogramAggregation {
 		Field(p.Field).
 		Interval(p.Interval).
 		MinDocCount(0)
-	if p.From != -1 {
+	if p.From != nil {
 		agg.ExtendedBoundsMin(p.From)
-		agg.Offset(fmt.Sprintf("%ds", p.From/1000))
+		num, isNum := p.From.(float64)
+		if isNum {
+			// assume milliseconds
+			agg.Offset(fmt.Sprintf("%dms", int64(num)))
+		} else {
+			str, isStr := p.From.(string)
+			if isStr {
+				agg.Offset(str)
+			}
+		}
 	}
-	if p.To != -1 {
+	if p.To != nil {
 		agg.ExtendedBoundsMax(p.To)
 	}
 	return agg

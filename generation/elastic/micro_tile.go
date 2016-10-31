@@ -15,7 +15,7 @@ import (
 // MicroTile represents a tiling generator that produces a tile.
 type MicroTile struct {
 	TileGenerator
-	Binning *param.Binning
+	Tiling  *param.Tiling
 	Query   *query.Bool
 	TopHits *agg.TopHits
 }
@@ -31,7 +31,7 @@ func NewMicroTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		binning, err := param.NewBinning(tileReq)
+		tiling, err := param.NewTiling(tileReq)
 		if err != nil {
 			return nil, err
 		}
@@ -45,7 +45,7 @@ func NewMicroTile(host, port string) tile.GeneratorConstructor {
 		}
 		t := &MicroTile{}
 		t.Elastic = elastic
-		t.Binning = binning
+		t.Tiling = tiling
 		t.Query = query
 		t.TopHits = topHits
 		t.req = tileReq
@@ -59,7 +59,7 @@ func NewMicroTile(host, port string) tile.GeneratorConstructor {
 // GetParams returns a slice of tiling parameters.
 func (g *MicroTile) GetParams() []tile.Param {
 	return []tile.Param{
-		g.Binning,
+		g.Tiling,
 		g.Query,
 		g.TopHits,
 	}
@@ -67,8 +67,8 @@ func (g *MicroTile) GetParams() []tile.Param {
 
 func (g *MicroTile) getQuery() elastic.Query {
 	return elastic.NewBoolQuery().
-		Must(g.Binning.Tiling.GetXQuery()).
-		Must(g.Binning.Tiling.GetYQuery()).
+		Must(g.Tiling.GetXQuery()).
+		Must(g.Tiling.GetYQuery()).
 		Must(g.Query.GetQuery())
 }
 
@@ -104,7 +104,7 @@ func (g *MicroTile) GetTile() ([]byte, error) {
 		Size(0).
 		Query(g.getQuery()).
 		Aggregation(topHitsAggName, g.getAgg())
-	// send query through equalizer
+	// send query
 	res, err := query.Do()
 	if err != nil {
 		return nil, err

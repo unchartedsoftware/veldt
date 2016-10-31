@@ -12,3 +12,5 @@ import:
   version: 462326b1628e124b23f42e87a8f2750e3c4e2d24
 - package: github.com/onsi/gomega
   version: 0df7b7fdb38123c12a1f569f0affb2c2a7bd72cf
+- package: github.com/aws/aws-sdk-go
+  version: ~1.4.20

@@ -143,7 +143,7 @@ func (g *PreviewTile) GetTile() ([]byte, error) {
 		Size(0).
 		Query(g.getQuery()).
 		Aggregation(xAggName, g.getAgg())
-	// send query through equalizer
+	// send query
 	res, err := query.Do()
 	if err != nil {
 		return nil, err
