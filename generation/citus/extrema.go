@@ -9,7 +9,7 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
-// GetExtrema returns the extrema of a numeric field for the provided index.
+// GetNumericExtrema returns the extrema of a numeric field for the provided index.
 func GetNumericExtrema(connPool *pgx.ConnPool, schema string, table string, column string) (*binning.Extrema, error) {
 	// query
 	queryString := fmt.Sprintf("SELECT CAST(MIN(%s) AS FLOAT) as min, CAST(MAX(%s) AS FLOAT) as max FROM %s.%s;", column, column, schema, table)
@@ -35,7 +35,7 @@ func GetNumericExtrema(connPool *pgx.ConnPool, schema string, table string, colu
 	}, nil
 }
 
-// GetExtrema returns the extrema of a numeric field for the provided index.
+// GetTimestampExtrema returns the extrema of a timestamp field for the provided index.
 func GetTimestampExtrema(connPool *pgx.ConnPool, schema string, table string, column string) (*binning.Extrema, error) {
 	// query
 	queryString := fmt.Sprintf("SELECT MIN(%s) as min, MAX(%s) as max FROM %s.%s;", column, column, schema, table)

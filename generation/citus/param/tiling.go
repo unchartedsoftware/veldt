@@ -78,7 +78,7 @@ func (p *Tiling) GetHash() string {
 		p.maxY)
 }
 
-// GetXQuery returns an elastic query.
+// AddXQuery returns an elastic query.
 func (p *Tiling) AddXQuery(query *query.Query) *query.Query {
 	minXArg := query.AddParameter(p.minX)
 	maxXArg := query.AddParameter(p.maxX)
@@ -91,7 +91,7 @@ func (p *Tiling) AddXQuery(query *query.Query) *query.Query {
 	return query
 }
 
-// GetYQuery returns an elastic query.
+// AddYQuery returns an elastic query.
 func (p *Tiling) AddYQuery(query *query.Query) *query.Query {
 	minYArg := query.AddParameter(p.minY)
 	maxYArg := query.AddParameter(p.maxY)

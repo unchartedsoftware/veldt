@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/unchartedsoftware/prism/generation/citus/param"
-    "github.com/unchartedsoftware/prism/generation/citus/query"
+	"github.com/unchartedsoftware/prism/generation/citus/query"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -39,23 +39,23 @@ func (p *TopTerms) GetHash() string {
 	return fmt.Sprintf("%s:%d", p.Field, p.Size)
 }
 
-// GetAgg returns an elastic aggregation.
+// AddAgg returns an elastic aggregation.
 func (p *TopTerms) AddAgg(q *query.Query) (*query.Query, error) {
-    //Add the terms field. Assume the field is an array.
-    q.AddField(fmt.Sprintf("unnest(%s) AS term", p.Field))
+	//Add the terms field. Assume the field is an array.
+	q.AddField(fmt.Sprintf("unnest(%s) AS term", p.Field))
 
-    //Need to nest the existing query as a table and group by the terms.
-    termQuery, err := query.NewQuery()
-    if err != nil {
-        return nil, err
-    }
+	//Need to nest the existing query as a table and group by the terms.
+	termQuery, err := query.NewQuery()
+	if err != nil {
+		return nil, err
+	}
 
-    termQuery.AddTable(fmt.Sprintf("(%s) terms", q.GetQuery(true)))
-    termQuery.AddGroupByClause("term")
-    termQuery.AddField("term")
-    termQuery.AddField("COUNT(*) as term_count")
-    termQuery.AddOrderByClause("term_count desc")
-    termQuery.SetLimit(p.Size)
+	termQuery.AddTable(fmt.Sprintf("(%s) terms", q.GetQuery(true)))
+	termQuery.AddGroupByClause("term")
+	termQuery.AddField("term")
+	termQuery.AddField("COUNT(*) as term_count")
+	termQuery.AddOrderByClause("term_count desc")
+	termQuery.SetLimit(p.Size)
 
-    return termQuery, nil
+	return termQuery, nil
 }

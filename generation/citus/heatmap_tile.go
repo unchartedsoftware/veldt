@@ -133,9 +133,7 @@ func (g *HeatmapTile) parseResult(rows *pgx.Rows) ([]byte, error) {
 
 // GetTile returns the marshalled tile data.
 func (g *HeatmapTile) GetTile() ([]byte, error) {
-
 	heatReq := g.req
-
 	// send query
 	query := g.getQuery()
 	query = g.getAgg()

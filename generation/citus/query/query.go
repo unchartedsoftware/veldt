@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// Query represents a citus query object.
 type Query struct {
 	QueryArgs      []interface{}
 	WhereClauses   []string
@@ -13,9 +14,10 @@ type Query struct {
 	Fields         []string
 	Tables         []string
 	OrderByClauses []string
-	Limit		   uint32
+	Limit          uint32
 }
 
+// NewQuery instantiates and returns a new query object.
 func NewQuery() (*Query, error) {
 	return &Query{
 		WhereClauses:   []string{},
@@ -23,11 +25,12 @@ func NewQuery() (*Query, error) {
 		Fields:         []string{},
 		Tables:         []string{},
 		OrderByClauses: []string{},
-		Limit:			0,
+		Limit:          0,
 		QueryArgs:      make([]interface{}, 0),
 	}, nil
 }
 
+// GetHash retrusn the string hash of the query
 func (q *Query) GetHash() string {
 	numWheres := len(q.WhereClauses)
 	numGroups := len(q.GroupByClauses)
@@ -59,12 +62,13 @@ func (q *Query) GetHash() string {
 
 	hash := strings.Join(hashes, "::")
 	if q.Limit > 0 {
-		hash = hash +"::Limit=" + fmt.Sprint(q.Limit)
+		hash = hash + "::Limit=" + fmt.Sprint(q.Limit)
 	}
 
 	return hash
 }
 
+// GetQuery returns the squery string.
 func (q *Query) GetQuery(nested bool) string {
 	queryString := fmt.Sprintf("SELECT %s", strings.Join(q.Fields, ", "))
 
@@ -83,7 +87,7 @@ func (q *Query) GetQuery(nested bool) string {
 	}
 
 	if q.Limit > 0 {
-		queryString += fmt.Sprintf(" LIMIT %s", q.Limit)
+		queryString += fmt.Sprintf(" LIMIT %d", q.Limit)
 	}
 
 	if !nested {
@@ -99,26 +103,32 @@ func (q *Query) AddParameter(param interface{}) string {
 	return "$" + strconv.Itoa(len(q.QueryArgs))
 }
 
+// AddWhereClause adds a where clause to the query.
 func (q *Query) AddWhereClause(clause string) {
 	q.WhereClauses = append(q.WhereClauses, clause)
 }
 
+// AddGroupByClause adds a groupby to the query.
 func (q *Query) AddGroupByClause(clause string) {
 	q.GroupByClauses = append(q.GroupByClauses, clause)
 }
 
+// AddField adds a field to the query.
 func (q *Query) AddField(field string) {
 	q.Fields = append(q.Fields, field)
 }
 
+// AddTable adds a table to the query.
 func (q *Query) AddTable(table string) {
 	q.Tables = append(q.Tables, table)
 }
 
+// AddOrderByClause adds an orber by clause to the query.
 func (q *Query) AddOrderByClause(clause string) {
 	q.OrderByClauses = append(q.OrderByClauses, clause)
 }
 
+// SetLimit sets the limit to the query.
 func (q *Query) SetLimit(limit uint32) {
 	q.Limit = limit
 }
