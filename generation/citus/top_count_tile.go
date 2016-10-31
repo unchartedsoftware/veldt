@@ -20,11 +20,9 @@ const (
 // TopCountTile represents a tiling generator that produces top term counts.
 type TopCountTile struct {
 	TileGenerator
-	Tiling    *param.Tiling
-	TopTerms  *agg.TopTerms
-	Query     *query.Query
-	//Histogram *agg.Histogram
-	//TopHits   *agg.TopHits
+	Tiling   *param.Tiling
+	TopTerms *agg.TopTerms
+	Query    *query.Query
 }
 
 // NewTopCountTile instantiates and returns a pointer to a new generator.
@@ -51,22 +49,11 @@ func NewTopCountTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		// optional
-		//histogram, err := agg.NewHistogram(tileReq.Params)
-		//if param.IsOptionalErr(err) {
-		//	return nil, err
-		//}
-		//topHits, err := agg.NewTopHits(tileReq.Params)
-		//if param.IsOptionalErr(err) {
-		//	return nil, err
-		//}
 		t := &TopCountTile{}
 		t.Citus = citus
 		t.Tiling = tiling
 		t.TopTerms = topTerms
 		t.Query = query
-		//t.Histogram = histogram
-		//t.TopHits = topHits
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -81,8 +68,6 @@ func (g *TopCountTile) GetParams() []tile.Param {
 		g.Tiling,
 		g.TopTerms,
 		g.Query,
-		//g.Histogram,
-		//g.TopHits,
 	}
 }
 
@@ -98,36 +83,22 @@ func (g *TopCountTile) getAgg(q *query.Query) (*query.Query, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// if histogram param is provided, add histogram agg
-	//if g.Histogram != nil {
-	//	agg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
-	//}
-	// if topHits param is provided, add topHits agg
-	//if g.TopHits != nil {
-	//	agg.SubAggregation(topHitsAggName, g.TopHits.GetAgg())
-	//}
 	return aq, nil
 }
 
 func (g *TopCountTile) parseResult(rows *pgx.Rows) ([]byte, error) {
 	// Result of query is term, count.
 	counts := make(map[string]interface{})
-
-
 	for rows.Next() {
 		var term string
-		var term_count float64
-
-		err := rows.Scan(&term, &term_count)
+		var count float64
+		err := rows.Scan(&term, &count)
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing top terms: %s %v",
 				g.req.String(), err)
 		}
-
-		counts[term] = term_count
+		counts[term] = count
 	}
-
 	// marshal results map
 	return json.Marshal(counts)
 }
@@ -135,7 +106,7 @@ func (g *TopCountTile) parseResult(rows *pgx.Rows) ([]byte, error) {
 // GetTile returns the marshalled tile data.
 func (g *TopCountTile) GetTile() ([]byte, error) {
 	// send query
-	query:= g.Query
+	query := g.Query
 	query.AddTable(g.req.URI)
 	query = g.getQuery(query)
 	query, err := g.getAgg(query)
@@ -144,7 +115,6 @@ func (g *TopCountTile) GetTile() ([]byte, error) {
 		return nil, err
 	}
 	defer rows.Close()
-
 	// parse and return results
 	return g.parseResult(rows)
 }
