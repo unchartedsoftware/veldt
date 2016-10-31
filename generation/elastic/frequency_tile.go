@@ -15,10 +15,9 @@ import (
 // FrequencyTile represents a tiling generator that produces an array of counts.
 type FrequencyTile struct {
 	TileGenerator
-	Tiling    *param.Tiling
-	Time      *agg.DateHistogram
-	Query     *query.Bool
-	Histogram *agg.Histogram
+	Tiling *param.Tiling
+	Time   *agg.DateHistogram
+	Query  *query.Bool
 }
 
 // FrequencyBin represents the result type in the returned array.
@@ -51,17 +50,11 @@ func NewFrequencyTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		// optional
-		histogram, err := agg.NewHistogram(tileReq.Params)
-		if param.IsOptionalErr(err) {
-			return nil, err
-		}
 		t := &FrequencyTile{}
 		t.Elastic = elastic
 		t.Tiling = tiling
 		t.Time = time
 		t.Query = query
-		t.Histogram = histogram
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -76,7 +69,6 @@ func (g *FrequencyTile) GetParams() []tile.Param {
 		g.Tiling,
 		g.Time,
 		g.Query,
-		g.Histogram,
 	}
 }
 
@@ -90,25 +82,22 @@ func (g *FrequencyTile) getQuery() elastic.Query {
 
 func (g *FrequencyTile) getAgg() elastic.Aggregation {
 	// get date histogram agg
-	agg := g.Time.GetAgg()
-	// if histogram param is provided, add histogram agg
-	if g.Histogram != nil {
-		agg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
-	}
-	return agg
+	return g.Time.GetAgg()
 }
 
 func (g *FrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 	time, ok := res.Aggregations.DateHistogram(timeAggName)
 	if !ok {
-		return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request %s", timeAggName, g.req.String())
+		return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request %s",
+			timeAggName,
+			g.req.String())
 	}
 	bins := make([]FrequencyBin, len(time.Buckets))
-	counts := make([]interface{}, len(time.Buckets))
 	for i, bucket := range time.Buckets {
-		counts[i] = bucket.DocCount
-		bin := FrequencyBin{Count: bucket.DocCount, Timestamp: bucket.Key}
-		bins[i] = bin
+		bins[i] = FrequencyBin{
+			Count:     bucket.DocCount,
+			Timestamp: bucket.Key,
+		}
 	}
 	// marshal results map
 	return json.Marshal(bins)

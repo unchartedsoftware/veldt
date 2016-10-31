@@ -15,11 +15,9 @@ import (
 // TopicCountTile represents a tiling generator that produces terms counts.
 type TopicCountTile struct {
 	TileGenerator
-	Tiling    *param.Tiling
-	Terms     *agg.TermsFilter
-	Query     *query.Bool
-	Histogram *agg.Histogram
-	TopHits   *agg.TopHits
+	Tiling *param.Tiling
+	Terms  *agg.TermsFilter
+	Query  *query.Bool
 }
 
 // NewTopicCountTile instantiates and returns a pointer to a new generator.
@@ -33,7 +31,6 @@ func NewTopicCountTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		// required
 		tiling, err := param.NewTiling(tileReq)
 		if err != nil {
 			return nil, err
@@ -46,22 +43,11 @@ func NewTopicCountTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		// optional
-		histogram, err := agg.NewHistogram(tileReq.Params)
-		if param.IsOptionalErr(err) {
-			return nil, err
-		}
-		topHits, err := agg.NewTopHits(tileReq.Params)
-		if param.IsOptionalErr(err) {
-			return nil, err
-		}
 		t := &TopicCountTile{}
 		t.Elastic = elastic
 		t.Tiling = tiling
 		t.Terms = terms
 		t.Query = query
-		t.Histogram = histogram
-		t.TopHits = topHits
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -76,8 +62,6 @@ func (g *TopicCountTile) GetParams() []tile.Param {
 		g.Tiling,
 		g.Terms,
 		g.Query,
-		g.Histogram,
-		g.TopHits,
 	}
 }
 
@@ -91,14 +75,6 @@ func (g *TopicCountTile) getQuery() elastic.Query {
 func (g *TopicCountTile) addAggs(query *elastic.SearchService) *elastic.SearchService {
 	// add all filter aggregations
 	for term, agg := range g.Terms.GetAggs() {
-		// if histogram param is provided, add histogram agg
-		if g.Histogram != nil {
-			agg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
-		}
-		// if topHits param is provided, add topHits agg
-		if g.TopHits != nil {
-			agg.SubAggregation(topHitsAggName, g.TopHits.GetAgg())
-		}
 		query.Aggregation(term, agg)
 	}
 	return query
@@ -115,36 +91,7 @@ func (g *TopicCountTile) parseResult(res *elastic.SearchResult) ([]byte, error) 
 				g.req.String())
 		}
 		if filter.DocCount > 0 {
-			var bCounts interface{}
-			if g.Histogram != nil {
-				histogramAgg, ok := filter.Aggregations.Histogram(histogramAggName)
-				if !ok {
-					return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
-						histogramAggName,
-						g.req.String())
-				}
-				bCounts = g.Histogram.GetBucketMap(histogramAgg)
-			} else {
-				bCounts = filter.DocCount
-			}
-			if g.TopHits != nil {
-				topHitsAgg, ok := filter.Aggregations.TopHits(topHitsAggName)
-				if !ok {
-					return nil, fmt.Errorf("Top hits were not found in response for request %s",
-						g.req.String())
-				}
-				topHits, ok := g.TopHits.GetHitsMap(topHitsAgg)
-				if !ok {
-					return nil, fmt.Errorf("Top hits could not be unmarshalled from response for request %s",
-						g.req.String())
-				}
-				counts[term] = map[string]interface{}{
-					"counts": bCounts,
-					"hits":   topHits,
-				}
-			} else {
-				counts[term] = bCounts
-			}
+			counts[term] = filter.DocCount
 		}
 	}
 	// marshal results map

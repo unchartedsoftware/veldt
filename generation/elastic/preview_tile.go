@@ -16,9 +16,8 @@ const (
 	topHitsAggName = "tophits"
 )
 
-// PreviewTile represents a tiling generator that produces an n x n tile containing
-// preview data.  Preview data is the result of a top-n hits query for a given bucket,
-// where the caller
+// PreviewTile represents a tiling generator that produces an binned tile where
+// each bin contains the top documents sorted by some field.
 type PreviewTile struct {
 	TileGenerator
 	Binning *param.Binning
@@ -80,14 +79,9 @@ func (g *PreviewTile) getQuery() elastic.Query {
 }
 
 func (g *PreviewTile) getAgg() elastic.Aggregation {
-	// create x aggregation
-	xAgg := g.Binning.GetXAgg()
-	// create y aggregation, add it as a sub-agg to xAgg
-	yAgg := g.Binning.GetYAgg()
-	xAgg.SubAggregation(yAggName, yAgg)
-	// if there is a z field to sum, add sum agg to yAgg
-	yAgg.SubAggregation(topHitsAggName, g.TopHits.GetAgg())
-	return xAgg
+	return g.Binning.GetXAgg().
+		SubAggregation(yAggName, g.Binning.GetYAgg().
+			SubAggregation(topHitsAggName, g.TopHits.GetAgg()))
 }
 
 func (g *PreviewTile) parseResult(res *elastic.SearchResult) ([]byte, error) {

@@ -16,12 +16,10 @@ import (
 // frequency counts.
 type TopFrequencyTile struct {
 	TileGenerator
-	Tiling    *param.Tiling
-	TopTerms  *agg.TopTerms
-	Time      *agg.DateHistogram
-	Query     *query.Bool
-	Histogram *agg.Histogram
-	TopHits   *agg.TopHits
+	Tiling   *param.Tiling
+	TopTerms *agg.TopTerms
+	Time     *agg.DateHistogram
+	Query    *query.Bool
 }
 
 // NewTopFrequencyTile instantiates and returns a pointer to a new generator.
@@ -35,7 +33,6 @@ func NewTopFrequencyTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		// required
 		tiling, err := param.NewTiling(tileReq)
 		if err != nil {
 			return nil, err
@@ -52,23 +49,12 @@ func NewTopFrequencyTile(host, port string) tile.GeneratorConstructor {
 		if err != nil {
 			return nil, err
 		}
-		// optional
-		histogram, err := agg.NewHistogram(tileReq.Params)
-		if param.IsOptionalErr(err) {
-			return nil, err
-		}
-		topHits, err := agg.NewTopHits(tileReq.Params)
-		if param.IsOptionalErr(err) {
-			return nil, err
-		}
 		t := &TopFrequencyTile{}
 		t.Elastic = elastic
 		t.Tiling = tiling
 		t.TopTerms = topTerms
 		t.Time = time
 		t.Query = query
-		t.Histogram = histogram
-		t.TopHits = topHits
 		t.req = tileReq
 		t.host = host
 		t.port = port
@@ -84,8 +70,6 @@ func (g *TopFrequencyTile) GetParams() []tile.Param {
 		g.TopTerms,
 		g.Time,
 		g.Query,
-		g.Histogram,
-		g.TopHits,
 	}
 }
 
@@ -98,21 +82,9 @@ func (g *TopFrequencyTile) getQuery() elastic.Query {
 }
 
 func (g *TopFrequencyTile) getAgg() elastic.Aggregation {
-	// get top terms agg
-	agg := g.TopTerms.GetAgg()
-	// get date histogram agg
-	timeAgg := g.Time.GetAgg()
-	// if histogram param is provided, add histogram agg
-	if g.Histogram != nil {
-		timeAgg.SubAggregation(histogramAggName, g.Histogram.GetAgg())
-	}
-	// if topHits param is provided, add topHits agg
-	if g.TopHits != nil {
-		timeAgg.SubAggregation(topHitsAggName, g.TopHits.GetAgg())
-	}
-	// add date histogram agg
-	agg.SubAggregation(timeAggName, timeAgg)
-	return agg
+	// get date histogram agg nested in a top terms agg
+	return g.TopTerms.GetAgg().
+		SubAggregation(timeAggName, g.Time.GetAgg())
 }
 
 func (g *TopFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
@@ -133,40 +105,13 @@ func (g *TopFrequencyTile) parseResult(res *elastic.SearchResult) ([]byte, error
 		}
 		time, ok := bucket.Aggregations.DateHistogram(timeAggName)
 		if !ok {
-			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request %s", timeAggName, g.req.String())
+			return nil, fmt.Errorf("DateHistogram aggregation '%s' was not found in response for request %s",
+				timeAggName,
+				g.req.String())
 		}
 		counts := make([]interface{}, len(time.Buckets))
 		for i, bucket := range time.Buckets {
-			var bCounts interface{}
-			if g.Histogram != nil {
-				histogram, ok := bucket.Aggregations.Histogram(histogramAggName)
-				if !ok {
-					return nil, fmt.Errorf("Histogram aggregation '%s' was not found in response for request %s",
-						histogramAggName,
-						g.req.String())
-				}
-				bCounts = g.Histogram.GetBucketMap(histogram)
-			} else {
-				bCounts = bucket.DocCount
-			}
-			if g.TopHits != nil {
-				topHitsAgg, ok := bucket.Aggregations.TopHits(topHitsAggName)
-				if !ok {
-					return nil, fmt.Errorf("Top hits were not found in response for request %s",
-						g.req.String())
-				}
-				topHits, ok := g.TopHits.GetHitsMap(topHitsAgg)
-				if !ok {
-					return nil, fmt.Errorf("Top hits could not be unmarshalled from response for request %s",
-						g.req.String())
-				}
-				counts[i] = map[string]interface{}{
-					"counts": bCounts,
-					"hits":   topHits,
-				}
-			} else {
-				counts[i] = bCounts
-			}
+			counts[i] = bucket.DocCount
 		}
 		// add counts to frequencies map
 		frequencies[term] = counts

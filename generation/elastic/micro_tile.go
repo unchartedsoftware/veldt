@@ -80,7 +80,8 @@ func (g *MicroTile) parseResult(res *elastic.SearchResult) ([]byte, error) {
 	// parse aggregations
 	topHitsAgg, ok := res.Aggregations.TopHits(topHitsAggName)
 	if !ok {
-		return nil, fmt.Errorf("Top hits were not found in response for request %s", g.req.String())
+		return nil, fmt.Errorf("Top hits were not found in response for request %s",
+			g.req.String())
 	}
 	// loop over raw hit results for the bin and unmarshall them into a list
 	topHits := make([]map[string]interface{}, len(topHitsAgg.Hits.Hits))
