@@ -68,7 +68,7 @@ func (p *DateHistogram) GetAgg() *elastic.DateHistogramAggregation {
 		num, isNum := p.From.(float64)
 		if isNum {
 			// assume milliseconds
-			agg.Offset(fmt.Sprintf("%dms", int64(num)))
+			agg.Offset(fmt.Sprintf("%ds", int64(num)/1000))
 		} else {
 			str, isStr := p.From.(string)
 			if isStr {
