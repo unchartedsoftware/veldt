@@ -166,7 +166,7 @@ func (t *expression) advance() error {
 	return nil
 }
 
-func precendence(arg interface{}) int {
+func precedence(arg interface{}) int {
 	op, _ := toOperator(arg)
 	switch op {
 	case And:
@@ -224,7 +224,7 @@ func (t *expression) parseExpressionR(lhs Query, min int) (Query, error) {
 		return nil, err
 	}
 
-	for isBinaryOperator(lookahead) && precendence(lookahead) >= min {
+	for isBinaryOperator(lookahead) && precedence(lookahead) >= min {
 
 		op, err = toOperator(lookahead)
 		if err != nil {
@@ -246,9 +246,9 @@ func (t *expression) parseExpressionR(lhs Query, min int) (Query, error) {
 			return nil, err
 		}
 
-		for (isBinaryOperator(lookahead) && precendence(lookahead) > precendence(op)) ||
-		 	(isUnaryOperator(lookahead) && precendence(lookahead) == precendence(op)) {
-			rhs, err = t.parseExpressionR(rhs, precendence(lookahead))
+		for (isBinaryOperator(lookahead) && precedence(lookahead) > precedence(op)) ||
+		 	(isUnaryOperator(lookahead) && precedence(lookahead) == precedence(op)) {
+			rhs, err = t.parseExpressionR(rhs, precedence(lookahead))
 			if err != nil {
 				return nil, err
 			}
