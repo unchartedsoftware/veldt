@@ -8,7 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/tile"
 	awsManager "github.com/unchartedsoftware/prism/util/aws"
 	"github.com/unchartedsoftware/prism/util/json"
 )

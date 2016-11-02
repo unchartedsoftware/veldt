@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/tile"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 

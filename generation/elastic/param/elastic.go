@@ -7,7 +7,7 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/tile"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 

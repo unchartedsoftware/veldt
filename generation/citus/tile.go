@@ -6,7 +6,7 @@ import (
 	"github.com/jackc/pgx"
 
 	"github.com/unchartedsoftware/prism/generation/citus/param"
-	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/tile"
 )
 
 // TileGenerator represents a base generator that uses citus for its backend.

@@ -10,7 +10,7 @@ import (
 	"github.com/unchartedsoftware/prism/generation/citus/param"
 	"github.com/unchartedsoftware/prism/generation/citus/query"
 
-	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/tile"
 )
 
 const (

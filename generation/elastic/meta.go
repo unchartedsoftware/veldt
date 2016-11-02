@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/generation/meta"
+	"github.com/unchartedsoftware/prism/meta"
 )
 
 // MetaGenerator represents a base generator that uses elasticsearch for its

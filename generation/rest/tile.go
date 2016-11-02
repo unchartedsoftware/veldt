@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/tile"
 )
 
 // TileGenerator represents a base generator that uses elasticsearch for its

@@ -9,7 +9,7 @@ import (
 	"github.com/unchartedsoftware/prism/generation/elastic/agg"
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
 	"github.com/unchartedsoftware/prism/generation/elastic/query"
-	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/tile"
 )
 
 // TopicCountTile represents a tiling generator that produces terms counts.

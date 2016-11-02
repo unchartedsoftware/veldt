@@ -15,40 +15,39 @@ type Range struct {
 	To    interface{}
 }
 
-// NewRange instantiates and returns a range query object.
-func NewRange(params map[string]interface{}) (*Range, error) {
-	field, ok := json.GetString(params, "field")
-	if !ok {
-		return nil, fmt.Errorf("Range `field` parameter missing from tiling param %v", params)
-	}
-	from, hasFrom := json.Get(params, "from")
-	to, hasTo := json.Get(params, "to")
-	if !hasFrom && !hasTo {
-		return nil, fmt.Errorf("Range both `from` and `to` parameters missing from tiling param %v", params)
-	}
-	return &Range{
-		Field: field,
-		From:  from,
-		To:    to,
-	}, nil
-}
+// // NewRange instantiates and returns a range query object.
+// func NewRange(params map[string]interface{}) (*Range, error) {
+// 	field, ok := json.GetString(params, "field")
+// 	if !ok {
+// 		return nil, fmt.Errorf("Range `field` parameter missing from tiling param %v", params)
+// 	}
+// 	from, hasFrom := json.Get(params, "from")
+// 	to, hasTo := json.Get(params, "to")
+// 	if !hasFrom && !hasTo {
+// 		return nil, fmt.Errorf("Range both `from` and `to` parameters missing from tiling param %v", params)
+// 	}
+// 	return &Range{
+// 		Field: field,
+// 		From:  from,
+// 		To:    to,
+// 	}, nil
+// }
 
-// GetHash returns a string hash of the query.
-func (q *Range) GetHash() string {
-	return fmt.Sprintf("%s:%f:%f",
-		q.Field,
-		q.From,
-		q.To)
-}
-
-// GetQuery returns the elastic query object.
-func (q *Range) GetQuery() elastic.Query {
-	query := elastic.NewRangeQuery(q.Field)
-	if q.From != nil {
-		query.Gte(q.From)
+// Apply adds the query to the tiling job.
+func (q *Exists) Apply(query *elastic.Query) error {
+	rang := elastic.NewRangeQuery(q.Field)
+	if q.GTE != nil {
+		rang.Gte(q.GTE)
 	}
-	if q.To != nil {
-		query.Lte(q.To)
+	if q.GT != nil {
+		rang.Gt(q.GT)
 	}
-	return query
+	if q.LTE != nil {
+		rang.Lte(q.LTE)
+	}
+	if q.LT != nil {
+		rang.Lte(q.LT)
+	}
+	query.Must(rang)
+	return nil
 }

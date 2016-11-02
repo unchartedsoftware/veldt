@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx"
 
 	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/generation/meta"
+	"github.com/unchartedsoftware/prism/meta"
 )
 
 // PropertyMeta represents the meta data for a single property.

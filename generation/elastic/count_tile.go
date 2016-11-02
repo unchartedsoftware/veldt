@@ -7,7 +7,7 @@ import (
 
 	"github.com/unchartedsoftware/prism/generation/elastic/param"
 	"github.com/unchartedsoftware/prism/generation/elastic/query"
-	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/tile"
 )
 
 // CountTile represents a tiling generator that produces a tile.

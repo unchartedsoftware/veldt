@@ -7,7 +7,7 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/generation/meta"
+	"github.com/unchartedsoftware/prism/meta"
 	jsonutil "github.com/unchartedsoftware/prism/util/json"
 )
 
