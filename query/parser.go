@@ -4,39 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 )
-/*
-[
-	{
-		"equals": {
-			"field": "surname",
-			"value": "bethune"
-		}
-	},
-	"AND"
-	{
-		"in": {
-			"field": "hashtags",
-			"values": ["dank", "420", "nugz"]
-		}
-	},
-	"AND"
-	[
-		"NOT",
-		{
-			"exists": {
-				"field": "location"
-			}
-		},
-		"OR",
-		{
-			"range": {
-				"field": "data",
-				"lt": 123234532452
-			}
-		}
-	]
-]
-*/
 
 /*
 func ParseUnaryOp(op interface{}) (string, error) {
@@ -77,24 +44,60 @@ func parseExpression(args []interface{}) (Query, error) {
 	return exp.Parse()
 }
 
-func parseQuery(query interface{}) (Query, error) {
+func getQueryAndKey(query map[string]interface{}) (string, map[string]interface{}, bool) {
+    var key string
+    var value map[string]interface{}
+    found := false
+    for k, v := range query {
+		val, ok := v.(map[string]interface{})
+		if !ok {
+			continue
+		}
+        key = k
+        value = val
+        found  = true
+		break
+	}
+    return key, value, found
+}
+
+func parseQuery(arg interface{}) (Query, error) {
 	// pattern match for base queries
-	return nil, nil
+
+    query, ok := arg.(map[string]interface{})
+    if !ok {
+        return nil, fmt.Errorf("`%v` is not a recognised query format", arg)
+    }
+
+    id, params, ok := getQueryAndKey(query)
+    if !ok {
+        return nil, fmt.Errorf("Query `%v` is empty", query)
+    }
+
+    return GetQuery(id, params)
 }
 
 func parseToken(token interface{}) (Query, error) {
 	// check if token is an expression
 	exp, ok := token.([]interface{})
 	if ok {
+    	fmt.Println("EXP:")
+        for _, e := range exp {
+            fmt.Printf("\t%v,\n", e)
+        }
+        fmt.Println()
 		// is expression, recursively parse it
 		return parseExpression(exp)
 	}
+	fmt.Println("QUERY:")
+	fmt.Printf("\t%v,\n\n", token)
 	// is query, parse it directly
-	return parseQuery(exp)
+	return parseQuery(token)
 }
 
 type expression struct {
 	tokens []interface{}
+    parsed []interface{}
 }
 
 func newExpression(arr []interface{}) *expression {
@@ -108,10 +111,14 @@ func (t *expression) pop() (interface{}, error) {
 		return nil, fmt.Errorf("Expected operand missing")
 	}
 	token := t.tokens[0]
+    t.parsed = append(t.parsed, token)
 	t.tokens = t.tokens[1:len(t.tokens)]
 	return token, nil
 }
 
+
+func (t *expression) success(token  interface{}) {
+}
 
 func (t *expression) popOperand() (Query, error) {
 	// Pops the next operand
@@ -151,11 +158,18 @@ func (t *expression) popOperand() (Query, error) {
 	return parseToken(token)
 }
 
-func (t *expression) peek() (interface{}, error) {
+// func (t *expression) peek() (interface{}, bool) {
+// 	if len(t.tokens) == 0 {
+// 		return nil, fmt.Errorf("Expected token missing")
+// 	}
+// 	return t.tokens[0], nil
+// }
+
+func (t *expression) peek() interface{} {
 	if len(t.tokens) == 0 {
-		return nil, fmt.Errorf("Expected token missing")
+		return nil
 	}
-	return t.tokens[0], nil
+	return t.tokens[0]
 }
 
 func (t *expression) advance() error {
@@ -194,6 +208,7 @@ func isBinaryOperator(arg interface{}) bool {
 	}
 	switch str {
 	case And:
+		return true
 	case Or:
 		return true
 	}
@@ -219,10 +234,7 @@ func (t *expression) parseExpressionR(lhs Query, min int) (Query, error) {
 	var rhs Query
 	var lookahead interface{}
 
-	lookahead, err = t.peek()
-	if err != nil {
-		return nil, err
-	}
+	lookahead = t.peek()
 
 	for isBinaryOperator(lookahead) && precedence(lookahead) >= min {
 
@@ -241,10 +253,7 @@ func (t *expression) parseExpressionR(lhs Query, min int) (Query, error) {
 			return nil, err
 		}
 
-		lookahead, err = t.peek()
-		if err != nil {
-			return nil, err
-		}
+		lookahead = t.peek()
 
 		for (isBinaryOperator(lookahead) && precedence(lookahead) > precedence(op)) ||
 		 	(isUnaryOperator(lookahead) && precedence(lookahead) == precedence(op)) {
@@ -252,10 +261,7 @@ func (t *expression) parseExpressionR(lhs Query, min int) (Query, error) {
 			if err != nil {
 				return nil, err
 			}
-			lookahead, err = t.peek()
-			if err != nil {
-				return nil, err
-			}
+			lookahead = t.peek()
 		}
 		lhs = &BinaryExpression{
 			Left: lhs,
@@ -269,14 +275,27 @@ func (t *expression) parseExpressionR(lhs Query, min int) (Query, error) {
 func (t *expression) Parse() (Query, error) {
 	lhs, err := t.popOperand()
 	if err != nil {
+        fmt.Println("Parsed:", t.parsed[0:len(t.parsed)-1])
+        fmt.Println("Failed:", t.parsed[len(t.parsed)-1])
+        fmt.Println("Remaining:", t.tokens)
 		return nil, err
 	}
-	return t.parseExpressionR(lhs, 0)
+	query, err := t.parseExpressionR(lhs, 0)
+    if err != nil {
+        fmt.Println("Parsed:", t.parsed[0:len(t.parsed)-1])
+        fmt.Println("Failed:", t.parsed[len(t.parsed)-1])
+        fmt.Println("Remaining:", t.tokens)
+		return nil, err
+	}
+    return query, nil
 }
 
 // Parse parses the query payload into the query AST.
 func Parse(bytes []byte) (Query, error) {
 	var token interface{}
-	json.Unmarshal(bytes, &token)
+	err := json.Unmarshal(bytes, &token)
+    if err != nil {
+        return nil, err
+    }
 	return parseToken(token)
 }

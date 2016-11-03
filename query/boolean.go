@@ -18,8 +18,8 @@ const (
 // BinaryExpression represents a binary boolean expression.
 type BinaryExpression struct {
 	Left Query
-	Right Query
 	Op string
+	Right Query
 }
 
 // Apply adds the query to the tiling job.

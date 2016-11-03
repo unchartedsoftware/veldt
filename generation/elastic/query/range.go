@@ -34,7 +34,7 @@ type Range struct {
 // }
 
 // Apply adds the query to the tiling job.
-func (q *Exists) Apply(query *elastic.Query) error {
+func (q *Range) Apply(query *elastic.Query) error {
 	rang := elastic.NewRangeQuery(q.Field)
 	if q.GTE != nil {
 		rang.Gte(q.GTE)
