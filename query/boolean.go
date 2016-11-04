@@ -17,14 +17,14 @@ const (
 
 // BinaryExpression represents a binary boolean expression.
 type BinaryExpression struct {
-	Left Query
-	Op string
+	Left  Query
+	Op    string
 	Right Query
 }
 
 // Apply adds the query to the tiling job.
 func (q *BinaryExpression) Apply(arg interface{}) error {
-	return fmt.Errorf("BinaryExpression has not been implemented")
+	return fmt.Errorf("Not implemented")
 }
 
 // GetHash returns the hash of the query.
@@ -38,12 +38,12 @@ func (q *BinaryExpression) GetHash() string {
 // UnaryExpression represents a unary boolean expression.
 type UnaryExpression struct {
 	Query Query
-	Op string
+	Op    string
 }
 
 // Apply adds the query to the tiling job.
 func (q *UnaryExpression) Apply(arg interface{}) error {
-	return fmt.Errorf("UnaryExpression has not been implemented")
+	return fmt.Errorf("Not implemented")
 }
 
 // GetHash returns the hash of the query.

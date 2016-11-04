@@ -2,14 +2,14 @@ package query
 
 import (
 	"fmt"
-	"strings"
 	"github.com/unchartedsoftware/prism/util/json"
+	"strings"
 )
 
 // Has quiery represents a query checking if the field has one or more of the
 // provided values. represents an elasticsearch terms query.
 type Has struct {
-	Field string
+	Field  string
 	Values []interface{}
 }
 
@@ -17,21 +17,21 @@ type Has struct {
 func NewHas(params map[string]interface{}) (Query, error) {
 	field, ok := json.GetString(params, "field")
 	if !ok {
-		return nil, fmt.Errorf("Has `field` parameter missing from tiling param %v", params)
+		return nil, fmt.Errorf("`field` parameter missing from query params")
 	}
 	values, ok := json.GetArray(params, "values")
 	if !ok {
-		return nil, fmt.Errorf("Has `values` parameter missing from tiling param %v", params)
+		return nil, fmt.Errorf("`values` parameter missing from query params")
 	}
 	return &Has{
-		Field: field,
+		Field:  field,
 		Values: values,
 	}, nil
 }
 
 // Apply adds the query to the tiling job.
 func (q *Has) Apply(arg interface{}) error {
-	return fmt.Errorf("Has has not been implemented")
+	return fmt.Errorf("Not implemented")
 }
 
 // GetHash returns a string hash of the query.

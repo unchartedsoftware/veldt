@@ -16,11 +16,11 @@ type Equals struct {
 func NewEquals(params map[string]interface{}) (Query, error) {
 	field, ok := json.GetString(params, "field")
 	if !ok {
-		return nil, fmt.Errorf("Equals `field` parameter missing from tiling param %v", params)
+		return nil, fmt.Errorf("`field` parameter missing from query params")
 	}
 	value, ok := json.Get(params, "value")
 	if !ok {
-		return nil, fmt.Errorf("Equals `value` parameter missing from tiling param %v", params)
+		return nil, fmt.Errorf("`value` parameter missing from query params")
 	}
 	return &Equals{
 		Field: field,
@@ -30,7 +30,7 @@ func NewEquals(params map[string]interface{}) (Query, error) {
 
 // Apply adds the query to the tiling job.
 func (q *Equals) Apply(arg interface{}) error {
-	return fmt.Errorf("Equals has not been implemented")
+	return fmt.Errorf("Not implemented")
 }
 
 // GetHash returns a string hash of the query.

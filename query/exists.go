@@ -14,7 +14,7 @@ type Exists struct {
 func NewExists(params map[string]interface{}) (Query, error) {
 	field, ok := json.GetString(params, "field")
 	if !ok {
-		return nil, fmt.Errorf("Exists `field` parameter missing from tiling param %v", params)
+		return nil, fmt.Errorf("`field` parameter missing from query params")
 	}
 	return &Exists{
 		Field: field,
@@ -23,7 +23,7 @@ func NewExists(params map[string]interface{}) (Query, error) {
 
 // Apply adds the query to the tiling job.
 func (q *Exists) Apply(arg interface{}) error {
-	return fmt.Errorf("Exists has not been implemented")
+	return fmt.Errorf("Not implemented")
 }
 
 // GetHash returns a string hash of the query.
