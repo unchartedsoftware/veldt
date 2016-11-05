@@ -49,10 +49,10 @@ func (p *DateHistogram) GetHash() string {
 func (p *DateHistogram) GetQuery() *elastic.RangeQuery {
 	query := elastic.NewRangeQuery(p.Field)
 	if p.From != nil {
-		query.Gte(p.From)
+		query.Gte(castTime(p.From))
 	}
 	if p.To != nil {
-		query.Lte(p.To)
+		query.Lte(castTime(p.To))
 	}
 	return query
 }
@@ -64,20 +64,36 @@ func (p *DateHistogram) GetAgg() *elastic.DateHistogramAggregation {
 		Interval(p.Interval).
 		MinDocCount(0)
 	if p.From != nil {
-		agg.ExtendedBoundsMin(p.From)
-		num, isNum := p.From.(float64)
-		if isNum {
-			// assume milliseconds
-			agg.Offset(fmt.Sprintf("%dms", int64(num)))
-		} else {
-			str, isStr := p.From.(string)
-			if isStr {
-				agg.Offset(str)
-			}
-		}
+		agg.ExtendedBoundsMin(castTime(p.From))
+		agg.Offset(castTimeToString(p.From))
 	}
 	if p.To != nil {
-		agg.ExtendedBoundsMax(p.To)
+		agg.ExtendedBoundsMax(castTime(p.To))
 	}
 	return agg
+}
+
+func castTime(val interface{}) interface{} {
+	num, isNum := val.(float64)
+	if isNum {
+		return int64(num)
+	}
+	str, isStr := val.(string)
+	if isStr {
+		return str
+	}
+	return val
+}
+
+func castTimeToString(val interface{}) string {
+	num, isNum := val.(float64)
+	if isNum {
+		// assume milliseconds
+		return fmt.Sprintf("%dms\n", int64(num))
+	}
+	str, isStr := val.(string)
+	if isStr {
+		return str
+	}
+	return ""
 }
