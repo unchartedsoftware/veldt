@@ -18,7 +18,7 @@ func Register(typeID string, ctor Constructor) {
 func GetQuery(typeID string, args map[string]interface{}) (Query, error) {
 	ctor, ok := registry[typeID]
 	if !ok {
-		return nil, fmt.Errorf("Query type `%s` has not been registered",
+		return nil, fmt.Errorf("query `%s` has not been registered",
 			typeID)
 	}
 	return ctor(args)

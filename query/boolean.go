@@ -42,14 +42,6 @@ func (q *BinaryExpression) Apply(arg interface{}) error {
 	return fmt.Errorf("Not implemented")
 }
 
-// GetHash returns the hash of the query.
-func (q *BinaryExpression) GetHash() string {
-	return fmt.Sprintf("%s:%s:%s",
-		q.Left.GetHash(),
-		q.Op,
-		q.Right.GetHash())
-}
-
 // UnaryExpression represents a unary boolean expression.
 type UnaryExpression struct {
 	Query Query
@@ -59,11 +51,4 @@ type UnaryExpression struct {
 // Apply adds the query to the tiling job.
 func (q *UnaryExpression) Apply(arg interface{}) error {
 	return fmt.Errorf("Not implemented")
-}
-
-// GetHash returns the hash of the query.
-func (q *UnaryExpression) GetHash() string {
-	return fmt.Sprintf("%s:%s",
-		q.Op,
-		q.Query.GetHash())
 }

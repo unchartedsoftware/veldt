@@ -3,24 +3,27 @@ package tile
 import (
 	"fmt"
 
+	"github.com/davecgh/go-spew/spew"
+
 	"github.com/unchartedsoftware/prism/binning"
 )
 
-// Request represents the tile type and tile coord.
-type Request struct {
-	Coord  *binning.TileCoord     `json:"coord"`
-	Type   string                 `json:"type"`
-	URI    string                 `json:"uri"`
-	Store  string                 `json:"store"`
-	Params map[string]interface{} `json:"params"`
+func init() {
+	spew.Config.SortKeys = true
 }
 
-// String returns the request formatted as a string.
-func (r *Request) String() string {
-	return fmt.Sprintf("%s/%s/%d/%d/%d",
-		r.Type,
-		r.URI,
-		r.Coord.Z,
-		r.Coord.X,
-		r.Coord.Y)
+// Request represents the tile type and tile coord.
+type Request struct {
+	Type string
+	Tile string
+	Param  param.Params
+	URI    string
+	Store  string
+	Coord  *binning.TileCoord
+	Query  query.Query
+}
+
+// GetHash returns a unique hash for the request.
+func (r *Request) GetHash() string {
+	return fmt.Sprintf("%s:%s", "tile", spew.Dump(r))
 }

@@ -2,8 +2,7 @@ package meta
 
 // Generator represents an interface for generating meta data.
 type Generator interface {
-	GetMeta() ([]byte, error)
-	GetHash() string
+	GetMeta(string) ([]byte, error)
 }
 
 // GeneratorConstructor represents a function to instantiate a new generator

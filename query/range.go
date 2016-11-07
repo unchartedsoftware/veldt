@@ -42,23 +42,3 @@ func NewRange(params map[string]interface{}) (Query, error) {
 func (q *Range) Apply(arg interface{}) error {
 	return fmt.Errorf("Not implemented")
 }
-
-// GetHash returns a string hash of the query.
-func (q *Range) GetHash() string {
-	var values []string
-	if q.GT != nil {
-		values = append(values, fmt.Sprintf("%v", q.GT))
-	}
-	if q.GTE != nil {
-		values = append(values, fmt.Sprintf("%v", q.GTE))
-	}
-	if q.LT != nil {
-		values = append(values, fmt.Sprintf("%v", q.LT))
-	}
-	if q.LTE != nil {
-		values = append(values, fmt.Sprintf("%v", q.LTE))
-	}
-	return fmt.Sprintf("%s:%s",
-		q.Field,
-		strings.Join(values, ":"))
-}

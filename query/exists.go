@@ -25,8 +25,3 @@ func NewExists(params map[string]interface{}) (Query, error) {
 func (q *Exists) Apply(arg interface{}) error {
 	return fmt.Errorf("Not implemented")
 }
-
-// GetHash returns a string hash of the query.
-func (q *Exists) GetHash() string {
-	return fmt.Sprintf("%s", q.Field)
-}

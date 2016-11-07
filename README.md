@@ -40,87 +40,118 @@ This minimalistic application shows how to register tile and meta data generator
 package main
 
 import (
-    "math"
+	"math"
 
-    "github.com/unchartedsoftware/prism/generation/elastic"
-    "github.com/unchartedsoftware/prism/generation/meta"
-    "github.com/unchartedsoftware/prism/generation/tile"
-    "github.com/unchartedsoftware/prism/store"
-    "github.com/unchartedsoftware/prism/store/redis"
+	"github.com/unchartedsoftware/prism/generation/elastic"
+	"github.com/unchartedsoftware/prism/generation/meta"
+	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/store"
+	"github.com/unchartedsoftware/prism/store/redis"
 	"github.com/unchartedsoftware/prism/store/compress/gzip"
 )
 
 func GenerateMetaData(m *meta.Request) ([]byte, error) {
-    // Generate meta data, this call will block until the response is ready
-    // in the store.
-    err := meta.GenerateMeta(m)
-    if err != nil {
-        return nil, err
-    }
-    // Retrieve the meta data form the store.
-    return meta.GetMetaFromStore(m)
+	// Generate meta data, this call will block until the response is ready
+	// in the store.
+	err := meta.GenerateMeta(m)
+	if err != nil {
+		return nil, err
+	}
+	// Retrieve the meta data form the store.
+	return meta.GetMetaFromStore(m)
 }
 
 func GenerateTileData(t *tile.Request) ([]byte, error) {
-    // Generate a tile, this call will block until the tile is ready in the store.
-    err := tile.GenerateTile(t)
-    if err != nil {
-        return nil, err
-    }
-    // Retrieve the tile form the store.
-    return tile.GetTileFromStore(t)
+	// Generate a tile, this call will block until the tile is ready in the store.
+	err := tile.GenerateTile(t)
+	if err != nil {
+		return nil, err
+	}
+	// Retrieve the tile form the store.
+	return tile.GetTileFromStore(t)
 }
 
 func main() {
-    // Register the in-memory store to use the redis implementation.
-    store.Register("redis", redis.NewConnection("localhost", "6379", 3600))    
-    // Use gzip compression when setting / getting from the store
-    store.Use(gzip.NewCompressor())
+	// Store
 
-    // Register meta data generator
-    meta.Register("default", elastic.NewDefaultMeta("http://localhost", "9200"))
+	// Register the in-memory store to use the redis implementation.
+	store.Register("redis", redis.NewConnection("localhost", "6379", 3600))
+	// Use gzip compression when setting / getting from the store
+	store.Use(gzip.NewCompressor())
 
-    // Register tile data generator
-    tile.Register("heatmap", elastic.NewHeatmapTile("http://localhost", "9200"))
-    // Set the maximum concurrent tile requests
-    tile.SetMaxConcurrent(32)
-    // Set the tile requests queue length
-    tile.SetQueueLength(1024)
+	// Meta
 
-    // Create a request for `default` meta data.
-    m := &meta.Request{
-        Type: "default",
-        URI: "test_index",
-    }
+	// Register meta types
+	meta.Register("elastic", map[string]meta.Constructor{
+		"default": elastic.NewDefaultMeta("http://localhost", "9200"),
+	})
 
-    // Create a request for a `heatmap` tile.
-    t := &tile.Request{
-        Type: "heatmap",
-        URI: "test_index",
-        Store: "redis"
-        Coord: &binning.TileCoord{
-            Z: 4,
-            X: 12,
-            y: 12,
-        },
-        Params: map[string]interface{}{
-            "binning": map[string]interface{}{
-                "x": "xField",
-                "y": "yField",
-                "left": 0,
-                "right": math.Pow(2, 32),
-                "bottom": 0,
-                "top": math.Pow(2, 32),
-                "resolution": 256,
-            }
-        }
-    }
+	// Tile
 
-    // Generate meta data
-    md, err := GenerateMetaData(m)
+	// Register tile types
+	tile.Register("elastic", map[string]tile.Constructor{
+		"heatmap": elastic.NewHeatmapTile("http://localhost", "9200"),
+	})
+	// Set the maximum concurrent tile requests
+	tile.SetMaxConcurrent(32)
+	// Set the tile requests queue length
+	tile.SetQueueLength(1024)
 
-    // Generate tile data
-    td, err := GenerateTileData(t)
+	// Query
+
+	// Register query types
+	query.Register("equals", query.NewEquals)
+	query.Register("exists", query.NewExists)
+	query.Register("has", query.NewHas)
+	query.Register("range", query.NewRange)
+
+	// Example
+
+	// Create a request for `default` meta data.
+	m := &meta.Request{
+		Type: "elastic",
+		Meta: "default",
+		URI: "test_index",
+	}
+
+	// Create a request for a `heatmap` tile.
+	t := &tile.Request{
+		Type: "elastic",
+		Tile: "heatmap",
+		Params: &Heatmap{
+			XField: "x",
+			YField: "y",
+			Left: 0,
+			Right: math.Pow(2, 32),
+			Bottom: 0,
+			Top: math.Pow(2, 32),
+			Resolution: 256,
+		},
+		URI: "test_index",
+		Store: "redis",
+		Coord: &binning.Coord{
+			Z: 4,
+			X: 12,
+			y: 12,
+		},
+		Query: &query.BinaryExpression{
+			Left: &query.Equals{
+				Field: "name",
+				Value: "john",
+			},
+			Op: query.And,
+			Right: &query.Range{
+				Field: "age",
+				GTE: 19,
+			},
+		}
+	}
+
+	// Generate meta data
+	md, err := GenerateMetaData(m)
+
+	// Generate tile data
+	td, err := GenerateTileData(t)
 }
 ```
 

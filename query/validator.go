@@ -3,13 +3,164 @@ package query
 import (
 	"fmt"
 	"strings"
+
+	"github.com/unchartedsoftware/prism/util/json"
 )
 
-const (
-	indentor     = "    "
-	redColor     = "\033[31m"
-	defaultColor = "\033[39m"
-)
+// Validator parses a JSON query expression into its typed format. It
+// ensure all types are correct and that the syntax is valid.
+type Validator struct {
+	json.Validator
+}
+
+// NewValidator instantiates and returns a new query expression object.
+func NewValidator() *Validator {
+	v := &Validator{}
+	v.Output = make([]string, 0)
+	return v
+}
+
+// Validate returns the instantiated runtime format of the provideJSON.
+func (v *Validator) Validate(arg interface{}) (interface{}, error) {
+	exp := v.validateToken(arg, 0)
+	err := v.Error()
+	if err != nil {
+		return nil, err
+	}
+	return exp, nil
+}
+
+func (v *Validator) formatVal(val interface{}) string {
+	str, ok := val.(string)
+	if ok {
+		return fmt.Sprintf("\"%s\"", str)
+	}
+	arr, ok := val.([]interface{})
+	if ok {
+		vals := make([]string, len(arr))
+		for i, sub := range arr {
+			vals[i] = v.formatVal(sub)
+		}
+		return fmt.Sprintf("[ %s ]", strings.Join(vals, ", "))
+	}
+	return fmt.Sprintf("%v", val)
+}
+
+func (v *Validator) getIDAndParams(query map[string]interface{}) (string, map[string]interface{}, bool) {
+	var key string
+	var value map[string]interface{}
+	found := false
+	for k, v := range query {
+		val, ok := v.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		key = k
+		value = val
+		found = true
+		break
+	}
+	return key, value, found
+}
+
+func (v *Validator) validateParams(id string, params map[string]interface{}, indent int, err error) {
+	// open bracket
+	v.Buffer("{", indent)
+	v.Buffer(fmt.Sprintf("\"%s\": {", id), indent+1)
+	// if error, start
+	if err != nil {
+		v.StartError(fmt.Sprintf("%v", err), indent+2)
+	}
+	// values
+	for key, val := range params {
+		v.Buffer(fmt.Sprintf("\"%s\": %s", key, v.formatVal(val)), indent+2)
+	}
+	// if error, end
+	if err != nil {
+		v.EndError()
+	}
+	// close bracket
+	v.Buffer("}", indent+1)
+	v.Buffer("}", indent)
+}
+
+func (v *Validator) validateQuery(arg map[string]interface{}, indent int) interface{} {
+	// get query id and params
+	id, params, ok := v.getIDAndParams(arg)
+	if !ok {
+		v.StartError("Empty query object", indent)
+		v.Buffer("{", indent)
+		v.Buffer("}", indent)
+		v.EndError()
+		return nil
+	}
+	query, err := GetQuery(id, params)
+	if err != nil {
+		v.validateParams(id, params, indent, err)
+		return nil
+	}
+	v.validateParams(id, params, indent, nil)
+	return query
+}
+
+func (v *Validator) validateOperator(op string, indent int) interface{} {
+	if !IsBoolOperator(op) {
+		v.StartError("Invalid operator", indent)
+		v.Buffer(fmt.Sprintf("\"%v\"", op), indent)
+		v.EndError()
+		return nil
+	}
+	v.Buffer(fmt.Sprintf("\"%s\"", op), indent)
+	return op
+}
+
+func (v *Validator) validateExpression(exp []interface{}, indent int) interface{} {
+	// open paren
+	v.Buffer("[", indent)
+	// track last token to ensure next is valid
+	var last interface{}
+	// for each component
+	for i, sub := range exp {
+		// next line
+		if last != nil {
+			if !nextTokenIsValid(last, sub) {
+				v.StartError("Unexpected token", indent+1)
+				v.validateToken(sub, indent+1)
+				v.EndError()
+				last = sub
+				continue
+			}
+		}
+		exp[i] = v.validateToken(sub, indent+1)
+		last = sub
+	}
+	// close paren
+	v.Buffer("]", indent)
+	return exp
+}
+
+func (v *Validator) validateToken(arg interface{}, indent int) interface{} {
+	// expression
+	exp, ok := arg.([]interface{})
+	if ok {
+		return v.validateExpression(exp, indent)
+	}
+	// query
+	query, ok := arg.(map[string]interface{})
+	if ok {
+		return v.validateQuery(query, indent)
+	}
+	// operator
+	op, ok := arg.(string)
+	if ok {
+		return v.validateOperator(op, indent)
+	}
+	// err
+	v.StartError("Unrecognized symbol", indent)
+	v.Buffer(fmt.Sprintf("\"%v\"", arg), indent)
+	v.EndError()
+	return arg
+}
 
 func getTokenType(token interface{}) string {
 	_, ok := token.([]interface{})
@@ -52,277 +203,4 @@ func nextTokenIsValid(c interface{}, n interface{}) bool {
 		return next == "query" || next == "exp"
 	}
 	return false
-}
-
-// ExpressionValidator parses a JSON query expression into its typed format. It
-// ensure all types are correct and that the syntax is valid.
-type ExpressionValidator struct {
-	output         []string
-	errStartIndex  int
-	errEndIndex    int
-	errIndent      string
-	errHeaderIndex int
-	errMsg         string
-	err            bool
-}
-
-// NewExpressionValidator instantiates and returns a new query expression object.
-func NewExpressionValidator() *ExpressionValidator {
-	return &ExpressionValidator{
-		output: make([]string, 0),
-	}
-}
-
-func getIndent(indent int) string {
-	var strs []string
-	for i := 0; i < indent; i++ {
-		strs = append(strs, indentor)
-	}
-	return strings.Join(strs, "")
-}
-
-func (q *ExpressionValidator) buffer(line string) {
-	q.output = append(q.output, line)
-}
-
-func (q *ExpressionValidator) size() int {
-	return len(q.output)
-}
-
-// Error handling
-
-func (q *ExpressionValidator) startError(msg string, indent string) {
-	q.err = true
-	q.errHeaderIndex = q.size()
-	q.errStartIndex = q.size() + 1
-	q.errIndent = indent
-	q.errMsg = msg
-	q.buffer("")
-}
-
-func (q *ExpressionValidator) getErrAnnotations(width int, char string) string {
-	arr := make([]string, width)
-	for i := 0; i < width; i++ {
-		arr[i] = char
-	}
-	return strings.Join(arr, "")
-}
-
-func (q *ExpressionValidator) getErrHeader(width int) string {
-	return fmt.Sprintf("%s%s%s%s",
-		redColor,
-		q.errIndent,
-		q.getErrAnnotations(width, "v"),
-		defaultColor)
-}
-
-func (q *ExpressionValidator) getErrFooter(width int) string {
-	return fmt.Sprintf("%s%s%s Error: %s%s",
-		redColor,
-		q.errIndent,
-		q.getErrAnnotations(width, "^"),
-		q.errMsg,
-		defaultColor)
-}
-
-func (q *ExpressionValidator) getErrWidth() int {
-	maxWidth := 1
-	for i := q.errStartIndex; i < q.errEndIndex; i++ {
-		width := (len(q.output[i]) - len(q.errIndent))
-		if width > maxWidth {
-			maxWidth = width
-		}
-	}
-	return maxWidth
-}
-
-func (q *ExpressionValidator) endError() {
-	q.errEndIndex = q.size()
-	width := q.getErrWidth()
-	header := q.getErrHeader(width)
-	footer := q.getErrFooter(width)
-	q.output[q.errHeaderIndex] = header
-	q.buffer(footer)
-}
-
-func (q *ExpressionValidator) formatVal(val interface{}) string {
-	str, ok := val.(string)
-	if ok {
-		return fmt.Sprintf("\"%s\"", str)
-	}
-	arr, ok := val.([]interface{})
-	if ok {
-		vals := make([]string, len(arr))
-		for i, sub := range arr {
-			vals[i] = q.formatVal(sub)
-		}
-		return fmt.Sprintf("[ %s ]", strings.Join(vals, ", "))
-	}
-	return fmt.Sprintf("%v", val)
-}
-
-func getQueryAndKey(query map[string]interface{}) (string, map[string]interface{}, bool) {
-	var key string
-	var value map[string]interface{}
-	found := false
-	for k, v := range query {
-		val, ok := v.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		key = k
-		value = val
-		found = true
-		break
-	}
-	return key, value, found
-}
-
-func (q *ExpressionValidator) formatParams(id string, params map[string]interface{}, n int, err error) {
-	indent := getIndent(n)
-	idIndent := getIndent(n + 1)
-	paramIndent := getIndent(n + 2)
-	// open bracket
-	q.buffer(fmt.Sprintf("%s{", indent))
-	q.buffer(fmt.Sprintf("%s\"%s\": {", idIndent, id))
-	// if error, start
-	if err != nil {
-		q.startError(fmt.Sprintf("%v", err), paramIndent)
-	}
-	// values
-	for key, val := range params {
-		q.buffer(fmt.Sprintf("%s\"%s\": %s", paramIndent, key, q.formatVal(val)))
-	}
-	// if error, end
-	if err != nil {
-		q.endError()
-	}
-	// close bracket
-	q.buffer(fmt.Sprintf("%s}", idIndent))
-	q.buffer(fmt.Sprintf("%s}", indent))
-}
-
-func (q *ExpressionValidator) formatQuery(arg map[string]interface{}, n int) interface{} {
-	indent := getIndent(n)
-	// pattern match for base queries
-	id, params, ok := getQueryAndKey(arg)
-	if !ok {
-		q.startError("Empty query object", indent)
-		q.buffer(fmt.Sprintf("%s{", indent))
-		q.buffer(fmt.Sprintf("%s}", indent))
-		q.endError()
-		return nil
-	}
-	query, err := GetQuery(id, params)
-	if err != nil {
-		q.formatParams(id, params, n, err)
-		return nil
-	}
-	q.formatParams(id, params, n, nil)
-	return query
-}
-
-func (q *ExpressionValidator) formatOperator(op string, n int) interface{} {
-	indent := getIndent(n)
-	if !IsBoolOperator(op) {
-		q.startError("Invalid operator", indent)
-		q.buffer(fmt.Sprintf("%s\"%v\"", indent, op))
-		q.endError()
-		return nil
-	}
-	q.buffer(fmt.Sprintf("%s\"%s\"", indent, op))
-	return op
-}
-
-func (q *ExpressionValidator) formatExpression(exp []interface{}, n int) interface{} {
-	indent := getIndent(n)
-	// open paren
-	q.buffer(fmt.Sprintf("%s[", indent))
-	// track last token to ensure next is valid
-	var last interface{}
-	// for each component
-	for i, sub := range exp {
-		// next line
-		if last != nil {
-			if !nextTokenIsValid(last, sub) {
-				q.startError("Unexpected token", getIndent(n+1))
-				q.formatToken(sub, n+1)
-				q.endError()
-				last = sub
-				continue
-			}
-		}
-		exp[i] = q.formatToken(sub, n+1)
-		last = sub
-	}
-	// close paren
-	q.buffer(fmt.Sprintf("%s]", indent))
-	return exp
-}
-
-func (q *ExpressionValidator) formatToken(arg interface{}, n int) interface{} {
-	// expression
-	exp, ok := arg.([]interface{})
-	if ok {
-		return q.formatExpression(exp, n)
-	}
-	// query
-	query, ok := arg.(map[string]interface{})
-	if ok {
-		return q.formatQuery(query, n)
-	}
-	// operator
-	op, ok := arg.(string)
-	if ok {
-		return q.formatOperator(op, n)
-	}
-	// err
-	indent := getIndent(n)
-	q.startError("Unrecognized symbol", indent)
-	q.buffer(fmt.Sprintf("%s\"%v\"", indent, arg))
-	q.endError()
-	return arg
-}
-
-// func (q *ExpressionValidator) formatExpression(arg interface{}, n int) interface{} {
-// 	indent := getIndent(n)
-// 	arr, ok := arg.([]interface{})
-// 	if ok {
-// 		// open paren
-// 		q.buffer(fmt.Sprintf("%s[", indent))
-// 		var last interface{}
-// 		// for each component
-// 		for i, sub := range arr {
-// 			// next line
-// 			if last != nil {
-// 				if !nextTokenIsValid(last, sub) {
-// 					q.startError("Unexpected token", getIndent(n+1))
-// 					q.formatExpression(sub, n+1)
-// 					q.endError()
-// 					last = sub
-// 					continue
-// 				}
-// 			}
-// 			arr[i] = q.formatExpression(sub, n+1)
-// 			last = sub
-// 		}
-// 		// close paren
-// 		q.buffer(fmt.Sprintf("%s]", indent))
-// 		return arg
-// 	}
-// 	arg = q.formatToken(arg, indent)
-// 	return arg
-// }
-
-func (q *ExpressionValidator) format(arg interface{}) (interface{}, error) {
-	exp := q.formatToken(arg, 0)
-	if q.err {
-		return nil, fmt.Errorf(strings.Join(q.output, "\n"))
-	}
-	return exp, nil
-}
-
-func prePass(arg interface{}) (interface{}, error) {
-	q := NewExpressionValidator()
-	return q.format(arg)
 }

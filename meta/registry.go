@@ -5,7 +5,6 @@ import (
 )
 
 var (
-	// registry contains all registered meta data generator constructors.
 	registry = make(map[string]GeneratorConstructor)
 )
 

@@ -19,11 +19,6 @@ func NewCompressor() store.CompressorConstructor {
 	}
 }
 
-// GetHash returns the hash for the compression type.
-func (c *Compressor) GetHash() string {
-	return "gzip"
-}
-
 // Compress compresses the provided bytes.
 func (c *Compressor) Compress(data []byte) ([]byte, error) {
 	var b bytes.Buffer

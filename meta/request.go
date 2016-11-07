@@ -2,18 +2,23 @@ package meta
 
 import (
 	"fmt"
+
+	"github.com/davecgh/go-spew/spew"
 )
+
+func init() {
+	spew.Config.SortKeys = true
+}
 
 // Request represents a meta data request.
 type Request struct {
-	Type  string `json:"type"`
-	URI   string `json:"uri"`
-	Store string `json:"store"`
+	Type  string
+	Param  param.Params
+	URI   string
+	Store string
 }
 
-// String returns the request formatted as a string.
-func (r *Request) String() string {
-	return fmt.Sprintf("%s/%s",
-		r.Type,
-		r.URI)
+// GetHash returns a unique hash for the request.
+func (r *Request) GetHash() string {
+	return fmt.Sprintf("%s:%s", "meta", spew.Dump(r))
 }

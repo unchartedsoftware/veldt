@@ -19,7 +19,7 @@ var (
 	clients = make(map[string]*elastic.Client)
 )
 
-// NewClient returns an elasticsearch client from the pool.
+// NewClient instantiates and returns a new elastic.Client from a pool.
 func NewClient(host string, port string) (*elastic.Client, error) {
 	endpoint := host + ":" + port
 	mutex.Lock()

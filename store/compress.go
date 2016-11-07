@@ -14,7 +14,6 @@ var (
 // Compressor represents an interface for compressing and decompressing the
 // generated tile data before adding and after retrieving it from the store.
 type Compressor interface {
-	GetHash() string
 	Compress([]byte) ([]byte, error)
 	Decompress([]byte) ([]byte, error)
 }
@@ -32,7 +31,7 @@ func addHash(hash string) string {
 	if disabled {
 		return hash
 	}
-	return fmt.Sprintf("%s:%s", hash, compressor.GetHash())
+	return fmt.Sprintf("%s:%s", hash, spew.Dump(compressor))
 }
 
 func compress(data []byte) ([]byte, error) {

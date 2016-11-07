@@ -5,20 +5,37 @@ import (
 	"fmt"
 )
 
-// ExpressionParser parses the runtime query expression and ensure all logic
-// adheres to boolean order of operations.
-type ExpressionParser struct {
+// Parser parses the runtime query expression into it's runtime AST tree.
+type Parser struct {
 	tokens []interface{}
 }
 
-// NewExpressionParser instantiates and returns a new expression parser object.
-func NewExpressionParser(arr []interface{}) *ExpressionParser {
-	return &ExpressionParser{
+// NewParser instantiates and returns a new expression parser object.
+func NewParser(arr []interface{}) *Parser {
+	return &Parser{
 		tokens: arr,
 	}
 }
 
-func (t *ExpressionParser) pop() (interface{}, error) {
+// Parse parses the query payload into the query AST.
+func Parse(bytes []byte) (Query, error) {
+	// unmarshal the query
+	var token interface{}
+	err := json.Unmarshal(bytes, &token)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid JSON: %v", err)
+	}
+	// validate the JSON into ot's runtime query components
+	validator := NewValidator()
+	exp, err := validator.Validate(token)
+	if err != nil {
+		return nil, err
+	}
+	// parse into correct AST
+	return parseToken(exp)
+}
+
+func (t *Parser) pop() (interface{}, error) {
 	if len(t.tokens) == 0 {
 		return nil, fmt.Errorf("Expected operand missing")
 	}
@@ -27,7 +44,7 @@ func (t *ExpressionParser) pop() (interface{}, error) {
 	return token, nil
 }
 
-func (t *ExpressionParser) popOperand() (Query, error) {
+func (t *Parser) popOperand() (Query, error) {
 	// pops the next operand
 	//     cases to consider:
 	//         - a) unary operator -> expression
@@ -71,14 +88,14 @@ func (t *ExpressionParser) popOperand() (Query, error) {
 	return parseToken(token)
 }
 
-func (t *ExpressionParser) peek() interface{} {
+func (t *Parser) peek() interface{} {
 	if len(t.tokens) == 0 {
 		return nil
 	}
 	return t.tokens[0]
 }
 
-func (t *ExpressionParser) advance() error {
+func (t *Parser) advance() error {
 	if len(t.tokens) < 2 {
 		return fmt.Errorf("Expected token missing after `%v`", t.tokens[0])
 	}
@@ -139,7 +156,7 @@ func isUnaryOperator(arg interface{}) (bool, error) {
 	return false, fmt.Errorf("`%v` operator not recognized", op)
 }
 
-func (t *ExpressionParser) parseExpressionR(lhs Query, min int) (Query, error) {
+func (t *Parser) parseExpressionR(lhs Query, min int) (Query, error) {
 
 	var err error
 	var op string
@@ -201,7 +218,7 @@ func (t *ExpressionParser) parseExpressionR(lhs Query, min int) (Query, error) {
 }
 
 // Parse parses the expression.
-func (t *ExpressionParser) Parse() (Query, error) {
+func (t *Parser) parse() (Query, error) {
 	lhs, err := t.popOperand()
 	if err != nil {
 		return nil, err
@@ -214,8 +231,8 @@ func (t *ExpressionParser) Parse() (Query, error) {
 }
 
 func parseExpression(args []interface{}) (Query, error) {
-	exp := NewExpressionParser(args)
-	return exp.Parse()
+	exp := NewParser(args)
+	return exp.parse()
 }
 
 func parseToken(token interface{}) (Query, error) {
@@ -231,21 +248,4 @@ func parseToken(token interface{}) (Query, error) {
 		return nil, fmt.Errorf("`%v` token is unrecognized", token)
 	}
 	return query, nil
-}
-
-// Parse parses the query payload into the query AST.
-func Parse(bytes []byte) (Query, error) {
-	// unmarshal the query
-	var token interface{}
-	err := json.Unmarshal(bytes, &token)
-	if err != nil {
-		return nil, fmt.Errorf("Invalid JSON: %v", err)
-	}
-	// run a pre-pass to check for valid query syntax
-	exp, err := prePass(token)
-	if err != nil {
-		return nil, err
-	}
-	// parse into correct AST
-	return parseToken(exp)
 }

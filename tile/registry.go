@@ -2,10 +2,11 @@ package tile
 
 import (
 	"fmt"
+
+	"github.com/unchartedsoftware/prism/binning"
 )
 
 var (
-	// registry contains all registered tile generator constructors.
 	registry = make(map[string]GeneratorConstructor)
 )
 
@@ -15,10 +16,11 @@ func Register(typeID string, gen GeneratorConstructor) {
 }
 
 // GetGenerator instantiates a tile generator from a tile request.
-func GetGenerator(req *Request) (Generator, error) {
-	ctor, ok := registry[req.Type]
+func GetGenerator(typeID string, coord *binning.TileCoord, params map[string]interface{}) (Generator, error) {
+	ctor, ok := registry[typeID]
 	if !ok {
-		return nil, fmt.Errorf("Tile type '%s' is not recognized in request %s", req.Type, req.String())
+		return nil, fmt.Errorf("query `%s` has not been registered",
+			typeID)
 	}
-	return ctor(req)
+	return ctor(coord, params)
 }

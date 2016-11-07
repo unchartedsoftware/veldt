@@ -33,14 +33,3 @@ func NewHas(params map[string]interface{}) (Query, error) {
 func (q *Has) Apply(arg interface{}) error {
 	return fmt.Errorf("Not implemented")
 }
-
-// GetHash returns a string hash of the query.
-func (q *Has) GetHash() string {
-	hashes := make([]string, len(q.Values))
-	for i, val := range q.Values {
-		hashes[i] = fmt.Sprintf("%v", val)
-	}
-	return fmt.Sprintf("%s:%s",
-		q.Field,
-		strings.Join(hashes, ":"))
-}
