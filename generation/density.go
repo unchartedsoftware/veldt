@@ -9,16 +9,16 @@ import (
 
 // Density represents a univariate density strip generator.
 type Density struct {
-	Binning *param.Univariate
+	Univariate
 }
 
-// SetDensityParams sets the tiling params on a tiling generator.
-func SetDensityParams(arg interface{}, coord *binning.TileCoord, params map[string]interface{}) error {
-	return SetUnivariateParams(arg, coord, params)
+// Parse parses the provided JSON object and populates the tiles attributes.
+func (d *Density) Parse(coord *binning.TileCoord, params map[string]interface{}) error {
+	return h.Univariate.Parse(coord, params)
 }
 
 // Float64ToBytes converts a []float64 to a []uint8 of equal byte size.
-func (t *Density) Float64ToBytes(arr []float64) []byte {
+func (d *Density) Float64ToBytes(arr []float64) []byte {
 	bits := make([]byte, len(arr)*8)
 	for i, val := range arr {
 		binary.LittleEndian.PutUint64(

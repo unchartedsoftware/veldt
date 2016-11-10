@@ -10,15 +10,14 @@ type Exists struct {
 	Field string
 }
 
-// NewExists instantiates and returns an exists query object.
-func NewExists(params map[string]interface{}) (Query, error) {
+// Parse parses the provided JSON object and populates the querys attributes.
+func (q *Exists) Parse(params map[string]interface{}) error {
 	field, ok := json.GetString(params, "field")
 	if !ok {
 		return nil, fmt.Errorf("`field` parameter missing from query params")
 	}
-	return &Exists{
-		Field: field,
-	}, nil
+	q.Field = field
+	return nil
 }
 
 // Apply adds the query to the tiling job.

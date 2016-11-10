@@ -4,22 +4,22 @@ import (
 	"encoding/binary"
 	"math"
 
-	"github.com/unchartedsoftware/prism/param"
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/param"
 )
 
 // Heatmap represents a bivariate heatmap tile generator.
 type Heatmap struct {
-	Binning *param.Bivariate
+	Bivariate
 }
 
-// SetHeatmapParams sets the params for the specific generator.
-func SetHeatmapParams(arg interface{}, coord *binning.TileCoord, params map[string]interface{}) error {
-	return SetBivariateParams(arg, coord, params)
+// Parse parses the provided JSON object and populates the tiles attributes.
+func (h *Heatmap) Parse(coord *binning.TileCoord, params map[string]interface{}) error {
+	return h.Bivariate.Parse(coord, params)
 }
 
 // Float64ToBytes converts a []float64 to a []uint8 of equal byte size.
-func (t *Heatmap) Float64ToBytes(arr []float64) []byte {
+func (h *Heatmap) Float64ToBytes(arr []float64) []byte {
 	bits := make([]byte, len(arr)*8)
 	for i, val := range arr {
 		binary.LittleEndian.PutUint64(

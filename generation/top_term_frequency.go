@@ -9,7 +9,7 @@ import (
 
 // TopTermFrequency represents a tiling generator that produces heatmaps.
 type TopTermFrequency struct {
-	Tiling *param.Bivariate
+	Bivariate
 	TermField string
 	SortField string
 	Sort      string
@@ -18,11 +18,11 @@ type TopTermFrequency struct {
 	Interval  int64
 }
 
-// SetTopTermFrequencyParams sets the params for the specific generator.
-func SetTopTermFrequencyParams(arg interface{}, coord *binning.TileCoord, params map[string]interface{}) error {
-	generator, ok := arg.(*TopTermFrequency)
-	if !ok {
-		return fmt.Errorf("`%v` is not of type `*TopTermFrequency`", arg)
+// Parse parses the provided JSON object and populates the tiles attributes.
+func (t *TopTermCount) Parse(coord *binning.TileCoord, params map[string]interface{}) error {
+	err := t.Bivariate.Parse(coord, params)
+	if err != nil {
+		return err
 	}
 	termField, ok := json.GetString(params, "termField")
 	if !ok {
@@ -45,11 +45,11 @@ func SetTopTermFrequencyParams(arg interface{}, coord *binning.TileCoord, params
 	if !ok {
 		return fmt.Errorf("`sort` parameter missing from tiling params")
 	}
-	generator.TermField = termField
-	generator.SortField = sortField
-	generator.Sort = sort
-	generator.From = int64(from)
-	generator.To = int64(to)
-	generator.Interval = int64(interval)
+	t.TermField = termField
+	t.SortField = sortField
+	t.Sort = sort
+	t.From = int64(from)
+	t.To = int64(to)
+	t.Interval = int64(interval)
 	return nil
 }

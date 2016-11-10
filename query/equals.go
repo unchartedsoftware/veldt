@@ -12,8 +12,8 @@ type Equals struct {
 	Value interface{}
 }
 
-// NewEquals instantiates and returns an equals query object.
-func NewEquals(params map[string]interface{}) (Query, error) {
+// Parse parses the provided JSON object and populates the querys attributes.
+func (q *Equals) Parse(params map[string]interface{}) error {
 	field, ok := json.GetString(params, "field")
 	if !ok {
 		return nil, fmt.Errorf("`field` parameter missing from query params")
@@ -22,10 +22,9 @@ func NewEquals(params map[string]interface{}) (Query, error) {
 	if !ok {
 		return nil, fmt.Errorf("`value` parameter missing from query params")
 	}
-	return &Equals{
-		Field: field,
-		Value: value,
-	}, nil
+	q.Field = field
+	q.Value = value
+	return nil
 }
 
 // Apply adds the query to the tiling job.

@@ -16,8 +16,8 @@ type Range struct {
 	LTE   interface{}
 }
 
-// NewRange instantiates and returns a range query object.
-func NewRange(params map[string]interface{}) (Query, error) {
+// Parse parses the provided JSON object and populates the querys attributes.
+func (q *Range) Parse(params map[string]interface{}) error {
 	field, ok := json.GetString(params, "field")
 	if !ok {
 		return nil, fmt.Errorf("`field` parameter missing from query params")
@@ -29,13 +29,12 @@ func NewRange(params map[string]interface{}) (Query, error) {
 	if !gteOk && !gtOk && !lteOk && !ltOk {
 		return nil, fmt.Errorf("Range has no valid range parameters")
 	}
-	return &Range{
-		Field: field,
-		GTE:   gte,
-		GT:    gt,
-		LTE:   lte,
-		LT:    lt,
-	}, nil
+	q.Field = field
+	q.GTE = gte
+	q.GT = gt
+	q.LTE = lte
+	q.LT = lt
+	return nil
 }
 
 // Apply adds the query to the tiling job.

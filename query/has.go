@@ -13,8 +13,8 @@ type Has struct {
 	Values []interface{}
 }
 
-// NewHas instantiates and returns a has query object.
-func NewHas(params map[string]interface{}) (Query, error) {
+// Parse parses the provided JSON object and populates the querys attributes.
+func (q *Has) Parse(params map[string]interface{}) error {
 	field, ok := json.GetString(params, "field")
 	if !ok {
 		return nil, fmt.Errorf("`field` parameter missing from query params")
@@ -23,10 +23,9 @@ func NewHas(params map[string]interface{}) (Query, error) {
 	if !ok {
 		return nil, fmt.Errorf("`values` parameter missing from query params")
 	}
-	return &Has{
-		Field:  field,
-		Values: values,
-	}, nil
+	q.Field = field
+	q.Values = values
+	return nil
 }
 
 // Apply adds the query to the tiling job.

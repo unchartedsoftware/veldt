@@ -9,19 +9,15 @@ import (
 
 // TopTermCount represents a tiling generator that produces heatmaps.
 type TopTermCount struct {
-	Tiling *param.Bivariate
+	Bivariate
 	TermField string
 	SortField string
 	Sort      string
 }
 
-// SetTopTermCountParams sets the params for the specific generator.
-func SetTopTermCountParams(arg interface{}, coord *binning.TileCoord, params map[string]interface{}) error {
-	generator, ok := arg.(*TopTermCount)
-	if !ok {
-		return fmt.Errorf("`%v` is not of type `*TopTermCount`", arg)
-	}
-	err := SetBivariateParams(generator, coord, params)
+// Parse parses the provided JSON object and populates the tiles attributes.
+func (t *TopTermCount) Parse(coord *binning.TileCoord, params map[string]interface{}) error {
+	err := t.Bivariate.Parse(coord, params)
 	if err != nil {
 		return err
 	}
@@ -34,8 +30,8 @@ func SetTopTermCountParams(arg interface{}, coord *binning.TileCoord, params map
 		return fmt.Errorf("`sortField` parameter missing from tiling params")
 	}
 	sort := json.GetStringDefault(params, "desc", "sort")
-	generator.TermField = termField
-	generator.SortField = sortField
-	generator.Sort = sort
+	t.TermField = termField
+	t.SortField = sortField
+	t.Sort = sort
 	return nil
 }
