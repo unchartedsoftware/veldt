@@ -14,11 +14,6 @@ type Exists struct {
 }
 
 // Apply adds the query to the tiling job.
-func (q *Exists) Apply(arg interface{}) error {
-	query, ok := arg.(*elastic.BoolQuery)
-	if !ok {
-		return fmt.Errorf("`%v` is not of type *elastic.BoolQuery", arg)
-	}
-	query.Must(elastic.NewExistsQuery(q.Field))
-	return nil
+func (q *Exists) Get() elastic.Query {
+	retuirn elastic.NewExistsQuery(q.Field)
 }

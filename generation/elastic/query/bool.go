@@ -12,46 +12,21 @@ type BinaryExpression struct {
 }
 
 // Apply adds the query to the tiling job.
-func (q *BinaryExpression) Apply(arg interface{}) error {
-	query, ok := arg.(*elastic.BoolQuery)
-	if !ok {
-		return fmt.Errorf("`%v` is not of type *elastic.BoolQuery", arg)
-	}
-	binary := elastic.NewBoolQuery()
+func (q *BinaryExpression) Get() elastic.Query {
+	query := elastic.NewBoolQuery()
 	switch q.Op {
 	case query.And:
 		// AND
-		left := elastic.NewBoolQuery()
-		right := elastic.NewBoolQuery()
-		err := q.Left.Apply(left)
-		if err != nil {
-			return err
-		}
-		err := q.Right.Apply(right)
-		if err != nil {
-			return err
-		}
-		binary.Must(left)
-		binary.Must(right)
+		query.Must(q.Left.Get())
+		query.Must(q.Right.Get())
 	case query.Or:
 		// OR
-		left := elastic.NewBoolQuery()
-		right := elastic.NewBoolQuery()
-		err := q.Left.Apply(left)
-		if err != nil {
-			return err
-		}
-		err := q.Right.Apply(right)
-		if err != nil {
-			return err
-		}
-		binary.Should(left)
-		binary.Should(right)
+		query.Should(q.Left.Get())
+		query.Should(q.Right.Get())
 	default:
 		return fmt.Errorf("`%v` operator is not a valid binary operator", q.Op)
 	}
-	query.Must(binary)
-	return nil
+	return query
 }
 
 // UnaryExpression represents a must_not boolean query.
@@ -60,24 +35,14 @@ type UnaryExpression struct {
 }
 
 // Apply adds the query to the tiling job.
-func (q *BinaryExpression) Apply(arg interface{}) error {
-	query, ok := arg.(*elastic.BoolQuery)
-	if !ok {
-		return fmt.Errorf("`%v` is not of type *elastic.BoolQuery", arg)
-	}
-	unary := elastic.NewBoolQuery()
+func (q *UnaryExpression) Apply(arg interface{}) error {
+	query := elastic.NewBoolQuery()
 	switch q.Op {
 	case query.Not:
 		// NOT
-		sub := elastic.NewBoolQuery()
-		err := q.Left.Apply(sub)
-		if err != nil {
-			return err
-		}
-		unary.MustNot(sub)
+		unary.MustNot(q.Query.Get())
 	default:
 		return fmt.Errorf("`%v` operator is not a valid unary operator", q.Op)
 	}
-	query.Must(unary)
-	return nil
+	return query
 }

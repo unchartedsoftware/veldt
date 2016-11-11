@@ -84,11 +84,11 @@ func (v *Validator) formatParams(id string, params map[string]interface{}, inden
 	v.Buffer("}", indent)
 }
 
-func (v *Validator) validateTile(arg map[string]interface{}, indent int) prism.Tile {
+func (v *Validator) validateMeta(arg map[string]interface{}, indent int) prism.Tile {
 	// get generator id and params
 	id, params, ok := v.getIDAndParams(arg)
 	if !ok {
-		v.StartError("Empty tile object", indent)
+		v.StartError("Empty meta object", indent)
 		v.Buffer("{", indent)
 		v.Buffer("}", indent)
 		v.EndError()
@@ -97,7 +97,7 @@ func (v *Validator) validateTile(arg map[string]interface{}, indent int) prism.T
 
 	//
 	// TODO: FIX THIS
-	tile, err := CreateTile(id, params)
+	tile, err := CreateMeta(id, params)
 	if err != nil {
 		v.formatParams(id, params, indent, err)
 		return nil
@@ -119,5 +119,5 @@ func (v *Validator) validateToken(arg interface{}, indent int) prism.Tile {
 		v.EndError()
 		return nil
 	}
-	return v.validateTile(query, indent)
+	return v.validateMeta(query, indent)
 }

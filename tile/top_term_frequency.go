@@ -7,17 +7,20 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
-// TopTermCount represents a tiling generator that produces heatmaps.
-type TopTermCount struct {
+// TopTermFrequency represents a tiling generator that produces heatmaps.
+type TopTermFrequency struct {
 	Bivariate
 	TermField string
 	SortField string
 	Sort      string
+	From      int64
+	To        int64
+	Interval  int64
 }
 
 // Parse parses the provided JSON object and populates the tiles attributes.
-func (t *TopTermCount) Parse(coord *binning.TileCoord, params map[string]interface{}) error {
-	err := t.Bivariate.Parse(coord, params)
+func (t *TopTermCount) Parse(params map[string]interface{}) error {
+	err := t.Bivariate.Parse(params)
 	if err != nil {
 		return err
 	}
@@ -30,8 +33,23 @@ func (t *TopTermCount) Parse(coord *binning.TileCoord, params map[string]interfa
 		return fmt.Errorf("`sortField` parameter missing from tiling params")
 	}
 	sort := json.GetStringDefault(params, "desc", "sort")
+	from, ok := json.GetNumber(params, "from")
+	if !ok {
+		return fmt.Errorf("`sort` parameter missing from tiling params")
+	}
+	to, ok := json.GetNumber(params, "to")
+	if !ok {
+		return fmt.Errorf("`sort` parameter missing from tiling params")
+	}
+	interval, ok := json.GetNumber(params, "interval")
+	if !ok {
+		return fmt.Errorf("`sort` parameter missing from tiling params")
+	}
 	t.TermField = termField
 	t.SortField = sortField
 	t.Sort = sort
+	t.From = int64(from)
+	t.To = int64(to)
+	t.Interval = int64(interval)
 	return nil
 }

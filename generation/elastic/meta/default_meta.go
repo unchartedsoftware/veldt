@@ -27,13 +27,48 @@ func isOrdinal(typ string) bool {
 		typ == "date"
 }
 
+func getExtrema(client *elastic.Client, index string, field string) (*binning.Extrema, error) {
+	// query
+	result, err := client.
+		Search(index).
+		Size(0).
+		Aggregation("min",
+			elastic.NewMinAggregation().
+				Field(field)).
+		Aggregation("max",
+			elastic.NewMaxAggregation().
+				Field(field)).
+		Do()
+	if err != nil {
+		return nil, err
+	}
+	// parse aggregations
+	min, ok := result.Aggregations.Min("min")
+	if !ok {
+		return nil, fmt.Errorf("Min '%s' aggregation was not found in response for %s", field, index)
+	}
+	max, ok := result.Aggregations.Max("max")
+	if !ok {
+		return nil, fmt.Errorf("Max '%s' aggregation was not found in response for %s", field, index)
+	}
+	// if the mapping exists, but no documents have the attribute, the min / max
+	// are null
+	if min.Value == nil || max.Value == nil {
+		return nil, nil
+	}
+	return &binning.Extrema{
+		Min: *min.Value,
+		Max: *max.Value,
+	}, nil
+}
+
 func getPropertyMeta(client *elastic.Client, index string, field string, typ string) (*PropertyMeta, error) {
 	p := PropertyMeta{
 		Type: typ,
 	}
 	// if field is 'ordinal', get the extrema
 	if isOrdinal(typ) {
-		extrema, err := GetExtrema(client, index, field)
+		extrema, err := getExtrema(client, index, field)
 		if err != nil {
 			return nil, err
 		}
@@ -99,26 +134,25 @@ func parseProperties(client *elastic.Client, index string, props map[string]inte
 // DefaultMeta represents a meta data generator that produces default
 // metadata with property types and extrema.
 type DefaultMeta struct {
-	Meta
+	Host string
+	Port string
 }
 
 // NewDefaultMeta instantiates and returns a pointer to a new generator.
-func NewDefaultMeta(host string, port string) meta.GeneratorConstructor {
-	return func(metaReq *meta.Request) (meta.Generator, error) {
-		generator := &DefaultMeta{}
-		err := SetMetaParams(generator, host, port)
-		if err != nil {
-			return nil, err
+func NewDefaultMeta(host string, port string) meta.Ctor {
+	return func() (meta.Generator, error) {
+		return &DefaultMeta{
+			Host: host,
+			Port: port,
 		}
-		return generator, nil
 	}
 }
 
 // GetMeta returns the meta data for a given index.
-func (g *DefaultMeta) GetMeta(uri string) ([]byte, error) {
-	client := g.client
+func (g *DefaultMeta) Create(uri string) ([]byte, error) {
+	client := NewClient(g.Host, g.Port)
 	// get the raw mappings
-	mapping, err := GetMapping(client, uri)
+	mapping, err := client.GetMapping().Index(uri).Do()
 	if err != nil {
 		return nil, err
 	}

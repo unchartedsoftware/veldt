@@ -94,11 +94,17 @@ func (v *Validator) validateQuery(arg map[string]interface{}, indent int) interf
 		v.EndError()
 		return nil
 	}
-	query, err := GetQuery(id, params)
+
+	//
+	// TODO: FIX THIS
+	query, err := CreateQuery(id, params)
 	if err != nil {
 		v.validateParams(id, params, indent, err)
 		return nil
 	}
+	// TODO: FIX THIS
+	//
+
 	v.validateParams(id, params, indent, nil)
 	return query
 }

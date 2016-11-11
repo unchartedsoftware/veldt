@@ -14,11 +14,6 @@ type Has struct {
 }
 
 // Apply adds the query to the tiling job.
-func (q *Has) Apply(arg interface{}) error {
-	query, ok := arg.(*elastic.BoolQuery)
-	if !ok {
-		return fmt.Errorf("`%v` is not of type *elastic.BoolQuery", arg)
-	}
-	query.Must(elastic.NewTermsQuery(q.Field, q.Values...))
-	return nil
+func (q *Has) Get() elastic.Query {
+	return elastic.NewTermsQuery(q.Field, q.Values...)
 }

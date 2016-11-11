@@ -6,34 +6,71 @@ import (
 	"github.com/unchartedsoftware/prism/tile"
 )
 
-const (
-	xAggName = "x"
-	yAggName = "y"
-)
-
-// Heatmap represents a tiling generator that produces heatmaps.
 type Heatmap struct {
-	generation.Heatmap
+	tile.Bivariate
+	Host string
+	Port string
 }
 
-func (h *Heatmap) ApplyQuery(query *elastic.BoolQuery) error {
-	h.Bivariate.ApplyQuery(query))
-	return nil
+func NewHeatmap(host, port string) tile.Ctor {
+	return func() {
+		return &Heatmap{
+			Host: host,
+			Port: port,
+		}
+	}
 }
 
-func (h *Heatmap) ApplyAgg(search *elastic.SearchService) error {
-	h.Bivariate.ApplyAgg(query))
-	return nil
+func (h *Heatmap) Parse(params map[string]interface{}) error {
+	return h.Bivariate.Parse(params)
 }
 
-func (h *Heatmap) ParseRes(res *elastic.SearchResult) ([]byte, error) {
-	bins, err := h.Bivariate.GetBins(query))
+func (h *Heatmap) CreateTile(uri string, coord tile.TileCoord, query tile.Query) ([]byte, error) {
+	// get client
+	client, err := NewClient(p.Host, p.Port)
 	if err != nil {
 		return nil, err
 	}
-	buffer := make([]float64, len(bins))
-	for i, bin := range bins {
-		buffer[i] = bin.DocCount
+
+	// create search service
+	search := p.client.Search().
+		Index(uri).
+		Size(0)
+
+	// create root query
+	query := elastic.NewBoolQuery()
+
+	// add tiling query
+	query.Must(h.Bivariate.GetQuery(coord))
+
+	// add filter query
+	if query != nil {
+		query.Must(query.GetQuery())
 	}
-	return g.Float64ToBytes(buffer), nil
+
+	// add aggs
+	aggs := h.Bivariate.GetAggs(coord)
+	// set the aggregation
+	search.Aggregation("x", aggs["x"].SubAggregation("y", aggs["y"]))
+
+	// send query
+	res, err := search.Do()
+	if err != nil {
+		return nil, err
+	}
+
+	// get bins
+	bins, err := h.Bivariate.GetBins(res)
+	if err != nil {
+		return nil, err
+	}
+
+	// convert to byte array
+	bits := make([]byte, len(bins)*8)
+	for i, val := range bins {
+		binary.LittleEndian.PutUint64(
+			bits[i*8:i*8+8],
+			math.Float64bits(val))
+	}
+	return bits[0:], nil
 }

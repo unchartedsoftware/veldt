@@ -63,7 +63,7 @@ func GenerateMetaData(m *meta.Request) ([]byte, error) {
 
 func GenerateTileData(t *tile.Request) ([]byte, error) {
 	// Generate a tile, this call will block until the tile is ready in the store.
-	err := tile.GenerateTile(t)
+	err := prism.GenerateTile(t)
 	if err != nil {
 		return nil, err
 	}
@@ -71,41 +71,127 @@ func GenerateTileData(t *tile.Request) ([]byte, error) {
 	return tile.GetTileFromStore(t)
 }
 
+func NewTilePipeline() prism.Pipeline {
+	// Create elasticsearch pipeline
+	pipeline := elastic.NewPipeline("http://localhost:9200")
+	// register elasticsearch tile types
+	pipeline.Register("heatmap", elastic.HeatmapTile)
+	pipeline.Register("top_term_count", elastic.TopTermCountTile)
+	pipeline.Store()
+	return pipeline
+}
+
+func NewMetaPipeline() prism.Pipeline {
+	// Create elasticsearch pipeline
+	pipeline := elastic.NewMetaPipeline("http://localhost:9200")
+	// register elasticsearch tile types
+	pipeline.Register("default", elastic.DefaultMeta)
+	return pipeline
+}
+
 func main() {
-	// Store
 
-	// Register the in-memory store to use the redis implementation.
-	store.Register("redis", redis.NewConnection("localhost", "6379", 3600))
-	// Use gzip compression when setting / getting from the store
-	store.Use(gzip.NewCompressor())
+	// Create pipeline
 
-	// Meta
+	pipeline := prism.NewPipeline()
 
-	// Register meta types
-	meta.Register("elastic", map[string]meta.Constructor{
-		"default": elastic.NewDefaultMeta("http://localhost", "9200"),
-	})
+	// Add query types to the pipeline
+	pipeline.Query("exists", elastic.NewExist)
+	pipeline.Query("has", elastic.NewHas)
+	pipeline.Query("equals", elastic.NewEquals)
+	pipeline.Query("range", elastic.NewRange)
 
-	// Tile
+	// Add tiles types to the pipeline
+	pipeline.Tile("heatmap", elastic.NewHeatmapTile("localhost", "9200"))
+	pipeline.Tile("wordcloud", elastic.NewWordcloudTile("localhost", "9200"))
 
-	// Register tile types
-	tile.Register("elastic", map[string]tile.Constructor{
-		"heatmap": elastic.NewHeatmapTile("http://localhost", "9200"),
-	})
 	// Set the maximum concurrent tile requests
-	tile.SetMaxConcurrent(32)
+	pipeline.SetMaxConcurrent(32)
 	// Set the tile requests queue length
-	tile.SetQueueLength(1024)
+	pipeline.SetQueueLength(1024)
 
-	// Query
+	// Add meta types to the pipeline
+	pipeline.Meta("default", elastic.DefaultMeta("localhost", "9200"))
 
-	// Register query types
-	query.Register("equals", query.NewEquals)
-	query.Register("exists", query.NewExists)
-	query.Register("has", query.NewHas)
-	query.Register("range", query.NewRange)
+	// Add a store to the pipeline
+	pipeline.Store(redis.NewConnection("localhost", "6379", -1))
 
-	// Example
+	// register the pipeline
+	prism.Register("elastic", pipeline)
+
+	prism.GenerateTile("elastic",
+		`
+		{
+			"uri": "twitter_index0",
+			"coord": {
+				"z": 4,
+				"x": 12,
+				"y": 8
+			},
+			"tile": {
+				"heatmap": {
+					"xField": "pixel.x",
+					"yField": "pixel.y",
+					"left": 0,
+					"right": 2<<32,
+					"bottom": 0,
+					"top": 2<<32,
+					"resolution": 256
+				}
+			},
+			"query": [
+				{
+					"equals": {
+						"field": "name",
+						"value": "john"
+					}
+				},
+				"AND",
+				{
+					"range": {
+						"field": "age",
+						"gte": 19
+					}
+				}
+			]
+		}
+		`)
+
+	// Create a request for a `heatmap` tile.
+	t := &tile.Request{
+		Pipeline: "elastic",
+		Tile: Heatmap{
+			XField: "x",
+			YField: "y",
+			Left: 0,
+			Right: math.Pow(2, 32),
+			Bottom: 0,
+			Top: math.Pow(2, 32),
+			Resolution: 256,
+		},
+		URI: "test_index",
+		Store: "redis",
+		Coord: binning.Coord{
+			Z: 4,
+			X: 12,
+			y: 12,
+		},
+		Query: elastic.BinaryExpression{
+			Left: elastic.Equals{
+				Field: "name",
+				Value: "john",
+			},
+			Op: "AND",
+			Right: elastic.Range{
+				Field: "age",
+				GTE: 19,
+			},
+		}
+	}
+
+
+	////
+
 
 	// Create a request for `default` meta data.
 	m := &meta.Request{
@@ -117,8 +203,7 @@ func main() {
 	// Create a request for a `heatmap` tile.
 	t := &tile.Request{
 		Type: "elastic",
-		Tile: "heatmap",
-		Params: &Heatmap{
+		Tile: &elastic.Heatmap{
 			XField: "x",
 			YField: "y",
 			Left: 0,
@@ -134,13 +219,13 @@ func main() {
 			X: 12,
 			y: 12,
 		},
-		Query: &query.BinaryExpression{
-			Left: &query.Equals{
+		Query: &elastic.BinaryExpression{
+			Left: &elastic.Equals{
 				Field: "name",
 				Value: "john",
 			},
-			Op: query.And,
-			Right: &query.Range{
+			Op: elastic.And,
+			Right: &elastic.Range{
 				Field: "age",
 				GTE: 19,
 			},

@@ -14,11 +14,7 @@ type Range struct {
 }
 
 // Apply adds the query to the tiling job.
-func (q *Range) Apply(arg interface{}) error {
-	query, ok := arg.(*elastic.BoolQuery)
-	if !ok {
-		return fmt.Errorf("`%v` is not of type *elastic.BoolQuery", arg)
-	}
+func (q *Range) Get() elastic.Query {
 	rang := elastic.NewRangeQuery(q.Field)
 	if q.GTE != nil {
 		rang.Gte(q.GTE)
@@ -32,6 +28,5 @@ func (q *Range) Apply(arg interface{}) error {
 	if q.LT != nil {
 		rang.Lte(q.LT)
 	}
-	query.Must(rang)
-	return nil
+	return rang
 }
