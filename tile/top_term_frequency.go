@@ -3,7 +3,6 @@ package tile
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -19,7 +18,7 @@ type TopTermFrequency struct {
 }
 
 // Parse parses the provided JSON object and populates the tiles attributes.
-func (t *TopTermCount) Parse(params map[string]interface{}) error {
+func (t *TopTermFrequency) Parse(params map[string]interface{}) error {
 	err := t.Bivariate.Parse(params)
 	if err != nil {
 		return err

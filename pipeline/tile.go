@@ -130,7 +130,7 @@ func (p *Pipeline) GetTileFromStore(req *prism.TileRequest) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.decompress(res)
+	return p.decompress(res[0:])
 }
 
 func (p *Pipeline) getTilePromise(hash string, req *prism.TileRequest) error {
@@ -148,14 +148,14 @@ func (p *Pipeline) getTilePromise(hash string, req *prism.TileRequest) error {
 	return p.Wait()
 }
 
-func (p *Pipeline) generateAndStoreTile(hash string, req *prism.TileRequest, store prism.Store) error {
+func (p *Pipeline) generateAndStoreTile(hash string, req *prism.TileRequest) error {
 	// queue the tile to be generated
 	res, err := p.queue.QueueTile(req)
 	if err != nil {
 		return err
 	}
 	// compress tile payload
-	res, err = p.compress(p.compression, res[0:])
+	res, err = p.compress(res[0:])
 	if err != nil {
 		return err
 	}

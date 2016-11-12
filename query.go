@@ -1,4 +1,4 @@
-package query
+package prism
 
 // Query represents a base query interface.
 type Query interface {

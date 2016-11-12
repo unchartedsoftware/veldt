@@ -2,6 +2,8 @@ package query
 
 import (
 	"fmt"
+
+	"github.com/unchartedsoftware/prism"
 )
 
 const (
@@ -32,9 +34,9 @@ func IsUnaryOperator(op string) bool {
 
 // BinaryExpression represents a binary boolean expression.
 type BinaryExpression struct {
-	Left  Query
+	Left  prism.Query
 	Op    string
-	Right Query
+	Right prism.Query
 }
 
 // Apply adds the query to the tiling job.
@@ -44,7 +46,7 @@ func (q *BinaryExpression) Apply(arg interface{}) error {
 
 // UnaryExpression represents a unary boolean expression.
 type UnaryExpression struct {
-	Query Query
+	Query prism.Query
 	Op    string
 }
 

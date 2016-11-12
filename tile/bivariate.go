@@ -2,9 +2,7 @@ package tile
 
 import (
 	"fmt"
-	"math"
 
-	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 

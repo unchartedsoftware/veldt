@@ -8,16 +8,16 @@ import (
 
 type Queue struct {
 	ready chan bool
-	q.pending int
-	mu sync.Mutex
+	pending int
+	mu *sync.Mutex
 	maxPending int
 	maxLength int
 }
 
 func NewQueue() *Queue {
 	queue := &Queue{
-		ready: make(chan bool)
-		mu: sync.Mutex{},
+		ready: make(chan bool),
+		mu: &sync.Mutex{},
 		maxPending: 32,
 		maxLength: 256 * 8,
 	}

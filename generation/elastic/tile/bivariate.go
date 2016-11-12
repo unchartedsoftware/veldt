@@ -5,7 +5,6 @@ import (
 	"math"
 
 	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/param"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 

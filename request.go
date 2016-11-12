@@ -1,4 +1,4 @@
-package tile
+package prism
 
 import (
 	"fmt"
@@ -12,24 +12,24 @@ import (
 type TileRequest struct {
 	URI      string
 	Coord    binning.TileCoord
-	Query    prism.Query
-	Tile     prism.Tile
+	Query    Query
+	Tile     Tile
 }
 
 // GetHash returns a unique hash for the request.
-func (r *Request) GetHash() string {
+func (r *TileRequest) GetHash() string {
 	spew.Config.SortKeys = true
-	return fmt.Sprintf("%s:%s", "tile", spew.Dump(r))
+	return fmt.Sprintf("%s:%s", "tile", spew.Sdump(r))
 }
 
 // MetaRequest represents a meta data generation request.
 type MetaRequest struct {
 	URI   string
-	Meta  prism.Meta
+	Meta  Meta
 }
 
 // GetHash returns a unique hash for the request.
-func (r *Request) GetHash() string {
+func (r *MetaRequest) GetHash() string {
 	spew.Config.SortKeys = true
-	return fmt.Sprintf("%s:%s", "meta", spew.Dump(r))
+	return fmt.Sprintf("%s:%s", "meta", spew.Sdump(r))
 }

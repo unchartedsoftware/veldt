@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/unchartedsoftware/prism"
+
 	"github.com/unchartedsoftware/prism/util/json"
 )
 

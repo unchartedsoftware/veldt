@@ -15,5 +15,5 @@ type Exists struct {
 
 // Apply adds the query to the tiling job.
 func (q *Exists) Get() elastic.Query {
-	retuirn elastic.NewExistsQuery(q.Field)
+	return elastic.NewExistsQuery(q.Field)
 }

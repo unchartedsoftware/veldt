@@ -3,10 +3,12 @@ package query
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/unchartedsoftware/prism"
 )
 
 // Parse parses the query payload into the query AST.
-func Parse(arg interface{}) (Query, error) {
+func Parse(arg interface{}) (prism.Query, error) {
 	// validate the JSON into ot's runtime query components
 	validator := NewValidator()
 	token, err := validator.Validate(arg)
@@ -17,12 +19,12 @@ func Parse(arg interface{}) (Query, error) {
 	return parseToken(token)
 }
 
-func parseExpression(args []interface{}) (Query, error) {
+func parseExpression(args []interface{}) (prism.Query, error) {
 	exp := NewParser(args)
 	return exp.parse()
 }
 
-func parseToken(token interface{}) (Query, error) {
+func parseToken(token interface{}) (prism.Query, error) {
 	// check if token is an expression
 	exp, ok := token.([]interface{})
 	if ok {
@@ -30,7 +32,7 @@ func parseToken(token interface{}) (Query, error) {
 		return parseExpression(exp)
 	}
 	// is query, parse it directly
-	query, ok := token.(Query)
+	query, ok := token.(prism.Query)
 	if !ok {
 		return nil, fmt.Errorf("`%v` token is unrecognized", token)
 	}
@@ -57,7 +59,7 @@ func (e *expression) pop() (interface{}, error) {
 	return token, nil
 }
 
-func (e *expression) popOperand() (Query, error) {
+func (e *expression) popOperand() (prism.Query, error) {
 	// pops the next operand
 	//     cases to consider:
 	//         - a) unary operator -> expression
@@ -93,7 +95,7 @@ func (e *expression) popOperand() (Query, error) {
 		// return unary expression
 		return &UnaryExpression{
 			Op:    op,
-			Query: query,
+			prism.Query: query,
 		}, nil
 	}
 
@@ -169,11 +171,11 @@ func isUnaryOperator(arg interface{}) (bool, error) {
 	return false, fmt.Errorf("`%v` operator not recognized", op)
 }
 
-func (e *expression) parseExpressionR(lhs Query, min int) (Query, error) {
+func (e *expression) parseExpressionR(lhs prism.Query, min int) (prism.Query, error) {
 
 	var err error
 	var op string
-	var rhs Query
+	var rhs prism.Query
 	var lookahead interface{}
 	var isBinary, isUnary bool
 
@@ -230,7 +232,7 @@ func (e *expression) parseExpressionR(lhs Query, min int) (Query, error) {
 	return lhs, nil
 }
 
-func (e *expression) parse() (Query, error) {
+func (e *expression) parse() (prism.Query, error) {
 	lhs, err := e.popOperand()
 	if err != nil {
 		return nil, err

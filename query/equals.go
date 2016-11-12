@@ -2,6 +2,8 @@ package query
 
 import (
 	"fmt"
+
+	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 

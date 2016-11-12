@@ -1,9 +1,7 @@
 package pipeline
 
 import (
-	"fmt"
-	"runtime"
-	"sync"
+	"github.com/unchartedsoftware/prism"
 )
 
 type Pipeline struct {

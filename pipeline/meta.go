@@ -2,8 +2,6 @@ package pipeline
 
 import (
 	"fmt"
-	"runtime"
-	"sync"
 )
 
 func (p *Pipeline) NewMetaRequest(params) {
@@ -19,19 +17,6 @@ func (p *Pipeline) NewMetaRequest(params) {
 		URI: uri,
 		Meta: meta,
 	}
-}
-
-func (p *Pipeline) parseMeta(coord binning.MetaCoord, args map[string]interface{}) (prism.Meta, error) {
-	t, ok := args["meta"]
-	if !ok {
-		return nil, nil
-	}
-	// TODO: properly validate tile
-	id, params, ok := p.getIDAndParams(args)
-	if !ok {
-		return nil, fmt.Errof("Could not parse meta")
-	}
-	return  p.GetMeta(id, params)
 }
 
 func (p *Pipeline) GenerateMeta(req *prism.MetaRequest) error {
@@ -70,7 +55,20 @@ func (p *Pipeline) GetMetaFromStore(req *prism.MetaRequest) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.decompress(res)
+	return p.decompress(res[0:])
+}
+
+func (p *Pipeline) parseMeta(coord binning.MetaCoord, args map[string]interface{}) (prism.Meta, error) {
+	t, ok := args["meta"]
+	if !ok {
+		return nil, nil
+	}
+	// TODO: properly validate tile
+	id, params, ok := p.getIDAndParams(args)
+	if !ok {
+		return nil, fmt.Errof("Could not parse meta")
+	}
+	return  p.GetMeta(id, params)
 }
 
 func (p *Pipeline) getMetaPromise(hash string, req *prism.MetaRequest) error {
@@ -88,19 +86,19 @@ func (p *Pipeline) getMetaPromise(hash string, req *prism.MetaRequest) error {
 	return p.Wait()
 }
 
-func (p *Pipeline) generateAndStoreMeta(hash string, req *prism.MetaRequest, store prism.Store) error {
+func (p *Pipeline) generateAndStoreMeta(hash string, req *prism.MetaRequest) error {
 	// queue the tile to be generated
 	res, err := p.queue.QueueMeta(req)
 	if err != nil {
 		return err
 	}
 	// compress tile payload
-	res, err = p.compress(p.compression, res[0:])
+	res, err = p.compress(res[0:])
 	if err != nil {
 		return err
 	}
 	// get store
-	store, err := p.GetStore()
+	store, err = p.GetStore()
 	if err != nil {
 		return err
 	}

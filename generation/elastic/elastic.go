@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/unchartedsoftware/plog"
+	"github.com/unchartedsoftware/plog"
 	"gopkg.in/olivere/elastic.v3"
 )
 

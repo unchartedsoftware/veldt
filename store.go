@@ -1,9 +1,4 @@
-package tile
-
-import (
-	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/query"
-)
+package prism
 
 // Store represents an interface for connecting to, setting, and retrieving
 // values from a key-value database or in-memory storage server.
@@ -13,3 +8,7 @@ type Store interface {
 	Exists(string) (bool, error)
 	Close()
 }
+
+// StoreCtor represents a function that instantiates and returns a new storage
+// type.
+type StoreCtor func() (Meta, error)

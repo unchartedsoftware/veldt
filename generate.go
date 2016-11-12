@@ -1,9 +1,4 @@
-package tile
-
-import (
-	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/query"
-)
+package prism
 
 func GenerateTile(id string, args map[string]interface{}) error {
 	pipeline, err := GetPipeline(id)

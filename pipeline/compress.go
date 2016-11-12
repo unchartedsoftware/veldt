@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io/ioutil"
-
-	"github.com/unchartedsoftware/prism/store"
 )
 
-func (p *Pipeline) compress(compression string, data []byte) ([]byte, error) {
+func (p *Pipeline) compress(data []byte) ([]byte, error) {
 	var buffer bytes.Buffer
-	writer, err := getWriter(compression, &buffer)
+	writer, err := p.getWriter(&buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -25,9 +23,9 @@ func (p *Pipeline) compress(compression string, data []byte) ([]byte, error) {
 	return buffer.Bytes()[0:], nil
 }
 
-func (p *Pipeline) decompress(typ string, data []byte) ([]byte, error) {
+func (p *Pipeline) decompress(data []byte) ([]byte, error) {
 	buffer := bytes.NewBuffer(data[0:])
-	reader, err := getReader(compression, &buffer)
+	reader, err := p.getReader(&buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -42,9 +40,9 @@ func (p *Pipeline) decompress(typ string, data []byte) ([]byte, error) {
 	return data[0:], nil
 }
 
-func getReader(compression string, buffer *bytes.Buffer) (io.Reader, error) {
+func (p *Pipeline) getReader(buffer *bytes.Buffer) (io.Reader, error) {
 	// use compression based reader if specified
-	switch compression {
+	switch p.compression {
 	case "gzip":
 		return gzip.NewReader(buffer)
 	case "bzip2":
@@ -58,9 +56,9 @@ func getReader(compression string, buffer *bytes.Buffer) (io.Reader, error) {
 	}
 }
 
-func getWriter(compression string, buffer *bytes.Buffer) (io.Reader, error) {
+func (p *Pipeline) getWriter(buffer *bytes.Buffer) (io.Reader, error) {
 	// use compression based reader if specified
-	switch compression {
+	switch p.compression {
 	case "gzip":
 		return gzip.NewWriter(buffer)
 	case "bzip2":

@@ -6,8 +6,8 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
+	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/meta"
 	jsonutil "github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -140,7 +140,7 @@ type DefaultMeta struct {
 
 // NewDefaultMeta instantiates and returns a pointer to a new generator.
 func NewDefaultMeta(host string, port string) meta.Ctor {
-	return func() (meta.Generator, error) {
+	return func() (prism.Meta, error) {
 		return &DefaultMeta{
 			Host: host,
 			Port: port,
