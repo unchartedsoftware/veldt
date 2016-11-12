@@ -1,4 +1,4 @@
-package tile
+package pipeline
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package tile
+package meta
 
 import (
 	"fmt"
