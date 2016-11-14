@@ -7,19 +7,19 @@ import (
 )
 
 type queue struct {
-	ready chan bool
-	pending int
-	mu *sync.Mutex
+	ready      chan bool
+	pending    int
+	mu         *sync.Mutex
 	maxPending int
-	maxLength int
+	maxLength  int
 }
 
 func newQueue() *queue {
 	q := &queue{
-		ready: make(chan bool),
-		mu: &sync.Mutex{},
+		ready:      make(chan bool),
+		mu:         &sync.Mutex{},
 		maxPending: 32,
-		maxLength: 256 * 8,
+		maxLength:  256 * 8,
 	}
 	// store in intermediate here in case max is change before the following
 	// loop completes
@@ -62,7 +62,7 @@ func (q *queue) queueTile(req *TileRequest) ([]byte, error) {
 	// wait until equalizer is ready
 	<-q.ready
 	// dispatch the query
-	tile, err := req.Tile.Create(req.URI, req.Coord)
+	tile, err := req.Tile.Create(req.URI, req.Coord, req.Query)
 	// decrement the q.pending count
 	q.decrementPending()
 	go func() {

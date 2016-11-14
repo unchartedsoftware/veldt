@@ -1,4 +1,4 @@
-package query
+package elastic
 
 import (
 	"gopkg.in/olivere/elastic.v3"

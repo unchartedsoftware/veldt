@@ -1,4 +1,4 @@
-package meta
+package elastic
 
 import (
 	"encoding/json"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/binning"
-	es "github.com/unchartedsoftware/prism/generation/elastic"
 	jsonutil "github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -80,45 +79,49 @@ func getPropertyMeta(client *elastic.Client, index string, field string, typ str
 
 func parsePropertiesRecursive(meta map[string]PropertyMeta, client *elastic.Client, index string, p map[string]interface{}, path string) error {
 	children, ok := jsonutil.GetChildMap(p)
-	if ok {
-		for key, props := range children {
-			subpath := key
-			if path != "" {
-				subpath = path + "." + key
+	if !ok {
+		return nil
+	}
+
+	for key, props := range children {
+		subpath := key
+		if path != "" {
+			subpath = path + "." + key
+		}
+		subprops, hasProps := jsonutil.GetChild(props, "properties")
+		if hasProps {
+			// recurse further
+			err := parsePropertiesRecursive(meta, client, index, subprops, subpath)
+			if err != nil {
+				return err
 			}
-			subprops, hasProps := jsonutil.GetChild(props, "properties")
-			if hasProps {
-				// recurse further
-				err := parsePropertiesRecursive(meta, client, index, subprops, subpath)
+		} else {
+			typ, hasType := jsonutil.GetString(props, "type")
+			// we don't support nested types
+			if hasType && typ != "nested" {
+
+				prop, err := getPropertyMeta(client, index, subpath, typ)
 				if err != nil {
 					return err
 				}
-			} else {
-				typ, hasType := jsonutil.GetString(props, "type")
-				// we don't support nested types
-				if hasType && typ != "nested" {
-					prop, err := getPropertyMeta(client, index, subpath, typ)
-					if err != nil {
-						return err
-					}
-					meta[subpath] = *prop
+				meta[subpath] = *prop
 
-					// Parse out multi-field mapping
-					fields, hasFields := jsonutil.GetChild(props, "fields")
-					if hasFields {
-						for fieldName := range fields {
-							multiFieldPath := subpath + "." + fieldName
-							prop, err = getPropertyMeta(client, index, multiFieldPath, typ)
-							if err != nil {
-								return err
-							}
-							meta[multiFieldPath] = *prop
+				// Parse out multi-field mapping
+				fields, hasFields := jsonutil.GetChild(props, "fields")
+				if hasFields {
+					for fieldName := range fields {
+						multiFieldPath := subpath + "." + fieldName
+						prop, err = getPropertyMeta(client, index, multiFieldPath, typ)
+						if err != nil {
+							return err
 						}
+						meta[multiFieldPath] = *prop
 					}
 				}
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -130,6 +133,17 @@ func parseProperties(client *elastic.Client, index string, props map[string]inte
 		return nil, err
 	}
 	return meta, nil
+}
+
+func parseType(client *elastic.Client, index string, typ map[string]interface{}) (map[string]PropertyMeta, error) {
+	props, ok := jsonutil.GetChild(typ, "properties")
+	if !ok {
+		return nil, fmt.Errorf("Unable to parse `properties` from mappings response for type `%s` for %s",
+			typ,
+			index)
+	}
+	// parse json mappings into the property map
+	return parseProperties(client, index, props)
 }
 
 // DefaultMeta represents a meta data generator that produces default
@@ -149,9 +163,16 @@ func NewDefaultMeta(host string, port string) prism.MetaCtor {
 	}
 }
 
+func (g *DefaultMeta) Parse(params map[string]interface{}) error {
+	return nil
+}
+
 // GetMeta returns the meta data for a given index.
 func (g *DefaultMeta) Create(uri string) ([]byte, error) {
-	client := es.NewClient(g.Host, g.Port)
+	client, err := NewClient(g.Host, g.Port)
+	if err != nil {
+		return nil, err
+	}
 	// get the raw mappings
 	mapping, err := client.GetMapping().Index(uri).Do()
 	if err != nil {
@@ -176,14 +197,7 @@ func (g *DefaultMeta) Create(uri string) ([]byte, error) {
 	// for each type, parse the mapping
 	meta := make(map[string]interface{})
 	for key, typ := range mappings {
-		props, ok := jsonutil.GetChild(typ, "properties")
-		if !ok {
-			return nil, fmt.Errorf("Unable to parse `properties` from mappings response for type `%s` for %s",
-				typ,
-				uri)
-		}
-		// parse json mappings into the property map
-		typeMeta, err := parseProperties(client, uri, props)
+		typeMeta, err := parseType(client, uri, typ)
 		if err != nil {
 			return nil, err
 		}

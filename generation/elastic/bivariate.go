@@ -1,4 +1,4 @@
-package tile
+package elastic
 
 import (
 	"fmt"
@@ -16,7 +16,6 @@ type Bivariate struct {
 }
 
 func (b *Bivariate) GetQuery(coord *binning.TileCoord) elastic.Query {
-
 	extents := &binning.Bounds{
 		TopLeft: &binning.Coord{
 			X: b.Left,
@@ -43,8 +42,7 @@ func (b *Bivariate) GetQuery(coord *binning.TileCoord) elastic.Query {
 	return query
 }
 
-func (b *Bivariate) GetAgg(coord *binning.TileCoord) map[string]elastic.Aggregation {
-
+func (b *Bivariate) GetAggs(coord *binning.TileCoord) map[string]elastic.Aggregation {
 	extents := &binning.Bounds{
 		TopLeft: &binning.Coord{
 			X: b.Left,
@@ -73,6 +71,8 @@ func (b *Bivariate) GetAgg(coord *binning.TileCoord) map[string]elastic.Aggregat
 		Offset(minY).
 		Interval(intervalY).
 		MinDocCount(1)
+
+	x.SubAggregation("y", y)
 	return map[string]elastic.Aggregation{
 		"x": x,
 		"y": y,

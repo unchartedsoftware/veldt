@@ -13,22 +13,22 @@ import (
 )
 
 type Pipeline struct {
-	queue *queue
-	queries map[string]QueryCtor
-	tiles map[string]TileCtor
-	metas map[string]MetaCtor
-	store StoreCtor
-	promises *promise.Map
+	queue       *queue
+	queries     map[string]QueryCtor
+	tiles       map[string]TileCtor
+	metas       map[string]MetaCtor
+	store       StoreCtor
+	promises    *promise.Map
 	compression string
 }
 
 func NewPipeline() *Pipeline {
 	return &Pipeline{
-		queue: newQueue(),
-		queries: make(map[string]QueryCtor),
-		tiles: make(map[string]TileCtor),
-		metas: make(map[string]MetaCtor),
-		promises: promise.NewMap(),
+		queue:       newQueue(),
+		queries:     make(map[string]QueryCtor),
+		tiles:       make(map[string]TileCtor),
+		metas:       make(map[string]MetaCtor),
+		promises:    promise.NewMap(),
 		compression: "gzip",
 	}
 }
@@ -63,7 +63,6 @@ func (p *Pipeline) getIDAndParams(val interface{}) (string, map[string]interface
 	}
 	return key, value, found
 }
-
 
 func (p *Pipeline) Query(id string, ctor QueryCtor) {
 	p.queries[id] = ctor
@@ -154,10 +153,10 @@ func (p *Pipeline) NewTileRequest(args map[string]interface{}) (*TileRequest, er
 		return nil, err
 	}
 	return &TileRequest{
-		URI: uri,
+		URI:   uri,
 		Coord: coord,
 		Query: query,
-		Tile: tile,
+		Tile:  tile,
 	}, nil
 }
 
@@ -217,7 +216,7 @@ func (p *Pipeline) parseQuery(args map[string]interface{}) (Query, error) {
 	if !ok {
 		return nil, fmt.Errorf("Could not parse tile")
 	}
-	return  p.GetQuery(id, params)
+	return p.GetQuery(id, params)
 }
 
 func (p *Pipeline) parseTile(args map[string]interface{}) (Tile, error) {
@@ -230,7 +229,7 @@ func (p *Pipeline) parseTile(args map[string]interface{}) (Tile, error) {
 	if !ok {
 		return nil, fmt.Errorf("Could not parse tile")
 	}
-	return  p.GetTile(id, params)
+	return p.GetTile(id, params)
 }
 
 func (p *Pipeline) GenerateTile(req *TileRequest) error {
@@ -322,7 +321,7 @@ func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, er
 		return nil, err
 	}
 	return &MetaRequest{
-		URI: uri,
+		URI:  uri,
 		Meta: meta,
 	}, nil
 }
@@ -376,7 +375,7 @@ func (p *Pipeline) parseMeta(args map[string]interface{}) (Meta, error) {
 	if !ok {
 		return nil, fmt.Errorf("Could not parse meta")
 	}
-	return  p.GetMeta(id, params)
+	return p.GetMeta(id, params)
 }
 
 func (p *Pipeline) getMetaPromise(hash string, req *MetaRequest) error {

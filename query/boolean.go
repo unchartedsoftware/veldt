@@ -49,7 +49,6 @@ type UnaryExpression struct {
 	Op    string
 }
 
-
 func (q *UnaryExpression) Parse(params map[string]interface{}) error {
 	return fmt.Errorf("not implemented")
 }

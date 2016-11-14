@@ -10,10 +10,10 @@ import (
 
 // TileRequest represents a tile data generation request.
 type TileRequest struct {
-	URI      string
-	Coord    *binning.TileCoord
-	Query    Query
-	Tile     Tile
+	URI   string
+	Coord *binning.TileCoord
+	Query Query
+	Tile  Tile
 }
 
 // GetHash returns a unique hash for the request.
@@ -24,8 +24,8 @@ func (r *TileRequest) GetHash() string {
 
 // MetaRequest represents a meta data generation request.
 type MetaRequest struct {
-	URI   string
-	Meta  Meta
+	URI  string
+	Meta Meta
 }
 
 // GetHash returns a unique hash for the request.
