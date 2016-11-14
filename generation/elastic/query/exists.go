@@ -1,8 +1,6 @@
 package query
 
 import (
-	"fmt"
-
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/query"
@@ -14,6 +12,6 @@ type Exists struct {
 }
 
 // Apply adds the query to the tiling job.
-func (q *Exists) Get() elastic.Query {
-	return elastic.NewExistsQuery(q.Field)
+func (q *Exists) Get() (elastic.Query, error) {
+	return elastic.NewExistsQuery(q.Field), nil
 }

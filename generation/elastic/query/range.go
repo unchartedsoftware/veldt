@@ -1,8 +1,6 @@
 package query
 
 import (
-	"fmt"
-
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/prism/query"
@@ -14,7 +12,7 @@ type Range struct {
 }
 
 // Apply adds the query to the tiling job.
-func (q *Range) Get() elastic.Query {
+func (q *Range) Get() (elastic.Query, error) {
 	rang := elastic.NewRangeQuery(q.Field)
 	if q.GTE != nil {
 		rang.Gte(q.GTE)
@@ -28,5 +26,5 @@ func (q *Range) Get() elastic.Query {
 	if q.LT != nil {
 		rang.Lte(q.LT)
 	}
-	return rang
+	return rang, nil
 }

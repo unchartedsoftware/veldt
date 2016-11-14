@@ -39,9 +39,8 @@ type BinaryExpression struct {
 	Right prism.Query
 }
 
-// Apply adds the query to the tiling job.
-func (q *BinaryExpression) Apply(arg interface{}) error {
-	return fmt.Errorf("Not implemented")
+func (q *BinaryExpression) Parse(params map[string]interface{}) error {
+	return fmt.Errorf("not implemented")
 }
 
 // UnaryExpression represents a unary boolean expression.
@@ -50,7 +49,7 @@ type UnaryExpression struct {
 	Op    string
 }
 
-// Apply adds the query to the tiling job.
-func (q *UnaryExpression) Apply(arg interface{}) error {
-	return fmt.Errorf("Not implemented")
+
+func (q *UnaryExpression) Parse(params map[string]interface{}) error {
+	return fmt.Errorf("not implemented")
 }

@@ -1,7 +1,6 @@
 package query
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/unchartedsoftware/prism"
@@ -20,7 +19,7 @@ func Parse(arg interface{}) (prism.Query, error) {
 }
 
 func parseExpression(args []interface{}) (prism.Query, error) {
-	exp := NewParser(args)
+	exp := newExpression(args)
 	return exp.parse()
 }
 
@@ -95,7 +94,7 @@ func (e *expression) popOperand() (prism.Query, error) {
 		// return unary expression
 		return &UnaryExpression{
 			Op:    op,
-			prism.Query: query,
+			Query: query,
 		}, nil
 	}
 

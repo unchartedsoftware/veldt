@@ -8,6 +8,7 @@ import (
 
 	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/binning"
+	es "github.com/unchartedsoftware/prism/generation/elastic"
 	jsonutil "github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -139,18 +140,18 @@ type DefaultMeta struct {
 }
 
 // NewDefaultMeta instantiates and returns a pointer to a new generator.
-func NewDefaultMeta(host string, port string) meta.Ctor {
+func NewDefaultMeta(host string, port string) prism.MetaCtor {
 	return func() (prism.Meta, error) {
 		return &DefaultMeta{
 			Host: host,
 			Port: port,
-		}
+		}, nil
 	}
 }
 
 // GetMeta returns the meta data for a given index.
 func (g *DefaultMeta) Create(uri string) ([]byte, error) {
-	client := NewClient(g.Host, g.Port)
+	client := es.NewClient(g.Host, g.Port)
 	// get the raw mappings
 	mapping, err := client.GetMapping().Index(uri).Do()
 	if err != nil {

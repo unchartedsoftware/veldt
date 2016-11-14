@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/unchartedsoftware/prism"
-
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -99,16 +97,17 @@ func (v *Validator) validateQuery(arg map[string]interface{}, indent int) interf
 
 	//
 	// TODO: FIX THIS
-	query, err := CreateQuery(id, params)
-	if err != nil {
-		v.validateParams(id, params, indent, err)
-		return nil
-	}
+	// query, err := CreateQuery(id, params)
+	// if err != nil {
+	// 	v.validateParams(id, params, indent, err)
+	// 	return nil
+	// }
 	// TODO: FIX THIS
 	//
 
 	v.validateParams(id, params, indent, nil)
-	return query
+	//return query
+	return nil
 }
 
 func (v *Validator) validateOperator(op string, indent int) interface{} {

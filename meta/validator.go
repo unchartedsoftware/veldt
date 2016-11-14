@@ -98,16 +98,17 @@ func (v *Validator) validateMeta(arg map[string]interface{}, indent int) prism.T
 
 	//
 	// TODO: FIX THIS
-	tile, err := CreateMeta(id, params)
-	if err != nil {
-		v.formatParams(id, params, indent, err)
-		return nil
-	}
+	// meta, err := CreateMeta(id, params)
+	// if err != nil {
+	// 	v.formatParams(id, params, indent, err)
+	// 	return nil
+	// }
 	// TODO: FIX THIS
 	//
 
 	v.formatParams(id, params, indent, nil)
-	return tile
+	//return meta
+	return nil
 }
 
 func (v *Validator) validateToken(arg interface{}, indent int) prism.Tile {

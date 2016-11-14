@@ -48,12 +48,12 @@ func (b *Bivariate) Parse(params map[string]interface{}) error {
 	// get resolution
 	resolution := json.GetNumberDefault(params, 256, "resolution")
 	// set attributes
-	b.xField = xField
-	b.yField = yField
-	b.left = left
-	b.right = right
-	b.bottom = bottom
-	b.top = top
-	b.resolution = resolution
+	b.XField = xField
+	b.YField = yField
+	b.Left = left
+	b.Right = right
+	b.Bottom = bottom
+	b.Top = top
+	b.Resolution = int(resolution)
 	return nil
 }

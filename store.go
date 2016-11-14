@@ -11,4 +11,4 @@ type Store interface {
 
 // StoreCtor represents a function that instantiates and returns a new storage
 // type.
-type StoreCtor func() (Meta, error)
+type StoreCtor func() (Store, error)

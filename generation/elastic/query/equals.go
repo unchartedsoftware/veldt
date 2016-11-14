@@ -12,6 +12,6 @@ type Equals struct {
 }
 
 // Apply adds the query to the tiling job.
-func (q *Equals) Get() elastic.Query {
-	return elastic.NewTermQuery(q.Field, q.Value)
+func (q *Equals) Get() (elastic.Query, error) {
+	return elastic.NewTermQuery(q.Field, q.Value), nil
 }

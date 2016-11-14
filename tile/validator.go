@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -97,16 +98,17 @@ func (v *Validator) validateTile(arg map[string]interface{}, indent int) prism.T
 
 	//
 	// TODO: FIX THIS
-	tile, err := CreateTile(id, params)
-	if err != nil {
-		v.formatParams(id, params, indent, err)
-		return nil
-	}
+	// tile, err := CreateTile(id, params)
+	// if err != nil {
+	// 	v.formatParams(id, params, indent, err)
+	// 	return nil
+	// }
 	// TODO: FIX THIS
 	//
 
 	v.formatParams(id, params, indent, nil)
-	return tile
+	//return tile
+	return nil
 }
 
 func (v *Validator) validateToken(arg interface{}, indent int) prism.Tile {

@@ -16,7 +16,7 @@ type Store struct {
 func NewStore(host, port string, expirySeconds int) prism.StoreCtor {
 	return func() (prism.Store, error) {
 		return &Store{
-			conn:   getStore(host, port),
+			conn:   getConnection(host, port),
 			expiry: expirySeconds,
 		}, nil
 	}

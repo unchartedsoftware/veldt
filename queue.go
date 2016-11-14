@@ -1,4 +1,4 @@
-package pipeline
+package prism
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-type Queue struct {
+type queue struct {
 	ready chan bool
 	pending int
 	mu *sync.Mutex
@@ -14,8 +14,8 @@ type Queue struct {
 	maxLength int
 }
 
-func NewQueue() *Queue {
-	queue := &Queue{
+func newQueue() *queue {
+	q := &queue{
 		ready: make(chan bool),
 		mu: &sync.Mutex{},
 		maxPending: 32,
@@ -23,22 +23,22 @@ func NewQueue() *Queue {
 	}
 	// store in intermediate here in case max is change before the following
 	// loop completes
-	currentMax := queue.maxPending
+	currentMax := q.maxPending
 	go func() {
 		// send as many ready messages as there are expected listeners
 		for i := 0; i < currentMax; i++ {
-			queue.ready <- true
+			q.ready <- true
 		}
 	}()
-	return queue
+	return q
 }
 
-func (q *Queue) incrementPending() error {
+func (q *queue) incrementPending() error {
 	q.mu.Lock()
 	defer runtime.Gosched()
 	defer q.mu.Unlock()
 	if q.pending-q.maxPending > q.maxLength {
-		return fmt.Errorf("Queue has reached maximum length of %d and is no longer accepting requests",
+		return fmt.Errorf("queue has reached maximum length of %d and is no longer accepting requests",
 			q.maxLength)
 	}
 	// increment count
@@ -46,53 +46,52 @@ func (q *Queue) incrementPending() error {
 	return nil
 }
 
-func (q *Queue) decrementPending() {
+func (q *queue) decrementPending() {
 	q.mu.Lock()
 	q.pending--
 	q.mu.Unlock()
 	runtime.Gosched()
 }
 
-func (q *Queue) QueueTile(req *prism.TileRequest) ([]byte, error) {
+func (q *queue) queueTile(req *TileRequest) ([]byte, error) {
 	// increment the q.pending query count
-	err := incrementPending()
+	err := q.incrementPending()
 	if err != nil {
 		return nil, err
 	}
 	// wait until equalizer is ready
-	<-ready
+	<-q.ready
 	// dispatch the query
 	tile, err := req.Tile.Create(req.URI, req.Coord)
 	// decrement the q.pending count
-	decrementPending()
+	q.decrementPending()
 	go func() {
 		// inform queue that it is ready to generate another tile
-		ready <- true
+		q.ready <- true
 	}()
 	return tile, err
 }
 
-func (q *Queue) QueueMeta(req *prism.MetaRequest) ([]byte, error) {
+func (q *queue) queueMeta(req *MetaRequest) ([]byte, error) {
 	// increment the q.pending query count
-	err := incrementPending()
+	err := q.incrementPending()
 	if err != nil {
 		return nil, err
 	}
 	// wait until equalizer is ready
-	<-ready
+	<-q.ready
 	// dispatch the query
 	tile, err := req.Meta.Create(req.URI)
 	// decrement the q.pending count
-	decrementPending()
+	q.decrementPending()
 	go func() {
 		// inform queue that it is ready to generate another tile
-		ready <- true
+		q.ready <- true
 	}()
 	return tile, err
 }
 
-// SetMaxConcurrent sets the maximum concurrent tile requests allowed.
-func (q *Queue) SetMaxConcurrent(max int) {
+func (q *queue) setMaxConcurrent(max int) {
 	q.mu.Lock()
 	diff := max - q.maxPending
 	q.maxPending = max
@@ -102,7 +101,7 @@ func (q *Queue) SetMaxConcurrent(max int) {
 		go func() {
 			// send as many ready messages as there are expected listeners
 			for i := 0; i < diff; i++ {
-				ready <- true
+				q.ready <- true
 			}
 		}()
 	} else {
@@ -110,15 +109,14 @@ func (q *Queue) SetMaxConcurrent(max int) {
 		go func() {
 			// send as many ready messages as there are expected listeners
 			for i := diff; i < 0; i++ {
-				<-ready
+				<-q.ready
 			}
 		}()
 	}
 	runtime.Gosched()
 }
 
-// SetQueueLength sets the queue length for tiles to hold in the queue.
-func (q *Queue) SetQueueLength(length int) {
+func (q *queue) setQueueLength(length int) {
 	q.mu.Lock()
 	q.maxLength = length
 	q.mu.Unlock()

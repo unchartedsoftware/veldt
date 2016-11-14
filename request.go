@@ -11,7 +11,7 @@ import (
 // TileRequest represents a tile data generation request.
 type TileRequest struct {
 	URI      string
-	Coord    binning.TileCoord
+	Coord    *binning.TileCoord
 	Query    Query
 	Tile     Tile
 }
