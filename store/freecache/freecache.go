@@ -5,9 +5,9 @@ import (
 	"sync"
 
 	"github.com/coocood/freecache"
-	log "github.com/unchartedsoftware/plog"
+	"github.com/unchartedsoftware/plog"
 
-	"github.com/unchartedsoftware/prism/store"
+	"github.com/unchartedsoftware/prism"
 )
 
 var (
@@ -35,8 +35,8 @@ func getCache(byteSize int) *freecache.Cache {
 }
 
 // NewConnection instantiates and returns a new freecache store connection.
-func NewConnection(byteSize int, expirySeconds int) store.ConnectionConstructor {
-	return func() (store.Connection, error) {
+func NewConnection(byteSize int, expirySeconds int) prism.StoreCtor {
+	return func() (prism.Store, error) {
 		return &Connection{
 			cache:  getCache(byteSize),
 			expiry: expirySeconds,

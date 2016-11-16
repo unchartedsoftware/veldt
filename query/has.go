@@ -2,8 +2,8 @@ package query
 
 import (
 	"fmt"
+
 	"github.com/unchartedsoftware/prism/util/json"
-	"strings"
 )
 
 // Has quiery represents a query checking if the field has one or more of the
@@ -13,34 +13,17 @@ type Has struct {
 	Values []interface{}
 }
 
-// NewHas instantiates and returns a has query object.
-func NewHas(params map[string]interface{}) (Query, error) {
+// Parse parses the provided JSON object and populates the querys attributes.
+func (q *Has) Parse(params map[string]interface{}) error {
 	field, ok := json.GetString(params, "field")
 	if !ok {
-		return nil, fmt.Errorf("`field` parameter missing from query params")
+		return fmt.Errorf("`field` parameter missing from query params")
 	}
 	values, ok := json.GetArray(params, "values")
 	if !ok {
-		return nil, fmt.Errorf("`values` parameter missing from query params")
+		return fmt.Errorf("`values` parameter missing from query params")
 	}
-	return &Has{
-		Field:  field,
-		Values: values,
-	}, nil
-}
-
-// Apply adds the query to the tiling job.
-func (q *Has) Apply(arg interface{}) error {
-	return fmt.Errorf("Not implemented")
-}
-
-// GetHash returns a string hash of the query.
-func (q *Has) GetHash() string {
-	hashes := make([]string, len(q.Values))
-	for i, val := range q.Values {
-		hashes[i] = fmt.Sprintf("%v", val)
-	}
-	return fmt.Sprintf("%s:%s",
-		q.Field,
-		strings.Join(hashes, ":"))
+	q.Field = field
+	q.Values = values
+	return nil
 }

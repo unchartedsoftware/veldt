@@ -3,19 +3,19 @@ package redis
 import (
 	"github.com/garyburd/redigo/redis"
 
-	"github.com/unchartedsoftware/prism/store"
+	"github.com/unchartedsoftware/prism"
 )
 
-// Connection represents a single connection to a redis server.
-type Connection struct {
+// Store represents a single connection to a redis server.
+type Store struct {
 	conn   redis.Conn
 	expiry int
 }
 
-// NewConnection instantiates and returns a new redis store connection.
-func NewConnection(host, port string, expirySeconds int) store.ConnectionConstructor {
-	return func() (store.Connection, error) {
-		return &Connection{
+// NewStore instantiates and returns a new redis store connection.
+func NewStore(host, port string, expirySeconds int) prism.StoreCtor {
+	return func() (prism.Store, error) {
+		return &Store{
 			conn:   getConnection(host, port),
 			expiry: expirySeconds,
 		}, nil
@@ -23,12 +23,12 @@ func NewConnection(host, port string, expirySeconds int) store.ConnectionConstru
 }
 
 // Get when given a string key will return a byte slice of data from redis.
-func (r *Connection) Get(key string) ([]byte, error) {
+func (r *Store) Get(key string) ([]byte, error) {
 	return redis.Bytes(r.conn.Do("GET", key))
 }
 
 // Set will store a byte slice under a given key in redis.
-func (r *Connection) Set(key string, value []byte) error {
+func (r *Store) Set(key string, value []byte) error {
 	var err error
 	if r.expiry > 0 {
 		_, err = r.conn.Do("SET", key, value, "NX", "EX", r.expiry)
@@ -39,11 +39,11 @@ func (r *Connection) Set(key string, value []byte) error {
 }
 
 // Exists returns whether or not a key exists in redis.
-func (r *Connection) Exists(key string) (bool, error) {
+func (r *Store) Exists(key string) (bool, error) {
 	return redis.Bool(r.conn.Do("Exists", key))
 }
 
 // Close closes the redis connection.
-func (r *Connection) Close() {
+func (r *Store) Close() {
 	r.conn.Close()
 }

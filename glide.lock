@@ -1,48 +1,57 @@
-hash: 112c9c0819fc2cef86bbd7702548105e08730bb05c83fa23b98954cd788fb365
-updated: 2016-10-24T13:08:41.13493052-04:00
+hash: fdfaee242f9a81e363708c6fe97b35b30e633e91f367da09ba137f3c1bc40c02
+updated: 2016-11-07T10:54:46.296714066-05:00
 imports:
 - name: github.com/aws/aws-sdk-go
-  version: 32cdc88aa5cd2ba4afa049da884aaf9a3d103ef4
+  version: 6c577e9e7b08a6d10bad1c9703227cd0403a8dd7
+  subpackages:
+  - aws/session
+  - service/s3
+  - aws
+  - aws/awserr
+  - aws/client
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/stscreds
+  - aws/defaults
+  - aws/request
+  - private/endpoints
+  - aws/awsutil
+  - aws/client/metadata
+  - aws/signer/v4
+  - private/protocol
+  - private/protocol/restxml
+  - private/waiter
+  - service/sts
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/ec2metadata
+  - private/protocol/rest
+  - private/protocol/query
+  - private/protocol/xml/xmlutil
+  - private/protocol/query/queryutil
 - name: github.com/coocood/freecache
   version: 1aa53c26cb85c33eef6d832305447982e95f844c
+- name: github.com/davecgh/go-spew
+  version: 346938d642f2ec3594ed81d874461961cd0faa76
+  subpackages:
+  - spew
 - name: github.com/garyburd/redigo
   version: 8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13
   subpackages:
-  - internal
   - redis
+  - internal
+- name: github.com/go-ini/ini
+  version: 6e4869b434bd001f6983749881c7ead3545887d8
+- name: github.com/jackc/pgx
+  version: 2508faa9ced29f4bbb3a39483e4b5ac2627a7c48
+- name: github.com/jmespath/go-jmespath
+  version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/mgutz/ansi
   version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
 - name: github.com/onsi/ginkgo
   version: 462326b1628e124b23f42e87a8f2750e3c4e2d24
-  subpackages:
-  - config
-  - internal/codelocation
-  - internal/containernode
-  - internal/failer
-  - internal/leafnodes
-  - internal/remote
-  - internal/spec
-  - internal/specrunner
-  - internal/suite
-  - internal/testingtproxy
-  - internal/writer
-  - reporters
-  - reporters/stenographer
-  - types
 - name: github.com/onsi/gomega
   version: 0df7b7fdb38123c12a1f569f0affb2c2a7bd72cf
-  subpackages:
-  - format
-  - internal/assertion
-  - internal/asyncassertion
-  - internal/oraclematcher
-  - internal/testingtsupport
-  - matchers
-  - matchers/support/goraph/bipartitegraph
-  - matchers/support/goraph/edge
-  - matchers/support/goraph/node
-  - matchers/support/goraph/util
-  - types
 - name: github.com/Sirupsen/logrus
   version: f3cfb454f4c209e6668c95216c4744b8fddb2356
 - name: github.com/spaolacci/murmur3
@@ -58,6 +67,4 @@ imports:
   subpackages:
   - backoff
   - uritemplates
-testImports:
-- name: gopkg.in/yaml.v2
-  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
+testImports: []

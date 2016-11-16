@@ -40,87 +40,203 @@ This minimalistic application shows how to register tile and meta data generator
 package main
 
 import (
-    "math"
+	"math"
 
-    "github.com/unchartedsoftware/prism/generation/elastic"
-    "github.com/unchartedsoftware/prism/generation/meta"
-    "github.com/unchartedsoftware/prism/generation/tile"
-    "github.com/unchartedsoftware/prism/store"
-    "github.com/unchartedsoftware/prism/store/redis"
+	"github.com/unchartedsoftware/prism/generation/elastic"
+	"github.com/unchartedsoftware/prism/generation/meta"
+	"github.com/unchartedsoftware/prism/generation/tile"
+	"github.com/unchartedsoftware/prism/store"
+	"github.com/unchartedsoftware/prism/store/redis"
 	"github.com/unchartedsoftware/prism/store/compress/gzip"
 )
 
 func GenerateMetaData(m *meta.Request) ([]byte, error) {
-    // Generate meta data, this call will block until the response is ready
-    // in the store.
-    err := meta.GenerateMeta(m)
-    if err != nil {
-        return nil, err
-    }
-    // Retrieve the meta data form the store.
-    return meta.GetMetaFromStore(m)
+	// Generate meta data, this call will block until the response is ready
+	// in the store.
+	err := meta.GenerateMeta(m)
+	if err != nil {
+		return nil, err
+	}
+	// Retrieve the meta data form the store.
+	return meta.GetMetaFromStore(m)
 }
 
 func GenerateTileData(t *tile.Request) ([]byte, error) {
-    // Generate a tile, this call will block until the tile is ready in the store.
-    err := tile.GenerateTile(t)
-    if err != nil {
-        return nil, err
-    }
-    // Retrieve the tile form the store.
-    return tile.GetTileFromStore(t)
+	// Generate a tile, this call will block until the tile is ready in the store.
+	err := prism.GenerateTile(t)
+	if err != nil {
+		return nil, err
+	}
+	// Retrieve the tile form the store.
+	return tile.GetTileFromStore(t)
+}
+
+func NewTilePipeline() prism.Pipeline {
+	// Create elasticsearch pipeline
+	pipeline := elastic.NewPipeline("http://localhost:9200")
+	// register elasticsearch tile types
+	pipeline.Register("heatmap", elastic.HeatmapTile)
+	pipeline.Register("top_term_count", elastic.TopTermCountTile)
+	pipeline.Store()
+	return pipeline
+}
+
+func NewMetaPipeline() prism.Pipeline {
+	// Create elasticsearch pipeline
+	pipeline := elastic.NewMetaPipeline("http://localhost:9200")
+	// register elasticsearch tile types
+	pipeline.Register("default", elastic.DefaultMeta)
+	return pipeline
 }
 
 func main() {
-    // Register the in-memory store to use the redis implementation.
-    store.Register("redis", redis.NewConnection("localhost", "6379", 3600))    
-    // Use gzip compression when setting / getting from the store
-    store.Use(gzip.NewCompressor())
 
-    // Register meta data generator
-    meta.Register("default", elastic.NewDefaultMeta("http://localhost", "9200"))
+	// Create pipeline
 
-    // Register tile data generator
-    tile.Register("heatmap", elastic.NewHeatmapTile("http://localhost", "9200"))
-    // Set the maximum concurrent tile requests
-    tile.SetMaxConcurrent(32)
-    // Set the tile requests queue length
-    tile.SetQueueLength(1024)
+	pipeline := prism.NewPipeline()
 
-    // Create a request for `default` meta data.
-    m := &meta.Request{
-        Type: "default",
-        URI: "test_index",
-    }
+	// Add query types to the pipeline
+	pipeline.Query("exists", elastic.NewExist)
+	pipeline.Query("has", elastic.NewHas)
+	pipeline.Query("equals", elastic.NewEquals)
+	pipeline.Query("range", elastic.NewRange)
 
-    // Create a request for a `heatmap` tile.
-    t := &tile.Request{
-        Type: "heatmap",
-        URI: "test_index",
-        Store: "redis"
-        Coord: &binning.TileCoord{
-            Z: 4,
-            X: 12,
-            y: 12,
-        },
-        Params: map[string]interface{}{
-            "binning": map[string]interface{}{
-                "x": "xField",
-                "y": "yField",
-                "left": 0,
-                "right": math.Pow(2, 32),
-                "bottom": 0,
-                "top": math.Pow(2, 32),
-                "resolution": 256,
-            }
-        }
-    }
+	// Add tiles types to the pipeline
+	pipeline.Tile("heatmap", elastic.NewHeatmapTile("localhost", "9200"))
+	pipeline.Tile("wordcloud", elastic.NewWordcloudTile("localhost", "9200"))
 
-    // Generate meta data
-    md, err := GenerateMetaData(m)
+	// Set the maximum concurrent tile requests
+	pipeline.SetMaxConcurrent(32)
+	// Set the tile requests queue length
+	pipeline.SetQueueLength(1024)
 
-    // Generate tile data
-    td, err := GenerateTileData(t)
+	// Add meta types to the pipeline
+	pipeline.Meta("default", elastic.DefaultMeta("localhost", "9200"))
+
+	// Add a store to the pipeline
+	pipeline.Store(redis.NewConnection("localhost", "6379", -1))
+
+	// register the pipeline
+	prism.Register("elastic", pipeline)
+
+	prism.GenerateTile("elastic",
+		`
+		{
+			"uri": "twitter_index0",
+			"coord": {
+				"z": 4,
+				"x": 12,
+				"y": 8
+			},
+			"tile": {
+				"heatmap": {
+					"xField": "pixel.x",
+					"yField": "pixel.y",
+					"left": 0,
+					"right": 2<<32,
+					"bottom": 0,
+					"top": 2<<32,
+					"resolution": 256
+				}
+			},
+			"query": [
+				{
+					"equals": {
+						"field": "name",
+						"value": "john"
+					}
+				},
+				"AND",
+				{
+					"range": {
+						"field": "age",
+						"gte": 19
+					}
+				}
+			]
+		}
+		`)
+
+	// Create a request for a `heatmap` tile.
+	t := &tile.Request{
+		Pipeline: "elastic",
+		Tile: Heatmap{
+			XField: "x",
+			YField: "y",
+			Left: 0,
+			Right: math.Pow(2, 32),
+			Bottom: 0,
+			Top: math.Pow(2, 32),
+			Resolution: 256,
+		},
+		URI: "test_index",
+		Store: "redis",
+		Coord: binning.Coord{
+			Z: 4,
+			X: 12,
+			y: 12,
+		},
+		Query: elastic.BinaryExpression{
+			Left: elastic.Equals{
+				Field: "name",
+				Value: "john",
+			},
+			Op: "AND",
+			Right: elastic.Range{
+				Field: "age",
+				GTE: 19,
+			},
+		}
+	}
+
+
+	////
+
+
+	// Create a request for `default` meta data.
+	m := &meta.Request{
+		Type: "elastic",
+		Meta: "default",
+		URI: "test_index",
+	}
+
+	// Create a request for a `heatmap` tile.
+	t := &tile.Request{
+		Type: "elastic",
+		Tile: &elastic.Heatmap{
+			XField: "x",
+			YField: "y",
+			Left: 0,
+			Right: math.Pow(2, 32),
+			Bottom: 0,
+			Top: math.Pow(2, 32),
+			Resolution: 256,
+		},
+		URI: "test_index",
+		Store: "redis",
+		Coord: &binning.Coord{
+			Z: 4,
+			X: 12,
+			y: 12,
+		},
+		Query: &elastic.BinaryExpression{
+			Left: &elastic.Equals{
+				Field: "name",
+				Value: "john",
+			},
+			Op: elastic.And,
+			Right: &elastic.Range{
+				Field: "age",
+				GTE: 19,
+			},
+		}
+	}
+
+	// Generate meta data
+	md, err := GenerateMetaData(m)
+
+	// Generate tile data
+	td, err := GenerateTileData(t)
 }
 ```
 

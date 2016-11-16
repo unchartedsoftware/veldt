@@ -2,8 +2,6 @@ version=0.1.0
 
 .PHONY: all
 
-NOVENDOR := $(shell glide novendor)
-
 all:
 	@echo "make <cmd>"
 	@echo ""
@@ -15,17 +13,17 @@ all:
 	@echo "  install       - install dependencies"
 
 lint:
-	@go vet $(NOVENDOR)
+	@go vet $(shell glide novendor)
 	@go list ./... | grep -v /vendor/ | xargs -L1 golint
 
 test:
-	@go test $(NOVENDOR)
+	@go test $(shell glide novendor)
 
 fmt:
-	@go fmt $(NOVENDOR)
+	@go fmt $(shell glide novendor)
 
 build: lint
-	@go build $(NOVENDOR)
+	@go build $(shell glide novendor)
 
 install:
 	@go get github.com/golang/lint/golint

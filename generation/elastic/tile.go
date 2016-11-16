@@ -5,24 +5,30 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/generation/elastic/param"
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/prism"
 )
 
-// TileGenerator represents a base generator that uses elasticsearch for its
-// backend.
-type TileGenerator struct {
-	host    string
-	port    string
-	client  *elastic.Client
-	req     *tile.Request
-	Elastic *param.Elastic
+type Tile struct {
+	Host string
+	Port string
 }
 
-// GetHash returns the hash for this generator.
-func (g *TileGenerator) GetHash() string {
-	return fmt.Sprintf("%s:%s:%s",
-		g.host,
-		g.port,
-		g.Elastic.GetHash())
+func (t *Tile) CreateQuery(query prism.Query) (*elastic.BoolQuery, error) {
+	// create root query
+	root := elastic.NewBoolQuery()
+	// add filter query
+	if query != nil {
+		// type assert
+		esquery, ok := query.(Query)
+		if !ok {
+			return nil, fmt.Errorf("query is not elastic.Query")
+		}
+		// get underlying query
+		q, err := esquery.Get()
+		if err != nil {
+			return nil, err
+		}
+		root.Must(q)
+	}
+	return root, nil
 }

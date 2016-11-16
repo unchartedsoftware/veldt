@@ -6,10 +6,71 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
+	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/meta"
 	jsonutil "github.com/unchartedsoftware/prism/util/json"
 )
+
+// DefaultMeta represents a meta data generator that produces default
+// metadata with property types and extrema.
+type DefaultMeta struct {
+	Host string
+	Port string
+}
+
+// NewDefaultMeta instantiates and returns a pointer to a new generator.
+func NewDefaultMeta(host string, port string) prism.MetaCtor {
+	return func() (prism.Meta, error) {
+		return &DefaultMeta{
+			Host: host,
+			Port: port,
+		}, nil
+	}
+}
+
+func (g *DefaultMeta) Parse(params map[string]interface{}) error {
+	return nil
+}
+
+// GetMeta returns the meta data for a given index.
+func (g *DefaultMeta) Create(uri string) ([]byte, error) {
+	client, err := NewClient(g.Host, g.Port)
+	if err != nil {
+		return nil, err
+	}
+	// get the raw mappings
+	mapping, err := client.GetMapping().Index(uri).Do()
+	if err != nil {
+		return nil, err
+	}
+	// get nested 'properties' attribute of mappings payload
+	// NOTE: If running a `mapping` query on an aliased index, the mapping
+	// response will be nested under the original index name. Since we are only
+	// getting the mapping of a single index at a time, we can simply get the
+	// 'first' and only node.
+	index, ok := jsonutil.GetRandomChild(mapping)
+	if !ok {
+		return nil, fmt.Errorf("Unable to retrieve the mappings response for %s",
+			uri)
+	}
+	// get mappings node
+	mappings, ok := jsonutil.GetChildMap(index, "mappings")
+	if !ok {
+		return nil, fmt.Errorf("Unable to parse `mappings` from mappings response for %s",
+			uri)
+	}
+	// for each type, parse the mapping
+	meta := make(map[string]interface{})
+	for key, typ := range mappings {
+		typeMeta, err := parseType(client, uri, typ)
+		if err != nil {
+			return nil, err
+		}
+		meta[key] = typeMeta
+	}
+	// return
+	return json.Marshal(meta)
+}
 
 // PropertyMeta represents the meta data for a single property.
 type PropertyMeta struct {
@@ -27,13 +88,48 @@ func isOrdinal(typ string) bool {
 		typ == "date"
 }
 
+func getExtrema(client *elastic.Client, index string, field string) (*binning.Extrema, error) {
+	// query
+	result, err := client.
+		Search(index).
+		Size(0).
+		Aggregation("min",
+			elastic.NewMinAggregation().
+				Field(field)).
+		Aggregation("max",
+			elastic.NewMaxAggregation().
+				Field(field)).
+		Do()
+	if err != nil {
+		return nil, err
+	}
+	// parse aggregations
+	min, ok := result.Aggregations.Min("min")
+	if !ok {
+		return nil, fmt.Errorf("Min '%s' aggregation was not found in response for %s", field, index)
+	}
+	max, ok := result.Aggregations.Max("max")
+	if !ok {
+		return nil, fmt.Errorf("Max '%s' aggregation was not found in response for %s", field, index)
+	}
+	// if the mapping exists, but no documents have the attribute, the min / max
+	// are null
+	if min.Value == nil || max.Value == nil {
+		return nil, nil
+	}
+	return &binning.Extrema{
+		Min: *min.Value,
+		Max: *max.Value,
+	}, nil
+}
+
 func getPropertyMeta(client *elastic.Client, index string, field string, typ string) (*PropertyMeta, error) {
 	p := PropertyMeta{
 		Type: typ,
 	}
 	// if field is 'ordinal', get the extrema
 	if isOrdinal(typ) {
-		extrema, err := GetExtrema(client, index, field)
+		extrema, err := getExtrema(client, index, field)
 		if err != nil {
 			return nil, err
 		}
@@ -44,45 +140,49 @@ func getPropertyMeta(client *elastic.Client, index string, field string, typ str
 
 func parsePropertiesRecursive(meta map[string]PropertyMeta, client *elastic.Client, index string, p map[string]interface{}, path string) error {
 	children, ok := jsonutil.GetChildMap(p)
-	if ok {
-		for key, props := range children {
-			subpath := key
-			if path != "" {
-				subpath = path + "." + key
+	if !ok {
+		return nil
+	}
+
+	for key, props := range children {
+		subpath := key
+		if path != "" {
+			subpath = path + "." + key
+		}
+		subprops, hasProps := jsonutil.GetChild(props, "properties")
+		if hasProps {
+			// recurse further
+			err := parsePropertiesRecursive(meta, client, index, subprops, subpath)
+			if err != nil {
+				return err
 			}
-			subprops, hasProps := jsonutil.GetChild(props, "properties")
-			if hasProps {
-				// recurse further
-				err := parsePropertiesRecursive(meta, client, index, subprops, subpath)
+		} else {
+			typ, hasType := jsonutil.GetString(props, "type")
+			// we don't support nested types
+			if hasType && typ != "nested" {
+
+				prop, err := getPropertyMeta(client, index, subpath, typ)
 				if err != nil {
 					return err
 				}
-			} else {
-				typ, hasType := jsonutil.GetString(props, "type")
-				// we don't support nested types
-				if hasType && typ != "nested" {
-					prop, err := getPropertyMeta(client, index, subpath, typ)
-					if err != nil {
-						return err
-					}
-					meta[subpath] = *prop
+				meta[subpath] = *prop
 
-					// Parse out multi-field mapping
-					fields, hasFields := jsonutil.GetChild(props, "fields")
-					if hasFields {
-						for fieldName := range fields {
-							multiFieldPath := subpath + "." + fieldName
-							prop, err = getPropertyMeta(client, index, multiFieldPath, typ)
-							if err != nil {
-								return err
-							}
-							meta[multiFieldPath] = *prop
+				// Parse out multi-field mapping
+				fields, hasFields := jsonutil.GetChild(props, "fields")
+				if hasFields {
+					for fieldName := range fields {
+						multiFieldPath := subpath + "." + fieldName
+						prop, err = getPropertyMeta(client, index, multiFieldPath, typ)
+						if err != nil {
+							return err
 						}
+						meta[multiFieldPath] = *prop
 					}
 				}
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -96,69 +196,13 @@ func parseProperties(client *elastic.Client, index string, props map[string]inte
 	return meta, nil
 }
 
-// DefaultMeta represents a meta data generator that produces default
-// metadata with property types and extrema.
-type DefaultMeta struct {
-	MetaGenerator
-}
-
-// NewDefaultMeta instantiates and returns a pointer to a new generator.
-func NewDefaultMeta(host string, port string) meta.GeneratorConstructor {
-	return func(metaReq *meta.Request) (meta.Generator, error) {
-		client, err := NewClient(host, port)
-		if err != nil {
-			return nil, err
-		}
-		m := &DefaultMeta{}
-		m.host = host
-		m.port = port
-		m.req = metaReq
-		m.client = client
-		return m, nil
-	}
-}
-
-// GetMeta returns the meta data for a given index.
-func (g *DefaultMeta) GetMeta() ([]byte, error) {
-	client := g.client
-	metaReq := g.req
-	// get the raw mappings
-	mapping, err := GetMapping(client, metaReq.URI)
-	if err != nil {
-		return nil, err
-	}
-	// get nested 'properties' attribute of mappings payload
-	// NOTE: If running a `mapping` query on an aliased index, the mapping
-	// response will be nested under the original index name. Since we are only
-	// getting the mapping of a single index at a time, we can simply get the
-	// 'first' and only node.
-	index, ok := jsonutil.GetRandomChild(mapping)
+func parseType(client *elastic.Client, index string, typ map[string]interface{}) (map[string]PropertyMeta, error) {
+	props, ok := jsonutil.GetChild(typ, "properties")
 	if !ok {
-		return nil, fmt.Errorf("Unable to retrieve the mappings response for %s",
-			metaReq.URI)
+		return nil, fmt.Errorf("Unable to parse `properties` from mappings response for type `%s` for %s",
+			typ,
+			index)
 	}
-	// get mappings node
-	mappings, ok := jsonutil.GetChildMap(index, "mappings")
-	if !ok {
-		return nil, fmt.Errorf("Unable to parse `mappings` from mappings response for %s",
-			metaReq.URI)
-	}
-	// for each type, parse the mapping
-	meta := make(map[string]interface{})
-	for key, typ := range mappings {
-		props, ok := jsonutil.GetChild(typ, "properties")
-		if !ok {
-			return nil, fmt.Errorf("Unable to parse `properties` from mappings response for type `%s` for %s",
-				typ,
-				metaReq.URI)
-		}
-		// parse json mappings into the property map
-		typeMeta, err := parseProperties(client, metaReq.URI, props)
-		if err != nil {
-			return nil, err
-		}
-		meta[key] = typeMeta
-	}
-	// return
-	return json.Marshal(meta)
+	// parse json mappings into the property map
+	return parseProperties(client, index, props)
 }

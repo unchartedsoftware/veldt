@@ -18,36 +18,36 @@ var _ = Describe("json", func() {
 					"number": 2323423
 				}
 			},
-	        "binning": {
-	            "x":"locality_bag.dateBegin",
-	            "left":1350416916775,
-	            "right":1446058904529,
-	            "y":"feature.author_firstmessage_rank",
-	            "bottom":0,
-	            "top":78891,
-	            "resolution":256
-	        },
-	        "bool_query": {
-	            "must": [
-	                {
-	                    "term": {
-	                        "field": "feature.firearm_type",
-	                        "terms":  ["Rifle"]
-	                    }
-	                },
-	                {
-	                    "range": {
-	                        "field": "feature.indicator_risky",
-	                        "from": 0.5,
-	                        "to": 3
-	                    }
-	                }
-	            ],
-	            "must_not": [],
-	            "should": [],
-	            "filter": []
-	        }
-	    }`
+			"binning": {
+				"x":"locality_bag.dateBegin",
+				"left":1350416916775,
+				"right":1446058904529,
+				"y":"feature.author_firstmessage_rank",
+				"bottom":0,
+				"top":78891,
+				"resolution":256
+			},
+			"bool_query": {
+				"must": [
+					{
+						"term": {
+							"field": "feature.firearm_type",
+							"terms":  ["Rifle"]
+						}
+					},
+					{
+						"range": {
+							"field": "feature.indicator_risky",
+							"from": 0.5,
+							"to": 3
+						}
+					}
+				],
+				"must_not": [],
+				"should": [],
+				"filter": []
+			}
+		}`
 	)
 
 	var (
