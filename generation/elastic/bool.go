@@ -20,7 +20,7 @@ func (e *BinaryExpression) Get() (elastic.Query, error) {
 	if !ok {
 		return nil, fmt.Errorf("Left is not of type elastic.Query")
 	}
-	right, ok := e.Left.(Query)
+	right, ok := e.Right.(Query)
 	if !ok {
 		return nil, fmt.Errorf("Right is not of type elastic.Query")
 	}

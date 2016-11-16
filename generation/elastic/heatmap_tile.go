@@ -13,7 +13,7 @@ type Heatmap struct {
 	Tile
 }
 
-func NewHeatmap(host, port string) prism.TileCtor {
+func NewHeatmapTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
 		h := &Heatmap{}
 		h.Host = host

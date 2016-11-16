@@ -3,18 +3,19 @@ package json
 import (
 	"fmt"
 	"strings"
+
+	"github.com/unchartedsoftware/prism/util/color"
 )
 
 const (
-	indentor     = "    "
-	redColor     = "\033[31m"
-	defaultColor = "\033[39m"
+	indentor = "    "
 )
 
 // Validator parses a JSON query expression into its typed format. It
 // ensure all types are correct and that the syntax is valid.
 type Validator struct {
-	Output         []string
+	output         []string
+	errLines       map[int]bool
 	errStartIndex  int
 	errEndIndex    int
 	errIndent      int
@@ -24,28 +25,52 @@ type Validator struct {
 	err            bool
 }
 
-// Validate returns the instantiated runtime format of the provideJSON.
-func (v *Validator) Validate(arg interface{}) (interface{}, error) {
-	return nil, fmt.Errorf("Not implemented")
-}
-
 // Buffer adds a string at the appropriate indent to the output buffer.
 func (v *Validator) Buffer(str string, indent int) {
 	line := fmt.Sprintf("%s%s", v.getIndent(indent), str)
-	v.Output = append(v.Output, line)
+	v.output = append(v.output, line)
 }
 
 // Size returns the length of the current output buffer.
 func (v *Validator) Size() int {
-	return len(v.Output)
+	return len(v.output)
 }
 
-// HasError begins wrapping an error portion of the output buffer.
+// HasError returns true if an error has been encountered.
+func (v *Validator) HasError() bool {
+	return v.err
+}
+
+// Error returns the error if there is one.
 func (v *Validator) Error() error {
 	if v.err {
-		return fmt.Errorf(strings.Join(v.Output, "\n"))
+		return fmt.Errorf(v.String())
 	}
 	return nil
+}
+
+// String returns the string in the output buffer.
+func (v *Validator) String() string {
+	length := len(v.output)
+	formatted := make([]string, length)
+	// add start and end of the JSON
+	formatted[0] = v.output[0]
+	formatted[length-1] = v.output[length-1]
+	// determine whether or not to append a comma on the end based on the next
+	// line in the output buffer
+	for i := length - 2; i > 0; i-- {
+		line := v.output[i]
+		next := v.output[i+1]
+		ending := line[len(line)-1]
+		nextEnding := next[len(next)-1]
+		if v.errLines[i] || ending == '[' || ending == '{' || nextEnding == '}' {
+			formatted[i] = line
+		} else {
+			formatted[i] = line + ","
+		}
+	}
+	// return the concatenated output
+	return strings.Join(formatted, "\n")
 }
 
 // StartError begins wrapping an error portion of the output buffer.
@@ -65,8 +90,14 @@ func (v *Validator) EndError() {
 	width := v.getErrWidth()
 	header := v.getErrHeader(width)
 	footer := v.getErrFooter(width)
-	v.Output[v.errHeaderIndex] = header
-	v.Output[v.errEndIndex] = footer
+	v.output[v.errHeaderIndex] = header
+	v.output[v.errEndIndex] = footer
+	// track which lines have errors
+	if v.errLines == nil {
+		v.errLines = make(map[int]bool)
+	}
+	v.errLines[v.errHeaderIndex] = true
+	v.errLines[v.errEndIndex] = true
 }
 
 func (v *Validator) getErrAnnotations(width int, char string) string {
@@ -78,26 +109,38 @@ func (v *Validator) getErrAnnotations(width int, char string) string {
 }
 
 func (v *Validator) getErrHeader(width int) string {
-	return fmt.Sprintf("%s%s%s%s",
-		redColor,
+	if color.ColorTerminal {
+		return fmt.Sprintf("%s%s%s%s",
+			color.Red,
+			v.getIndent(v.errIndent),
+			v.getErrAnnotations(width, "v"),
+			color.Reset)
+	}
+	return fmt.Sprintf("%s%s",
 		v.getIndent(v.errIndent),
-		v.getErrAnnotations(width, "v"),
-		defaultColor)
+		v.getErrAnnotations(width, "v"))
 }
 
 func (v *Validator) getErrFooter(width int) string {
-	return fmt.Sprintf("%s%s%s Error: %s%s",
-		redColor,
+	if color.ColorTerminal {
+		return fmt.Sprintf("%s%s%s Error: %s%s",
+			color.Red,
+			v.getIndent(v.errIndent),
+			v.getErrAnnotations(width, "^"),
+			v.errMsg,
+			color.Reset)
+	}
+	return fmt.Sprintf("%s%s Error: %s",
 		v.getIndent(v.errIndent),
 		v.getErrAnnotations(width, "^"),
-		v.errMsg,
-		defaultColor)
+		v.errMsg)
 }
 
 func (v *Validator) getErrWidth() int {
 	maxWidth := 1
+	indentLength := v.errIndent * len(indentor)
 	for i := v.errStartIndex; i < v.errEndIndex; i++ {
-		width := (len(v.Output[i]) - v.errIndent)
+		width := (len(v.output[i]) - indentLength)
 		if width > maxWidth {
 			maxWidth = width
 		}
@@ -113,7 +156,7 @@ func (v *Validator) getIndent(indent int) string {
 	return strings.Join(strs, "")
 }
 
-func (v *Validator) FormatVal(val interface{}) string {
+func (v *Validator) formatVal(val interface{}) string {
 	str, ok := val.(string)
 	if ok {
 		return fmt.Sprintf("\"%s\"", str)
@@ -122,7 +165,7 @@ func (v *Validator) FormatVal(val interface{}) string {
 	if ok {
 		vals := make([]string, len(arr))
 		for i, sub := range arr {
-			vals[i] = v.FormatVal(sub)
+			vals[i] = v.formatVal(sub)
 		}
 		return fmt.Sprintf("[ %s ]", strings.Join(vals, ", "))
 	}
@@ -163,7 +206,7 @@ func (v *Validator) bufferKeyValue(key string, val interface{}, indent int) {
 	if ok {
 		vals := make([]string, len(arr))
 		for i, sub := range arr {
-			vals[i] = v.FormatVal(sub)
+			vals[i] = v.formatVal(sub)
 		}
 		v.Buffer(fmt.Sprintf("[ %s ]", strings.Join(vals, ", ")), indent)
 		return
@@ -177,6 +220,7 @@ func (v *Validator) bufferKeyValue(key string, val interface{}, indent int) {
 			v.bufferKeyValue(subkey, subval, indent+1)
 		}
 		v.Buffer("}", indent)
+		return
 	}
 
 	// other

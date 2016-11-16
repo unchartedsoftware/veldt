@@ -3,12 +3,17 @@ package elastic
 import (
 	"gopkg.in/olivere/elastic.v3"
 
+	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/query"
 )
 
 // Range represents an elasticsearch range query.
 type Range struct {
 	query.Range
+}
+
+func NewRange() (prism.Query, error) {
+	return &Range{}, nil
 }
 
 // Apply adds the query to the tiling job.

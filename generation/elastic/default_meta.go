@@ -11,6 +11,67 @@ import (
 	jsonutil "github.com/unchartedsoftware/prism/util/json"
 )
 
+// DefaultMeta represents a meta data generator that produces default
+// metadata with property types and extrema.
+type DefaultMeta struct {
+	Host string
+	Port string
+}
+
+// NewDefaultMeta instantiates and returns a pointer to a new generator.
+func NewDefaultMeta(host string, port string) prism.MetaCtor {
+	return func() (prism.Meta, error) {
+		return &DefaultMeta{
+			Host: host,
+			Port: port,
+		}, nil
+	}
+}
+
+func (g *DefaultMeta) Parse(params map[string]interface{}) error {
+	return nil
+}
+
+// GetMeta returns the meta data for a given index.
+func (g *DefaultMeta) Create(uri string) ([]byte, error) {
+	client, err := NewClient(g.Host, g.Port)
+	if err != nil {
+		return nil, err
+	}
+	// get the raw mappings
+	mapping, err := client.GetMapping().Index(uri).Do()
+	if err != nil {
+		return nil, err
+	}
+	// get nested 'properties' attribute of mappings payload
+	// NOTE: If running a `mapping` query on an aliased index, the mapping
+	// response will be nested under the original index name. Since we are only
+	// getting the mapping of a single index at a time, we can simply get the
+	// 'first' and only node.
+	index, ok := jsonutil.GetRandomChild(mapping)
+	if !ok {
+		return nil, fmt.Errorf("Unable to retrieve the mappings response for %s",
+			uri)
+	}
+	// get mappings node
+	mappings, ok := jsonutil.GetChildMap(index, "mappings")
+	if !ok {
+		return nil, fmt.Errorf("Unable to parse `mappings` from mappings response for %s",
+			uri)
+	}
+	// for each type, parse the mapping
+	meta := make(map[string]interface{})
+	for key, typ := range mappings {
+		typeMeta, err := parseType(client, uri, typ)
+		if err != nil {
+			return nil, err
+		}
+		meta[key] = typeMeta
+	}
+	// return
+	return json.Marshal(meta)
+}
+
 // PropertyMeta represents the meta data for a single property.
 type PropertyMeta struct {
 	Type    string           `json:"type"`
@@ -144,65 +205,4 @@ func parseType(client *elastic.Client, index string, typ map[string]interface{})
 	}
 	// parse json mappings into the property map
 	return parseProperties(client, index, props)
-}
-
-// DefaultMeta represents a meta data generator that produces default
-// metadata with property types and extrema.
-type DefaultMeta struct {
-	Host string
-	Port string
-}
-
-// NewDefaultMeta instantiates and returns a pointer to a new generator.
-func NewDefaultMeta(host string, port string) prism.MetaCtor {
-	return func() (prism.Meta, error) {
-		return &DefaultMeta{
-			Host: host,
-			Port: port,
-		}, nil
-	}
-}
-
-func (g *DefaultMeta) Parse(params map[string]interface{}) error {
-	return nil
-}
-
-// GetMeta returns the meta data for a given index.
-func (g *DefaultMeta) Create(uri string) ([]byte, error) {
-	client, err := NewClient(g.Host, g.Port)
-	if err != nil {
-		return nil, err
-	}
-	// get the raw mappings
-	mapping, err := client.GetMapping().Index(uri).Do()
-	if err != nil {
-		return nil, err
-	}
-	// get nested 'properties' attribute of mappings payload
-	// NOTE: If running a `mapping` query on an aliased index, the mapping
-	// response will be nested under the original index name. Since we are only
-	// getting the mapping of a single index at a time, we can simply get the
-	// 'first' and only node.
-	index, ok := jsonutil.GetRandomChild(mapping)
-	if !ok {
-		return nil, fmt.Errorf("Unable to retrieve the mappings response for %s",
-			uri)
-	}
-	// get mappings node
-	mappings, ok := jsonutil.GetChildMap(index, "mappings")
-	if !ok {
-		return nil, fmt.Errorf("Unable to parse `mappings` from mappings response for %s",
-			uri)
-	}
-	// for each type, parse the mapping
-	meta := make(map[string]interface{})
-	for key, typ := range mappings {
-		typeMeta, err := parseType(client, uri, typ)
-		if err != nil {
-			return nil, err
-		}
-		meta[key] = typeMeta
-	}
-	// return
-	return json.Marshal(meta)
 }

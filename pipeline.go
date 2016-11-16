@@ -115,7 +115,11 @@ func (p *Pipeline) GetStore() (Store, error) {
 
 func (p *Pipeline) NewTileRequest(args map[string]interface{}) (*TileRequest, error) {
 	validator := NewValidator(p)
-	return validator.ValidateTileRequest(args)
+	req, err := validator.ValidateTileRequest(args)
+	if err != nil {
+		return nil, fmt.Errorf("invalid tile request:\n%s", err)
+	}
+	return req, nil
 }
 
 func (p *Pipeline) GenerateTile(req *TileRequest) error {
@@ -199,7 +203,11 @@ func (p *Pipeline) getTileHash(req *TileRequest) string {
 
 func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, error) {
 	validator := NewValidator(p)
-	return validator.ValidateMetaRequest(args)
+	req, err := validator.ValidateMetaRequest(args)
+	if err != nil {
+		return nil, fmt.Errorf("invalid meta request:\n%s", err)
+	}
+	return req, nil
 }
 
 func (p *Pipeline) GenerateMeta(req *MetaRequest) error {
