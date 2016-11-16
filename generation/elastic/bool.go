@@ -5,12 +5,12 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/query"
+	"github.com/unchartedsoftware/prism"
 )
 
 // BinaryExpression represents an must / should boolean query.
 type BinaryExpression struct {
-	query.BinaryExpression
+	prism.BinaryExpression
 }
 
 // Apply adds the query to the tiling job.
@@ -36,11 +36,11 @@ func (e *BinaryExpression) Get() (elastic.Query, error) {
 
 	res := elastic.NewBoolQuery()
 	switch e.Op {
-	case query.And:
+	case prism.And:
 		// AND
 		res.Must(a)
 		res.Must(b)
-	case query.Or:
+	case prism.Or:
 		// OR
 		res.Should(a)
 		res.Should(b)
@@ -52,7 +52,7 @@ func (e *BinaryExpression) Get() (elastic.Query, error) {
 
 // UnaryExpression represents a must_not boolean query.
 type UnaryExpression struct {
-	query.UnaryExpression
+	prism.UnaryExpression
 }
 
 // Apply adds the query to the tiling job.
@@ -70,7 +70,7 @@ func (e *UnaryExpression) Get() (elastic.Query, error) {
 
 	res := elastic.NewBoolQuery()
 	switch e.Op {
-	case query.Not:
+	case prism.Not:
 		// NOT
 		res.MustNot(a)
 	default:

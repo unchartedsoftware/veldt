@@ -1,9 +1,7 @@
-package query
+package prism
 
 import (
 	"fmt"
-
-	"github.com/unchartedsoftware/prism"
 )
 
 const (
@@ -34,9 +32,9 @@ func IsUnaryOperator(op string) bool {
 
 // BinaryExpression represents a binary boolean expression.
 type BinaryExpression struct {
-	Left  prism.Query
+	Left  Query
 	Op    string
-	Right prism.Query
+	Right Query
 }
 
 func (q *BinaryExpression) Parse(params map[string]interface{}) error {
@@ -45,7 +43,7 @@ func (q *BinaryExpression) Parse(params map[string]interface{}) error {
 
 // UnaryExpression represents a unary boolean expression.
 type UnaryExpression struct {
-	Query prism.Query
+	Query Query
 	Op    string
 }
 

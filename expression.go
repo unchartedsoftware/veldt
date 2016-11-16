@@ -1,37 +1,23 @@
-package query
+package prism
 
 import (
 	"fmt"
-
-	"github.com/unchartedsoftware/prism"
 )
 
-// Parse parses the query payload into the query AST.
-func Parse(arg interface{}) (prism.Query, error) {
-	// validate the JSON into ot's runtime query components
-	validator := NewValidator()
-	token, err := validator.Validate(arg)
-	if err != nil {
-		return nil, err
-	}
+func parseQueryExpression(arg interface{}) (Query, error) {
 	// parse into correct AST
-	return parseToken(token)
+	return parseToken(arg)
 }
 
-func parseExpression(args []interface{}) (prism.Query, error) {
-	exp := newExpression(args)
-	return exp.parse()
-}
-
-func parseToken(token interface{}) (prism.Query, error) {
+func parseToken(token interface{}) (Query, error) {
 	// check if token is an expression
 	exp, ok := token.([]interface{})
 	if ok {
 		// is expression, recursively parse it
-		return parseExpression(exp)
+		return newExpression(exp).parse()
 	}
 	// is query, parse it directly
-	query, ok := token.(prism.Query)
+	query, ok := token.(Query)
 	if !ok {
 		return nil, fmt.Errorf("`%v` token is unrecognized", token)
 	}
@@ -58,7 +44,7 @@ func (e *expression) pop() (interface{}, error) {
 	return token, nil
 }
 
-func (e *expression) popOperand() (prism.Query, error) {
+func (e *expression) popOperand() (Query, error) {
 	// pops the next operand
 	//     cases to consider:
 	//         - a) unary operator -> expression
@@ -117,64 +103,11 @@ func (e *expression) advance() error {
 	return nil
 }
 
-func precedence(arg interface{}) int {
-	op, _ := toOperator(arg)
-	switch op {
-	case And:
-		return 2
-	case Or:
-		return 1
-	case Not:
-		return 3
-	}
-	return 0
-}
-
-func toOperator(arg interface{}) (string, error) {
-	op, ok := arg.(string)
-	if !ok {
-		return "", fmt.Errorf("`%v` operator is not of type string", arg)
-	}
-	return op, nil
-}
-
-func isBinaryOperator(arg interface{}) (bool, error) {
-	op, ok := arg.(string)
-	if !ok {
-		return false, nil
-	}
-	switch op {
-	case And:
-		return true, nil
-	case Or:
-		return true, nil
-	case Not:
-		return false, nil
-	}
-	return false, fmt.Errorf("`%v` operator not recognized", op)
-}
-
-func isUnaryOperator(arg interface{}) (bool, error) {
-	op, ok := arg.(string)
-	if !ok {
-		return false, nil
-	}
-	switch op {
-	case Not:
-		return true, nil
-	case And:
-		return false, nil
-	case Or:
-		return false, nil
-	}
-	return false, fmt.Errorf("`%v` operator not recognized", op)
-}
-
-func (e *expression) parseExpressionR(lhs prism.Query, min int) (prism.Query, error) {
+func (e *expression) parseExpressionR(lhs Query, min int) (Query, error) {
 
 	var err error
 	var op string
-	var rhs prism.Query
+	var rhs Query
 	var lookahead interface{}
 	var isBinary, isUnary bool
 
@@ -231,7 +164,7 @@ func (e *expression) parseExpressionR(lhs prism.Query, min int) (prism.Query, er
 	return lhs, nil
 }
 
-func (e *expression) parse() (prism.Query, error) {
+func (e *expression) parse() (Query, error) {
 	lhs, err := e.popOperand()
 	if err != nil {
 		return nil, err
@@ -241,4 +174,57 @@ func (e *expression) parse() (prism.Query, error) {
 		return nil, err
 	}
 	return query, nil
+}
+
+func precedence(arg interface{}) int {
+	op, _ := toOperator(arg)
+	switch op {
+	case And:
+		return 2
+	case Or:
+		return 1
+	case Not:
+		return 3
+	}
+	return 0
+}
+
+func toOperator(arg interface{}) (string, error) {
+	op, ok := arg.(string)
+	if !ok {
+		return "", fmt.Errorf("`%v` operator is not of type string", arg)
+	}
+	return op, nil
+}
+
+func isBinaryOperator(arg interface{}) (bool, error) {
+	op, ok := arg.(string)
+	if !ok {
+		return false, nil
+	}
+	switch op {
+	case And:
+		return true, nil
+	case Or:
+		return true, nil
+	case Not:
+		return false, nil
+	}
+	return false, fmt.Errorf("`%v` operator not recognized", op)
+}
+
+func isUnaryOperator(arg interface{}) (bool, error) {
+	op, ok := arg.(string)
+	if !ok {
+		return false, nil
+	}
+	switch op {
+	case Not:
+		return true, nil
+	case And:
+		return false, nil
+	case Or:
+		return false, nil
+	}
+	return false, fmt.Errorf("`%v` operator not recognized", op)
 }

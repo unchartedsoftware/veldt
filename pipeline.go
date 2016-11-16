@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/util/promise"
 )
 
@@ -41,27 +40,6 @@ func (p *Pipeline) SetMaxConcurrent(max int) {
 // SetQueueLength sets the queue length for tiles to hold in the queue.
 func (p *Pipeline) SetQueueLength(length int) {
 	p.queue.setQueueLength(length)
-}
-
-func (p *Pipeline) getIDAndParams(val interface{}) (string, map[string]interface{}, bool) {
-	params, ok := val.(map[string]interface{})
-	if !ok {
-		return "", nil, false
-	}
-	var key string
-	var value map[string]interface{}
-	found := false
-	for k, v := range params {
-		val, ok := v.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		key = k
-		value = val
-		found = true
-		break
-	}
-	return key, value, found
 }
 
 func (p *Pipeline) Query(id string, ctor QueryCtor) {
@@ -136,100 +114,8 @@ func (p *Pipeline) GetStore() (Store, error) {
 }
 
 func (p *Pipeline) NewTileRequest(args map[string]interface{}) (*TileRequest, error) {
-	uri, err := p.parseURI(args)
-	if err != nil {
-		return nil, err
-	}
-	coord, err := p.parseTileCoord(args)
-	if err != nil {
-		return nil, err
-	}
-	query, err := p.parseQuery(args)
-	if err != nil {
-		return nil, err
-	}
-	tile, err := p.parseTile(args)
-	if err != nil {
-		return nil, err
-	}
-	return &TileRequest{
-		URI:   uri,
-		Coord: coord,
-		Query: query,
-		Tile:  tile,
-	}, nil
-}
-
-func (p *Pipeline) parseURI(args map[string]interface{}) (string, error) {
-	val, ok := args["uri"]
-	uri, ok := val.(string)
-	if !ok {
-		return "", fmt.Errorf("uri was not found in request JSON")
-	}
-	return uri, nil
-}
-
-func (p *Pipeline) parseTileCoord(args map[string]interface{}) (*binning.TileCoord, error) {
-	c, ok := args["coord"]
-	coord, ok := c.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("tile coord was not found in request JSON")
-	}
-	ix, ok := coord["x"]
-	if !ok {
-		return nil, fmt.Errorf("tile coord X component was not found in request JSON")
-	}
-	x, ok := ix.(float64)
-	if !ok {
-		return nil, fmt.Errorf("tile coord X component in request JSON is not a numerical type")
-	}
-	iy, ok := coord["y"]
-	if !ok {
-		return nil, fmt.Errorf("tile coord Y component was not found in request JSON")
-	}
-	y, ok := iy.(float64)
-	if !ok {
-		return nil, fmt.Errorf("tile coord Y component in request JSON is not a numerical type")
-	}
-	iz, ok := coord["z"]
-	if !ok {
-		return nil, fmt.Errorf("tile coord Z component was not found in request JSON")
-	}
-	z, ok := iz.(float64)
-	if !ok {
-		return nil, fmt.Errorf("tile coord Z component in request JSON is not a numerical type")
-	}
-	return &binning.TileCoord{
-		X: uint32(x),
-		Y: uint32(y),
-		Z: uint32(z),
-	}, nil
-}
-
-func (p *Pipeline) parseQuery(args map[string]interface{}) (Query, error) {
-	val, ok := args["query"]
-	if !ok {
-		return nil, nil
-	}
-	// TODO: properly validate query
-	id, params, ok := p.getIDAndParams(val)
-	if !ok {
-		return nil, fmt.Errorf("Could not parse tile")
-	}
-	return p.GetQuery(id, params)
-}
-
-func (p *Pipeline) parseTile(args map[string]interface{}) (Tile, error) {
-	val, ok := args["tile"]
-	if !ok {
-		return nil, nil
-	}
-	// TODO: properly validate tile
-	id, params, ok := p.getIDAndParams(val)
-	if !ok {
-		return nil, fmt.Errorf("Could not parse tile")
-	}
-	return p.GetTile(id, params)
+	validator := NewValidator(p)
+	return validator.ValidateTileRequest(args)
 }
 
 func (p *Pipeline) GenerateTile(req *TileRequest) error {
@@ -312,18 +198,8 @@ func (p *Pipeline) getTileHash(req *TileRequest) string {
 }
 
 func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, error) {
-	uri, err := p.parseURI(args)
-	if err != nil {
-		return nil, err
-	}
-	meta, err := p.parseMeta(args)
-	if err != nil {
-		return nil, err
-	}
-	return &MetaRequest{
-		URI:  uri,
-		Meta: meta,
-	}, nil
+	validator := NewValidator(p)
+	return validator.ValidateMetaRequest(args)
 }
 
 func (p *Pipeline) GenerateMeta(req *MetaRequest) error {
@@ -363,19 +239,6 @@ func (p *Pipeline) GetMetaFromStore(req *MetaRequest) ([]byte, error) {
 		return nil, err
 	}
 	return p.decompress(res[0:])
-}
-
-func (p *Pipeline) parseMeta(args map[string]interface{}) (Meta, error) {
-	val, ok := args["meta"]
-	if !ok {
-		return nil, nil
-	}
-	// TODO: properly validate tile
-	id, params, ok := p.getIDAndParams(val)
-	if !ok {
-		return nil, fmt.Errorf("Could not parse meta")
-	}
-	return p.GetMeta(id, params)
 }
 
 func (p *Pipeline) getMetaPromise(hash string, req *MetaRequest) error {

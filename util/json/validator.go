@@ -112,3 +112,86 @@ func (v *Validator) getIndent(indent int) string {
 	}
 	return strings.Join(strs, "")
 }
+
+func (v *Validator) FormatVal(val interface{}) string {
+	str, ok := val.(string)
+	if ok {
+		return fmt.Sprintf("\"%s\"", str)
+	}
+	arr, ok := val.([]interface{})
+	if ok {
+		vals := make([]string, len(arr))
+		for i, sub := range arr {
+			vals[i] = v.FormatVal(sub)
+		}
+		return fmt.Sprintf("[ %s ]", strings.Join(vals, ", "))
+	}
+	return fmt.Sprintf("%v", val)
+}
+
+func (v *Validator) GetIDAndParams(args map[string]interface{}) (string, map[string]interface{}, error) {
+	var key string
+	var value map[string]interface{}
+	found := false
+	for k, v := range args {
+		val, ok := v.(map[string]interface{})
+		if !ok {
+			return k, nil, fmt.Errorf("`%v` does not contain any attributes", k)
+		}
+		key = k
+		value = val
+		found = true
+		break
+	}
+	if !found {
+		return "", nil, fmt.Errorf("no id found")
+	}
+	return key, value, nil
+}
+
+func (v *Validator) bufferKeyValue(key string, val interface{}, indent int) {
+	// string
+	str, ok := val.(string)
+	if ok {
+		v.Buffer(fmt.Sprintf("\"%s\": %s", key, str), indent)
+		return
+	}
+
+	// array
+	// TODO: split this into multiline
+	arr, ok := val.([]interface{})
+	if ok {
+		vals := make([]string, len(arr))
+		for i, sub := range arr {
+			vals[i] = v.FormatVal(sub)
+		}
+		v.Buffer(fmt.Sprintf("[ %s ]", strings.Join(vals, ", ")), indent)
+		return
+	}
+
+	// obj
+	obj, ok := val.(map[string]interface{})
+	if ok {
+		v.Buffer(fmt.Sprintf("\"%s\": {", key), indent)
+		for subkey, subval := range obj {
+			v.bufferKeyValue(subkey, subval, indent+1)
+		}
+		v.Buffer("}", indent)
+	}
+
+	// other
+	v.Buffer(fmt.Sprintf("\"%s\": %v", key, val), indent)
+}
+
+func (v *Validator) BufferKeyValue(key string, val interface{}, indent int, err error) {
+	// if error, start
+	if err != nil {
+		v.StartError(fmt.Sprintf("%v", err), indent)
+	}
+	// buffer key / val
+	v.bufferKeyValue(key, val, indent)
+	// if error, end
+	if err != nil {
+		v.EndError()
+	}
+}
