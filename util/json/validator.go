@@ -59,11 +59,31 @@ func (v *Validator) String() string {
 	// determine whether or not to append a comma on the end based on the next
 	// line in the output buffer
 	for i := length - 2; i > 0; i-- {
+		// skip any error annotation lines
+		if v.errLines[i] {
+			formatted[i] = v.output[i]
+			continue
+		}
+		// get the line
 		line := v.output[i]
-		next := v.output[i+1]
+		// get the next line that isn't an error
+		j := i + 1
+		for {
+			// until the next line that isn't an error
+			if v.errLines[j] {
+				j++
+				continue
+			}
+			break
+		}
+		if j > length-1 {
+			// no more lines, this means the output is malformed
+			break
+		}
+		next := v.output[j]
 		ending := line[len(line)-1]
 		nextEnding := next[len(next)-1]
-		if v.errLines[i] || ending == '[' || ending == '{' || nextEnding == '}' {
+		if ending == '[' || ending == '{' || nextEnding == '}' || nextEnding == ']' {
 			formatted[i] = line
 		} else {
 			formatted[i] = line + ","
@@ -172,24 +192,11 @@ func (v *Validator) formatVal(val interface{}) string {
 	return fmt.Sprintf("%v", val)
 }
 
-func (v *Validator) GetIDAndParams(args map[string]interface{}) (string, map[string]interface{}, error) {
-	var key string
-	var value map[string]interface{}
-	found := false
+func (v *Validator) GetIDAndParams(args map[string]interface{}) (string, interface{}, error) {
 	for k, v := range args {
-		val, ok := v.(map[string]interface{})
-		if !ok {
-			return k, nil, fmt.Errorf("`%v` does not contain any attributes", k)
-		}
-		key = k
-		value = val
-		found = true
-		break
+		return k, v, nil
 	}
-	if !found {
-		return "", nil, fmt.Errorf("no id found")
-	}
-	return key, value, nil
+	return "", nil, fmt.Errorf("no id found")
 }
 
 func (v *Validator) bufferKeyValue(key string, val interface{}, indent int) {

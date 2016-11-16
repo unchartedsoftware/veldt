@@ -76,7 +76,7 @@ func (v *Validator) ValidateMetaRequest(args map[string]interface{}) (*MetaReque
 	return req, nil
 }
 
-// parses the tile request JSON for the provided URI.
+// Parses the tile request JSON for the provided URI.
 //
 // Ex:
 //     {
@@ -101,7 +101,7 @@ func (v *Validator) validateURI(args map[string]interface{}, indent int) string 
 	return uri
 }
 
-// parses the tile request JSON for the provided tile coordinate.
+// Parses the tile request JSON for the provided tile coordinate.
 //
 // Ex:
 //     {
@@ -162,7 +162,7 @@ func (v *Validator) validateCoord(args map[string]interface{}, indent int) *binn
 	return coord
 }
 
-// parses the tile request JSON for the provided tile coordinate.
+// Parses the tile request JSON for the provided tile type and parameters.
 //
 // Ex:
 //     {
@@ -180,17 +180,9 @@ func (v *Validator) validateCoord(args map[string]interface{}, indent int) *binn
 //     }
 //
 func (v *Validator) parseTile(args map[string]interface{}) (string, interface{}, Tile, error) {
-	arg, ok := args["tile"]
-	if !ok {
-		return "", nil, nil, fmt.Errorf("`tile` not found")
-	}
-	val, ok := arg.(map[string]interface{})
-	if !ok {
-		return "", arg, nil, fmt.Errorf("`tile` is not of correct type")
-	}
-	id, params, err := v.GetIDAndParams(val)
+	id, params, err := v.GetIDAndParams(args)
 	if err != nil {
-		return id, params, nil, fmt.Errorf("unable to parse `tile` parameters")
+		return id, params, nil, err
 	}
 	tile, err := v.pipeline.GetTile(id, params)
 	if err != nil {
@@ -200,16 +192,33 @@ func (v *Validator) parseTile(args map[string]interface{}) (string, interface{},
 }
 
 func (v *Validator) validateTile(args map[string]interface{}, indent int) Tile {
-	_, params, tile, err := v.parseTile(args)
-	if params != nil {
-		v.BufferKeyValue("tile", params, indent, err)
-	} else {
-		v.BufferKeyValue("tile", missing, indent, err)
+	// check if the tile key exists
+	arg, ok := args["tile"]
+	if !ok {
+		v.BufferKeyValue("tile", missing, indent, fmt.Errorf("`tile` not found"))
+		return nil
 	}
+
+	// check if the tile value is an object
+	val, ok := arg.(map[string]interface{})
+	if !ok {
+		v.BufferKeyValue("tile", arg, indent, fmt.Errorf("`tile` is not of correct type"))
+		return nil
+	}
+
+	// check if tile is correct
+	v.Buffer("\"tile\": {", indent)
+	id, params, tile, err := v.parseTile(val)
+	if id == "" {
+		id = missing
+		params = missing
+	}
+	v.BufferKeyValue(id, params, indent+1, err)
+	v.Buffer("}", indent)
 	return tile
 }
 
-// parses the meta request JSON for the provided tile coordinate.
+// Parses the meta request JSON for the provided meta type and parameters.
 //
 // Ex:
 //     {
@@ -219,32 +228,41 @@ func (v *Validator) validateTile(args map[string]interface{}, indent int) Tile {
 //     }
 //
 func (v *Validator) parseMeta(args map[string]interface{}) (string, interface{}, Meta, error) {
-	arg, ok := args["meta"]
-	if !ok {
-		return "", nil, nil, fmt.Errorf("`meta` not found")
-	}
-	val, ok := arg.(map[string]interface{})
-	if !ok {
-		return "", arg, nil, fmt.Errorf("`meta` is not of correct type")
-	}
-	id, params, err := v.GetIDAndParams(val)
-	if err != nil {
-		return id, params, nil, fmt.Errorf("unable to parse `meta` parameters")
-	}
-	meta, err := v.pipeline.GetMeta(id, params)
+	id, params, err := v.GetIDAndParams(args)
 	if err != nil {
 		return id, params, nil, err
 	}
-	return id, params, meta, nil
+	tile, err := v.pipeline.GetMeta(id, params)
+	if err != nil {
+		return id, params, nil, err
+	}
+	return id, params, tile, nil
 }
 
 func (v *Validator) validateMeta(args map[string]interface{}, indent int) Meta {
-	_, params, meta, err := v.parseMeta(args)
-	if params != nil {
-		v.BufferKeyValue("meta", params, indent, err)
-	} else {
-		v.BufferKeyValue("meta", missing, indent, err)
+	// check if the meta key exists
+	arg, ok := args["meta"]
+	if !ok {
+		v.BufferKeyValue("meta", missing, indent, fmt.Errorf("`meta` not found"))
+		return nil
 	}
+
+	// check if the meta value is an object
+	val, ok := arg.(map[string]interface{})
+	if !ok {
+		v.BufferKeyValue("meta", arg, indent, fmt.Errorf("`meta` is not of correct type"))
+		return nil
+	}
+
+	// check if meta is correct
+	v.Buffer("\"meta\": {", indent)
+	id, params, meta, err := v.parseMeta(val)
+	if id == "" {
+		id = missing
+		params = missing
+	}
+	v.BufferKeyValue(id, params, indent+1, err)
+	v.Buffer("}", indent)
 	return meta
 }
 
@@ -253,7 +271,11 @@ func (v *Validator) validateQuery(args map[string]interface{}, indent int) Query
 	if !ok {
 		return nil
 	}
-	validated := v.validateToken(val, indent+1)
+	v.Buffer("{", indent)
+	v.Buffer("query: ", indent+1)
+	validated := v.validateToken(val, indent+2)
+	v.Buffer("}", indent+1)
+	v.Buffer("}", indent)
 	query, err := parseQueryExpression(validated)
 	if err != nil {
 		return nil
@@ -261,7 +283,7 @@ func (v *Validator) validateQuery(args map[string]interface{}, indent int) Query
 	return query
 }
 
-// parses the query request JSON for the provided tile coordinate.
+// Parses the query request JSON for the provided query expression.
 //
 // Ex:
 //     {
@@ -271,10 +293,10 @@ func (v *Validator) validateQuery(args map[string]interface{}, indent int) Query
 //         }
 //     }
 //
-func (v *Validator) parseQuery(args map[string]interface{}) (string, map[string]interface{}, Query, error) {
+func (v *Validator) parseQuery(args map[string]interface{}) (string, interface{}, Query, error) {
 	id, params, err := v.GetIDAndParams(args)
 	if err != nil {
-		return id, params, nil, fmt.Errorf("unable to parse `query` parameters")
+		return id, params, nil, err
 	}
 	query, err := v.pipeline.GetQuery(id, params)
 	if err != nil {

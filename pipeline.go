@@ -58,10 +58,14 @@ func (p *Pipeline) Store(ctor StoreCtor) {
 	p.store = ctor
 }
 
-func (p *Pipeline) GetQuery(id string, params map[string]interface{}) (Query, error) {
+func (p *Pipeline) GetQuery(id string, args interface{}) (Query, error) {
+	params, ok := args.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("`%s` is not of correct type", id)
+	}
 	ctor, ok := p.queries[id]
 	if !ok {
-		return nil, fmt.Errorf("Unrecognized query type `%v`", id)
+		return nil, fmt.Errorf("unrecognized query type `%v`", id)
 	}
 	query, err := ctor()
 	if err != nil {
@@ -74,10 +78,14 @@ func (p *Pipeline) GetQuery(id string, params map[string]interface{}) (Query, er
 	return query, nil
 }
 
-func (p *Pipeline) GetTile(id string, params map[string]interface{}) (Tile, error) {
+func (p *Pipeline) GetTile(id string, args interface{}) (Tile, error) {
+	params, ok := args.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("`%s` is not of correct type", id)
+	}
 	ctor, ok := p.tiles[id]
 	if !ok {
-		return nil, fmt.Errorf("Unrecognized tile type `%v`", id)
+		return nil, fmt.Errorf("unrecognized tile type `%v`", id)
 	}
 	tile, err := ctor()
 	if err != nil {
@@ -90,10 +98,14 @@ func (p *Pipeline) GetTile(id string, params map[string]interface{}) (Tile, erro
 	return tile, nil
 }
 
-func (p *Pipeline) GetMeta(id string, params map[string]interface{}) (Meta, error) {
+func (p *Pipeline) GetMeta(id string, args interface{}) (Meta, error) {
+	params, ok := args.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("`%s` is not of correct type", id)
+	}
 	ctor, ok := p.metas[id]
 	if !ok {
-		return nil, fmt.Errorf("Unrecognized meta type `%v`", id)
+		return nil, fmt.Errorf("unrecognized meta type `%v`", id)
 	}
 	meta, err := ctor()
 	if err != nil {
@@ -108,7 +120,7 @@ func (p *Pipeline) GetMeta(id string, params map[string]interface{}) (Meta, erro
 
 func (p *Pipeline) GetStore() (Store, error) {
 	if p.store == nil {
-		return nil, fmt.Errorf("No store has been provided")
+		return nil, fmt.Errorf("no store has been provided")
 	}
 	return p.store()
 }
