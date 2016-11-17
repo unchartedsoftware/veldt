@@ -3,12 +3,17 @@ package citus
 import (
 	"fmt"
 
+	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/query"
 )
 
 // Equals represents an = query.
 type Equals struct {
 	query.Equals
+}
+
+func NewEquals() (prism.Query, error) {
+	return &Equals{}, nil
 }
 
 // Get adds the parameters to the query and returns the string representation.

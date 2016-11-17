@@ -3,12 +3,17 @@ package citus
 import (
 	"fmt"
 
+	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/query"
 )
 
-// Has represents an cituss query on an array.
+// Has represents an citus query on an array.
 type Has struct {
 	query.Has
+}
+
+func NewHas() (prism.Query, error) {
+	return &Has{}, nil
 }
 
 // Get adds the parameters to the query and returns the string representation.

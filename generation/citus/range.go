@@ -3,12 +3,17 @@ package citus
 import (
 	"fmt"
 
+	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/query"
 )
 
 // Range represents a citus range query.
 type Range struct {
 	query.Range
+}
+
+func NewRange() (prism.Query, error) {
+	return &Range{}, nil
 }
 
 // Get adds the parameters to the query and returns the string representation.
