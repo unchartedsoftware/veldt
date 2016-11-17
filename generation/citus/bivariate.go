@@ -13,10 +13,9 @@ import (
 // Bivariate represents a bivariate tile generator.
 type Bivariate struct {
 	tile.Bivariate
-    Bounds  *binning.Bounds
-	BinSizeX   float64
-	BinSizeY   float64
-
+	Bounds   *binning.Bounds
+	BinSizeX float64
+	BinSizeY float64
 }
 
 func (b *Bivariate) GetQuery(coord *binning.TileCoord, query *Query) *Query {
@@ -36,14 +35,14 @@ func (b *Bivariate) GetQuery(coord *binning.TileCoord, query *Query) *Query {
 	maxX := math.Max(bounds.TopLeft.X, bounds.BottomRight.X)
 	minY := math.Min(bounds.TopLeft.Y, bounds.BottomRight.Y)
 	maxY := math.Max(bounds.TopLeft.Y, bounds.BottomRight.Y)
-    b.Bounds = bounds
+	b.Bounds = bounds
 
-    minXArg := query.AddParameter(minX)
+	minXArg := query.AddParameter(minX)
 	maxXArg := query.AddParameter(maxX)
 	rangeQueryX := fmt.Sprintf("%s >= %s and %s < %s", b.XField, minXArg, b.XField, maxXArg)
 	query.AddWhereClause(rangeQueryX)
 
-    minYArg := query.AddParameter(minY)
+	minYArg := query.AddParameter(minY)
 	maxYArg := query.AddParameter(maxY)
 	rangeQueryY := fmt.Sprintf("%s >= %s and %s < %s", b.YField, minYArg, b.YField, maxYArg)
 	query.AddWhereClause(rangeQueryY)
@@ -70,17 +69,17 @@ func (b *Bivariate) GetAgg(coord *binning.TileCoord, query *Query) *Query {
 	yRange := math.Abs(bounds.BottomRight.Y - bounds.TopLeft.Y)
 	intervalX := int64(math.Max(1, xRange/float64(b.Resolution)))
 	intervalY := int64(math.Max(1, yRange/float64(b.Resolution)))
-    b.Bounds = bounds
-    b.BinSizeX = xRange / float64(b.Resolution)
+	b.Bounds = bounds
+	b.BinSizeX = xRange / float64(b.Resolution)
 	b.BinSizeY = yRange / float64(b.Resolution)
 
-    minXArg := query.AddParameter(minX)
+	minXArg := query.AddParameter(minX)
 	intervalXArg := query.AddParameter(intervalX)
 	queryString := fmt.Sprintf("((%s - %s) / %s * %s)", b.XField, minXArg, intervalXArg, intervalXArg)
 	query.AddGroupByClause(queryString)
 	query.AddField(fmt.Sprintf("%s + %s as x", minXArg, queryString))
 
-    minYArg := query.AddParameter(minY)
+	minYArg := query.AddParameter(minY)
 	intervalYArg := query.AddParameter(intervalY)
 	queryString = fmt.Sprintf("((%s - %s) / %s * %s)", b.YField, minYArg, intervalYArg, intervalYArg)
 	query.AddGroupByClause(queryString)
@@ -126,7 +125,7 @@ func (b *Bivariate) GetYBin(y int64) int64 {
 
 // GetBins parses the resulting histograms into bins.
 func (b *Bivariate) GetBins(rows *pgx.Rows) ([]float64, error) {
-    // allocate bins buffer
+	// allocate bins buffer
 	bins := make([]float64, b.Resolution*b.Resolution)
 	// fill bins buffer
 	for rows.Next() {
@@ -146,5 +145,5 @@ func (b *Bivariate) GetBins(rows *pgx.Rows) ([]float64, error) {
 		bins[index] += value
 	}
 
-    return bins, nil
+	return bins, nil
 }

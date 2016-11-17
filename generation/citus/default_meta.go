@@ -2,8 +2,8 @@ package citus
 
 import (
 	"encoding/json"
-	"fmt"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -137,7 +137,7 @@ func (g *DefaultMeta) Parse(params map[string]interface{}) error {
 
 func (g *DefaultMeta) Create(uri string) ([]byte, error) {
 	client, err := NewClient(g.Host, g.Port)
-    if err != nil {
+	if err != nil {
 		return nil, err
 	}
 
