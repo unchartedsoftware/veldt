@@ -20,7 +20,7 @@ type Range struct {
 func (q *Range) Parse(params map[string]interface{}) error {
 	field, ok := json.GetString(params, "field")
 	if !ok {
-		return fmt.Errorf("`field` parameter missing from query params")
+		return fmt.Errorf("`field` parameter missing from query")
 	}
 	gte, gteOk := json.Get(params, "gte")
 	gt, gtOk := json.Get(params, "gt")

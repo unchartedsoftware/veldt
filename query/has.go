@@ -17,11 +17,11 @@ type Has struct {
 func (q *Has) Parse(params map[string]interface{}) error {
 	field, ok := json.GetString(params, "field")
 	if !ok {
-		return fmt.Errorf("`field` parameter missing from query params")
+		return fmt.Errorf("`field` parameter missing from query")
 	}
 	values, ok := json.GetArray(params, "values")
 	if !ok {
-		return fmt.Errorf("`values` parameter missing from query params")
+		return fmt.Errorf("`values` parameter missing from query")
 	}
 	q.Field = field
 	q.Values = values

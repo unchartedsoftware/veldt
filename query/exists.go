@@ -15,7 +15,7 @@ type Exists struct {
 func (q *Exists) Parse(params map[string]interface{}) error {
 	field, ok := json.GetString(params, "field")
 	if !ok {
-		return fmt.Errorf("`field` parameter missing from query params")
+		return fmt.Errorf("`field` parameter missing from query")
 	}
 	q.Field = field
 	return nil
