@@ -272,15 +272,15 @@ func (v *Validator) validateQuery(args map[string]interface{}, indent int) Query
 		return nil
 	}
 	v.Buffer("{", indent)
-	v.Buffer("query: ", indent+1)
-	validated := v.validateToken(val, indent+2)
-	v.Buffer("}", indent+1)
+	/*validated := */ v.validateToken(val, indent+1, true)
 	v.Buffer("}", indent)
-	query, err := parseQueryExpression(validated)
-	if err != nil {
-		return nil
-	}
-	return query
+	// parse the expression
+	return nil
+	// query, err := newExpressionParser(v.pipeline).Parse(validated)
+	// if err != nil {
+	// 	return nil
+	// }
+	// return query
 }
 
 // Parses the query request JSON for the provided query expression.
@@ -305,9 +305,19 @@ func (v *Validator) parseQuery(args map[string]interface{}) (string, interface{}
 	return id, params, query, nil
 }
 
-func (v *Validator) validateQueryToken(args map[string]interface{}, indent int) Query {
+func (v *Validator) validateQueryToken(args map[string]interface{}, indent int, first bool) Query {
 	id, params, query, err := v.parseQuery(args)
-	v.BufferKeyValue(id, params, indent, err)
+	if id == "" {
+		id = missing
+		params = missing
+	}
+	if first {
+		v.Buffer("\"query\": {", indent)
+		v.BufferKeyValue(id, params, indent+1, err)
+		v.Buffer("}", indent)
+	} else {
+		v.BufferKeyValue(id, params, indent, err)
+	}
 	return query
 }
 
@@ -322,9 +332,13 @@ func (v *Validator) validateOperatorToken(op string, indent int) interface{} {
 	return op
 }
 
-func (v *Validator) validateExpressionToken(exp []interface{}, indent int) interface{} {
+func (v *Validator) validateExpressionToken(exp []interface{}, indent int, first bool) interface{} {
 	// open paren
-	v.Buffer("[", indent)
+	if first {
+		v.Buffer("\"query\": [", indent)
+	} else {
+		v.Buffer("[", indent)
+	}
 	// track last token to ensure next is valid
 	var last interface{}
 	// for each component
@@ -333,13 +347,13 @@ func (v *Validator) validateExpressionToken(exp []interface{}, indent int) inter
 		if last != nil {
 			if !nextTokenIsValid(last, sub) {
 				v.StartError("unexpected token", indent+1)
-				v.validateToken(sub, indent+1)
+				v.validateToken(sub, indent+1, false)
 				v.EndError()
 				last = sub
 				continue
 			}
 		}
-		exp[i] = v.validateToken(sub, indent+1)
+		exp[i] = v.validateToken(sub, indent+1, false)
 		last = sub
 	}
 	// close paren
@@ -347,16 +361,16 @@ func (v *Validator) validateExpressionToken(exp []interface{}, indent int) inter
 	return exp
 }
 
-func (v *Validator) validateToken(arg interface{}, indent int) interface{} {
+func (v *Validator) validateToken(arg interface{}, indent int, first bool) interface{} {
 	// expression
 	exp, ok := arg.([]interface{})
 	if ok {
-		return v.validateExpressionToken(exp, indent)
+		return v.validateExpressionToken(exp, indent, first)
 	}
 	// query
 	query, ok := arg.(map[string]interface{})
 	if ok {
-		return v.validateQueryToken(query, indent)
+		return v.validateQueryToken(query, indent, first)
 	}
 	// operator
 	op, ok := arg.(string)
@@ -364,9 +378,13 @@ func (v *Validator) validateToken(arg interface{}, indent int) interface{} {
 		return v.validateOperatorToken(op, indent)
 	}
 	// err
-	v.StartError("unrecognized symbol", indent)
-	v.Buffer(fmt.Sprintf("\"%v\"", arg), indent)
-	v.EndError()
+	if first {
+		v.BufferKeyValue("query", fmt.Sprintf("%v", arg), indent, fmt.Errorf("`query` is not of correct type"))
+	} else {
+		v.StartError("unrecognized symbol", indent)
+		v.Buffer(fmt.Sprintf("%v", arg), indent)
+		v.EndError()
+	}
 	return arg
 }
 

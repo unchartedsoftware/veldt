@@ -14,6 +14,8 @@ import (
 type Pipeline struct {
 	queue       *queue
 	queries     map[string]QueryCtor
+	binary      QueryCtor
+	unary       QueryCtor
 	tiles       map[string]TileCtor
 	metas       map[string]MetaCtor
 	store       StoreCtor
@@ -46,6 +48,14 @@ func (p *Pipeline) Query(id string, ctor QueryCtor) {
 	p.queries[id] = ctor
 }
 
+func (p *Pipeline) Binary(ctor QueryCtor) {
+	p.binary = ctor
+}
+
+func (p *Pipeline) Unary(ctor QueryCtor) {
+	p.unary = ctor
+}
+
 func (p *Pipeline) Tile(id string, ctor TileCtor) {
 	p.tiles[id] = ctor
 }
@@ -76,6 +86,20 @@ func (p *Pipeline) GetQuery(id string, args interface{}) (Query, error) {
 		return nil, err
 	}
 	return query, nil
+}
+
+func (p *Pipeline) GetBinary() (Query, error) {
+	if p.binary == nil {
+		return nil, fmt.Errorf("no binary query type has been provided")
+	}
+	return p.binary()
+}
+
+func (p *Pipeline) GetUnary() (Query, error) {
+	if p.unary == nil {
+		return nil, fmt.Errorf("no unary query type has been provided")
+	}
+	return p.unary()
 }
 
 func (p *Pipeline) GetTile(id string, args interface{}) (Tile, error) {
@@ -120,7 +144,7 @@ func (p *Pipeline) GetMeta(id string, args interface{}) (Meta, error) {
 
 func (p *Pipeline) GetStore() (Store, error) {
 	if p.store == nil {
-		return nil, fmt.Errorf("no store has been provided")
+		return nil, fmt.Errorf("no store type has been provided")
 	}
 	return p.store()
 }
@@ -225,7 +249,6 @@ func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, er
 func (p *Pipeline) GenerateMeta(req *MetaRequest) error {
 	// get tile hash
 	hash := p.getMetaHash(req)
-	fmt.Println(hash)
 	// get store
 	store, err := p.GetStore()
 	if err != nil {
@@ -248,21 +271,17 @@ func (p *Pipeline) GenerateMeta(req *MetaRequest) error {
 func (p *Pipeline) GetMetaFromStore(req *MetaRequest) ([]byte, error) {
 	// get tile hash
 	hash := p.getMetaHash(req)
-	fmt.Println(hash)
 	// get store
-	fmt.Println("get store")
 	store, err := p.GetStore()
 	if err != nil {
 		return nil, err
 	}
 	defer store.Close()
-	fmt.Println("get from store")
 	// get tile data from store
 	res, err := store.Get(hash)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("lets decompress it")
 	return p.decompress(res[0:])
 }
 

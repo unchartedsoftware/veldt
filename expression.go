@@ -4,17 +4,27 @@ import (
 	"fmt"
 )
 
-func parseQueryExpression(arg interface{}) (Query, error) {
-	// parse into correct AST
-	return parseToken(arg)
+type expressionParser struct {
+	pipeline *Pipeline
 }
 
-func parseToken(token interface{}) (Query, error) {
+func newExpressionParser(pipeline *Pipeline) *expressionParser {
+	return &expressionParser{
+		pipeline: pipeline,
+	}
+}
+
+func (p *expressionParser) Parse(arg interface{}) (Query, error) {
+	// parse into correct AST
+	return parseToken(p.pipeline, arg)
+}
+
+func parseToken(pipeline *Pipeline, token interface{}) (Query, error) {
 	// check if token is an expression
 	exp, ok := token.([]interface{})
 	if ok {
 		// is expression, recursively parse it
-		return newExpression(exp).parse()
+		return newExpression(pipeline, exp).parse()
 	}
 	// is query, parse it directly
 	query, ok := token.(Query)
@@ -26,18 +36,32 @@ func parseToken(token interface{}) (Query, error) {
 
 // expression parses the runtime query expression into it's runtime AST tree.
 type expression struct {
-	tokens []interface{}
+	pipeline *Pipeline
+	tokens   []interface{}
 }
 
-func newExpression(arr []interface{}) *expression {
+func newExpression(pipeline *Pipeline, arr []interface{}) *expression {
 	return &expression{
-		tokens: arr,
+		pipeline: pipeline,
+		tokens:   arr,
 	}
+}
+
+func (e *expression) parse() (Query, error) {
+	lhs, err := e.popOperand()
+	if err != nil {
+		return nil, err
+	}
+	query, err := e.parseExpression(lhs, 0)
+	if err != nil {
+		return nil, err
+	}
+	return query, nil
 }
 
 func (e *expression) pop() (interface{}, error) {
 	if len(e.tokens) == 0 {
-		return nil, fmt.Errorf("Expected operand missing")
+		return nil, fmt.Errorf("expected operand missing")
 	}
 	token := e.tokens[0]
 	e.tokens = e.tokens[1:len(e.tokens)]
@@ -73,19 +97,28 @@ func (e *expression) popOperand() (Query, error) {
 			return nil, err
 		}
 		// parse token
-		query, err := parseToken(next)
+		query, err := parseToken(e.pipeline, next)
 		if err != nil {
 			return nil, err
 		}
-		// return unary expression
-		return &UnaryExpression{
-			Op:    op,
-			Query: query,
-		}, nil
+		// get unary expression
+		unary, err := e.pipeline.GetUnary()
+		if err != nil {
+			return nil, err
+		}
+		// populate it
+		err = unary.Parse(map[string]interface{}{
+			"op":    op,
+			"query": query,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return unary, nil
 	}
 
 	// parse token
-	return parseToken(token)
+	return parseToken(e.pipeline, token)
 }
 
 func (e *expression) peek() interface{} {
@@ -97,13 +130,13 @@ func (e *expression) peek() interface{} {
 
 func (e *expression) advance() error {
 	if len(e.tokens) < 2 {
-		return fmt.Errorf("Expected token missing after `%v`", e.tokens[0])
+		return fmt.Errorf("expected token missing after `%v`", e.tokens[0])
 	}
 	e.tokens = e.tokens[1:len(e.tokens)]
 	return nil
 }
 
-func (e *expression) parseExpressionR(lhs Query, min int) (Query, error) {
+func (e *expression) parseExpression(lhs Query, min int) (Query, error) {
 
 	var err error
 	var op string
@@ -149,31 +182,30 @@ func (e *expression) parseExpressionR(lhs Query, min int) (Query, error) {
 
 		for (isBinary && precedence(lookahead) > precedence(op)) ||
 			(isUnary && precedence(lookahead) == precedence(op)) {
-			rhs, err = e.parseExpressionR(rhs, precedence(lookahead))
+			rhs, err = e.parseExpression(rhs, precedence(lookahead))
 			if err != nil {
 				return nil, err
 			}
 			lookahead = e.peek()
 		}
-		lhs = &BinaryExpression{
-			Left:  lhs,
-			Op:    op,
-			Right: rhs,
+
+		// get binary expression
+		binary, err := e.pipeline.GetBinary()
+		if err != nil {
+			return nil, err
 		}
+		// populate it
+		err = binary.Parse(map[string]interface{}{
+			"left":  lhs,
+			"op":    op,
+			"right": rhs,
+		})
+		if err != nil {
+			return nil, err
+		}
+		lhs = binary
 	}
 	return lhs, nil
-}
-
-func (e *expression) parse() (Query, error) {
-	lhs, err := e.popOperand()
-	if err != nil {
-		return nil, err
-	}
-	query, err := e.parseExpressionR(lhs, 0)
-	if err != nil {
-		return nil, err
-	}
-	return query, nil
 }
 
 func precedence(arg interface{}) int {
