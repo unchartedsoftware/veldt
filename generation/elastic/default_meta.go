@@ -56,7 +56,7 @@ func (g *DefaultMeta) Create(uri string) ([]byte, error) {
 	// get mappings node
 	mappings, ok := jsonutil.GetChildMap(index, "mappings")
 	if !ok {
-		return nil, fmt.Errorf("Unable to parse `mappings` from mappings response for %s",
+		return nil, fmt.Errorf("unable to parse `mappings` from mappings response for %s",
 			uri)
 	}
 	// for each type, parse the mapping
@@ -106,11 +106,11 @@ func getExtrema(client *elastic.Client, index string, field string) (*binning.Ex
 	// parse aggregations
 	min, ok := result.Aggregations.Min("min")
 	if !ok {
-		return nil, fmt.Errorf("Min '%s' aggregation was not found in response for %s", field, index)
+		return nil, fmt.Errorf("min '%s' aggregation was not found in response for %s", field, index)
 	}
 	max, ok := result.Aggregations.Max("max")
 	if !ok {
-		return nil, fmt.Errorf("Max '%s' aggregation was not found in response for %s", field, index)
+		return nil, fmt.Errorf("max '%s' aggregation was not found in response for %s", field, index)
 	}
 	// if the mapping exists, but no documents have the attribute, the min / max
 	// are null

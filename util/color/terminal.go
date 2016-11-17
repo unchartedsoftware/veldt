@@ -3,6 +3,7 @@ package color
 import (
 	"os"
 	"regexp"
+	"runtime"
 
 	"github.com/mattn/go-isatty"
 )
@@ -30,7 +31,7 @@ const (
 
 var (
 	// ColorTerminal represents whether or not the terminal supports color.
-	ColorTerminal = isatty.IsTerminal(os.Stdout.Fd())
+	ColorTerminal = isatty.IsTerminal(os.Stdout.Fd()) && (runtime.GOOS != "windows")
 	// regex to find any color patterns
 	colorPattern = regexp.MustCompile(`\x1b\[\d{0,2}m`)
 )

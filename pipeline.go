@@ -159,6 +159,7 @@ func (p *Pipeline) GenerateTile(req *TileRequest) error {
 func (p *Pipeline) GetTileFromStore(req *TileRequest) ([]byte, error) {
 	// get tile hash
 	hash := p.getTileHash(req)
+	fmt.Println(hash)
 	// get store
 	store, err := p.GetStore()
 	if err != nil {
@@ -225,6 +226,7 @@ func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, er
 func (p *Pipeline) GenerateMeta(req *MetaRequest) error {
 	// get tile hash
 	hash := p.getMetaHash(req)
+	fmt.Println(hash)
 	// get store
 	store, err := p.GetStore()
 	if err != nil {
@@ -247,17 +249,21 @@ func (p *Pipeline) GenerateMeta(req *MetaRequest) error {
 func (p *Pipeline) GetMetaFromStore(req *MetaRequest) ([]byte, error) {
 	// get tile hash
 	hash := p.getMetaHash(req)
+	fmt.Println(hash)
 	// get store
+	fmt.Println("get store")
 	store, err := p.GetStore()
 	if err != nil {
 		return nil, err
 	}
 	defer store.Close()
+	fmt.Println("get from store")
 	// get tile data from store
 	res, err := store.Get(hash)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("lets decompress it")
 	return p.decompress(res[0:])
 }
 
@@ -303,50 +309,64 @@ func (p *Pipeline) getMetaHash(req *MetaRequest) string {
 
 func (p *Pipeline) compress(data []byte) ([]byte, error) {
 	var buffer bytes.Buffer
-	writer, err := p.getWriter(&buffer)
-	if err != nil {
-		return nil, err
-	}
-	_, err = writer.Write(data)
-	if err != nil {
-		return nil, err
+	writer, ok := p.getWriter(&buffer)
+	if ok {
+		// compress
+		_, err := writer.Write(data)
+		if err != nil {
+			return nil, err
+		}
+		err = writer.Close()
+		if err != nil {
+			return nil, err
+		}
 	}
 	return buffer.Bytes()[0:], nil
 }
 
 func (p *Pipeline) decompress(data []byte) ([]byte, error) {
 	buffer := bytes.NewBuffer(data[0:])
-	reader, err := p.getReader(buffer)
+	reader, err, ok := p.getReader(buffer)
 	if err != nil {
 		return nil, err
 	}
-	data, err = ioutil.ReadAll(reader)
-	if err != nil {
-		return nil, err
+	if ok {
+		// decompress
+		var err error
+		data, err = ioutil.ReadAll(reader)
+		if err != nil {
+			return nil, err
+		}
+		err = reader.Close()
+		if err != nil {
+			return nil, err
+		}
 	}
 	return data[0:], nil
 }
 
-func (p *Pipeline) getReader(buffer *bytes.Buffer) (io.Reader, error) {
+func (p *Pipeline) getReader(buffer *bytes.Buffer) (io.ReadCloser, error, bool) {
 	// use compression based reader if specified
 	switch p.compression {
 	case "gzip":
-		return gzip.NewReader(buffer)
+		reader, err := gzip.NewReader(buffer)
+		return reader, err, true
 	case "zlib":
-		return zlib.NewReader(buffer)
+		reader, err := zlib.NewReader(buffer)
+		return reader, err, true
 	default:
-		return buffer, nil
+		return nil, nil, false
 	}
 }
 
-func (p *Pipeline) getWriter(buffer *bytes.Buffer) (io.Writer, error) {
+func (p *Pipeline) getWriter(buffer *bytes.Buffer) (io.WriteCloser, bool) {
 	// use compression based reader if specified
 	switch p.compression {
 	case "gzip":
-		return gzip.NewWriter(buffer), nil
+		return gzip.NewWriter(buffer), true
 	case "zlib":
-		return zlib.NewWriter(buffer), nil
+		return zlib.NewWriter(buffer), true
 	default:
-		return buffer, nil
+		return nil, false
 	}
 }

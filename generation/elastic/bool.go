@@ -18,11 +18,11 @@ func (e *BinaryExpression) Get() (elastic.Query, error) {
 
 	left, ok := e.Left.(Query)
 	if !ok {
-		return nil, fmt.Errorf("Left is not of type elastic.Query")
+		return nil, fmt.Errorf("`Left` is not of type elastic.Query")
 	}
 	right, ok := e.Right.(Query)
 	if !ok {
-		return nil, fmt.Errorf("Right is not of type elastic.Query")
+		return nil, fmt.Errorf("`Right` is not of type elastic.Query")
 	}
 
 	a, err := left.Get()

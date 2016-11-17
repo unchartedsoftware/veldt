@@ -2,6 +2,7 @@ package prism
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/davecgh/go-spew/spew"
 
@@ -19,7 +20,13 @@ type TileRequest struct {
 // GetHash returns a unique hash for the request.
 func (r *TileRequest) GetHash() string {
 	spew.Config.SortKeys = true
-	return fmt.Sprintf("%s:%s", "tile", spew.Sdump(r))
+	spew.Config.SpewKeys = true
+	spew.Config.DisablePointerAddresses = true
+	spew.Config.DisableCapacities = true
+	spew.Config.DisablePointerMethods = true
+	spew.Config.DisableMethods = true
+	hash := fmt.Sprintf("%s:%s", "tile", spew.Sdump(r))
+	return strings.Join(strings.Fields(hash), ":")
 }
 
 // MetaRequest represents a meta data generation request.
@@ -31,5 +38,11 @@ type MetaRequest struct {
 // GetHash returns a unique hash for the request.
 func (r *MetaRequest) GetHash() string {
 	spew.Config.SortKeys = true
-	return fmt.Sprintf("%s:%s", "meta", spew.Sdump(r))
+	spew.Config.SpewKeys = true
+	spew.Config.DisablePointerAddresses = true
+	spew.Config.DisableCapacities = true
+	spew.Config.DisablePointerMethods = true
+	spew.Config.DisableMethods = true
+	hash := fmt.Sprintf("%s:%s", "meta", spew.Sdump(r))
+	return strings.Join(strings.Fields(hash), ":")
 }
