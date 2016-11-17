@@ -37,8 +37,38 @@ type BinaryExpression struct {
 	Right Query
 }
 
-func (q *BinaryExpression) Parse(params map[string]interface{}) error {
-	return fmt.Errorf("not implemented")
+func (b *BinaryExpression) Parse(params map[string]interface{}) error {
+	// left
+	l, ok := params["left"]
+	if !ok {
+		return fmt.Errorf("`left` parameter missing from query")
+	}
+	left, ok := l.(Query)
+	if !ok {
+		return fmt.Errorf("`left` is not a query type")
+	}
+	b.Left = left
+	// op
+	o, ok := params["op"]
+	if !ok {
+		return fmt.Errorf("`op` parameter missing from query")
+	}
+	op, ok := o.(string)
+	if !ok {
+		return fmt.Errorf("`op` is not of type string")
+	}
+	b.Op = op
+	// right
+	r, ok := params["left"]
+	if !ok {
+		return fmt.Errorf("`right` parameter missing from query")
+	}
+	right, ok := r.(Query)
+	if !ok {
+		return fmt.Errorf("`right` is not a query type")
+	}
+	b.Right = right
+	return nil
 }
 
 // UnaryExpression represents a unary boolean expression.
@@ -47,6 +77,26 @@ type UnaryExpression struct {
 	Op    string
 }
 
-func (q *UnaryExpression) Parse(params map[string]interface{}) error {
-	return fmt.Errorf("not implemented")
+func (u *UnaryExpression) Parse(params map[string]interface{}) error {
+	// left
+	q, ok := params["query"]
+	if !ok {
+		return fmt.Errorf("`query` parameter missing from query")
+	}
+	query, ok := q.(Query)
+	if !ok {
+		return fmt.Errorf("`query` is not a query type")
+	}
+	u.Query = query
+	// op
+	o, ok := params["op"]
+	if !ok {
+		return fmt.Errorf("`op` parameter missing from query")
+	}
+	op, ok := o.(string)
+	if !ok {
+		return fmt.Errorf("`op` is not of type string")
+	}
+	u.Op = op
+	return nil
 }
