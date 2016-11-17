@@ -159,7 +159,6 @@ func (p *Pipeline) GenerateTile(req *TileRequest) error {
 func (p *Pipeline) GetTileFromStore(req *TileRequest) ([]byte, error) {
 	// get tile hash
 	hash := p.getTileHash(req)
-	fmt.Println(hash)
 	// get store
 	store, err := p.GetStore()
 	if err != nil {
