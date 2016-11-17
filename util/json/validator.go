@@ -16,6 +16,7 @@ const (
 type Validator struct {
 	output         []string
 	errLines       map[int]bool
+	indentation    []int
 	errStartIndex  int
 	errEndIndex    int
 	errIndent      int
@@ -29,6 +30,7 @@ type Validator struct {
 func (v *Validator) Buffer(str string, indent int) {
 	line := fmt.Sprintf("%s%s", v.getIndent(indent), str)
 	v.output = append(v.output, line)
+	v.indentation = append(v.indentation, indent)
 }
 
 // Size returns the length of the current output buffer.
@@ -53,19 +55,14 @@ func (v *Validator) Error() error {
 func (v *Validator) String() string {
 	length := len(v.output)
 	formatted := make([]string, length)
-	// add start and end of the JSON
-	formatted[0] = v.output[0]
-	formatted[length-1] = v.output[length-1]
 	// determine whether or not to append a comma on the end based on the next
-	// line in the output buffer
-	for i := length - 2; i > 0; i-- {
+	// lines indentation
+	for i := 0; i < length; i++ {
 		// skip any error annotation lines
 		if v.errLines[i] {
 			formatted[i] = v.output[i]
 			continue
 		}
-		// get the line
-		line := v.output[i]
 		// get the next line that isn't an error
 		j := i + 1
 		for {
@@ -80,13 +77,10 @@ func (v *Validator) String() string {
 			// no more lines, this means the output is malformed
 			break
 		}
-		next := v.output[j]
-		ending := line[len(line)-1]
-		nextEnding := next[len(next)-1]
-		if ending == '[' || ending == '{' || nextEnding == '}' || nextEnding == ']' {
-			formatted[i] = line
+		if v.indentation[i] != v.indentation[j] {
+			formatted[i] = v.output[i]
 		} else {
-			formatted[i] = line + ","
+			formatted[i] = v.output[i] + ","
 		}
 	}
 	// return the concatenated output
@@ -215,7 +209,7 @@ func (v *Validator) bufferKeyValue(key string, val interface{}, indent int) {
 		for i, sub := range arr {
 			vals[i] = v.formatVal(sub)
 		}
-		v.Buffer(fmt.Sprintf("[ %s ]", strings.Join(vals, ", ")), indent)
+		v.Buffer(fmt.Sprintf("\"%s\": [ %s ]", key, strings.Join(vals, ", ")), indent)
 		return
 	}
 
