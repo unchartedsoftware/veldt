@@ -3,7 +3,7 @@ package citus
 import (
 	"fmt"
 
-    "github.com/unchartedsoftware/prism/query"
+	"github.com/unchartedsoftware/prism/query"
 )
 
 // Range represents a citus range query.
@@ -31,7 +31,7 @@ func (q *Range) Get(query *Query) (string, error) {
 		valueParam = query.AddParameter(q.LT)
 		clause = clause + fmt.Sprintf(" AND %s < %v", q.Field, valueParam)
 	}
-    //Remove leading " AND "
-    //query.AddWhereClause(clause[5:])
+	//Remove leading " AND "
+	//query.AddWhereClause(clause[5:])
 	return clause[5:], nil
 }

@@ -14,9 +14,9 @@ type Tile struct {
 func (t *Tile) CreateQuery(query prism.Query) (*Query, error) {
 	// create root query
 	root, err := NewQuery()
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
 	// add filter query
 	if query != nil {
