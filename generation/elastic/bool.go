@@ -13,6 +13,10 @@ type BinaryExpression struct {
 	prism.BinaryExpression
 }
 
+func NewBinaryExpression() (prism.Query, error) {
+	return &BinaryExpression{}, nil
+}
+
 // Apply adds the query to the tiling job.
 func (e *BinaryExpression) Get() (elastic.Query, error) {
 
@@ -53,6 +57,10 @@ func (e *BinaryExpression) Get() (elastic.Query, error) {
 // UnaryExpression represents a must_not boolean query.
 type UnaryExpression struct {
 	prism.UnaryExpression
+}
+
+func NewUnaryExpression() (prism.Query, error) {
+	return &UnaryExpression{}, nil
 }
 
 // Apply adds the query to the tiling job.
