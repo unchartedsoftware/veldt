@@ -59,7 +59,7 @@ func (b *BinaryExpression) Parse(params map[string]interface{}) error {
 	}
 	b.Op = op
 	// right
-	r, ok := params["left"]
+	r, ok := params["right"]
 	if !ok {
 		return fmt.Errorf("`right` parameter missing from query")
 	}
