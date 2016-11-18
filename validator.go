@@ -275,12 +275,11 @@ func (v *Validator) validateQuery(args map[string]interface{}, indent int) Query
 	/*validated := */ v.validateToken(val, indent+1, true)
 	v.Buffer("}", indent)
 	// parse the expression
-	return nil
-	// query, err := newExpressionParser(v.pipeline).Parse(validated)
-	// if err != nil {
-	// 	return nil
-	// }
-	// return query
+	query, err := newExpressionParser(v.pipeline).Parse(validated)
+	if err != nil {
+		return nil
+	}
+	return query
 }
 
 // Parses the query request JSON for the provided query expression.
