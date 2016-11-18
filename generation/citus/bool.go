@@ -11,6 +11,10 @@ type BinaryExpression struct {
 	prism.BinaryExpression
 }
 
+func NewBinaryExpression() (prism.Query, error) {
+	return &BinaryExpression{}, nil
+}
+
 // Get adds the parameters to the query and returns the string representation.
 func (e *BinaryExpression) Get(query *Query) (string, error) {
 
@@ -51,6 +55,10 @@ type UnaryExpression struct {
 	prism.UnaryExpression
 }
 
+func NewUnaryExpression() (prism.Query, error) {
+	return &UnaryExpression{}, nil
+}
+
 // Get adds the parameters to the query and returns the string representation.
 func (e *UnaryExpression) Get(query *Query) (string, error) {
 
@@ -64,11 +72,11 @@ func (e *UnaryExpression) Get(query *Query) (string, error) {
 		return "", err
 	}
 
-	res := "NOT "
+	res := ""
 	switch e.Op {
 	case prism.Not:
 		// NOT
-		res = res + fmt.Sprintf("(%s)", a)
+		res = res + fmt.Sprintf("NOT (%s)", a)
 	default:
 		return "", fmt.Errorf("`%v` operator is not a valid unary operator", e.Op)
 	}
