@@ -73,8 +73,8 @@ func (m *Macro) Create(uri string, coord *binning.TileCoord, query prism.Query) 
 	numPoints := 0
 	for i, bin := range bins {
 		if bin != nil {
-			x := float32(float64(i % m.Resolution) * binSize + halfSize)
-			y := float32(math.Floor(float64(i / m.Resolution)) * binSize + halfSize)
+			x := float32(float64(i%m.Resolution)*binSize + halfSize)
+			y := float32(math.Floor(float64(i/m.Resolution))*binSize + halfSize)
 			binary.LittleEndian.PutUint32(
 				bits[numPoints*8:numPoints*8+4],
 				math.Float32bits(x))
@@ -84,5 +84,5 @@ func (m *Macro) Create(uri string, coord *binning.TileCoord, query prism.Query) 
 			numPoints++
 		}
 	}
-	return bits[0:numPoints*8], nil
+	return bits[0 : numPoints*8], nil
 }

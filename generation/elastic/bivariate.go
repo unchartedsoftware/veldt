@@ -110,7 +110,7 @@ func (b *Bivariate) getXBin(x int64) int {
 	fx := float64(x)
 	var bin int64
 	if bounds.TopLeft.X > bounds.BottomRight.X {
-		bin = int64(float64(b.Resolution - 1) - ((fx - bounds.BottomRight.X) / b.binSizeX))
+		bin = int64(float64(b.Resolution-1) - ((fx - bounds.BottomRight.X) / b.binSizeX))
 	} else {
 		bin = int64((fx - bounds.TopLeft.X) / b.binSizeX)
 	}
@@ -123,7 +123,7 @@ func (b *Bivariate) getYBin(y int64) int {
 	fy := float64(y)
 	var bin int64
 	if bounds.TopLeft.Y > bounds.BottomRight.Y {
-		bin = int64(float64(b.Resolution - 1) - ((fy - bounds.BottomRight.Y) / b.binSizeY))
+		bin = int64(float64(b.Resolution-1) - ((fy - bounds.BottomRight.Y) / b.binSizeY))
 	} else {
 		bin = int64((fy - bounds.TopLeft.Y) / b.binSizeY)
 	}
