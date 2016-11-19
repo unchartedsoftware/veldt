@@ -271,6 +271,11 @@ func (v *Validator) validateQuery(args map[string]interface{}, indent int) Query
 	if !ok {
 		return nil
 	}
+	// nil query is valid
+	if val == nil {
+		return nil
+	}
+	// validate the query
 	v.Buffer("{", indent)
 	validated := v.validateToken(val, indent+1, true)
 	v.Buffer("}", indent)
