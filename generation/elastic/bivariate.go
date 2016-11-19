@@ -105,25 +105,27 @@ func (b *Bivariate) GetAggs(coord *binning.TileCoord) map[string]elastic.Aggrega
 }
 
 // GetXBin given an x value, returns the corresponding bin.
-func (b *Bivariate) getXBin(x int) int {
+func (b *Bivariate) getXBin(x int64) int {
+	bounds := b.bounds
 	fx := float64(x)
-	var bin int
-	if b.bounds.TopLeft.X > b.bounds.BottomRight.X {
-		bin = int(float64(b.Resolution) - ((fx - b.bounds.BottomRight.X) / b.binSizeX))
+	var bin int64
+	if bounds.TopLeft.X > bounds.BottomRight.X {
+		bin = int64(float64(b.Resolution - 1) - ((fx - bounds.BottomRight.X) / b.binSizeX))
 	} else {
-		bin = int((fx - b.bounds.TopLeft.X) / b.binSizeX)
+		bin = int64((fx - bounds.TopLeft.X) / b.binSizeX)
 	}
 	return b.clampBin(bin)
 }
 
 // GetYBin given an y value, returns the corresponding bin.
-func (b *Bivariate) getYBin(y int) int {
+func (b *Bivariate) getYBin(y int64) int {
+	bounds := b.bounds
 	fy := float64(y)
-	var bin int
-	if b.bounds.TopLeft.Y > b.bounds.BottomRight.Y {
-		bin = int(float64(b.Resolution) - ((fy - b.bounds.BottomRight.Y) / b.binSizeY))
+	var bin int64
+	if bounds.TopLeft.Y > bounds.BottomRight.Y {
+		bin = int64(float64(b.Resolution - 1) - ((fy - bounds.BottomRight.Y) / b.binSizeY))
 	} else {
-		bin = int((fy - b.bounds.TopLeft.Y) / b.binSizeY)
+		bin = int64((fy - bounds.TopLeft.Y) / b.binSizeY)
 	}
 	return b.clampBin(bin)
 }
@@ -143,14 +145,14 @@ func (b *Bivariate) GetBins(res *elastic.SearchResult) ([]*elastic.AggregationBu
 	// fill bins
 	for _, xBucket := range xAgg.Buckets {
 		x := xBucket.Key
-		xBin := b.getXBin(int(x))
+		xBin := b.getXBin(x)
 		yAgg, ok := xBucket.Histogram("y")
 		if !ok {
 			return nil, fmt.Errorf("histogram aggregation `y` was not found")
 		}
 		for _, yBucket := range yAgg.Buckets {
 			y := yBucket.Key
-			yBin := b.getYBin(int(y))
+			yBin := b.getYBin(y)
 			index := xBin + b.Resolution*yBin
 			bins[index] = yBucket
 		}
@@ -158,12 +160,12 @@ func (b *Bivariate) GetBins(res *elastic.SearchResult) ([]*elastic.AggregationBu
 	return bins, nil
 }
 
-func (p *Bivariate) clampBin(bin int) int {
-	if bin > p.Resolution-1 {
-		return p.Resolution - 1
+func (b *Bivariate) clampBin(bin int64) int {
+	if bin > int64(b.Resolution)-1 {
+		return b.Resolution - 1
 	}
 	if bin < 0 {
 		return 0
 	}
-	return bin
+	return int(bin)
 }
