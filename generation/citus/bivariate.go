@@ -31,10 +31,10 @@ func (b *Bivariate) GetQuery(coord *binning.TileCoord, query *Query) *Query {
 		},
 	}
 	bounds := binning.GetTileBounds(coord, extents)
-	minX := math.Min(bounds.TopLeft.X, bounds.BottomRight.X)
-	maxX := math.Max(bounds.TopLeft.X, bounds.BottomRight.X)
-	minY := math.Min(bounds.TopLeft.Y, bounds.BottomRight.Y)
-	maxY := math.Max(bounds.TopLeft.Y, bounds.BottomRight.Y)
+	minX := int64(math.Min(bounds.TopLeft.X, bounds.BottomRight.X))
+	maxX := int64(math.Max(bounds.TopLeft.X, bounds.BottomRight.X))
+	minY := int64(math.Min(bounds.TopLeft.Y, bounds.BottomRight.Y))
+	maxY := int64(math.Max(bounds.TopLeft.Y, bounds.BottomRight.Y))
 	b.Bounds = bounds
 
 	minXArg := query.AddParameter(minX)

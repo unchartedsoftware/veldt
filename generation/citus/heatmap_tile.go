@@ -13,7 +13,7 @@ type Heatmap struct {
 	Tile
 }
 
-func NewHeatmap(host, port string) prism.TileCtor {
+func NewHeatmapTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
 		h := &Heatmap{}
 		h.Host = host
@@ -49,6 +49,7 @@ func (h *Heatmap) Create(uri string, coord *binning.TileCoord, query prism.Query
 	//search.Aggregation("x", aggs["x"].SubAggregation("y", aggs["y"]))
 
 	citusQuery.AddTable(uri)
+	citusQuery.AddField("CAST(COUNT(*) AS FLOAT) AS value")
 	// send query
 	res, err := client.Query(citusQuery.GetQuery(false), citusQuery.QueryArgs...)
 	if err != nil {
