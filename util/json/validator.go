@@ -197,7 +197,7 @@ func (v *Validator) bufferKeyValue(key string, val interface{}, indent int) {
 	// string
 	str, ok := val.(string)
 	if ok {
-		v.Buffer(fmt.Sprintf("\"%s\": %s", key, str), indent)
+		v.Buffer(fmt.Sprintf("\"%s\": \"%s\"", key, str), indent)
 		return
 	}
 
