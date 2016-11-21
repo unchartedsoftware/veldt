@@ -19,7 +19,7 @@ type Query struct {
 	Fields         []string
 	Tables         []string
 	OrderByClauses []string
-	Limit          uint32
+	RowLimit       uint32
 }
 
 // NewQuery instantiates and returns a new query object.
@@ -30,7 +30,7 @@ func NewQuery() (*Query, error) {
 		Fields:         []string{},
 		Tables:         []string{},
 		OrderByClauses: []string{},
-		Limit:          0,
+		RowLimit:       0,
 		QueryArgs:      make([]interface{}, 0),
 	}, nil
 }
@@ -66,8 +66,8 @@ func (q *Query) GetHash() string {
 	}
 
 	hash := strings.Join(hashes, "::")
-	if q.Limit > 0 {
-		hash = hash + "::Limit=" + fmt.Sprint(q.Limit)
+	if q.RowLimit > 0 {
+		hash = hash + "::Limit=" + fmt.Sprint(q.RowLimit)
 	}
 
 	return hash
@@ -91,8 +91,8 @@ func (q *Query) GetQuery(nested bool) string {
 		queryString += fmt.Sprintf(" ORDER BY %s", strings.Join(q.OrderByClauses, ", "))
 	}
 
-	if q.Limit > 0 {
-		queryString += fmt.Sprintf(" LIMIT %d", q.Limit)
+	if q.RowLimit > 0 {
+		queryString += fmt.Sprintf(" LIMIT %d", q.RowLimit)
 	}
 
 	if !nested {
@@ -109,31 +109,31 @@ func (q *Query) AddParameter(param interface{}) string {
 }
 
 // AddWhereClause adds a where clause to the query.
-func (q *Query) AddWhereClause(clause string) {
+func (q *Query) Where(clause string) {
 	q.WhereClauses = append(q.WhereClauses, clause)
 }
 
 // AddGroupByClause adds a groupby to the query.
-func (q *Query) AddGroupByClause(clause string) {
+func (q *Query) GroupBy(clause string) {
 	q.GroupByClauses = append(q.GroupByClauses, clause)
 }
 
 // AddField adds a field to the query.
-func (q *Query) AddField(field string) {
+func (q *Query) Select(field string) {
 	q.Fields = append(q.Fields, field)
 }
 
 // AddTable adds a table to the query.
-func (q *Query) AddTable(table string) {
+func (q *Query) From(table string) {
 	q.Tables = append(q.Tables, table)
 }
 
 // AddOrderByClause adds an orber by clause to the query.
-func (q *Query) AddOrderByClause(clause string) {
+func (q *Query) OrderBy(clause string) {
 	q.OrderByClauses = append(q.OrderByClauses, clause)
 }
 
 // SetLimit sets the limit to the query.
-func (q *Query) SetLimit(limit uint32) {
-	q.Limit = limit
+func (q *Query) Limit(limit uint32) {
+	q.RowLimit = limit
 }

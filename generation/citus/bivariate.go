@@ -18,7 +18,7 @@ type Bivariate struct {
 	BinSizeY float64
 }
 
-func (b *Bivariate) GetQuery(coord *binning.TileCoord, query *Query) *Query {
+func (b *Bivariate) AddQuery(coord *binning.TileCoord, query *Query) *Query {
 
 	extents := &binning.Bounds{
 		TopLeft: &binning.Coord{
@@ -40,17 +40,17 @@ func (b *Bivariate) GetQuery(coord *binning.TileCoord, query *Query) *Query {
 	minXArg := query.AddParameter(minX)
 	maxXArg := query.AddParameter(maxX)
 	rangeQueryX := fmt.Sprintf("%s >= %s and %s < %s", b.XField, minXArg, b.XField, maxXArg)
-	query.AddWhereClause(rangeQueryX)
+	query.Where(rangeQueryX)
 
 	minYArg := query.AddParameter(minY)
 	maxYArg := query.AddParameter(maxY)
 	rangeQueryY := fmt.Sprintf("%s >= %s and %s < %s", b.YField, minYArg, b.YField, maxYArg)
-	query.AddWhereClause(rangeQueryY)
+	query.Where(rangeQueryY)
 
 	return query
 }
 
-func (b *Bivariate) GetAgg(coord *binning.TileCoord, query *Query) *Query {
+func (b *Bivariate) AddAgg(coord *binning.TileCoord, query *Query) *Query {
 
 	extents := &binning.Bounds{
 		TopLeft: &binning.Coord{
@@ -76,14 +76,14 @@ func (b *Bivariate) GetAgg(coord *binning.TileCoord, query *Query) *Query {
 	minXArg := query.AddParameter(minX)
 	intervalXArg := query.AddParameter(intervalX)
 	queryString := fmt.Sprintf("((%s - %s) / %s * %s)", b.XField, minXArg, intervalXArg, intervalXArg)
-	query.AddGroupByClause(queryString)
-	query.AddField(fmt.Sprintf("%s + %s as x", minXArg, queryString))
+	query.GroupBy(queryString)
+	query.Select(fmt.Sprintf("%s + %s as x", minXArg, queryString))
 
 	minYArg := query.AddParameter(minY)
 	intervalYArg := query.AddParameter(intervalY)
 	queryString = fmt.Sprintf("((%s - %s) / %s * %s)", b.YField, minYArg, intervalYArg, intervalYArg)
-	query.AddGroupByClause(queryString)
-	query.AddField(fmt.Sprintf("%s + %s as y", minYArg, queryString))
+	query.GroupBy(queryString)
+	query.Select(fmt.Sprintf("%s + %s as y", minYArg, queryString))
 
 	return query
 }

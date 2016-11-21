@@ -34,22 +34,22 @@ func (m *Macro) Create(uri string, coord *binning.TileCoord, query prism.Query) 
 	}
 
 	// create root query
-    citusQuery, err := m.CreateQuery(query)
+	citusQuery, err := m.CreateQuery(query)
 	if err != nil {
 		return nil, err
 	}
 
 	// add tiling query
-	citusQuery = m.Bivariate.GetQuery(coord, citusQuery)
+	citusQuery = m.Bivariate.AddQuery(coord, citusQuery)
 
 	// add aggs
-	citusQuery = m.Bivariate.GetAgg(coord, citusQuery)
+	citusQuery = m.Bivariate.AddAgg(coord, citusQuery)
 
 	// set the aggregation
 	//search.Aggregation("x", aggs["x"])
 
-	citusQuery.AddTable(uri)
-	citusQuery.AddField("CAST(COUNT(*) AS FLOAT) AS value")
+	citusQuery.From(uri)
+	citusQuery.Select("CAST(COUNT(*) AS FLOAT) AS value")
 
 	// send query
 	res, err := client.Query(citusQuery.GetQuery(false), citusQuery.QueryArgs...)
@@ -58,7 +58,7 @@ func (m *Macro) Create(uri string, coord *binning.TileCoord, query prism.Query) 
 	}
 
 	// get bins
-    bins, err := m.Bivariate.GetBins(res)
+	bins, err := m.Bivariate.GetBins(res)
 	if err != nil {
 		return nil, err
 	}
@@ -70,18 +70,16 @@ func (m *Macro) Create(uri string, coord *binning.TileCoord, query prism.Query) 
 	// convert to byte array
 	bits := make([]byte, len(bins)*8)
 	numPoints := 0
-	for i, bin := range bins {
-		if bin > 0 {
-			x := float32(float64(i%m.Resolution)*binSize + halfSize)
-			y := float32(math.Floor(float64(i/m.Resolution))*binSize + halfSize)
-			binary.LittleEndian.PutUint32(
-				bits[numPoints*8:numPoints*8+4],
-				math.Float32bits(x))
-			binary.LittleEndian.PutUint32(
-				bits[numPoints*8+4:numPoints*8+8],
-				math.Float32bits(y))
-			numPoints++
-		}
+	for i, _ := range bins {
+		x := float32(float64(i%m.Resolution)*binSize + halfSize)
+		y := float32(math.Floor(float64(i/m.Resolution))*binSize + halfSize)
+		binary.LittleEndian.PutUint32(
+			bits[numPoints*8:numPoints*8+4],
+			math.Float32bits(x))
+		binary.LittleEndian.PutUint32(
+			bits[numPoints*8+4:numPoints*8+8],
+			math.Float32bits(y))
+		numPoints++
 	}
 	return bits[0 : numPoints*8], nil
 }

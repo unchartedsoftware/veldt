@@ -40,16 +40,16 @@ func (h *Heatmap) Create(uri string, coord *binning.TileCoord, query prism.Query
 	}
 
 	// add tiling query
-	citusQuery = h.Bivariate.GetQuery(coord, citusQuery)
+	citusQuery = h.Bivariate.AddQuery(coord, citusQuery)
 
 	// add aggs
-	citusQuery = h.Bivariate.GetAgg(coord, citusQuery)
+	citusQuery = h.Bivariate.AddAgg(coord, citusQuery)
 
 	// set the aggregation
 	//search.Aggregation("x", aggs["x"].SubAggregation("y", aggs["y"]))
 
-	citusQuery.AddTable(uri)
-	citusQuery.AddField("CAST(COUNT(*) AS FLOAT) AS value")
+	citusQuery.From(uri)
+	citusQuery.Select("CAST(COUNT(*) AS FLOAT) AS value")
 	// send query
 	res, err := client.Query(citusQuery.GetQuery(false), citusQuery.QueryArgs...)
 	if err != nil {
