@@ -65,23 +65,12 @@ func (h *Heatmap) Create(uri string, coord *binning.TileCoord, query prism.Query
 	}
 
 	// convert to byte array
-	// bits := make([]byte, len(bins)*8)
-	// for i, bin := range bins {
-	// 	if bin != nil {
-	// 		binary.LittleEndian.PutUint64(
-	// 			bits[i*8:i*8+8],
-	// 			math.Float64bits(float64(bin.DocCount)))
-	// 	}
-	// }
-
-	// convert to byte array
 	bits := make([]byte, len(bins)*4)
 	for i, bin := range bins {
 		if bin != nil {
 			binary.LittleEndian.PutUint32(
 				bits[i*4:i*4+4],
 				uint32(bin.DocCount))
-			//math.Float32bits(float32(bin.DocCount)))
 		}
 	}
 	return bits[0:], nil
