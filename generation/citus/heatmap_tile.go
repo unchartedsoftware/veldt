@@ -2,7 +2,6 @@ package citus
 
 import (
 	"encoding/binary"
-	"math"
 
 	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/binning"
@@ -65,11 +64,9 @@ func (h *Heatmap) Create(uri string, coord *binning.TileCoord, query prism.Query
 	// convert to byte array
 	bits := make([]byte, len(bins)*4)
 	for i, bin := range bins {
-		if bin != nil {
-			binary.LittleEndian.PutUint32(
-				bits[i*4:i*4+4],
-				uint32(bin.DocCount))
-		}
+		binary.LittleEndian.PutUint32(
+			bits[i*4:i*4+4],
+			uint32(bin))
 	}
 	return bits[0:], nil
 }

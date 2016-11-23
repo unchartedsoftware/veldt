@@ -23,11 +23,11 @@ func (b *Bivariate) AddQuery(coord *binning.TileCoord, query *Query) *Query {
 	extents := &binning.Bounds{
 		BottomLeft: &binning.Coord{
 			X: b.Left,
-			Y: b.Top,
+			Y: b.Bottom,
 		},
 		TopRight: &binning.Coord{
 			X: b.Right,
-			Y: b.Bottom,
+			Y: b.Top,
 		},
 	}
 	bounds := binning.GetTileBounds(coord, extents)
@@ -55,11 +55,11 @@ func (b *Bivariate) AddAgg(coord *binning.TileCoord, query *Query) *Query {
 	extents := &binning.Bounds{
 		BottomLeft: &binning.Coord{
 			X: b.Left,
-			Y: b.Top,
+			Y: b.Bottom,
 		},
 		TopRight: &binning.Coord{
 			X: b.Right,
-			Y: b.Bottom,
+			Y: b.Top,
 		},
 	}
 	bounds := binning.GetTileBounds(coord, extents)
