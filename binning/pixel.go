@@ -2,8 +2,6 @@ package binning
 
 import (
 	"math"
-
-	"github.com/unchartedsoftware/prism/util"
 )
 
 const (
@@ -15,13 +13,7 @@ const (
 	MaxPixels = MaxTileResolution * (1 << uint64(MaxLevelSupported))
 )
 
-// PixelBounds represents a bounding box in pixel coordinates.
-type PixelBounds struct {
-	TopLeft     *PixelCoord
-	BottomRight *PixelCoord
-}
-
-// PixelCoord represents a point in pixel coordinates.
+// PixelCoord represents a point in pixel coordinates where 0,0 is BOTTOM-LEFT.
 type PixelCoord struct {
 	X uint64 `json:"x"`
 	Y uint64 `json:"y"`
@@ -37,7 +29,7 @@ func NewPixelCoord(x, y uint64) *PixelCoord {
 
 // LonLatToPixelCoord translates a geographic coordinate to a pixel coordinate.
 func LonLatToPixelCoord(lonLat *LonLat) *PixelCoord {
-	// Converting to range from [0:1] where 0,0 is top left
+	// Converting to range from [0:1] where 0,0 is bottom-left
 	normalizedTile := LonLatToFractionalTile(lonLat, 0)
 	normalizedCoord := &Coord{
 		X: normalizedTile.X,
@@ -51,7 +43,7 @@ func LonLatToPixelCoord(lonLat *LonLat) *PixelCoord {
 
 // CoordToPixelCoord translates a coordinate to a pixel coordinate.
 func CoordToPixelCoord(coord *Coord, bounds *Bounds) *PixelCoord {
-	// Converting to range from [0:1] where 0,0 is top left
+	// Converting to range from [0:1] where 0,0 is bottom-left
 	normalizedTile := CoordToFractionalTile(coord, 0, bounds)
 	normalizedCoord := &Coord{
 		X: normalizedTile.X,
@@ -60,25 +52,5 @@ func CoordToPixelCoord(coord *Coord, bounds *Bounds) *PixelCoord {
 	return &PixelCoord{
 		X: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.X*MaxPixels))),
 		Y: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.Y*MaxPixels))),
-	}
-}
-
-// GetTilePixelBounds returns the pixel coordinate bounds of the tile coordinate.
-func GetTilePixelBounds(tile *TileCoord) *PixelBounds {
-	pow2 := math.Pow(2, float64(tile.Z))
-	// Converting to range from [0:1] where 0,0 is top left
-	xMin := float64(tile.X) / pow2
-	xMax := float64(tile.X+1) / pow2
-	yMin := float64(tile.Y) / pow2
-	yMax := float64(tile.Y+1) / pow2
-	return &PixelBounds{
-		TopLeft: &PixelCoord{
-			X: uint64(math.Min(MaxPixels-1, util.Round(xMin*MaxPixels))),
-			Y: uint64(math.Min(MaxPixels-1, util.Round(yMin*MaxPixels))),
-		},
-		BottomRight: &PixelCoord{
-			X: uint64(math.Min(MaxPixels-1, util.Round(xMax*MaxPixels))),
-			Y: uint64(math.Min(MaxPixels-1, util.Round(yMax*MaxPixels))),
-		},
 	}
 }

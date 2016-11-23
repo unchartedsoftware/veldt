@@ -65,7 +65,8 @@ func (m *Macro) Create(uri string, coord *binning.TileCoord, query prism.Query) 
 	}
 
 	// bin width
-	binSize := float64(256 / m.Resolution)
+	tileSize := 256.0
+	binSize := tileSize / float64(m.Resolution)
 	halfSize := float64(binSize / 2)
 
 	// convert to byte array

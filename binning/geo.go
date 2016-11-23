@@ -11,8 +11,8 @@ const (
 
 // GeoBounds represents a geographical bounding box.
 type GeoBounds struct {
-	TopLeft     *LonLat
-	BottomRight *LonLat
+	BottomLeft *LonLat
+	TopRight   *LonLat
 }
 
 // LonLat represents a geographic point.
@@ -29,17 +29,6 @@ func NewLonLat(lon, lat float64) *LonLat {
 	}
 }
 
-func tileToLon(x float64, level uint32) float64 {
-	pow2 := math.Pow(2, float64(level))
-	return x/pow2*360.0 - 180.0
-}
-
-func tileToLat(y float64, level uint32) float64 {
-	pow2 := math.Pow(2, float64(level))
-	n := math.Pi - (2.0*math.Pi*y)/pow2
-	return math.Atan(math.Sinh(n)) * radiansToDegrees
-}
-
 // LonLatToFractionalTile converts a geographic coordinate into a floating point tile coordinate.
 func LonLatToFractionalTile(lonLat *LonLat, level uint32) *FractionalTileCoord {
 	latR := lonLat.Lat * degreesToRadians
@@ -48,35 +37,7 @@ func LonLatToFractionalTile(lonLat *LonLat, level uint32) *FractionalTileCoord {
 	y := (pow2 * (1 - math.Log(math.Tan(latR)+1/math.Cos(latR))/math.Pi) / 2)
 	return &FractionalTileCoord{
 		X: x,
-		Y: y,
+		Y: pow2 - y,
 		Z: level,
-	}
-}
-
-// LonLatToTile converts a geographic coordinate into tile coordinate.
-func LonLatToTile(lonlat *LonLat, level uint32) *TileCoord {
-	tile := LonLatToFractionalTile(lonlat, level)
-	return &TileCoord{
-		X: uint32(math.Floor(tile.X)),
-		Y: uint32(math.Floor(tile.Y)),
-		Z: uint32(tile.Z),
-	}
-}
-
-// GetTileGeoBounds returns the geographic bounds of the tile coordinate.
-func GetTileGeoBounds(tile *TileCoord) *GeoBounds {
-	top := tileToLat(float64(tile.Y), tile.Z)
-	bottom := tileToLat(float64(tile.Y+1), tile.Z)
-	right := tileToLon(float64(tile.X+1), tile.Z)
-	left := tileToLon(float64(tile.X), tile.Z)
-	return &GeoBounds{
-		TopLeft: &LonLat{
-			Lon: left,
-			Lat: top,
-		},
-		BottomRight: &LonLat{
-			Lon: right,
-			Lat: bottom,
-		},
 	}
 }

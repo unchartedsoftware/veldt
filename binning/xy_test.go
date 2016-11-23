@@ -14,40 +14,40 @@ var _ = Describe("xy", func() {
 	)
 
 	var (
-		t0 = binning.TileCoord{
+		t000 = binning.TileCoord{
 			X: 0,
 			Y: 0,
 			Z: 0,
 		}
-		t1 = binning.TileCoord{
+		t100 = binning.TileCoord{
 			X: 0,
 			Y: 0,
 			Z: 1,
 		}
-		t2 = binning.TileCoord{
+		t111 = binning.TileCoord{
 			X: 1,
 			Y: 1,
 			Z: 1,
 		}
 		extent = binning.Bounds{
-			TopLeft: &binning.Coord{
+			BottomLeft: &binning.Coord{
 				X: -1,
 				Y: -1,
 			},
-			BottomRight: &binning.Coord{
+			TopRight: &binning.Coord{
 				X: 1,
 				Y: 1,
 			},
 		}
-		xy0 = binning.Coord{
+		bottomLeft = binning.Coord{
 			X: -1,
 			Y: -1,
 		}
-		xy1 = binning.Coord{
+		center = binning.Coord{
 			X: 0,
 			Y: 0,
 		}
-		xy2 = binning.Coord{
+		topRight = binning.Coord{
 			X: 1,
 			Y: 1,
 		}
@@ -55,101 +55,85 @@ var _ = Describe("xy", func() {
 
 	Describe("GetTileBounds", func() {
 		It("should return bounds from a tile coordinate", func() {
-			bounds := binning.GetTileBounds(&t0, &extent)
-			Expect(bounds.TopLeft.X).To(BeNumerically("~", -1.0, epsilon))
-			Expect(bounds.TopLeft.Y).To(BeNumerically("~", -1.0, epsilon))
-			Expect(bounds.BottomRight.X).To(BeNumerically("~", 1.0, epsilon))
-			Expect(bounds.BottomRight.Y).To(BeNumerically("~", 1.0, epsilon))
+			bounds := binning.GetTileBounds(&t000, &extent)
+			Expect(bounds.BottomLeft.X).To(BeNumerically("~", -1.0, epsilon))
+			Expect(bounds.BottomLeft.Y).To(BeNumerically("~", -1.0, epsilon))
+			Expect(bounds.TopRight.X).To(BeNumerically("~", 1.0, epsilon))
+			Expect(bounds.TopRight.Y).To(BeNumerically("~", 1.0, epsilon))
 
-			bounds = binning.GetTileBounds(&t1, &extent)
-			Expect(bounds.TopLeft.X).To(BeNumerically("~", -1.0, epsilon))
-			Expect(bounds.TopLeft.Y).To(BeNumerically("~", -1.0, epsilon))
-			Expect(bounds.BottomRight.X).To(BeNumerically("~", 0.0, epsilon))
-			Expect(bounds.BottomRight.Y).To(BeNumerically("~", 0.0, epsilon))
+			bounds = binning.GetTileBounds(&t100, &extent)
+			Expect(bounds.BottomLeft.X).To(BeNumerically("~", -1.0, epsilon))
+			Expect(bounds.BottomLeft.Y).To(BeNumerically("~", -1.0, epsilon))
+			Expect(bounds.TopRight.X).To(BeNumerically("~", 0.0, epsilon))
+			Expect(bounds.TopRight.Y).To(BeNumerically("~", 0.0, epsilon))
 
-			bounds = binning.GetTileBounds(&t2, &extent)
-			Expect(bounds.TopLeft.X).To(BeNumerically("~", 0.0, epsilon))
-			Expect(bounds.TopLeft.Y).To(BeNumerically("~", 0.0, epsilon))
-			Expect(bounds.BottomRight.X).To(BeNumerically("~", 1.0, epsilon))
-			Expect(bounds.BottomRight.Y).To(BeNumerically("~", 1.0, epsilon))
+			bounds = binning.GetTileBounds(&t111, &extent)
+			Expect(bounds.BottomLeft.X).To(BeNumerically("~", 0.0, epsilon))
+			Expect(bounds.BottomLeft.Y).To(BeNumerically("~", 0.0, epsilon))
+			Expect(bounds.TopRight.X).To(BeNumerically("~", 1.0, epsilon))
+			Expect(bounds.TopRight.Y).To(BeNumerically("~", 1.0, epsilon))
 		})
 		It("should support bounds where right > left", func() {
-			bounds := binning.GetTileBounds(&t0, &extent)
-			Expect(bounds.TopLeft.X).To(BeNumerically("~", -1.0, epsilon))
-			Expect(bounds.TopLeft.Y).To(BeNumerically("~", -1.0, epsilon))
-			Expect(bounds.BottomRight.X).To(BeNumerically("~", 1.0, epsilon))
-			Expect(bounds.BottomRight.Y).To(BeNumerically("~", 1.0, epsilon))
+			bounds := binning.GetTileBounds(&t000, &extent)
+			Expect(bounds.BottomLeft.X).To(BeNumerically("~", -1.0, epsilon))
+			Expect(bounds.BottomLeft.Y).To(BeNumerically("~", -1.0, epsilon))
+			Expect(bounds.TopRight.X).To(BeNumerically("~", 1.0, epsilon))
+			Expect(bounds.TopRight.Y).To(BeNumerically("~", 1.0, epsilon))
 		})
 		It("should support bounds where bottom > top", func() {
-			bounds := binning.GetTileBounds(&t0, &extent)
-			Expect(bounds.TopLeft.X).To(BeNumerically("~", -1.0, epsilon))
-			Expect(bounds.TopLeft.Y).To(BeNumerically("~", -1.0, epsilon))
-			Expect(bounds.BottomRight.X).To(BeNumerically("~", 1.0, epsilon))
-			Expect(bounds.BottomRight.Y).To(BeNumerically("~", 1.0, epsilon))
+			bounds := binning.GetTileBounds(&t000, &extent)
+			Expect(bounds.BottomLeft.X).To(BeNumerically("~", -1.0, epsilon))
+			Expect(bounds.BottomLeft.Y).To(BeNumerically("~", -1.0, epsilon))
+			Expect(bounds.TopRight.X).To(BeNumerically("~", 1.0, epsilon))
+			Expect(bounds.TopRight.Y).To(BeNumerically("~", 1.0, epsilon))
 		})
 		It("should support bounds where left > right", func() {
-			bounds := binning.GetTileBounds(&t0, &binning.Bounds{
-				TopLeft: &binning.Coord{
+			bounds := binning.GetTileBounds(&t000, &binning.Bounds{
+				BottomLeft: &binning.Coord{
 					X: 1,
 					Y: -1,
 				},
-				BottomRight: &binning.Coord{
+				TopRight: &binning.Coord{
 					X: -1,
 					Y: 1,
 				},
 			})
-			Expect(bounds.TopLeft.X).To(BeNumerically("~", 1.0, epsilon))
-			Expect(bounds.TopLeft.Y).To(BeNumerically("~", -1.0, epsilon))
-			Expect(bounds.BottomRight.X).To(BeNumerically("~", -1.0, epsilon))
-			Expect(bounds.BottomRight.Y).To(BeNumerically("~", 1.0, epsilon))
+			Expect(bounds.BottomLeft.X).To(BeNumerically("~", 1.0, epsilon))
+			Expect(bounds.BottomLeft.Y).To(BeNumerically("~", -1.0, epsilon))
+			Expect(bounds.TopRight.X).To(BeNumerically("~", -1.0, epsilon))
+			Expect(bounds.TopRight.Y).To(BeNumerically("~", 1.0, epsilon))
 		})
 		It("should support bounds where top > bottom", func() {
-			bounds := binning.GetTileBounds(&t0, &binning.Bounds{
-				TopLeft: &binning.Coord{
+			bounds := binning.GetTileBounds(&t000, &binning.Bounds{
+				BottomLeft: &binning.Coord{
 					X: -1,
 					Y: 1,
 				},
-				BottomRight: &binning.Coord{
+				TopRight: &binning.Coord{
 					X: 1,
 					Y: -1,
 				},
 			})
-			Expect(bounds.TopLeft.X).To(BeNumerically("~", -1.0, epsilon))
-			Expect(bounds.TopLeft.Y).To(BeNumerically("~", 1.0, epsilon))
-			Expect(bounds.BottomRight.X).To(BeNumerically("~", 1.0, epsilon))
-			Expect(bounds.BottomRight.Y).To(BeNumerically("~", -1.0, epsilon))
+			Expect(bounds.BottomLeft.X).To(BeNumerically("~", -1.0, epsilon))
+			Expect(bounds.BottomLeft.Y).To(BeNumerically("~", 1.0, epsilon))
+			Expect(bounds.TopRight.X).To(BeNumerically("~", 1.0, epsilon))
+			Expect(bounds.TopRight.Y).To(BeNumerically("~", -1.0, epsilon))
 		})
 	})
 
 	Describe("CoordToFractionalTile", func() {
 		It("should return a fractional tile coordinate", func() {
-			tile := binning.CoordToFractionalTile(&xy0, 0, &extent)
+			tile := binning.CoordToFractionalTile(&bottomLeft, 0, &extent)
 			Expect(tile.X).To(BeNumerically("~", 0.0, epsilon))
 			Expect(tile.Y).To(BeNumerically("~", 0.0, epsilon))
 
-			tile = binning.CoordToFractionalTile(&xy1, 1, &extent)
+			tile = binning.CoordToFractionalTile(&center, 1, &extent)
 			Expect(tile.X).To(BeNumerically("~", 1.0, epsilon))
 			Expect(tile.Y).To(BeNumerically("~", 1.0, epsilon))
 
-			tile = binning.CoordToFractionalTile(&xy2, 1, &extent)
+			tile = binning.CoordToFractionalTile(&topRight, 1, &extent)
 			Expect(tile.X).To(BeNumerically("~", 2.0, epsilon))
 			Expect(tile.Y).To(BeNumerically("~", 2.0, epsilon))
-		})
-	})
-
-	Describe("CoordToTile", func() {
-		It("should return a tile coordinate", func() {
-			tile := binning.CoordToTile(&xy0, 0, &extent)
-			Expect(tile.X).To(Equal(uint32(0)))
-			Expect(tile.X).To(Equal(uint32(0)))
-
-			tile = binning.CoordToTile(&xy1, 1, &extent)
-			Expect(tile.X).To(Equal(uint32(1)))
-			Expect(tile.X).To(Equal(uint32(1)))
-
-			tile = binning.CoordToTile(&xy2, 1, &extent)
-			Expect(tile.X).To(Equal(uint32(2)))
-			Expect(tile.X).To(Equal(uint32(2)))
 		})
 	})
 

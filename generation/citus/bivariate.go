@@ -21,20 +21,20 @@ type Bivariate struct {
 func (b *Bivariate) GetQuery(coord *binning.TileCoord, query *Query) *Query {
 
 	extents := &binning.Bounds{
-		TopLeft: &binning.Coord{
+		BottomLeft: &binning.Coord{
 			X: b.Left,
 			Y: b.Top,
 		},
-		BottomRight: &binning.Coord{
+		TopRight: &binning.Coord{
 			X: b.Right,
 			Y: b.Bottom,
 		},
 	}
 	bounds := binning.GetTileBounds(coord, extents)
-	minX := int64(math.Min(bounds.TopLeft.X, bounds.BottomRight.X))
-	maxX := int64(math.Max(bounds.TopLeft.X, bounds.BottomRight.X))
-	minY := int64(math.Min(bounds.TopLeft.Y, bounds.BottomRight.Y))
-	maxY := int64(math.Max(bounds.TopLeft.Y, bounds.BottomRight.Y))
+	minX := int64(math.Min(bounds.BottomLeft.X, bounds.TopRight.X))
+	maxX := int64(math.Max(bounds.BottomLeft.X, bounds.TopRight.X))
+	minY := int64(math.Min(bounds.BottomLeft.Y, bounds.TopRight.Y))
+	maxY := int64(math.Max(bounds.BottomLeft.Y, bounds.TopRight.Y))
 	b.Bounds = bounds
 
 	minXArg := query.AddParameter(minX)
@@ -53,20 +53,20 @@ func (b *Bivariate) GetQuery(coord *binning.TileCoord, query *Query) *Query {
 func (b *Bivariate) GetAgg(coord *binning.TileCoord, query *Query) *Query {
 
 	extents := &binning.Bounds{
-		TopLeft: &binning.Coord{
+		BottomLeft: &binning.Coord{
 			X: b.Left,
 			Y: b.Top,
 		},
-		BottomRight: &binning.Coord{
+		TopRight: &binning.Coord{
 			X: b.Right,
 			Y: b.Bottom,
 		},
 	}
 	bounds := binning.GetTileBounds(coord, extents)
-	minX := int64(math.Min(bounds.TopLeft.X, bounds.BottomRight.X))
-	minY := int64(math.Min(bounds.TopLeft.Y, bounds.BottomRight.Y))
-	xRange := math.Abs(bounds.BottomRight.X - bounds.TopLeft.X)
-	yRange := math.Abs(bounds.BottomRight.Y - bounds.TopLeft.Y)
+	minX := int64(math.Min(bounds.BottomLeft.X, bounds.TopRight.X))
+	minY := int64(math.Min(bounds.BottomLeft.Y, bounds.TopRight.Y))
+	xRange := math.Abs(bounds.TopRight.X - bounds.BottomLeft.X)
+	yRange := math.Abs(bounds.TopRight.Y - bounds.BottomLeft.Y)
 	intervalX := int64(math.Max(1, xRange/float64(b.Resolution)))
 	intervalY := int64(math.Max(1, yRange/float64(b.Resolution)))
 	b.Bounds = bounds
@@ -102,10 +102,10 @@ func (b *Bivariate) GetXBin(x int64) int64 {
 	bounds := b.Bounds
 	fx := float64(x)
 	var bin int64
-	if bounds.TopLeft.X > bounds.BottomRight.X {
-		bin = int64(float64(b.Resolution) - ((fx - bounds.BottomRight.X) / b.BinSizeX))
+	if bounds.BottomLeft.X > bounds.TopRight.X {
+		bin = int64(float64(b.Resolution-1) - ((fx - bounds.TopRight.X) / b.BinSizeX))
 	} else {
-		bin = int64((fx - bounds.TopLeft.X) / b.BinSizeX)
+		bin = int64((fx - bounds.BottomLeft.X) / b.BinSizeX)
 	}
 	return b.clampBin(bin)
 }
@@ -115,10 +115,10 @@ func (b *Bivariate) GetYBin(y int64) int64 {
 	bounds := b.Bounds
 	fy := float64(y)
 	var bin int64
-	if bounds.TopLeft.Y > bounds.BottomRight.Y {
-		bin = int64(float64(b.Resolution) - ((fy - bounds.BottomRight.Y) / b.BinSizeY))
+	if bounds.BottomLeft.Y > bounds.TopRight.Y {
+		bin = int64(float64(b.Resolution-1) - ((fy - bounds.TopRight.Y) / b.BinSizeY))
 	} else {
-		bin = int64((fy - bounds.TopLeft.Y) / b.BinSizeY)
+		bin = int64((fy - bounds.BottomLeft.Y) / b.BinSizeY)
 	}
 	return b.clampBin(bin)
 }

@@ -6,8 +6,8 @@ import (
 
 // Bounds represents a bounding box.
 type Bounds struct {
-	TopLeft     *Coord
-	BottomRight *Coord
+	BottomLeft *Coord
+	TopRight   *Coord
 }
 
 // Coord represents a point.
@@ -33,8 +33,8 @@ func NewCoord(x, y float64) *Coord {
 // CoordToFractionalTile converts a data coordinate to a floating point tile coordinate.
 func CoordToFractionalTile(coord *Coord, level uint32, bounds *Bounds) *FractionalTileCoord {
 	pow2 := math.Pow(2, float64(level))
-	x := pow2 * (coord.X - bounds.TopLeft.X) / (bounds.BottomRight.X - bounds.TopLeft.X)
-	y := pow2 * (coord.Y - bounds.TopLeft.Y) / (bounds.BottomRight.Y - bounds.TopLeft.Y)
+	x := pow2 * (coord.X - bounds.BottomLeft.X) / (bounds.TopRight.X - bounds.BottomLeft.X)
+	y := pow2 * (coord.Y - bounds.BottomLeft.Y) / (bounds.TopRight.Y - bounds.BottomLeft.Y)
 	return &FractionalTileCoord{
 		X: x,
 		Y: y,
@@ -42,29 +42,19 @@ func CoordToFractionalTile(coord *Coord, level uint32, bounds *Bounds) *Fraction
 	}
 }
 
-// CoordToTile converts a data coordinate to a tile coordinate.
-func CoordToTile(coord *Coord, level uint32, bounds *Bounds) *TileCoord {
-	tile := CoordToFractionalTile(coord, level, bounds)
-	return &TileCoord{
-		X: uint32(math.Floor(tile.X)),
-		Y: uint32(math.Floor(tile.Y)),
-		Z: level,
-	}
-}
-
 // GetTileBounds returns the data coordinate bounds of the tile coordinate.
 func GetTileBounds(tile *TileCoord, bounds *Bounds) *Bounds {
 	pow2 := math.Pow(2, float64(tile.Z))
-	tileXSize := (bounds.BottomRight.X - bounds.TopLeft.X) / pow2
-	tileYSize := (bounds.BottomRight.Y - bounds.TopLeft.Y) / pow2
+	tileXSize := (bounds.TopRight.X - bounds.BottomLeft.X) / pow2
+	tileYSize := (bounds.TopRight.Y - bounds.BottomLeft.Y) / pow2
 	return &Bounds{
-		TopLeft: &Coord{
-			X: bounds.TopLeft.X + tileXSize*float64(tile.X),
-			Y: bounds.TopLeft.Y + tileYSize*float64(tile.Y),
+		BottomLeft: &Coord{
+			X: bounds.BottomLeft.X + tileXSize*float64(tile.X),
+			Y: bounds.BottomLeft.Y + tileYSize*float64(tile.Y),
 		},
-		BottomRight: &Coord{
-			X: bounds.TopLeft.X + tileXSize*float64(tile.X+1),
-			Y: bounds.TopLeft.Y + tileYSize*float64(tile.Y+1),
+		TopRight: &Coord{
+			X: bounds.BottomLeft.X + tileXSize*float64(tile.X+1),
+			Y: bounds.BottomLeft.Y + tileYSize*float64(tile.Y+1),
 		},
 	}
 }

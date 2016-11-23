@@ -34,20 +34,20 @@ func (b *Bivariate) computeTilingProps(coord *binning.TileCoord) {
 	}
 	// tiling params
 	extents := &binning.Bounds{
-		TopLeft: &binning.Coord{
+		BottomLeft: &binning.Coord{
 			X: b.Left,
-			Y: b.Top,
-		},
-		BottomRight: &binning.Coord{
-			X: b.Right,
 			Y: b.Bottom,
+		},
+		TopRight: &binning.Coord{
+			X: b.Right,
+			Y: b.Top,
 		},
 	}
 	b.bounds = binning.GetTileBounds(coord, extents)
-	b.minX = int64(math.Min(b.bounds.TopLeft.X, b.bounds.BottomRight.X))
-	b.maxX = int64(math.Max(b.bounds.TopLeft.X, b.bounds.BottomRight.X))
-	b.minY = int64(math.Min(b.bounds.TopLeft.Y, b.bounds.BottomRight.Y))
-	b.maxY = int64(math.Max(b.bounds.TopLeft.Y, b.bounds.BottomRight.Y))
+	b.minX = int64(math.Min(b.bounds.BottomLeft.X, b.bounds.TopRight.X))
+	b.maxX = int64(math.Max(b.bounds.BottomLeft.X, b.bounds.TopRight.X))
+	b.minY = int64(math.Min(b.bounds.BottomLeft.Y, b.bounds.TopRight.Y))
+	b.maxY = int64(math.Max(b.bounds.BottomLeft.Y, b.bounds.TopRight.Y))
 	// flag as computed
 	b.tiling = true
 }
@@ -59,8 +59,8 @@ func (b *Bivariate) computeBinningProps(coord *binning.TileCoord) {
 	// ensure we have tiling props
 	b.computeTilingProps(coord)
 	// binning params
-	xRange := math.Abs(b.bounds.BottomRight.X - b.bounds.TopLeft.X)
-	yRange := math.Abs(b.bounds.BottomRight.Y - b.bounds.TopLeft.Y)
+	xRange := math.Abs(b.bounds.TopRight.X - b.bounds.BottomLeft.X)
+	yRange := math.Abs(b.bounds.TopRight.Y - b.bounds.BottomLeft.Y)
 	b.intervalX = int64(math.Max(1, xRange/float64(b.Resolution)))
 	b.intervalY = int64(math.Max(1, yRange/float64(b.Resolution)))
 	b.binSizeX = xRange / float64(b.Resolution)
@@ -109,10 +109,10 @@ func (b *Bivariate) getXBin(x int64) int {
 	bounds := b.bounds
 	fx := float64(x)
 	var bin int64
-	if bounds.TopLeft.X > bounds.BottomRight.X {
-		bin = int64(float64(b.Resolution-1) - ((fx - bounds.BottomRight.X) / b.binSizeX))
+	if bounds.BottomLeft.X > bounds.TopRight.X {
+		bin = int64(float64(b.Resolution-1) - ((fx - bounds.TopRight.X) / b.binSizeX))
 	} else {
-		bin = int64((fx - bounds.TopLeft.X) / b.binSizeX)
+		bin = int64((fx - bounds.BottomLeft.X) / b.binSizeX)
 	}
 	return b.clampBin(bin)
 }
@@ -122,10 +122,10 @@ func (b *Bivariate) getYBin(y int64) int {
 	bounds := b.bounds
 	fy := float64(y)
 	var bin int64
-	if bounds.TopLeft.Y > bounds.BottomRight.Y {
-		bin = int64(float64(b.Resolution-1) - ((fy - bounds.BottomRight.Y) / b.binSizeY))
+	if bounds.BottomLeft.Y > bounds.TopRight.Y {
+		bin = int64(float64(b.Resolution-1) - ((fy - bounds.TopRight.Y) / b.binSizeY))
 	} else {
-		bin = int64((fy - bounds.TopLeft.Y) / b.binSizeY)
+		bin = int64((fy - bounds.BottomLeft.Y) / b.binSizeY)
 	}
 	return b.clampBin(bin)
 }
