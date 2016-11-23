@@ -31,7 +31,7 @@ func (t *Tile) CreateQuery(query prism.Query) (*Query, error) {
 			return nil, err
 		}
 
-		root.AddWhereClause(q)
+		root.Where(q)
 	}
 
 	return root, nil
