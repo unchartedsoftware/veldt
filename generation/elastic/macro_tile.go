@@ -59,7 +59,7 @@ func (m *Macro) Create(uri string, coord *binning.TileCoord, query prism.Query) 
 	}
 
 	// get bins
-	bins, err := m.Bivariate.GetBins(res)
+	bins, err := m.Bivariate.GetBins(&res.Aggregations)
 	if err != nil {
 		return nil, err
 	}

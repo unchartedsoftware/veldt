@@ -27,7 +27,7 @@ func (q *Range) Parse(params map[string]interface{}) error {
 	lte, lteOk := json.Get(params, "lte")
 	lt, ltOk := json.Get(params, "lt")
 	if !gteOk && !gtOk && !lteOk && !ltOk {
-		return fmt.Errorf("Range has no valid range parameters")
+		return fmt.Errorf("range has no valid range parameters")
 	}
 	q.Field = field
 	q.GTE = gte

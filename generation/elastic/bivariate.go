@@ -131,12 +131,12 @@ func (b *Bivariate) getYBin(y int64) int {
 }
 
 // GetBins parses the resulting histograms into bins.
-func (b *Bivariate) GetBins(res *elastic.SearchResult) ([]*elastic.AggregationBucketHistogramItem, error) {
+func (b *Bivariate) GetBins(aggs *elastic.Aggregations) ([]*elastic.AggregationBucketHistogramItem, error) {
 	if !b.binning {
 		return nil, fmt.Errorf("binning properties have not been computed, ensure `GetAggs` is called")
 	}
 	// parse aggregations
-	xAgg, ok := res.Aggregations.Histogram("x")
+	xAgg, ok := aggs.Histogram("x")
 	if !ok {
 		return nil, fmt.Errorf("histogram aggregation `x` was not found")
 	}

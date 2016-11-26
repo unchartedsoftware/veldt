@@ -2,7 +2,6 @@ package elastic
 
 import (
 	"encoding/binary"
-	//"math"
 
 	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/binning"
@@ -20,10 +19,6 @@ func NewHeatmapTile(host, port string) prism.TileCtor {
 		h.Port = port
 		return h, nil
 	}
-}
-
-func (h *Heatmap) Parse(params map[string]interface{}) error {
-	return h.Bivariate.Parse(params)
 }
 
 func (h *Heatmap) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
@@ -59,7 +54,7 @@ func (h *Heatmap) Create(uri string, coord *binning.TileCoord, query prism.Query
 	}
 
 	// get bins
-	bins, err := h.Bivariate.GetBins(res)
+	bins, err := h.Bivariate.GetBins(&res.Aggregations)
 	if err != nil {
 		return nil, err
 	}
