@@ -7,30 +7,30 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
-type TopTermCountTile struct {
+type TargetTermCountTile struct {
 	Bivariate
-	TopTerms
+	TargetTerms
 	Tile
 }
 
-func NewTopTermCountTile(host, port string) prism.TileCtor {
+func NewTargetTermCountTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
-		t := &TopTermCountTile{}
+		t := &TargetTermCountTile{}
 		t.Host = host
 		t.Port = port
 		return t, nil
 	}
 }
 
-func (t *TopTermCountTile) Parse(params map[string]interface{}) error {
+func (t *TargetTermCountTile) Parse(params map[string]interface{}) error {
 	err := t.Bivariate.Parse(params)
 	if err != nil {
 		return nil
 	}
-	return t.TopTerms.Parse(params)
+	return t.TargetTerms.Parse(params)
 }
 
-func (t *TopTermCountTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (t *TargetTermCountTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(t.Host, t.Port)
 	if err != nil {
@@ -51,10 +51,12 @@ func (t *TopTermCountTile) Create(uri string, coord *binning.TileCoord, query pr
 	// set the query
 	search.Query(q)
 
-	// get agg
-	aggs := t.TopTerms.GetAggs()
-	// set the aggregation
-	search.Aggregation("top-terms", aggs["top-terms"])
+	// get aggs
+	aggs := t.TargetTerms.GetAggs()
+	for term, agg := range aggs {
+		// set the aggregation
+		search.Aggregation(term, agg)
+	}
 
 	// send query
 	res, err := search.Do()
@@ -63,7 +65,7 @@ func (t *TopTermCountTile) Create(uri string, coord *binning.TileCoord, query pr
 	}
 
 	// get bins
-	terms, err := t.TopTerms.GetTerms(&res.Aggregations)
+	terms, err := t.TargetTerms.GetTerms(&res.Aggregations)
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/unchartedsoftware/prism/tile"
 )
 
-// TopTerms represents a tiling generator that produces heatmaps.
 type TopTerms struct {
 	tile.TopTerms
 }
@@ -22,7 +21,6 @@ func (t *TopTerms) GetAggs() map[string]elastic.Aggregation {
 	}
 }
 
-// GetBins parses the resulting histograms into bins.
 func (t *TopTerms) GetTerms(aggs *elastic.Aggregations) (map[string]*elastic.AggregationBucketKeyItem, error) {
 	// build map of topics and counts
 	counts := make(map[string]*elastic.AggregationBucketKeyItem)

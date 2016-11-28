@@ -8,25 +8,25 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
-type Macro struct {
+type MacroTile struct {
 	Bivariate
 	Tile
 }
 
 func NewMacroTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
-		m := &Macro{}
+		m := &MacroTile{}
 		m.Host = host
 		m.Port = port
 		return m, nil
 	}
 }
 
-func (m *Macro) Parse(params map[string]interface{}) error {
+func (m *MacroTile) Parse(params map[string]interface{}) error {
 	return m.Bivariate.Parse(params)
 }
 
-func (m *Macro) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(m.Host, m.Port)
 	if err != nil {
