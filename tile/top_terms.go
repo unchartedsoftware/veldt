@@ -6,7 +6,6 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
-// TopTerms represents a tiling generator that produces heatmaps.
 type TopTerms struct {
 	TermsField string
 	TermsCount int

@@ -6,7 +6,6 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
-// Frequency represents a tiling generator that produces heatmaps.
 type Frequency struct {
 	FrequencyField string
 	GT             interface{}

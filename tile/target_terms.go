@@ -6,7 +6,6 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
-// TargetTerms represents a tiling generator that produces heatmaps.
 type TargetTerms struct {
 	TermsField string
 	Terms      []string
