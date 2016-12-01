@@ -90,29 +90,4 @@ func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query prism.Que
 		return tile.EncodeLOD(points[0:numPoints*2], m.LOD), nil
 	}
 	return tile.Encode(points[0 : numPoints*2]), nil
-
-	/*
-		// bin width
-		tileSize := 256.0
-		binSize := tileSize / float64(m.Resolution)
-		halfSize := float64(binSize / 2)
-
-		// convert to byte array
-		bits := make([]byte, len(bins)*8)
-		numPoints := 0
-		for i, bin := range bins {
-			if bin != nil {
-				x := float32(float64(i%m.Resolution)*binSize + halfSize)
-				y := float32(math.Floor(float64(i/m.Resolution))*binSize + halfSize)
-				binary.LittleEndian.PutUint32(
-					bits[numPoints*8:numPoints*8+4],
-					math.Float32bits(x))
-				binary.LittleEndian.PutUint32(
-					bits[numPoints*8+4:numPoints*8+8],
-					math.Float32bits(y))
-				numPoints++
-			}
-		}
-		return bits[0 : numPoints*8], nil
-	*/
 }

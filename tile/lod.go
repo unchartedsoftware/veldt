@@ -26,9 +26,7 @@ func init() {
 func morton(fx float32, fy float32) uint64 {
 	x := uint32(fx)
 	y := uint32(fy)
-	return (my[y&0xFF] | mx[x&0xFF]) +
-		(my[(y>>8)&0xFF]|mx[(x>>8)&0xFF])*0x10000 +
-		(my[(y>>16)&0xFF]|mx[(x>>16)&0xFF])*0x100000000
+	return (my[y&0xFF] | mx[x&0xFF]) + (my[(y>>8)&0xFF]|mx[(x>>8)&0xFF])*0x10000
 }
 
 type point []float32
@@ -48,7 +46,9 @@ func newPointArray(data []float32) *pointArray {
 	arr := &pointArray{
 		points: points,
 	}
+	// sort the points
 	sort.Sort(arr)
+	// now generate codes for the sorted points
 	codes := make([]int, len(points))
 	for i, p := range points {
 		codes[i] = int(morton(p[0], p[1]))
@@ -76,19 +76,22 @@ func EncodeLOD(data []float32, lod int) []byte {
 	paritionStride := max / int(partitions)
 
 	// set offsets
-	// TODO: fix this at 256 * 256 res?
-	offsets := make([]uint32, int(partitions))
+	offsets := make([]int, int(partitions))
+	for i := range offsets {
+		offsets[i] = -1
+	}
+
 	for i := len(arr.codes) - 1; i >= 0; i-- {
 		code := arr.codes[i]
 		j := code / paritionStride
-		offsets[j] = uint32(i * 8)
+		offsets[j] = i * 8
 	}
 
 	// fill empty offsets up with next entries to ensure easy LOD
-	for i := len(offsets) - 1; i > 0; i-- {
-		if offsets[i] == 0 {
+	for i := len(offsets) - 1; i >= 0; i-- {
+		if offsets[i] == -1 {
 			if i == len(offsets)-1 {
-				offsets[i] = uint32(len(arr.points) * 8)
+				offsets[i] = len(arr.points) * 8
 			} else {
 				offsets[i] = offsets[i+1]
 			}
@@ -111,19 +114,19 @@ func EncodeLOD(data []float32, lod int) []byte {
 	for i, offset := range offsets {
 		binary.LittleEndian.PutUint32(
 			offsetBytes[i*4:i*4+4],
-			offset)
+			uint32(offset))
 	}
 
 	// point length
 	pointLength := make([]byte, 4)
 	binary.LittleEndian.PutUint32(
-		pointLength[0:],
+		pointLength,
 		uint32(len(pointBytes)))
 
 	// offset length
 	offsetLength := make([]byte, 4)
 	binary.LittleEndian.PutUint32(
-		offsetLength[0:],
+		offsetLength,
 		uint32(len(offsetBytes)))
 
 	a := len(pointLength)
