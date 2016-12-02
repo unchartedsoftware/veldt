@@ -16,10 +16,12 @@ type TopHits struct {
 func (t *TopHits) GetAggs() map[string]elastic.Aggregation {
 	agg := elastic.NewTopHitsAggregation().Size(t.HitsCount)
 	// sort
-	if t.SortOrder == "desc" {
-		agg.Sort(t.SortField, false)
-	} else {
-		agg.Sort(t.SortField, true)
+	if t.SortField != "" {
+		if t.SortOrder == "desc" {
+			agg.Sort(t.SortField, false)
+		} else {
+			agg.Sort(t.SortField, true)
+		}
 	}
 	// add includes
 	if t.IncludeFields != nil {
@@ -32,6 +34,21 @@ func (t *TopHits) GetAggs() map[string]elastic.Aggregation {
 	}
 }
 
+func (t *TopHits) flattenSource(res map[string]interface{}, node map[string]interface{}, path string) {
+	for key, val := range node {
+		subpath := key
+		if path != "" {
+			subpath = path + "." + key
+		}
+		sub, ok := val.(map[string]interface{})
+		if ok {
+			t.flattenSource(res, sub, subpath)
+			continue
+		}
+		res[subpath] = val
+	}
+}
+
 func (t *TopHits) GetTopHits(aggs *elastic.Aggregations) ([]map[string]interface{}, error) {
 	topHits, ok := aggs.TopHits("top-hits")
 	if !ok {
@@ -39,10 +56,15 @@ func (t *TopHits) GetTopHits(aggs *elastic.Aggregations) ([]map[string]interface
 	}
 	hits := make([]map[string]interface{}, len(topHits.Hits.Hits))
 	for index, hit := range topHits.Hits.Hits {
-		err := json.Unmarshal(*hit.Source, &hits[index])
+		var src map[string]interface{}
+		err := json.Unmarshal(*hit.Source, &src)
 		if err != nil {
 			return nil, err
 		}
+		// flatten the source paths
+		flattened := make(map[string]interface{})
+		t.flattenSource(flattened, src, "")
+		hits[index] = flattened
 	}
 	return hits, nil
 }

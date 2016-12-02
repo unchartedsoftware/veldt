@@ -207,7 +207,7 @@ func (v *Validator) validateTile(args map[string]interface{}, indent int) Tile {
 	}
 
 	// check if tile is correct
-	v.Buffer("\"tile\": {", indent)
+	v.Buffer(`"tile": {`, indent)
 	id, params, tile, err := v.parseTile(val)
 	if id == "" {
 		id = missing
@@ -255,7 +255,7 @@ func (v *Validator) validateMeta(args map[string]interface{}, indent int) Meta {
 	}
 
 	// check if meta is correct
-	v.Buffer("\"meta\": {", indent)
+	v.Buffer(`"meta": {`, indent)
 	id, params, meta, err := v.parseMeta(val)
 	if id == "" {
 		id = missing
@@ -316,7 +316,7 @@ func (v *Validator) validateQueryToken(args map[string]interface{}, indent int, 
 		params = missing
 	}
 	if first {
-		v.Buffer("\"query\": {", indent)
+		v.Buffer(`"query": {`, indent)
 		v.BufferKeyValue(id, params, indent+1, err)
 		v.Buffer("}", indent)
 	} else {
@@ -328,18 +328,18 @@ func (v *Validator) validateQueryToken(args map[string]interface{}, indent int, 
 func (v *Validator) validateOperatorToken(op string, indent int) interface{} {
 	if !IsBoolOperator(op) {
 		v.StartError("invalid operator", indent)
-		v.Buffer(fmt.Sprintf("\"%v\"", op), indent)
+		v.Buffer(fmt.Sprintf(`"%v"`, op), indent)
 		v.EndError()
 		return nil
 	}
-	v.Buffer(fmt.Sprintf("\"%s\"", op), indent)
+	v.Buffer(fmt.Sprintf(`"%s"`, op), indent)
 	return op
 }
 
 func (v *Validator) validateExpressionToken(exp []interface{}, indent int, first bool) interface{} {
 	// open paren
 	if first {
-		v.Buffer("\"query\": [", indent)
+		v.Buffer(`"query": [`, indent)
 	} else {
 		v.Buffer("[", indent)
 	}

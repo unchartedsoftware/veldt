@@ -178,7 +178,7 @@ func (v *Validator) getIndent(indent int) string {
 func (v *Validator) formatVal(val interface{}) string {
 	str, ok := val.(string)
 	if ok {
-		return fmt.Sprintf("\"%s\"", str)
+		return fmt.Sprintf(`"%s"`, str)
 	}
 	arr, ok := val.([]interface{})
 	if ok {
@@ -202,7 +202,7 @@ func (v *Validator) bufferKeyValue(key string, val interface{}, indent int) {
 	// string
 	str, ok := val.(string)
 	if ok {
-		v.Buffer(fmt.Sprintf("\"%s\": \"%s\"", key, str), indent)
+		v.Buffer(fmt.Sprintf(`"%s": "%s"`, key, str), indent)
 		return
 	}
 
@@ -214,14 +214,14 @@ func (v *Validator) bufferKeyValue(key string, val interface{}, indent int) {
 		for i, sub := range arr {
 			vals[i] = v.formatVal(sub)
 		}
-		v.Buffer(fmt.Sprintf("\"%s\": [ %s ]", key, strings.Join(vals, ", ")), indent)
+		v.Buffer(fmt.Sprintf(`"%s": [ %s ]`, key, strings.Join(vals, ", ")), indent)
 		return
 	}
 
 	// obj
 	obj, ok := val.(map[string]interface{})
 	if ok {
-		v.Buffer(fmt.Sprintf("\"%s\": {", key), indent)
+		v.Buffer(fmt.Sprintf(`"%s": {`, key), indent)
 		for subkey, subval := range obj {
 			v.bufferKeyValue(subkey, subval, indent+1)
 		}
@@ -230,7 +230,7 @@ func (v *Validator) bufferKeyValue(key string, val interface{}, indent int) {
 	}
 
 	// other
-	v.Buffer(fmt.Sprintf("\"%s\": %v", key, val), indent)
+	v.Buffer(fmt.Sprintf(`"%s": %v`, key, val), indent)
 }
 
 func (v *Validator) BufferKeyValue(key string, val interface{}, indent int, err error) {

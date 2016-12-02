@@ -15,10 +15,7 @@ type TopHits struct {
 
 // Parse parses the provided JSON object and populates the tiles attributes.
 func (t *TopHits) Parse(params map[string]interface{}) error {
-	sortField, ok := json.GetString(params, "sortField")
-	if !ok {
-		return fmt.Errorf("`sortField` parameter missing from tile")
-	}
+	sortField := json.GetStringDefault(params, "", "sortField")
 	sortOrder := json.GetStringDefault(params, "desc", "sortOrder")
 	hitsCount, ok := json.GetNumber(params, "hitsCount")
 	if !ok {

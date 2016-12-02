@@ -48,5 +48,5 @@ func (t *Count) Create(uri string, coord *binning.TileCoord, query prism.Query) 
 		return nil, err
 	}
 
-	return []byte(fmt.Sprintf("{\"count\":%d}\n", res.Hits.TotalHits)), nil
+	return []byte(fmt.Sprintf(`{"count":%d}`, res.Hits.TotalHits)), nil
 }
