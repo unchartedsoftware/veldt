@@ -58,6 +58,11 @@ func (v *Validator) String() string {
 	// determine whether or not to append a comma on the end based on the next
 	// lines indentation
 	for i := 0; i < length; i++ {
+		if i == length-1 {
+			// last line
+			formatted[i] = v.output[i]
+			break
+		}
 		// skip any error annotation lines
 		if v.errLines[i] {
 			formatted[i] = v.output[i]
