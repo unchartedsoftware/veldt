@@ -194,7 +194,7 @@ func (p *Pipeline) GetTileFromStore(req *TileRequest) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.decompress(res[0:])
+	return p.decompress(res)
 }
 
 func (p *Pipeline) getTilePromise(hash string, req *TileRequest) error {
@@ -219,7 +219,7 @@ func (p *Pipeline) generateAndStoreTile(hash string, req *TileRequest) error {
 		return err
 	}
 	// compress tile payload
-	res, err = p.compress(res[0:])
+	res, err = p.compress(res)
 	if err != nil {
 		return err
 	}
@@ -230,7 +230,7 @@ func (p *Pipeline) generateAndStoreTile(hash string, req *TileRequest) error {
 	}
 	defer store.Close()
 	// add tile to store
-	return store.Set(hash, res[0:])
+	return store.Set(hash, res)
 }
 
 func (p *Pipeline) getTileHash(req *TileRequest) string {
@@ -282,7 +282,7 @@ func (p *Pipeline) GetMetaFromStore(req *MetaRequest) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.decompress(res[0:])
+	return p.decompress(res)
 }
 
 func (p *Pipeline) getMetaPromise(hash string, req *MetaRequest) error {
@@ -307,7 +307,7 @@ func (p *Pipeline) generateAndStoreMeta(hash string, req *MetaRequest) error {
 		return err
 	}
 	// compress tile payload
-	res, err = p.compress(res[0:])
+	res, err = p.compress(res)
 	if err != nil {
 		return err
 	}
@@ -318,7 +318,7 @@ func (p *Pipeline) generateAndStoreMeta(hash string, req *MetaRequest) error {
 	}
 	defer store.Close()
 	// add tile to store
-	return store.Set(hash, res[0:])
+	return store.Set(hash, res)
 }
 
 func (p *Pipeline) getMetaHash(req *MetaRequest) string {
@@ -339,11 +339,11 @@ func (p *Pipeline) compress(data []byte) ([]byte, error) {
 			return nil, err
 		}
 	}
-	return buffer.Bytes()[0:], nil
+	return buffer.Bytes(), nil
 }
 
 func (p *Pipeline) decompress(data []byte) ([]byte, error) {
-	buffer := bytes.NewBuffer(data[0:])
+	buffer := bytes.NewBuffer(data)
 	reader, err, ok := p.getReader(buffer)
 	if err != nil {
 		return nil, err
@@ -360,7 +360,7 @@ func (p *Pipeline) decompress(data []byte) ([]byte, error) {
 			return nil, err
 		}
 	}
-	return data[0:], nil
+	return data, nil
 }
 
 func (p *Pipeline) getReader(buffer *bytes.Buffer) (io.ReadCloser, error, bool) {

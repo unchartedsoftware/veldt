@@ -10,7 +10,6 @@ import (
 	"github.com/unchartedsoftware/prism/tile"
 )
 
-// Bivariate represents a bivariate tile generator.
 type Bivariate struct {
 	tile.Bivariate
 	// tiling

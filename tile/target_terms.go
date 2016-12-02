@@ -6,22 +6,22 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
-type TopTerms struct {
+type TargetTerms struct {
 	TermsField string
-	TermsCount int
+	Terms      []string
 }
 
 // Parse parses the provided JSON object and populates the tiles attributes.
-func (t *TopTerms) Parse(params map[string]interface{}) error {
+func (t *TargetTerms) Parse(params map[string]interface{}) error {
 	termsField, ok := json.GetString(params, "termsField")
 	if !ok {
 		return fmt.Errorf("`termsField` parameter missing from tile")
 	}
-	termsCount, ok := json.GetNumber(params, "termsCount")
+	terms, ok := json.GetStringArray(params, "terms")
 	if !ok {
-		return fmt.Errorf("`termsCount` parameter missing from tile")
+		return fmt.Errorf("`terms` parameter missing from tile")
 	}
 	t.TermsField = termsField
-	t.TermsCount = int(termsCount)
+	t.Terms = terms
 	return nil
 }

@@ -6,23 +6,17 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
-// Frequency represents a tiling generator that produces heatmaps.
 type Frequency struct {
-	Bivariate
-	FrequencyField    string
-	GT       interface{}
-	GTE      interface{}
-	LT       interface{}
-	LTE      interface{}
-	Interval string
+	FrequencyField string
+	GT             interface{}
+	GTE            interface{}
+	LT             interface{}
+	LTE            interface{}
+	Interval       string
 }
 
 // Parse parses the provided JSON object and populates the tiles attributes.
 func (t *Frequency) Parse(params map[string]interface{}) error {
-	err := t.Bivariate.Parse(params)
-	if err != nil {
-		return err
-	}
 	frequencyField, ok := json.GetString(params, "frequencyField")
 	if !ok {
 		return fmt.Errorf("`frequencyField` parameter missing from tile")

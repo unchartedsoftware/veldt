@@ -7,21 +7,21 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
-type Heatmap struct {
+type HeatmapTile struct {
 	Bivariate
 	Tile
 }
 
 func NewHeatmapTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
-		h := &Heatmap{}
+		h := &HeatmapTile{}
 		h.Host = host
 		h.Port = port
 		return h, nil
 	}
 }
 
-func (h *Heatmap) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (h *HeatmapTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(h.Host, h.Port)
 	if err != nil {
@@ -68,5 +68,5 @@ func (h *Heatmap) Create(uri string, coord *binning.TileCoord, query prism.Query
 				uint32(bin.DocCount))
 		}
 	}
-	return bits[0:], nil
+	return bits, nil
 }

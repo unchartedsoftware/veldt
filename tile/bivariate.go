@@ -6,7 +6,6 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
-// Bivariate represents a bivariate tile generator.
 type Bivariate struct {
 	XField     string
 	YField     string

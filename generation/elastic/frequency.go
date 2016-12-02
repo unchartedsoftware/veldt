@@ -8,9 +8,25 @@ import (
 	"github.com/unchartedsoftware/prism/tile"
 )
 
-// Frequency represents a tiling generator that produces heatmaps.
 type Frequency struct {
 	tile.Frequency
+}
+
+func (f *Frequency) GetQuery() *elastic.RangeQuery {
+	query := elastic.NewRangeQuery(f.FrequencyField)
+	if f.GTE != nil {
+		query.Gte(castTime(f.GTE))
+	}
+	if f.GT != nil {
+		query.Gt(castTime(f.GT))
+	}
+	if f.LTE != nil {
+		query.Lte(castTime(f.LTE))
+	}
+	if f.LT != nil {
+		query.Lt(castTime(f.LT))
+	}
+	return query
 }
 
 func (f *Frequency) GetAggs() map[string]elastic.Aggregation {
@@ -35,23 +51,6 @@ func (f *Frequency) GetAggs() map[string]elastic.Aggregation {
 	return map[string]elastic.Aggregation{
 		"frequency": agg,
 	}
-}
-
-func (f *Frequency) GetQuery() *elastic.RangeQuery {
-	query := elastic.NewRangeQuery(f.FrequencyField)
-	if f.GTE != nil {
-		query.Gte(castTime(f.GTE))
-	}
-	if f.GT != nil {
-		query.Gt(castTime(f.GT))
-	}
-	if f.LTE != nil {
-		query.Lte(castTime(f.LTE))
-	}
-	if f.LT != nil {
-		query.Lt(castTime(f.LT))
-	}
-	return query
 }
 
 func (f *Frequency) GetBuckets(aggs *elastic.Aggregations) ([]*elastic.AggregationBucketHistogramItem, error) {

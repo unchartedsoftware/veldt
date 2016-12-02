@@ -7,30 +7,30 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
-type TopTermCountTile struct {
+type FrequencyTile struct {
 	Bivariate
-	TopTerms
+	Frequency
 	Tile
 }
 
-func NewTopTermCountTile(host, port string) prism.TileCtor {
+func NewFrequencyTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
-		t := &TopTermCountTile{}
+		t := &FrequencyTile{}
 		t.Host = host
 		t.Port = port
 		return t, nil
 	}
 }
 
-func (t *TopTermCountTile) Parse(params map[string]interface{}) error {
+func (t *FrequencyTile) Parse(params map[string]interface{}) error {
 	err := t.Bivariate.Parse(params)
 	if err != nil {
 		return nil
 	}
-	return t.TopTerms.Parse(params)
+	return t.Frequency.Parse(params)
 }
 
-func (t *TopTermCountTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (t *FrequencyTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(t.Host, t.Port)
 	if err != nil {
@@ -48,13 +48,15 @@ func (t *TopTermCountTile) Create(uri string, coord *binning.TileCoord, query pr
 	}
 	// add tiling query
 	q.Must(t.Bivariate.GetQuery(coord))
+	// add frequency query
+	q.Must(t.Frequency.GetQuery())
 	// set the query
 	search.Query(q)
 
 	// get agg
-	aggs := t.TopTerms.GetAggs()
+	aggs := t.Frequency.GetAggs()
 	// set the aggregation
-	search.Aggregation("top-terms", aggs["top-terms"])
+	search.Aggregation("frequency", aggs["frequency"])
 
 	// send query
 	res, err := search.Do()
@@ -62,16 +64,19 @@ func (t *TopTermCountTile) Create(uri string, coord *binning.TileCoord, query pr
 		return nil, err
 	}
 
-	// get bins
-	terms, err := t.TopTerms.GetTerms(&res.Aggregations)
+	// get buckets
+	frequency, err := t.Frequency.GetBuckets(&res.Aggregations)
 	if err != nil {
 		return nil, err
 	}
 
-	counts := make(map[string]uint32)
-	for term, bucket := range terms {
-		counts[term] = uint32(bucket.DocCount)
+	buckets := make([]map[string]interface{}, len(frequency))
+	for i, bucket := range frequency {
+		buckets[i] = map[string]interface{}{
+			"timestamp": bucket.Key,
+			"count":     bucket.DocCount,
+		}
 	}
 	// marshal results
-	return json.Marshal(counts)
+	return json.Marshal(buckets)
 }

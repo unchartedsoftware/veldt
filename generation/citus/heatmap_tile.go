@@ -68,5 +68,5 @@ func (h *Heatmap) Create(uri string, coord *binning.TileCoord, query prism.Query
 			bits[i*4:i*4+4],
 			uint32(bin))
 	}
-	return bits[0:], nil
+	return bits, nil
 }
