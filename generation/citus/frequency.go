@@ -15,6 +15,11 @@ type Frequency struct {
 	tile.Frequency
 }
 
+type FrequencyResult struct {
+	Bucket int
+	Value  float64
+}
+
 func (f *Frequency) AddAggs(query *Query) *Query {
 	//Bounds extension (empty buckets) will be done in the go code when parsing results
 	//Not 100% sure if we need to substract the min value from the frequency field to
@@ -56,7 +61,7 @@ func (f *Frequency) AddQuery(query *Query) *Query {
 	return query
 }
 
-func (f *Frequency) GetBuckets(rows *pgx.Rows) ([]float64, error) {
+func (f *Frequency) GetBuckets(rows *pgx.Rows) ([]*FrequencyResult, error) {
 	//Need to build all the buckets over the window since empty buckets are needed.
 	results := make(map[int]float64)
 	//Parse the results. Build a map to fill in the buckets, and get the min/max.
@@ -102,10 +107,15 @@ func (f *Frequency) GetBuckets(rows *pgx.Rows) ([]float64, error) {
 
 	//May be off by 1 as result of type conversion.
 	numberOfBuckets := int64((windowEnd - windowStart)) / int64(intervalNum)
-	buckets := make([]float64, numberOfBuckets)
+	buckets := make([]*FrequencyResult, numberOfBuckets)
 	for i, _ := range buckets {
 		//If value is not in the map, 0 will be returned as default value.
-		buckets[i] = results[i]
+		bucket := i + windowStart
+		frequency := results[bucket]
+		buckets[i] = &FrequencyResult{
+			Bucket: bucket,
+			Value:  frequency,
+		}
 	}
 	return buckets, nil
 }

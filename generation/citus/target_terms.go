@@ -8,12 +8,28 @@ import (
 	"github.com/unchartedsoftware/prism/tile"
 )
 
-// TopTerms represents a tiling generator that produces heatmaps.
-type TopTerms struct {
-	tile.TopTerms
+type TargetTerms struct {
+	tile.TargetTerms
 }
 
-func (t *TopTerms) AddAggs(query *Query) *Query {
+func (t *TargetTerms) AddQuery(query *Query) *Query {
+	//Want to keep only documents that have the specified terms.
+	//Use the already existing Has construct.
+	hasQuery := &Has{}
+	hasQuery.Field = t.TermsField
+	terms := make([]interface{}, len(t.Terms))
+	for i, term := range t.Terms {
+		terms[i] = term
+	}
+	hasQuery.Values = terms
+
+	clause, _ := hasQuery.Get(query)
+	query.Where(clause)
+	return query
+}
+
+func (t *TargetTerms) AddAggs(query *Query) *Query {
+	//Count by term, only considering the specified terms.
 	//TODO: Find a better way to make this work. The caller NEEDS to use the returned value.
 	//Assume the backing field is an array. Need to unpack that array and group by the terms.
 	query.Select(fmt.Sprintf("unnest(%s) AS term", t.TermsField))
@@ -27,13 +43,20 @@ func (t *TopTerms) AddAggs(query *Query) *Query {
 	termQuery.Select("term")
 	termQuery.Select("COUNT(*) as term_count")
 	termQuery.OrderBy("term_count desc")
-	termQuery.Limit(uint32(t.TermsCount))
+
+	//Generate the filter for the terms.
+	clause := ""
+	for _, value := range t.Terms {
+		valueParam := query.AddParameter(value)
+		clause = clause + fmt.Sprintf(", %s", valueParam)
+	}
+	termQuery.Where(fmt.Sprintf("term IN [%s]", clause[2:]))
 
 	return termQuery
 }
 
 // GetTerms parses the result of the terms query into a map of term -> count.
-func (t *TopTerms) GetTerms(rows *pgx.Rows) (map[string]uint32, error) {
+func (t *TargetTerms) GetTerms(rows *pgx.Rows) (map[string]uint32, error) {
 	// build map of topics and counts
 	counts := make(map[string]uint32)
 	for rows.Next() {
