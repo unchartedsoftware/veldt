@@ -52,5 +52,5 @@ func (t *Count) Create(uri string, coord *binning.TileCoord, query prism.Query) 
 			err)
 	}
 
-	return []byte(fmt.Sprintf("{\"count\":%d}\n", value)), nil
+	return []byte(fmt.Sprintf("{\"count\":%d}", uint64(value))), nil
 }
