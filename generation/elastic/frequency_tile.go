@@ -25,7 +25,7 @@ func NewFrequencyTile(host, port string) prism.TileCtor {
 func (t *FrequencyTile) Parse(params map[string]interface{}) error {
 	err := t.Bivariate.Parse(params)
 	if err != nil {
-		return nil
+		return err
 	}
 	return t.Frequency.Parse(params)
 }

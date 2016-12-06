@@ -25,7 +25,7 @@ func NewTargetTermCountTile(host, port string) prism.TileCtor {
 func (t *TargetTermCountTile) Parse(params map[string]interface{}) error {
 	err := t.Bivariate.Parse(params)
 	if err != nil {
-		return nil
+		return err
 	}
 	return t.TargetTerms.Parse(params)
 }
