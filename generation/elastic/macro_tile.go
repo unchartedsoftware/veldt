@@ -68,11 +68,10 @@ func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query prism.Que
 	}
 
 	// bin width
-	tileSize := 256.0
-	binSize := tileSize / float64(m.Resolution)
+	binSize := binning.MaxTileResolution / float64(m.Resolution)
 	halfSize := float64(binSize / 2)
 
-	// convert to byte array
+	// convert to point array
 	points := make([]float32, len(bins)*2)
 	numPoints := 0
 	for i, bin := range bins {

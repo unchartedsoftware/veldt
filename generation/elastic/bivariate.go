@@ -104,7 +104,7 @@ func (b *Bivariate) GetAggs(coord *binning.TileCoord) map[string]elastic.Aggrega
 }
 
 // GetXBin given an x value, returns the corresponding bin.
-func (b *Bivariate) getXBin(x int64) int {
+func (b *Bivariate) GetXBin(x int64) int {
 	bounds := b.bounds
 	fx := float64(x)
 	var bin int64
@@ -116,8 +116,23 @@ func (b *Bivariate) getXBin(x int64) int {
 	return b.clampBin(bin)
 }
 
+// GetX given an x value, returns the corresponding coord within the range of
+// [0 : 256) for the tile.
+func (b *Bivariate) GetX(x float64) float64 {
+	bounds := b.bounds
+	var px float64
+	if bounds.BottomLeft.X > bounds.TopRight.X {
+		rang := bounds.BottomLeft.X - bounds.TopRight.X
+		px = binning.MaxTileResolution - (((x - bounds.TopRight.X) / rang) * binning.MaxTileResolution)
+	} else {
+		rang := bounds.TopRight.X - bounds.BottomLeft.X
+		px = ((x - bounds.BottomLeft.X) / rang) * binning.MaxTileResolution
+	}
+	return px
+}
+
 // GetYBin given an y value, returns the corresponding bin.
-func (b *Bivariate) getYBin(y int64) int {
+func (b *Bivariate) GetYBin(y int64) int {
 	bounds := b.bounds
 	fy := float64(y)
 	var bin int64
@@ -144,14 +159,14 @@ func (b *Bivariate) GetBins(aggs *elastic.Aggregations) ([]*elastic.AggregationB
 	// fill bins
 	for _, xBucket := range xAgg.Buckets {
 		x := xBucket.Key
-		xBin := b.getXBin(x)
+		xBin := b.GetXBin(x)
 		yAgg, ok := xBucket.Histogram("y")
 		if !ok {
 			return nil, fmt.Errorf("histogram aggregation `y` was not found")
 		}
 		for _, yBucket := range yAgg.Buckets {
 			y := yBucket.Key
-			yBin := b.getYBin(y)
+			yBin := b.GetYBin(y)
 			index := xBin + b.Resolution*yBin
 			bins[index] = yBucket
 		}
