@@ -120,15 +120,12 @@ func (b *Bivariate) GetXBin(x int64) int {
 // [0 : 256) for the tile.
 func (b *Bivariate) GetX(x float64) float64 {
 	bounds := b.bounds
-	var px float64
 	if bounds.BottomLeft.X > bounds.TopRight.X {
 		rang := bounds.BottomLeft.X - bounds.TopRight.X
-		px = binning.MaxTileResolution - (((x - bounds.TopRight.X) / rang) * binning.MaxTileResolution)
-	} else {
-		rang := bounds.TopRight.X - bounds.BottomLeft.X
-		px = ((x - bounds.BottomLeft.X) / rang) * binning.MaxTileResolution
+		return binning.MaxTileResolution - (((x - bounds.TopRight.X) / rang) * binning.MaxTileResolution)
 	}
-	return px
+	rang := bounds.TopRight.X - bounds.BottomLeft.X
+	return ((x - bounds.BottomLeft.X) / rang) * binning.MaxTileResolution
 }
 
 // GetYBin given an y value, returns the corresponding bin.
@@ -142,6 +139,18 @@ func (b *Bivariate) GetYBin(y int64) int {
 		bin = int64((fy - bounds.BottomLeft.Y) / b.binSizeY)
 	}
 	return b.clampBin(bin)
+}
+
+// GetY given an y value, returns the corresponding coord within the range of
+// [0 : 256) for the tile.
+func (b *Bivariate) GetY(y float64) float64 {
+	bounds := b.bounds
+	if bounds.BottomLeft.Y > bounds.TopRight.Y {
+		rang := bounds.BottomLeft.Y - bounds.TopRight.Y
+		return binning.MaxTileResolution - (((y - bounds.TopRight.Y) / rang) * binning.MaxTileResolution)
+	}
+	rang := bounds.TopRight.Y - bounds.BottomLeft.Y
+	return ((y - bounds.BottomLeft.Y) / rang) * binning.MaxTileResolution
 }
 
 // GetBins parses the resulting histograms into bins.

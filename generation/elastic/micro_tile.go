@@ -2,6 +2,7 @@ package elastic
 
 import (
 	"encoding/json"
+	"sort"
 
 	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/binning"
@@ -87,11 +88,7 @@ func (m *MicroTile) Create(uri string, coord *binning.TileCoord, query prism.Que
 		return nil, err
 	}
 
-	// bin width
-	binSize := binning.MaxTileResolution / float64(m.Resolution)
-	halfSize := float32(binSize / 2)
-
-	// convert to point array
+	// convert to point array and hits array
 	points := make([]float32, len(hits)*2)
 	for i, hit := range hits {
 		ix, ok := hit[m.Bivariate.XField]
@@ -110,19 +107,28 @@ func (m *MicroTile) Create(uri string, coord *binning.TileCoord, query prism.Que
 		if !ok {
 			continue
 		}
-		points[i*2] = float32(x) + halfSize
-		points[i*2+1] = float32(y) + halfSize
+		// convert to tile pixel coords
+		tx := m.Bivariate.GetX(x)
+		ty := m.Bivariate.GetY(y)
+		// add to point array
+		points[i*2] = float32(tx)
+		points[i*2+1] = float32(ty)
 	}
 
-	var buffer []byte
 	if m.LOD > 0 {
-		buffer = tile.EncodeLOD(points, m.LOD)
-	} else {
-		buffer = tile.Encode(points)
+		// sort hits by morton code so they align
+		sortHitsArray(hits, points)
+		// sort points and get offsets
+		sortedPoints, offsets := tile.LOD(points, m.LOD)
+		return json.Marshal(map[string]interface{}{
+			"points":  sortedPoints,
+			"offsets": offsets,
+			"hits":    hits,
+		})
 	}
 
 	return json.Marshal(map[string]interface{}{
-		"buffer": buffer,
+		"points": points,
 		"hits":   hits,
 	})
 }
@@ -134,4 +140,40 @@ func existsIn(val string, arr []string) bool {
 		}
 	}
 	return false
+}
+
+func sortHitsArray(hits []map[string]interface{}, points []float32) {
+	// sort hits by morton code so they align
+	hitsArr := make(hitsArray, len(hits))
+	for i, hit := range hits {
+		// add to hits array
+		hitsArr[i] = &hitWrapper{
+			x:    points[i*2],
+			y:    points[i*2],
+			data: hit,
+		}
+	}
+	sort.Sort(hitsArr)
+	// copy back into same arr
+	for i, hit := range hitsArr {
+		hits[i] = hit.data
+	}
+}
+
+type hitWrapper struct {
+	x    float32
+	y    float32
+	data map[string]interface{}
+}
+
+type hitsArray []*hitWrapper
+
+func (h hitsArray) Len() int {
+	return len(h)
+}
+func (h hitsArray) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+}
+func (h hitsArray) Less(i, j int) bool {
+	return tile.Morton(h[i].x, h[i].y) < tile.Morton(h[j].x, h[j].y)
 }
