@@ -34,7 +34,7 @@ func LOD(data []float32, lod int) ([]float32, []int) {
 	points := sortPoints(data)
 
 	// generate codes for the sorted points
-	codes := make([]int, len(points))
+	codes := make([]int, len(points)/2)
 	for i := 0; i < len(points); i += 2 {
 		codes[i/2] = Morton(points[i], points[i+1])
 	}
