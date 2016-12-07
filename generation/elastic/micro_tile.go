@@ -14,7 +14,9 @@ type MicroTile struct {
 	Bivariate
 	Tile
 	TopHits
-	LOD int
+	LOD       int
+	XIncluded bool
+	YIncluded bool
 }
 
 func NewMicroTile(host, port string) prism.TileCtor {
@@ -42,9 +44,13 @@ func (m *MicroTile) Parse(params map[string]interface{}) error {
 	includes := m.TopHits.IncludeFields
 	if !existsIn(xField, includes) {
 		includes = append(includes, xField)
+	} else {
+		m.XIncluded = true
 	}
 	if !existsIn(yField, includes) {
 		includes = append(includes, yField)
+	} else {
+		m.YIncluded = true
 	}
 	m.TopHits.IncludeFields = includes
 	return nil
@@ -113,6 +119,19 @@ func (m *MicroTile) Create(uri string, coord *binning.TileCoord, query prism.Que
 		// add to point array
 		points[i*2] = float32(tx)
 		points[i*2+1] = float32(ty)
+		// remove fields if they weren't explicitly included
+		if !m.XIncluded {
+			delete(hit, m.Bivariate.XField)
+		}
+		if !m.YIncluded {
+			delete(hit, m.Bivariate.YField)
+		}
+	}
+
+	// check if there is any hit info to include at all
+	if !m.XIncluded && !m.YIncluded && len(m.TopHits.IncludeFields) == 2 {
+		// no point returning an array of empty hits
+		hits = nil
 	}
 
 	if m.LOD > 0 {
@@ -143,6 +162,9 @@ func existsIn(val string, arr []string) bool {
 }
 
 func sortHitsArray(hits []map[string]interface{}, points []float32) {
+	if hits == nil {
+		return
+	}
 	// sort hits by morton code so they align
 	hitsArr := make(hitsArray, len(hits))
 	for i, hit := range hits {
