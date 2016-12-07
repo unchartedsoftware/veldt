@@ -2,6 +2,7 @@ package elastic
 
 import (
 	"encoding/json"
+	"math"
 	"sort"
 
 	"github.com/unchartedsoftware/prism"
@@ -117,8 +118,8 @@ func (m *MicroTile) Create(uri string, coord *binning.TileCoord, query prism.Que
 		tx := m.Bivariate.GetX(x)
 		ty := m.Bivariate.GetY(y)
 		// add to point array
-		points[i*2] = float32(tx)
-		points[i*2+1] = float32(ty)
+		points[i*2] = toFixed(float32(tx), 2)
+		points[i*2+1] = toFixed(float32(ty), 2)
 		// remove fields if they weren't explicitly included
 		if !m.XIncluded {
 			delete(hit, m.Bivariate.XField)
@@ -159,6 +160,11 @@ func existsIn(val string, arr []string) bool {
 		}
 	}
 	return false
+}
+
+func toFixed(num float32, precision int) float32 {
+	output := math.Pow(10, float64(precision))
+	return float32(math.Floor(float64(num)*output+0.5)) / float32(output)
 }
 
 func sortHitsArray(hits []map[string]interface{}, points []float32) {
