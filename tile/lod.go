@@ -20,18 +20,26 @@ type Point []float32
 
 // Morton returns the morton code for the provided points. Only works for values
 // in the range [0.0: 256.0)]
-func Morton(fx float32, fy float32) uint64 {
+func Morton(fx float32, fy float32) int {
 	x := uint32(fx)
 	y := uint32(fy)
-	return (my[y&0xFF] | mx[x&0xFF]) // + (my[(y>>8)&0xFF]|mx[(x>>8)&0xFF])*0x10000
+	return int(my[y&0xFF] | mx[x&0xFF])
 }
 
 // LOD takes the input point array and sorts it by morton code. It then
 // generates an offset array which match the byte offsets into the point buffer
 // for each LOD.
 func LOD(data []float32, lod int) ([]float32, []int) {
-	arr := newPointArray(data)
+	// get the points array sorted by morton code
+	points := sortPoints(data)
 
+	// generate codes for the sorted points
+	codes := make([]int, len(points))
+	for i := 0; i < len(points); i += 2 {
+		codes[i/2] = Morton(points[i], points[i+1])
+	}
+
+	// calc number of partitions and partition stride
 	partitions := math.Pow(4, float64(lod))
 	paritionStride := maxMorton / int(partitions)
 
@@ -42,8 +50,8 @@ func LOD(data []float32, lod int) ([]float32, []int) {
 		offsets[i] = -1
 	}
 	// set the offsets to the least byte in the array
-	for i := len(arr.codes) - 1; i >= 0; i-- {
-		code := arr.codes[i]
+	for i := len(codes) - 1; i >= 0; i-- {
+		code := codes[i]
 		j := code / paritionStride
 		offsets[j] = i * 8
 	}
@@ -51,17 +59,11 @@ func LOD(data []float32, lod int) ([]float32, []int) {
 	for i := len(offsets) - 1; i >= 0; i-- {
 		if offsets[i] == -1 {
 			if i == len(offsets)-1 {
-				offsets[i] = len(arr.points) * 8
+				offsets[i] = len(points) * 4
 			} else {
 				offsets[i] = offsets[i+1]
 			}
 		}
-	}
-	// convert to point array
-	points := make([]float32, len(arr.points)*2)
-	for i, point := range arr.points {
-		points[i*2] = point[0]
-		points[i*2+1] = point[1]
 	}
 	return points, offsets
 }
@@ -129,38 +131,32 @@ func init() {
 	}
 }
 
-type pointArray struct {
-	points [][]float32
-	codes  []int
-}
-
-func newPointArray(data []float32) *pointArray {
-	points := make([][]float32, len(data)/2)
+func sortPoints(data []float32) []float32 {
+	points := make(pointArray, len(data)/2)
 	for i := 0; i < len(data); i += 2 {
 		x := data[i]
 		y := data[i+1]
-		points[i/2] = []float32{x, y}
-	}
-	arr := &pointArray{
-		points: points,
+		points[i/2] = [2]float32{x, y}
 	}
 	// sort the points
-	sort.Sort(arr)
-	// now generate codes for the sorted points
-	codes := make([]int, len(points))
-	for i, p := range points {
-		codes[i] = int(Morton(p[0], p[1]))
+	sort.Sort(points)
+	// convert to flat array
+	res := make([]float32, len(points)*2)
+	for i, point := range points {
+		res[i*2] = point[0]
+		res[i*2+1] = point[1]
 	}
-	arr.codes = codes
-	return arr
+	return res
 }
 
+type pointArray [][2]float32
+
 func (p pointArray) Len() int {
-	return len(p.points)
+	return len(p)
 }
 func (p pointArray) Swap(i, j int) {
-	p.points[i], p.points[j] = p.points[j], p.points[i]
+	p[i], p[j] = p[j], p[i]
 }
 func (p pointArray) Less(i, j int) bool {
-	return Morton(p.points[i][0], p.points[i][1]) < Morton(p.points[j][0], p.points[j][1])
+	return Morton(p[i][0], p[i][1]) < Morton(p[j][0], p[j][1])
 }
