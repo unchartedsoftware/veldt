@@ -12,11 +12,11 @@ type TopTerms struct {
 	tile.TopTerms
 }
 
-func (t *TopTerms) GetAggs() map[string]elastic.Aggregation {
+func (t *TopTerms) GetAggs() map[string]*elastic.TermsAggregation {
 	agg := elastic.NewTermsAggregation().
 		Field(t.TermsField).
 		Size(int(t.TermsCount))
-	return map[string]elastic.Aggregation{
+	return map[string]*elastic.TermsAggregation{
 		"top-terms": agg,
 	}
 }

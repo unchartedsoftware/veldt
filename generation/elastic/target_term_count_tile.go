@@ -50,26 +50,23 @@ func (t *TargetTermCountTile) Create(uri string, coord *binning.TileCoord, query
 	q.Must(t.Bivariate.GetQuery(coord))
 	// set the query
 	search.Query(q)
-
 	// get aggs
 	aggs := t.TargetTerms.GetAggs()
 	for term, agg := range aggs {
 		// set the aggregation
 		search.Aggregation(term, agg)
 	}
-
 	// send query
 	res, err := search.Do()
 	if err != nil {
 		return nil, err
 	}
-
-	// get bins
+	// get terms
 	terms, err := t.TargetTerms.GetTerms(&res.Aggregations)
 	if err != nil {
 		return nil, err
 	}
-
+	// encode
 	counts := make(map[string]uint32)
 	for term, bucket := range terms {
 		counts[term] = uint32(bucket.DocCount)

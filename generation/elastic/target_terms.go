@@ -20,8 +20,8 @@ func (t *TargetTerms) GetQuery() elastic.Query {
 	return elastic.NewTermsQuery(t.TermsField, terms...)
 }
 
-func (t *TargetTerms) GetAggs() map[string]elastic.Aggregation {
-	aggs := make(map[string]elastic.Aggregation, len(t.Terms))
+func (t *TargetTerms) GetAggs() map[string]*elastic.FilterAggregation {
+	aggs := make(map[string]*elastic.FilterAggregation, len(t.Terms))
 	// add all filter aggregations
 	for _, term := range t.Terms {
 		aggs[term] = elastic.NewFilterAggregation().
