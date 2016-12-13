@@ -16,7 +16,7 @@ type Frequency struct {
 }
 
 type FrequencyResult struct {
-	Bucket int
+	Bucket int64
 	Value  float64
 }
 
@@ -61,29 +61,39 @@ func (f *Frequency) AddQuery(query *Query) *Query {
 	return query
 }
 
+// Get the frequency buckets from the query results.
 func (f *Frequency) GetBuckets(rows *pgx.Rows) ([]*FrequencyResult, error) {
 	//Need to build all the buckets over the window since empty buckets are needed.
-	results := make(map[int]float64)
-	//Parse the results. Build a map to fill in the buckets, and get the min/max.
-	min, max := math.MaxInt32, math.MinInt32
+	results := make(map[int64]float64)
+	//Parse the results. Build a map to fill in the buckets.
 	for rows.Next() {
-		var bucket int
+		var bucket int64
 		var frequency int
 		err := rows.Scan(&bucket, &frequency)
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing top terms: %v", err)
 		}
 		results[bucket] = float64(frequency)
-		if bucket < min {
-			min = bucket
+	}
+
+	return f.CreateBuckets(results)
+}
+
+// Create the frequency buckets, including the empty buckets as defined by the tile params.
+func (f *Frequency) CreateBuckets(results map[int64]float64) ([]*FrequencyResult, error) {
+	//Find the min & max buckets.
+	min, max := int64(math.MaxInt64), int64(math.MinInt64)
+	for k := range results {
+		if k < min {
+			min = k
 		}
-		if bucket > max {
-			max = bucket
+		if k > max {
+			max = k
 		}
 	}
 
 	//Define the window limits.
-	windowStart, windowEnd := 0, 0
+	windowStart, windowEnd := int64(0), int64(0)
 	if f.GT != nil {
 		windowStart = castFrequency(f.GT)
 	} else if f.GTE != nil {
@@ -110,7 +120,7 @@ func (f *Frequency) GetBuckets(rows *pgx.Rows) ([]*FrequencyResult, error) {
 	buckets := make([]*FrequencyResult, numberOfBuckets)
 	for i, _ := range buckets {
 		//If value is not in the map, 0 will be returned as default value.
-		bucket := i + windowStart
+		bucket := int64(float64(i)*intervalNum) + windowStart
 		frequency := results[bucket]
 		buckets[i] = &FrequencyResult{
 			Bucket: bucket,
@@ -120,10 +130,14 @@ func (f *Frequency) GetBuckets(rows *pgx.Rows) ([]*FrequencyResult, error) {
 	return buckets, nil
 }
 
-func castFrequency(val interface{}) int {
-	num, isNum := val.(float64)
+func castFrequency(val interface{}) int64 {
+	numF, isNum := val.(float64)
 	if isNum {
-		return int(num)
+		return int64(numF)
+	}
+	numI, isNum := val.(int64)
+	if isNum {
+		return numI
 	}
 
 	//TODO: Figure out which types are allowed, and what to do if bad data is received.

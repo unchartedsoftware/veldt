@@ -1,32 +1,35 @@
 package citus
 
 import (
-	"encoding/binary"
 	"math"
 
 	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/prism/util/json"
 )
 
-type Macro struct {
+type MacroTile struct {
 	Bivariate
 	Tile
+	LOD int
 }
 
 func NewMacroTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
-		m := &Macro{}
+		m := &MacroTile{}
 		m.Host = host
 		m.Port = port
 		return m, nil
 	}
 }
 
-func (m *Macro) Parse(params map[string]interface{}) error {
+func (m *MacroTile) Parse(params map[string]interface{}) error {
+	m.LOD = int(json.GetNumberDefault(params, 0, "lod"))
 	return m.Bivariate.Parse(params)
 }
 
-func (m *Macro) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(m.Host, m.Port)
 	if err != nil {
@@ -38,17 +41,14 @@ func (m *Macro) Create(uri string, coord *binning.TileCoord, query prism.Query) 
 	if err != nil {
 		return nil, err
 	}
+	citusQuery.From(uri)
 
 	// add tiling query
 	citusQuery = m.Bivariate.AddQuery(coord, citusQuery)
 
 	// add aggs
-	citusQuery = m.Bivariate.AddAgg(coord, citusQuery)
+	citusQuery = m.Bivariate.AddAggs(coord, citusQuery)
 
-	// set the aggregation
-	//search.Aggregation("x", aggs["x"])
-
-	citusQuery.From(uri)
 	citusQuery.Select("CAST(COUNT(*) AS FLOAT) AS value")
 
 	// send query
@@ -64,22 +64,25 @@ func (m *Macro) Create(uri string, coord *binning.TileCoord, query prism.Query) 
 	}
 
 	// bin width
-	binSize := float64(256 / m.Resolution)
+	binSize := binning.MaxTileResolution / float64(m.Resolution)
 	halfSize := float64(binSize / 2)
 
-	// convert to byte array
-	bits := make([]byte, len(bins)*8)
+	// convert to point array
+	// Not sure this was done properly as the value of the bin is never used.
+	// May need to do something like wrap it in an "if bin > 0".
+	points := make([]float32, len(bins)*2)
 	numPoints := 0
 	for i, _ := range bins {
 		x := float32(float64(i%m.Resolution)*binSize + halfSize)
 		y := float32(math.Floor(float64(i/m.Resolution))*binSize + halfSize)
-		binary.LittleEndian.PutUint32(
-			bits[numPoints*8:numPoints*8+4],
-			math.Float32bits(x))
-		binary.LittleEndian.PutUint32(
-			bits[numPoints*8+4:numPoints*8+8],
-			math.Float32bits(y))
+		points[numPoints*2] = x
+		points[numPoints*2+1] = y
 		numPoints++
 	}
-	return bits[0 : numPoints*8], nil
+
+	// encode the result
+	if m.LOD > 0 {
+		return tile.EncodeLOD(points[0:numPoints*2], m.LOD), nil
+	}
+	return tile.Encode(points[0 : numPoints*2]), nil
 }

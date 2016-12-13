@@ -19,10 +19,12 @@ func (t *TopHits) AddAggs(query *Query) *Query {
 	}
 
 	// sort
-	if t.SortOrder == "desc" {
-		query.OrderBy(fmt.Sprintf("%s DESC", t.SortField))
-	} else {
-		query.OrderBy(t.SortField)
+	if t.SortField != "" {
+		if t.SortOrder == "desc" {
+			query.OrderBy(fmt.Sprintf("%s DESC", t.SortField))
+		} else {
+			query.OrderBy(t.SortField)
+		}
 	}
 
 	query.Limit(uint32(t.HitsCount))

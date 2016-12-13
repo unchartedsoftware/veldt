@@ -7,25 +7,25 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
-type Heatmap struct {
+type HeatmapTile struct {
 	Bivariate
 	Tile
 }
 
 func NewHeatmapTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
-		h := &Heatmap{}
+		h := &HeatmapTile{}
 		h.Host = host
 		h.Port = port
 		return h, nil
 	}
 }
 
-func (h *Heatmap) Parse(params map[string]interface{}) error {
+func (h *HeatmapTile) Parse(params map[string]interface{}) error {
 	return h.Bivariate.Parse(params)
 }
 
-func (h *Heatmap) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (h *HeatmapTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(h.Host, h.Port)
 	if err != nil {
@@ -43,11 +43,9 @@ func (h *Heatmap) Create(uri string, coord *binning.TileCoord, query prism.Query
 	citusQuery = h.Bivariate.AddQuery(coord, citusQuery)
 
 	// add aggs
-	citusQuery = h.Bivariate.AddAgg(coord, citusQuery)
+	citusQuery = h.Bivariate.AddAggs(coord, citusQuery)
 
-	// set the aggregation
-	//search.Aggregation("x", aggs["x"].SubAggregation("y", aggs["y"]))
-
+	//May support AVG (& others) in the future. May as well make it a float for now.
 	citusQuery.Select("CAST(COUNT(*) AS FLOAT) AS value")
 	// send query
 	res, err := client.Query(citusQuery.GetQuery(false), citusQuery.QueryArgs...)

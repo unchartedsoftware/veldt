@@ -7,7 +7,7 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
-type TopTermCount struct {
+type TopTermCountTile struct {
 	Bivariate
 	TopTerms
 	Tile
@@ -15,22 +15,22 @@ type TopTermCount struct {
 
 func NewTopTermCountTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
-		t := &TopTermCount{}
+		t := &TopTermCountTile{}
 		t.Host = host
 		t.Port = port
 		return t, nil
 	}
 }
 
-func (t *TopTermCount) Parse(params map[string]interface{}) error {
+func (t *TopTermCountTile) Parse(params map[string]interface{}) error {
 	err := t.Bivariate.Parse(params)
 	if err != nil {
-		return nil
+		return err
 	}
 	return t.TopTerms.Parse(params)
 }
 
-func (t *TopTermCount) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (t *TopTermCountTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(t.Host, t.Port)
 	if err != nil {
