@@ -100,14 +100,9 @@ func (m *MicroTile) Create(uri string, coord *binning.TileCoord, query prism.Que
 		if !ok {
 			continue
 		}
-		x, ok := ix.(float64)
-		if !ok {
-			continue
-		}
-		y, ok := iy.(float64)
-		if !ok {
-			continue
-		}
+		x := castPixelResult(ix)
+		y := castPixelResult(iy)
+
 		// convert to tile pixel coords
 		tx := m.Bivariate.GetX(x)
 		ty := m.Bivariate.GetY(y)
@@ -145,6 +140,19 @@ func (m *MicroTile) Create(uri string, coord *binning.TileCoord, query prism.Que
 		"points": points,
 		"hits":   hits,
 	})
+}
+
+func castPixelResult(value interface{}) float64 {
+	val64, ok := value.(float64)
+	if ok {
+		return val64
+	}
+
+	valint64, ok := value.(int64)
+	if ok {
+		val64 = float64(valint64)
+	}
+	return val64
 }
 
 func existsIn(val string, arr []string) bool {

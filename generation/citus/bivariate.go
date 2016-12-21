@@ -88,17 +88,17 @@ func (b *Bivariate) AddAggs(coord *binning.TileCoord, query *Query) *Query {
 	return query
 }
 
-func (b *Bivariate) clampBin(bin int64) int64 {
+func (b *Bivariate) clampBin(bin int64) int {
 	if bin > int64(b.Resolution)-1 {
-		return int64(b.Resolution) - 1
+		return b.Resolution - 1
 	}
 	if bin < 0 {
 		return 0
 	}
-	return bin
+	return int(bin)
 }
 
-func (b *Bivariate) GetXBin(x int64) int64 {
+func (b *Bivariate) GetXBin(x int64) int {
 	bounds := b.Bounds
 	fx := float64(x)
 	var bin int64
@@ -123,7 +123,7 @@ func (b *Bivariate) GetX(x float64) float64 {
 }
 
 // GetYBin given an y value, returns the corresponding bin.
-func (b *Bivariate) GetYBin(y int64) int64 {
+func (b *Bivariate) GetYBin(y int64) int {
 	bounds := b.Bounds
 	fy := float64(y)
 	var bin int64
@@ -165,7 +165,7 @@ func (b *Bivariate) GetBins(rows *pgx.Rows) ([]float64, error) {
 		xBin := b.GetXBin(x)
 		yBin := b.GetYBin(y)
 
-		index := xBin + int64(b.Resolution)*yBin
+		index := xBin + b.Resolution*yBin
 		bins[index] += value
 	}
 

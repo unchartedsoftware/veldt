@@ -68,16 +68,16 @@ func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query prism.Que
 	halfSize := float64(binSize / 2)
 
 	// convert to point array
-	// Not sure this was done properly as the value of the bin is never used.
-	// May need to do something like wrap it in an "if bin > 0".
 	points := make([]float32, len(bins)*2)
 	numPoints := 0
-	for i, _ := range bins {
-		x := float32(float64(i%m.Resolution)*binSize + halfSize)
-		y := float32(math.Floor(float64(i/m.Resolution))*binSize + halfSize)
-		points[numPoints*2] = x
-		points[numPoints*2+1] = y
-		numPoints++
+	for i, bin := range bins {
+		if bin > 0 {
+			x := float32(float64(i%m.Resolution)*binSize + halfSize)
+			y := float32(math.Floor(float64(i/m.Resolution))*binSize + halfSize)
+			points[numPoints*2] = x
+			points[numPoints*2+1] = y
+			numPoints++
+		}
 	}
 
 	// encode the result
