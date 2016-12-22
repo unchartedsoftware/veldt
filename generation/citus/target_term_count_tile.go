@@ -31,18 +31,8 @@ func (t *TargetTermCountTile) Parse(params map[string]interface{}) error {
 }
 
 func (t *TargetTermCountTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
-	// get client
-	client, err := NewClient(t.Host, t.Port)
-	if err != nil {
-		return nil, err
-	}
-
-	// create root query
-	citusQuery, err := t.CreateQuery(query)
-	if err != nil {
-		return nil, err
-	}
-	citusQuery.From(uri)
+	// Initialize the tile processing.
+	client, citusQuery, err := t.InitliazeTile(uri, query)
 
 	// add tiling query
 	citusQuery = t.Bivariate.AddQuery(coord, citusQuery)

@@ -26,18 +26,8 @@ func (h *HeatmapTile) Parse(params map[string]interface{}) error {
 }
 
 func (h *HeatmapTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
-	// get client
-	client, err := NewClient(h.Host, h.Port)
-	if err != nil {
-		return nil, err
-	}
-
-	// create root query
-	citusQuery, err := h.CreateQuery(query)
-	if err != nil {
-		return nil, err
-	}
-	citusQuery.From(uri)
+	// Initialize the tile processing.
+	client, citusQuery, err := h.InitliazeTile(uri, query)
 
 	// add tiling query
 	citusQuery = h.Bivariate.AddQuery(coord, citusQuery)

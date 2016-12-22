@@ -30,18 +30,8 @@ func (m *MacroTile) Parse(params map[string]interface{}) error {
 }
 
 func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
-	// get client
-	client, err := NewClient(m.Host, m.Port)
-	if err != nil {
-		return nil, err
-	}
-
-	// create root query
-	citusQuery, err := m.CreateQuery(query)
-	if err != nil {
-		return nil, err
-	}
-	citusQuery.From(uri)
+	// Initialize the tile processing.
+	client, citusQuery, err := m.InitliazeTile(uri, query)
 
 	// add tiling query
 	citusQuery = m.Bivariate.AddQuery(coord, citusQuery)
