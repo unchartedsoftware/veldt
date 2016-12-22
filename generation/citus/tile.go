@@ -38,7 +38,7 @@ func (t *Tile) CreateQuery(query prism.Query) (*Query, error) {
 	return root, nil
 }
 
-func (t * Tile) InitliazeTile(uri string, query prism.Query) (*pgx.ConnPool, *Query, error) {
+func (t *Tile) InitliazeTile(uri string, query prism.Query) (*pgx.ConnPool, *Query, error) {
 	// get client
 	client, err := NewClient(t.Host, t.Port)
 	if err != nil {
