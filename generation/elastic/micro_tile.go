@@ -177,7 +177,7 @@ func sortHitsArray(hits []map[string]interface{}, points []float32) {
 		// add to hits array
 		hitsArr[i] = &hitWrapper{
 			x:    points[i*2],
-			y:    points[i*2],
+			y:    points[i*2+1],
 			data: hit,
 		}
 	}

@@ -1,18 +1,13 @@
-package image
+package rest
 
 import (
 	"fmt"
-	"image"
-	"image/draw"
 	"io/ioutil"
-	// register png decoder
-	_ "image/png"
-	// register jpeg decoder
-	_ "image/jpeg"
 	"net/http"
 
 	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/prism/tile"
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
@@ -44,6 +39,7 @@ func (t *Tile) Parse(params map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("`ext` parameter missing from tile")
 	}
+	// do we pad the coords?
 	t.ext = ext
 	t.endpoint = endpoint
 	t.scheme = scheme
@@ -83,31 +79,7 @@ func (t *Tile) Create(uri string, coord *binning.TileCoord, query prism.Query) (
 		}
 		return nil, fmt.Errorf(string(body))
 	}
-
-	if isImage(t.ext) {
-		// decode result into bytes
-		img, _, err := image.Decode(res.Body)
-		if err != nil {
-			return nil, err
-		}
-		rgba := image.NewRGBA(img.Bounds())
-		if rgba.Stride != rgba.Rect.Size().X*4 {
-			return nil, fmt.Errorf("unsupported stride in requested image")
-		}
-		draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
-		return []byte(rgba.Pix), nil
-	}
-
-	// return result directly
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
-}
-
-func isImage(ext string) bool {
-	return ext == "png" || ext == "jpg" || ext == "jpeg"
+	return tile.DecodeImage(t.ext, res.Body)
 }
 
 func handleExt(ext string, req *http.Request) {
