@@ -30,19 +30,12 @@ func (t *TargetTerms) AddQuery(query *Query) *Query {
 
 func (t *TargetTerms) AddAggs(query *Query) *Query {
 	//Count by term, only considering the specified terms.
-	//TODO: Find a better way to make this work. The caller NEEDS to use the returned value.
 	//Assume the backing field is an array. Need to unpack that array and group by the terms.
 	query.Select(fmt.Sprintf("unnest(%s) AS term", t.TermsField))
 
-	//Need to nest the existing query as a table and group by the terms.
-	//TODO: Figure out how to handle error properly.
-	termQuery, _ := NewQuery()
-
-	termQuery.From(fmt.Sprintf("(%s) terms", query.GetQuery(true)))
-	termQuery.GroupBy("term")
-	termQuery.Select("term")
-	termQuery.Select("COUNT(*) as term_count")
-	termQuery.OrderBy("term_count desc")
+	query.GroupBy("term")
+	query.Select("COUNT(*) as term_count")
+	query.OrderBy("term_count desc")
 
 	//Generate the filter for the terms.
 	clause := ""
@@ -50,9 +43,9 @@ func (t *TargetTerms) AddAggs(query *Query) *Query {
 		valueParam := query.AddParameter(value)
 		clause = clause + fmt.Sprintf(", %s", valueParam)
 	}
-	termQuery.Where(fmt.Sprintf("term IN [%s]", clause[2:]))
+	query.Where(fmt.Sprintf("term IN [%s]", clause[2:]))
 
-	return termQuery
+	return query
 }
 
 // GetTerms parses the result of the terms query into a map of term -> count.

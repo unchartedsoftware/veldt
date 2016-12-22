@@ -45,11 +45,13 @@ func (t *Count) Create(uri string, coord *binning.TileCoord, query prism.Query) 
 		return nil, err
 	}
 
-	var value float64
-	err = res.Scan(&value)
-	if err != nil {
-		return nil, fmt.Errorf("Error parsing count: %v",
-			err)
+	value := float64(0.0)
+	for res.Next() {
+		err = res.Scan(&value)
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing count: %v",
+				err)
+		}
 	}
 
 	return []byte(fmt.Sprintf(`{"count":%d}`, uint64(value))), nil
