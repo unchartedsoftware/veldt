@@ -167,10 +167,9 @@ func sortHitsArray(hits []map[string]interface{}, points []float32) {
 	hitsArr := make(hitsArray, len(hits))
 	for i, hit := range hits {
 		// add to hits array
-		// Taken from the elastic implementation, but pretty sure x & y should not be the same.
 		hitsArr[i] = &hitWrapper{
 			x:    points[i*2],
-			y:    points[i*2],
+			y:    points[i*2+1],
 			data: hit,
 		}
 	}
