@@ -7,12 +7,12 @@ import (
 
 	"github.com/jackc/pgx"
 
-	"github.com/unchartedsoftware/prism/generation/common"
+	"github.com/unchartedsoftware/prism/tile"
 )
 
 // Frequency represents a tiling generator that produces heatmaps.
 type Frequency struct {
-	common.Frequency
+	tile.Frequency
 }
 
 type FrequencyResult struct {
@@ -128,4 +128,16 @@ func (f *Frequency) CreateBuckets(results map[int64]float64) ([]*FrequencyResult
 		}
 	}
 	return buckets, nil
+}
+
+func (f *Frequency) encodeResult(frequency []*FrequencyResult) []map[string]interface{} {
+	buckets := make([]map[string]interface{}, len(frequency))
+	for i, bucket := range frequency {
+		buckets[i] = map[string]interface{}{
+			"timestamp": bucket.Bucket,
+			"count":     bucket.Value,
+		}
+	}
+
+	return buckets
 }

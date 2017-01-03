@@ -77,7 +77,7 @@ func (t *TargetTermFrequencyTile) Create(uri string, coord *binning.TileCoord, q
 			return nil, err
 		}
 		// add frequency
-		frequency := EncodeFrequency(buckets)
+		frequency := t.Frequency.encodeResult(buckets)
 		result[term] = frequency
 	}
 	// marshal results

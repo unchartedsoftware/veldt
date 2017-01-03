@@ -55,7 +55,7 @@ func (t *FrequencyTile) Create(uri string, coord *binning.TileCoord, query prism
 		return nil, err
 	}
 
-	buckets := EncodeFrequency(frequency)
+	buckets := t.Frequency.encodeResult(frequency)
 
 	// marshal results
 	return json.Marshal(buckets)

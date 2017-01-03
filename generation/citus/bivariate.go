@@ -7,12 +7,12 @@ import (
 	"github.com/jackc/pgx"
 
 	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/generation/common"
+	"github.com/unchartedsoftware/prism/tile"
 )
 
 // Bivariate represents a bivariate tile generator.
 type Bivariate struct {
-	common.Bivariate
+	tile.Bivariate
 }
 
 func (b *Bivariate) AddQuery(coord *binning.TileCoord, query *Query) *Query {
