@@ -55,13 +55,8 @@ func (t *FrequencyTile) Create(uri string, coord *binning.TileCoord, query prism
 		return nil, err
 	}
 
-	buckets := make([]map[string]interface{}, len(frequency))
-	for i, bucket := range frequency {
-		buckets[i] = map[string]interface{}{
-			"timestamp": bucket.Bucket,
-			"count":     bucket.Value,
-		}
-	}
+	buckets := EncodeFrequency(frequency)
+
 	// marshal results
 	return json.Marshal(buckets)
 }

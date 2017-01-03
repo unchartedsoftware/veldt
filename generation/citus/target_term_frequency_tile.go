@@ -40,8 +40,6 @@ func (t *TargetTermFrequencyTile) Create(uri string, coord *binning.TileCoord, q
 	citusQuery = t.Bivariate.AddQuery(coord, citusQuery)
 
 	// get aggs
-	//Need to add the frequency field to the select list before calling the target terms.
-	//Otherwise it will be impossible to build the aggregate since target terms nests the query.
 	citusQuery.Select(t.Frequency.FrequencyField)
 	citusQuery = t.TargetTerms.AddAggs(citusQuery)
 	citusQuery = t.Frequency.AddAggs(citusQuery)
@@ -79,13 +77,7 @@ func (t *TargetTermFrequencyTile) Create(uri string, coord *binning.TileCoord, q
 			return nil, err
 		}
 		// add frequency
-		frequency := make([]map[string]interface{}, len(buckets))
-		for i, bucket := range buckets {
-			frequency[i] = map[string]interface{}{
-				"timestamp": bucket.Bucket,
-				"count":     bucket.Value,
-			}
-		}
+		frequency := EncodeFrequency(buckets)
 		result[term] = frequency
 	}
 	// marshal results

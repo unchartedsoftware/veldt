@@ -7,12 +7,12 @@ import (
 
 	"github.com/jackc/pgx"
 
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/prism/generation/common"
 )
 
 // Frequency represents a tiling generator that produces heatmaps.
 type Frequency struct {
-	tile.Frequency
+	common.Frequency
 }
 
 type FrequencyResult struct {
@@ -95,16 +95,16 @@ func (f *Frequency) CreateBuckets(results map[int64]float64) ([]*FrequencyResult
 	//Define the window limits.
 	windowStart, windowEnd := int64(0), int64(0)
 	if f.GT != nil {
-		windowStart = castFrequency(f.GT)
+		windowStart = f.CastFrequency(f.GT)
 	} else if f.GTE != nil {
-		windowStart = castFrequency(f.GTE)
+		windowStart = f.CastFrequency(f.GTE)
 	} else {
 		windowStart = min
 	}
 	if f.LT != nil {
-		windowEnd = castFrequency(f.LT)
+		windowEnd = f.CastFrequency(f.LT)
 	} else if f.LTE != nil {
-		windowEnd = castFrequency(f.LTE)
+		windowEnd = f.CastFrequency(f.LTE)
 	} else {
 		windowEnd = max
 	}
@@ -128,43 +128,4 @@ func (f *Frequency) CreateBuckets(results map[int64]float64) ([]*FrequencyResult
 		}
 	}
 	return buckets, nil
-}
-
-func castFrequency(val interface{}) int64 {
-	numF, isNum := val.(float64)
-	if isNum {
-		return int64(numF)
-	}
-	numI, isNum := val.(int64)
-	if isNum {
-		return numI
-	}
-
-	//TODO: Figure out which types are allowed, and what to do if bad data is received.
-	return -1
-}
-
-func castTime(val interface{}) interface{} {
-	num, isNum := val.(float64)
-	if isNum {
-		return int64(num)
-	}
-	str, isStr := val.(string)
-	if isStr {
-		return str
-	}
-	return val
-}
-
-func castTimeToString(val interface{}) string {
-	num, isNum := val.(float64)
-	if isNum {
-		// assume milliseconds
-		return fmt.Sprintf("%dms\n", int64(num))
-	}
-	str, isStr := val.(string)
-	if isStr {
-		return str
-	}
-	return ""
 }
