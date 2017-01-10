@@ -19,6 +19,5 @@ func NewEquals() (prism.Query, error) {
 // Get adds the parameters to the query and returns the string representation.
 func (q *Equals) Get(query *Query) (string, error) {
 	valueParam := query.AddParameter(q.Value)
-	//query.AddWhereClause(fmt.Sprintf("%s = %s", q.Field, valueParam))
 	return fmt.Sprintf("%s = %s", q.Field, valueParam), nil
 }

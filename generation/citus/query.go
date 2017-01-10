@@ -35,7 +35,7 @@ func NewQuery() (*Query, error) {
 	}, nil
 }
 
-// GetHash retrusn the string hash of the query
+// GetHash returns the string hash of the query
 func (q *Query) GetHash() string {
 	numWheres := len(q.WhereClauses)
 	numGroups := len(q.GroupByClauses)
@@ -73,7 +73,7 @@ func (q *Query) GetHash() string {
 	return hash
 }
 
-// GetQuery returns the squery string.
+// GetQuery returns the query string.
 func (q *Query) GetQuery(nested bool) string {
 	queryString := fmt.Sprintf("SELECT %s", strings.Join(q.Fields, ", "))
 

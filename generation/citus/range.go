@@ -37,6 +37,5 @@ func (q *Range) Get(query *Query) (string, error) {
 		clause = clause + fmt.Sprintf(" AND %s < %v", q.Field, valueParam)
 	}
 	//Remove leading " AND "
-	//query.AddWhereClause(clause[5:])
 	return clause[5:], nil
 }

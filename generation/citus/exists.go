@@ -18,6 +18,5 @@ func NewExists() (prism.Query, error) {
 
 // Get adds the parameters to the query and returns the string representation.
 func (q *Exists) Get(query *Query) (string, error) {
-	//query.AddWhereClause(fmt.Sprintf("%s IS NOT NULL", q.Field))
 	return fmt.Sprintf("%s IS NOT NULL", q.Field), nil
 }
