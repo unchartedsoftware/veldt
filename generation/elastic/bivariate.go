@@ -14,15 +14,12 @@ type Bivariate struct {
 	tile.Bivariate
 	// tiling
 	tiling bool
-	bounds *binning.Bounds
 	minX   int64
 	maxX   int64
 	minY   int64
 	maxY   int64
 	// binning
 	binning   bool
-	binSizeX  float64
-	binSizeY  float64
 	intervalX int64
 	intervalY int64
 }
@@ -42,11 +39,11 @@ func (b *Bivariate) computeTilingProps(coord *binning.TileCoord) {
 			Y: b.Top,
 		},
 	}
-	b.bounds = binning.GetTileBounds(coord, extents)
-	b.minX = int64(math.Min(b.bounds.BottomLeft.X, b.bounds.TopRight.X))
-	b.maxX = int64(math.Max(b.bounds.BottomLeft.X, b.bounds.TopRight.X))
-	b.minY = int64(math.Min(b.bounds.BottomLeft.Y, b.bounds.TopRight.Y))
-	b.maxY = int64(math.Max(b.bounds.BottomLeft.Y, b.bounds.TopRight.Y))
+	b.Bounds = binning.GetTileBounds(coord, extents)
+	b.minX = int64(math.Min(b.Bounds.BottomLeft.X, b.Bounds.TopRight.X))
+	b.maxX = int64(math.Max(b.Bounds.BottomLeft.X, b.Bounds.TopRight.X))
+	b.minY = int64(math.Min(b.Bounds.BottomLeft.Y, b.Bounds.TopRight.Y))
+	b.maxY = int64(math.Max(b.Bounds.BottomLeft.Y, b.Bounds.TopRight.Y))
 	// flag as computed
 	b.tiling = true
 }
@@ -58,12 +55,12 @@ func (b *Bivariate) computeBinningProps(coord *binning.TileCoord) {
 	// ensure we have tiling props
 	b.computeTilingProps(coord)
 	// binning params
-	xRange := math.Abs(b.bounds.TopRight.X - b.bounds.BottomLeft.X)
-	yRange := math.Abs(b.bounds.TopRight.Y - b.bounds.BottomLeft.Y)
+	xRange := math.Abs(b.Bounds.TopRight.X - b.Bounds.BottomLeft.X)
+	yRange := math.Abs(b.Bounds.TopRight.Y - b.Bounds.BottomLeft.Y)
 	b.intervalX = int64(math.Max(1, xRange/float64(b.Resolution)))
 	b.intervalY = int64(math.Max(1, yRange/float64(b.Resolution)))
-	b.binSizeX = xRange / float64(b.Resolution)
-	b.binSizeY = yRange / float64(b.Resolution)
+	b.BinSizeX = xRange / float64(b.Resolution)
+	b.BinSizeY = yRange / float64(b.Resolution)
 	// flag as computed
 	b.binning = true
 }
@@ -103,56 +100,6 @@ func (b *Bivariate) GetAggs(coord *binning.TileCoord) map[string]elastic.Aggrega
 	}
 }
 
-// GetXBin given an x value, returns the corresponding bin.
-func (b *Bivariate) GetXBin(x int64) int {
-	bounds := b.bounds
-	fx := float64(x)
-	var bin int64
-	if bounds.BottomLeft.X > bounds.TopRight.X {
-		bin = int64(float64(b.Resolution-1) - ((fx - bounds.TopRight.X) / b.binSizeX))
-	} else {
-		bin = int64((fx - bounds.BottomLeft.X) / b.binSizeX)
-	}
-	return b.clampBin(bin)
-}
-
-// GetX given an x value, returns the corresponding coord within the range of
-// [0 : 256) for the tile.
-func (b *Bivariate) GetX(x float64) float64 {
-	bounds := b.bounds
-	if bounds.BottomLeft.X > bounds.TopRight.X {
-		rang := bounds.BottomLeft.X - bounds.TopRight.X
-		return binning.MaxTileResolution - (((x - bounds.TopRight.X) / rang) * binning.MaxTileResolution)
-	}
-	rang := bounds.TopRight.X - bounds.BottomLeft.X
-	return ((x - bounds.BottomLeft.X) / rang) * binning.MaxTileResolution
-}
-
-// GetYBin given an y value, returns the corresponding bin.
-func (b *Bivariate) GetYBin(y int64) int {
-	bounds := b.bounds
-	fy := float64(y)
-	var bin int64
-	if bounds.BottomLeft.Y > bounds.TopRight.Y {
-		bin = int64(float64(b.Resolution-1) - ((fy - bounds.TopRight.Y) / b.binSizeY))
-	} else {
-		bin = int64((fy - bounds.BottomLeft.Y) / b.binSizeY)
-	}
-	return b.clampBin(bin)
-}
-
-// GetY given an y value, returns the corresponding coord within the range of
-// [0 : 256) for the tile.
-func (b *Bivariate) GetY(y float64) float64 {
-	bounds := b.bounds
-	if bounds.BottomLeft.Y > bounds.TopRight.Y {
-		rang := bounds.BottomLeft.Y - bounds.TopRight.Y
-		return binning.MaxTileResolution - (((y - bounds.TopRight.Y) / rang) * binning.MaxTileResolution)
-	}
-	rang := bounds.TopRight.Y - bounds.BottomLeft.Y
-	return ((y - bounds.BottomLeft.Y) / rang) * binning.MaxTileResolution
-}
-
 // GetBins parses the resulting histograms into bins.
 func (b *Bivariate) GetBins(aggs *elastic.Aggregations) ([]*elastic.AggregationBucketHistogramItem, error) {
 	if !b.binning {
@@ -181,14 +128,4 @@ func (b *Bivariate) GetBins(aggs *elastic.Aggregations) ([]*elastic.AggregationB
 		}
 	}
 	return bins, nil
-}
-
-func (b *Bivariate) clampBin(bin int64) int {
-	if bin > int64(b.Resolution)-1 {
-		return b.Resolution - 1
-	}
-	if bin < 0 {
-		return 0
-	}
-	return int(bin)
 }

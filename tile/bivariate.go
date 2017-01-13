@@ -2,6 +2,7 @@ package tile
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/util/json"
@@ -61,16 +62,6 @@ func (b *Bivariate) Parse(params map[string]interface{}) error {
 	return nil
 }
 
-func (b *Bivariate) ClampBin(bin int64) int {
-	if bin > int64(b.Resolution)-1 {
-		return b.Resolution - 1
-	}
-	if bin < 0 {
-		return 0
-	}
-	return int(bin)
-}
-
 func (b *Bivariate) GetXBin(x int64) int {
 	bounds := b.Bounds
 	fx := float64(x)
@@ -80,7 +71,7 @@ func (b *Bivariate) GetXBin(x int64) int {
 	} else {
 		bin = int64((fx - bounds.BottomLeft.X) / b.BinSizeX)
 	}
-	return b.ClampBin(bin)
+	return b.clampBin(bin)
 }
 
 // GetX given an x value, returns the corresponding coord within the range of
@@ -105,7 +96,7 @@ func (b *Bivariate) GetYBin(y int64) int {
 	} else {
 		bin = int64((fy - bounds.BottomLeft.Y) / b.BinSizeY)
 	}
-	return b.ClampBin(bin)
+	return b.clampBin(bin)
 }
 
 // GetY given an y value, returns the corresponding coord within the range of
@@ -118,4 +109,57 @@ func (b *Bivariate) GetY(y float64) float64 {
 	}
 	rang := bounds.TopRight.Y - bounds.BottomLeft.Y
 	return ((y - bounds.BottomLeft.Y) / rang) * binning.MaxTileResolution
+}
+
+// GetXY given a data hit, returns the corresponding coord within the range of
+// [0 : 256) for the tile.
+func (b *Bivariate) GetXY(hit map[string]interface{}) (float32, float32, bool) {
+	// get x / y fields from data
+	ix, ok := hit[b.XField]
+	if !ok {
+		return 0, 0, false
+	}
+	iy, ok := hit[b.YField]
+	if !ok {
+		return 0, 0, false
+	}
+	// get X / Y of the data
+	x, y, ok := castPixel(ix, iy)
+	if !ok {
+		return 0, 0, false
+	}
+	// convert to tile pixel coords in the range [0 - 256)
+	tx := b.GetX(x)
+	ty := b.GetY(y)
+	// return position in tile coords with 2 decimal places
+	return toFixed(float32(tx), 2), toFixed(float32(ty), 2), true
+}
+
+func (b *Bivariate) clampBin(bin int64) int {
+	if bin > int64(b.Resolution)-1 {
+		return b.Resolution - 1
+	}
+	if bin < 0 {
+		return 0
+	}
+	return int(bin)
+}
+
+func toFixed(num float32, precision int) float32 {
+	output := math.Pow(10, float64(precision))
+	return float32(math.Floor(float64(num)*output+0.5)) / float32(output)
+}
+
+func castPixel(x interface{}, y interface{}) (float64, float64, bool) {
+	xfval, xok := x.(float64)
+	yfval, yok := y.(float64)
+	if xok && yok {
+		return xfval, yfval, true
+	}
+	xival, xok := x.(int64)
+	yival, yok := y.(int64)
+	if xok && yok {
+		return float64(xival), float64(yival), true
+	}
+	return 0, 0, false
 }

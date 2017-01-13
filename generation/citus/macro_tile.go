@@ -6,13 +6,12 @@ import (
 	"github.com/unchartedsoftware/prism"
 	"github.com/unchartedsoftware/prism/binning"
 	"github.com/unchartedsoftware/prism/tile"
-	"github.com/unchartedsoftware/prism/util/json"
 )
 
 type MacroTile struct {
-	Bivariate
 	Tile
-	LOD int
+	Bivariate
+	tile.Macro
 }
 
 func NewMacroTile(host, port string) prism.TileCtor {
@@ -25,8 +24,11 @@ func NewMacroTile(host, port string) prism.TileCtor {
 }
 
 func (m *MacroTile) Parse(params map[string]interface{}) error {
-	m.LOD = int(json.GetNumberDefault(params, 0, "lod"))
-	return m.Bivariate.Parse(params)
+	err := m.Bivariate.Parse(params)
+	if err != nil {
+		return err
+	}
+	return m.Macro.Parse(params)
 }
 
 func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
@@ -71,8 +73,5 @@ func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query prism.Que
 	}
 
 	// encode the result
-	if m.LOD > 0 {
-		return tile.EncodeLOD(points[0:numPoints*2], m.LOD), nil
-	}
-	return tile.Encode(points[0 : numPoints*2]), nil
+	return m.Macro.Encode(points[0 : numPoints*2])
 }
