@@ -119,7 +119,6 @@ func EncodeLOD(data []float32, lod int) []byte {
 
 func init() {
 	// init the morton code lookups.
-	// TODO: we only use 0 -> 65536, reduce the length of this array
 	mx = []uint64{0, 1}
 	my = []uint64{0, 2}
 	for i := 4; i < 0xFFFF; i <<= 2 {
