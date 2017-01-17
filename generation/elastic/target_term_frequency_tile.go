@@ -63,7 +63,7 @@ func (t *TargetTermFrequencyTile) Create(uri string, coord *binning.TileCoord, q
 	if err != nil {
 		return nil, err
 	}
-	// get bins
+	// get terms
 	terms, err := t.TargetTerms.GetTerms(&res.Aggregations)
 	if err != nil {
 		return nil, err
