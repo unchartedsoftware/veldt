@@ -346,19 +346,17 @@ func (v *Validator) validateExpressionToken(exp []interface{}, indent int, first
 	// track last token to ensure next is valid
 	var last interface{}
 	// for each component
-	for i, sub := range exp {
+	for i, current := range exp {
 		// next line
-		if last != nil {
-			if !nextTokenIsValid(last, sub) {
-				v.StartError("unexpected token", indent+1)
-				v.validateToken(sub, indent+1, false)
-				v.EndError()
-				last = sub
-				continue
-			}
+		if !isTokenValid(last, current) {
+			v.StartError("unexpected token", indent+1)
+			v.validateToken(current, indent+1, false)
+			v.EndError()
+			last = current
+			continue
 		}
-		exp[i] = v.validateToken(sub, indent+1, false)
-		last = sub
+		exp[i] = v.validateToken(current, indent+1, false)
+		last = current
 	}
 	// close paren
 	v.Buffer("]", indent)
@@ -414,6 +412,13 @@ func getTokenType(token interface{}) string {
 	return "unrecognized"
 }
 
+func isTokenValid(c interface{}, n interface{}) bool {
+	if c == nil {
+		return firstTokenIsValid(n)
+	}
+	return nextTokenIsValid(c, n)
+}
+
 func nextTokenIsValid(c interface{}, n interface{}) bool {
 	current := getTokenType(c)
 	next := getTokenType(n)
@@ -431,6 +436,20 @@ func nextTokenIsValid(c interface{}, n interface{}) bool {
 		return next == "unary" || next == "query" || next == "exp"
 	case "unary":
 		return next == "query" || next == "exp"
+	}
+	return false
+}
+
+func firstTokenIsValid(n interface{}) bool {
+	next := getTokenType(n)
+	fmt.Println("first is", next)
+	switch next {
+	case "exp":
+		return true
+	case "query":
+		return true
+	case "unary":
+		return true
 	}
 	return false
 }
