@@ -442,7 +442,6 @@ func nextTokenIsValid(c interface{}, n interface{}) bool {
 
 func firstTokenIsValid(n interface{}) bool {
 	next := getTokenType(n)
-	fmt.Println("first is", next)
 	switch next {
 	case "exp":
 		return true
