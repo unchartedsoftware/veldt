@@ -17,7 +17,7 @@ lint:
 	@go list ./... | grep -v /vendor/ | xargs -L1 golint
 
 test:
-	@go test $(shell glide novendor)
+	@ginkgo -r
 
 fmt:
 	@go fmt $(shell glide novendor)
@@ -26,6 +26,7 @@ build: lint
 	@go build $(shell glide novendor)
 
 install:
-	@go get github.com/golang/lint/golint
-	@go get github.com/Masterminds/glide
+	@go get -u github.com/golang/lint/golint
+	@go get -u github.com/Masterminds/glide
+	@go get -u github.com/onsi/ginkgo/ginkgo
 	@glide install

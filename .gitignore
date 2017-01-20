@@ -1,7 +1,4 @@
 .DS_Store
 TODO.md
-main
-main.exe
-*.swp
-.idea
+.glide
 vendor

@@ -28,6 +28,12 @@ func (t *Frequency) Parse(params map[string]interface{}) error {
 	if !gteOk && !gtOk && !lteOk && !ltOk {
 		return fmt.Errorf("top term frequency has no valid range parameters")
 	}
+	if gteOk && gtOk {
+		return fmt.Errorf("both `gte` and `gt` have been provided, only one upper bound may be provided")
+	}
+	if lteOk && ltOk {
+		return fmt.Errorf("both `lte` and `lt` have been provided, only one lower bound may be provided")
+	}
 	interval, ok := json.GetString(params, "interval")
 	if !ok {
 		return fmt.Errorf("`interval` parameter missing from tile")
@@ -50,8 +56,8 @@ func (f *Frequency) CastFrequency(val interface{}) int64 {
 	if isNum {
 		return numI
 	}
-
-	//TODO: Figure out which types are allowed, and what to do if bad data is received.
+	// TODO: Figure out which types are allowed, and what to do if bad data is
+	// received.
 	return -1
 }
 
