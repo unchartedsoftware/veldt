@@ -1,5 +1,5 @@
 hash: d459198fe3d1c55fcc8d8993cfd36800d5a55ed4f83413f402b931c5df0a674c
-updated: 2016-11-17T16:12:13.31401813-05:00
+updated: 2017-01-20T14:24:32.815799875-05:00
 imports:
 - name: github.com/coocood/freecache
   version: bc9053bc20ecba4f091ffe1c83040ae4b8f9e845
@@ -8,18 +8,18 @@ imports:
   subpackages:
   - spew
 - name: github.com/garyburd/redigo
-  version: 80f7de34463b0ed3d7c61303e5619efe1b227f92
+  version: 8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13
   subpackages:
   - internal
   - redis
 - name: github.com/jackc/pgx
-  version: 2a0504599e9e20e2a1e9413d7cff75e7dc039e8f
+  version: 6c5b4703172c5a71b5fd59160188d6857b2cd579
 - name: github.com/mattn/go-isatty
-  version: 66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8
+  version: 30a891c33c7cde7b02a981314b4228ec99380cca
 - name: github.com/mgutz/ansi
   version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
 - name: github.com/onsi/ginkgo
-  version: 00054c0bb96fc880d4e0be1b90937fad438c5290
+  version: a23f924ce96d61f963fb6219b8ff069d8d768cc2
   subpackages:
   - config
   - internal/codelocation
@@ -38,7 +38,7 @@ imports:
   - reporters/stenographer/support/go-isatty
   - types
 - name: github.com/onsi/gomega
-  version: 2b6ed62707a2f5fdf1ba9cd856cdeec6bfff6b61
+  version: e85f63af4302dc0e4277c6008ecf803f1d80e4f0
   subpackages:
   - format
   - internal/assertion
@@ -54,18 +54,13 @@ imports:
 - name: github.com/spaolacci/murmur3
   version: 0d12bf811670bf6a1a63828dfbd003eded177fce
 - name: github.com/unchartedsoftware/plog
-  version: 31065f349a921d42f27f1741f3690c9e57dbc105
-- name: golang.org/x/net
-  version: 4971afdc2f162e82d185353533d3cf16188a9f4e
-  subpackages:
-  - context
-  - context/ctxhttp
+  version: bbb4bc4151f23ea489aff06d2a27f10e1a935993
 - name: golang.org/x/sys
-  version: b699b7032584f0953262cb2788a0ca19bb494703
+  version: 30237cf4eefd639b184d1f2cb77a581ea0be8947
   subpackages:
   - unix
 - name: gopkg.in/olivere/elastic.v3
-  version: 1ad75b5396674e9c783400e89106bc0c8da9d786
+  version: 787ebbb5a7600662bca364e4e8ca959f315e442f
   subpackages:
   - backoff
   - uritemplates

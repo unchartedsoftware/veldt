@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"compress/zlib"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -150,8 +151,13 @@ func (p *Pipeline) GetStore() (Store, error) {
 }
 
 func (p *Pipeline) NewTileRequest(args map[string]interface{}) (*TileRequest, error) {
-	validator := NewValidator(p)
-	req, err := validator.ValidateTileRequest(args)
+	// params are modified in place during validation, so create a copy
+	copy, err := copyJSON(args)
+	if err != nil {
+		return nil, err
+	}
+	// validate request
+	req, err := NewValidator(p).ValidateTileRequest(copy)
 	if err != nil {
 		return nil, fmt.Errorf("invalid tile request:\n%s", err)
 	}
@@ -238,8 +244,13 @@ func (p *Pipeline) getTileHash(req *TileRequest) string {
 }
 
 func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, error) {
-	validator := NewValidator(p)
-	req, err := validator.ValidateMetaRequest(args)
+	// params are modified in place during validation, so create a copy
+	copy, err := copyJSON(args)
+	if err != nil {
+		return nil, err
+	}
+	// validate request
+	req, err := NewValidator(p).ValidateMetaRequest(copy)
 	if err != nil {
 		return nil, fmt.Errorf("invalid meta request:\n%s", err)
 	}
@@ -387,4 +398,17 @@ func (p *Pipeline) getWriter(buffer *bytes.Buffer) (io.WriteCloser, bool) {
 	default:
 		return nil, false
 	}
+}
+
+func copyJSON(obj map[string]interface{}) (map[string]interface{}, error) {
+	bytes, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+	var copy map[string]interface{}
+	err = json.Unmarshal(bytes, &copy)
+	if err != nil {
+		return nil, err
+	}
+	return copy, nil
 }
