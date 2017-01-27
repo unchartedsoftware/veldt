@@ -3,8 +3,8 @@ package elastic
 import (
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/query"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/query"
 )
 
 // Equals represents an elasticsearch term query.
@@ -13,7 +13,7 @@ type Equals struct {
 }
 
 // NewEquals instantiates and returns a new query struct.
-func NewEquals() (prism.Query, error) {
+func NewEquals() (veldt.Query, error) {
 	return &Equals{}, nil
 }
 

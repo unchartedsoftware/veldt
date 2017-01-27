@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"sort"
 
-	jsonutil "github.com/unchartedsoftware/prism/util/json"
+	jsonutil "github.com/unchartedsoftware/veldt/util/json"
 )
 
 // Micro represents a tile that returns individual data points with optional

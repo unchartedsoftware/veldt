@@ -1,4 +1,4 @@
-package prism
+package veldt
 
 // GenerateTile generates a tile for the provided pipeline ID and JSON request.
 func GenerateTile(id string, args map[string]interface{}) error {

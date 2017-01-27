@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/veldt/binning"
 )
 
 var _ = Describe("pixel", func() {

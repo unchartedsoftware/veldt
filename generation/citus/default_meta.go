@@ -9,8 +9,8 @@ import (
 
 	"github.com/jackc/pgx"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
 )
 
 // PropertyMeta represents the meta data for a single property.
@@ -123,8 +123,8 @@ type DefaultMeta struct {
 }
 
 // NewDefaultMeta instantiates and returns a pointer to a new generator.
-func NewDefaultMeta(host string, port string) prism.MetaCtor {
-	return func() (prism.Meta, error) {
+func NewDefaultMeta(host string, port string) veldt.MetaCtor {
+	return func() (veldt.Meta, error) {
 		return &DefaultMeta{
 			Host: host,
 			Port: port,

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// QueryString represents a citus implementation of the prism.Query interface.
+// QueryString represents a citus implementation of the veldt.Query interface.
 type QueryString interface {
 	Get(*Query) (string, error)
 }

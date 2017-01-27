@@ -1,7 +1,7 @@
-package prism
+package veldt
 
 import (
-	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/veldt/binning"
 )
 
 // Tile represents an interface for generating tile data.

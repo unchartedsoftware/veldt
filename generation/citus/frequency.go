@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx"
 
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/veldt/tile"
 )
 
 // Frequency represents a tiling generator that produces heatmaps.

@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/veldt/tile"
 )
 
 // Frequency represents an elasticsearch implementation of the frequency

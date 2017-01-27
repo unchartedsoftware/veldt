@@ -3,7 +3,7 @@ package query
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism/util/json"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // Has quiery represents a query checking if the field has one or more of the

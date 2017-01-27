@@ -1,4 +1,4 @@
-package prism
+package veldt
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/unchartedsoftware/prism/util/promise"
+	"github.com/unchartedsoftware/veldt/util/promise"
 )
 
 // Pipeline represents a cohesive tile and meta generation unit.

@@ -3,8 +3,8 @@ package citus
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
 )
 
 // Count represents a citus implementation of the count tile.
@@ -14,8 +14,8 @@ type Count struct {
 }
 
 // NewCountTile instantiates and returns a new tile struct.
-func NewCountTile(host, port string) prism.TileCtor {
-	return func() (prism.Tile, error) {
+func NewCountTile(host, port string) veldt.TileCtor {
+	return func() (veldt.Tile, error) {
 		t := &Count{}
 		t.Host = host
 		t.Port = port
@@ -25,7 +25,7 @@ func NewCountTile(host, port string) prism.TileCtor {
 
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
-func (t *Count) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (t *Count) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// Initialize the tile processing.
 	client, citusQuery, err := t.InitializeTile(uri, query)
 

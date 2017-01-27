@@ -1,4 +1,4 @@
-package prism
+package veldt
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 
-	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/veldt/binning"
 )
 
 // TileRequest represents a tile data generation request.

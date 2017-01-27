@@ -1,7 +1,7 @@
 package tile
 
 import (
-	"github.com/unchartedsoftware/prism/util/json"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // Macro represents a tile which returns a point for any bin that contains a

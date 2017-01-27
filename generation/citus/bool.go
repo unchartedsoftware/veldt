@@ -3,16 +3,16 @@ package citus
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism"
+	"github.com/unchartedsoftware/veldt"
 )
 
 // BinaryExpression represents an and/or boolean query.
 type BinaryExpression struct {
-	prism.BinaryExpression
+	veldt.BinaryExpression
 }
 
 // NewBinaryExpression instantiates and returns a new binary expression.
-func NewBinaryExpression() (prism.Query, error) {
+func NewBinaryExpression() (veldt.Query, error) {
 	return &BinaryExpression{}, nil
 }
 
@@ -39,10 +39,10 @@ func (e *BinaryExpression) Get(query *Query) (string, error) {
 
 	res := ""
 	switch e.Op {
-	case prism.And:
+	case veldt.And:
 		// AND
 		res = fmt.Sprintf("((%s) AND (%s))", queryStringLeft, queryStringRight)
-	case prism.Or:
+	case veldt.Or:
 		// OR
 		res = fmt.Sprintf("((%s) OR (%s))", queryStringLeft, queryStringRight)
 	default:
@@ -53,11 +53,11 @@ func (e *BinaryExpression) Get(query *Query) (string, error) {
 
 // UnaryExpression represents a must_not boolean query.
 type UnaryExpression struct {
-	prism.UnaryExpression
+	veldt.UnaryExpression
 }
 
 // NewUnaryExpression instantiates and returns a new unary expression.
-func NewUnaryExpression() (prism.Query, error) {
+func NewUnaryExpression() (veldt.Query, error) {
 	return &UnaryExpression{}, nil
 }
 
@@ -76,7 +76,7 @@ func (e *UnaryExpression) Get(query *Query) (string, error) {
 
 	res := ""
 	switch e.Op {
-	case prism.Not:
+	case veldt.Not:
 		// NOT
 		res = res + fmt.Sprintf("NOT (%s)", a)
 	default:

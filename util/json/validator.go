@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/unchartedsoftware/prism/util/color"
+	"github.com/unchartedsoftware/veldt/util/color"
 )
 
 const (

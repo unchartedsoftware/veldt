@@ -1,11 +1,16 @@
-package: github.com/unchartedsoftware/prism
+package: github.com/unchartedsoftware/veldt
 import:
 - package: github.com/coocood/freecache
-- package: github.com/garyburd/redigo
-- package: github.com/unchartedsoftware/plog
-- package: gopkg.in/olivere/elastic.v3
-- package: github.com/onsi/ginkgo
-- package: github.com/onsi/gomega
 - package: github.com/davecgh/go-spew
   subpackages:
   - spew
+- package: github.com/garyburd/redigo
+  subpackages:
+  - redis
+- package: github.com/jackc/pgx
+- package: github.com/mattn/go-isatty
+- package: github.com/unchartedsoftware/plog
+- package: gopkg.in/olivere/elastic.v3
+testImport:
+- package: github.com/onsi/ginkgo
+- package: github.com/onsi/gomega

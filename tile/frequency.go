@@ -3,7 +3,7 @@ package tile
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism/util/json"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // Frequency represents a tile which returns data over a provided time range.

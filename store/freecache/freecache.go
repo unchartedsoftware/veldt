@@ -7,7 +7,7 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/unchartedsoftware/plog"
 
-	"github.com/unchartedsoftware/prism"
+	"github.com/unchartedsoftware/veldt"
 )
 
 var (
@@ -35,8 +35,8 @@ func getCache(byteSize int) *freecache.Cache {
 }
 
 // NewConnection instantiates and returns a new freecache store connection.
-func NewConnection(byteSize int, expirySeconds int) prism.StoreCtor {
-	return func() (prism.Store, error) {
+func NewConnection(byteSize int, expirySeconds int) veldt.StoreCtor {
+	return func() (veldt.Store, error) {
 		return &Connection{
 			cache:  getCache(byteSize),
 			expiry: expirySeconds,

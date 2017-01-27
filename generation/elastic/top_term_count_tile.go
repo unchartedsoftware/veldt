@@ -3,8 +3,8 @@ package elastic
 import (
 	"encoding/json"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
 )
 
 // TopTermCountTile represents an elasticsearch implementation of the
@@ -16,8 +16,8 @@ type TopTermCountTile struct {
 }
 
 // NewTopTermCountTile instantiates and returns a new tile struct.
-func NewTopTermCountTile(host, port string) prism.TileCtor {
-	return func() (prism.Tile, error) {
+func NewTopTermCountTile(host, port string) veldt.TileCtor {
+	return func() (veldt.Tile, error) {
 		t := &TopTermCountTile{}
 		t.Host = host
 		t.Port = port
@@ -36,7 +36,7 @@ func (t *TopTermCountTile) Parse(params map[string]interface{}) error {
 
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
-func (t *TopTermCountTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (t *TopTermCountTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(t.Host, t.Port)
 	if err != nil {

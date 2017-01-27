@@ -3,7 +3,7 @@ package redis
 import (
 	"github.com/garyburd/redigo/redis"
 
-	"github.com/unchartedsoftware/prism"
+	"github.com/unchartedsoftware/veldt"
 )
 
 // Store represents a single connection to a redis server.
@@ -13,8 +13,8 @@ type Store struct {
 }
 
 // NewStore instantiates and returns a new redis store connection.
-func NewStore(host, port string, expirySeconds int) prism.StoreCtor {
-	return func() (prism.Store, error) {
+func NewStore(host, port string, expirySeconds int) veldt.StoreCtor {
+	return func() (veldt.Store, error) {
 		return &Store{
 			conn:   getConnection(host, port),
 			expiry: expirySeconds,

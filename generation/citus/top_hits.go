@@ -5,7 +5,7 @@ import (
 
 	"github.com/jackc/pgx"
 
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/veldt/tile"
 )
 
 // TopHits represents a citus implementation of the top hits tile.

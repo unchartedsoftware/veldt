@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
 )
 
 // TargetTermFrequencyTile represents a citus implementation of the target term
@@ -18,8 +18,8 @@ type TargetTermFrequencyTile struct {
 }
 
 // NewTargetTermFrequencyTile instantiates and returns a new tile struct.
-func NewTargetTermFrequencyTile(host, port string) prism.TileCtor {
-	return func() (prism.Tile, error) {
+func NewTargetTermFrequencyTile(host, port string) veldt.TileCtor {
+	return func() (veldt.Tile, error) {
 		t := &TargetTermFrequencyTile{}
 		t.Host = host
 		t.Port = port
@@ -38,7 +38,7 @@ func (t *TargetTermFrequencyTile) Parse(params map[string]interface{}) error {
 
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
-func (t *TargetTermFrequencyTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (t *TargetTermFrequencyTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// Initialize the tile processing.
 	client, citusQuery, err := t.InitializeTile(uri, query)
 

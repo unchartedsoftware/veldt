@@ -3,8 +3,8 @@ package elastic
 import (
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/query"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/query"
 )
 
 // Has represents an elasticsearch terms query.
@@ -13,7 +13,7 @@ type Has struct {
 }
 
 // NewHas instantiates and returns a new tile struct.
-func NewHas() (prism.Query, error) {
+func NewHas() (veldt.Query, error) {
 	return &Has{}, nil
 }
 

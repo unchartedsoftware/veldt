@@ -3,7 +3,7 @@ package tile
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism/util/json"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // TargetTerms represents a tile which returns counts for specific terms in a

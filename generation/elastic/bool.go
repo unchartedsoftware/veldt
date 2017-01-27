@@ -5,16 +5,16 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism"
+	"github.com/unchartedsoftware/veldt"
 )
 
 // BinaryExpression represents an must / should boolean query.
 type BinaryExpression struct {
-	prism.BinaryExpression
+	veldt.BinaryExpression
 }
 
 // NewBinaryExpression instantiates and returns a new binary expression.
-func NewBinaryExpression() (prism.Query, error) {
+func NewBinaryExpression() (veldt.Query, error) {
 	return &BinaryExpression{}, nil
 }
 
@@ -41,11 +41,11 @@ func (e *BinaryExpression) Get() (elastic.Query, error) {
 
 	res := elastic.NewBoolQuery()
 	switch e.Op {
-	case prism.And:
+	case veldt.And:
 		// AND
 		res.Must(a)
 		res.Must(b)
-	case prism.Or:
+	case veldt.Or:
 		// OR
 		res.Should(a)
 		res.Should(b)
@@ -57,11 +57,11 @@ func (e *BinaryExpression) Get() (elastic.Query, error) {
 
 // UnaryExpression represents a must_not boolean query.
 type UnaryExpression struct {
-	prism.UnaryExpression
+	veldt.UnaryExpression
 }
 
 // NewUnaryExpression instantiates and returns a new unary expression.
-func NewUnaryExpression() (prism.Query, error) {
+func NewUnaryExpression() (veldt.Query, error) {
 	return &UnaryExpression{}, nil
 }
 
@@ -80,7 +80,7 @@ func (e *UnaryExpression) Get() (elastic.Query, error) {
 
 	res := elastic.NewBoolQuery()
 	switch e.Op {
-	case prism.Not:
+	case veldt.Not:
 		// NOT
 		res.MustNot(a)
 	default:

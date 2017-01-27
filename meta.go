@@ -1,4 +1,4 @@
-package prism
+package veldt
 
 // Meta represents an interface for generating meta data.
 type Meta interface {

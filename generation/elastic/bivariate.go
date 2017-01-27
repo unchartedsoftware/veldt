@@ -6,8 +6,8 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/veldt/tile"
 )
 
 // Bivariate represents an elasticsearch implementation of the bivariate tile.

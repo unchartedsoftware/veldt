@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx"
-	"github.com/unchartedsoftware/prism"
+	"github.com/unchartedsoftware/veldt"
 )
 
 // Tile represents an citus tile type.
@@ -14,7 +14,7 @@ type Tile struct {
 }
 
 // CreateQuery creates the underlying citus query object.
-func (t *Tile) CreateQuery(query prism.Query) (*Query, error) {
+func (t *Tile) CreateQuery(query veldt.Query) (*Query, error) {
 	// create root query
 	root, err := NewQuery()
 	if err != nil {
@@ -41,7 +41,7 @@ func (t *Tile) CreateQuery(query prism.Query) (*Query, error) {
 }
 
 // InitializeTile initializes the citus tile type.
-func (t *Tile) InitializeTile(uri string, query prism.Query) (*pgx.ConnPool, *Query, error) {
+func (t *Tile) InitializeTile(uri string, query veldt.Query) (*pgx.ConnPool, *Query, error) {
 	// get client
 	client, err := NewClient(t.Host, t.Port)
 	if err != nil {

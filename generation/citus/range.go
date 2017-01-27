@@ -3,8 +3,8 @@ package citus
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/query"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/query"
 )
 
 // Range represents a citus range query.
@@ -13,7 +13,7 @@ type Range struct {
 }
 
 // NewRange instantiates and returns a new query struct.
-func NewRange() (prism.Query, error) {
+func NewRange() (veldt.Query, error) {
 	return &Range{}, nil
 }
 

@@ -1,4 +1,4 @@
-package prism
+package veldt
 
 import (
 	"fmt"

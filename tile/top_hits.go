@@ -3,7 +3,7 @@ package tile
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism/util/json"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // TopHits represents a tile which returns the top data points based on a

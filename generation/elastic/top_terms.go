@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/veldt/tile"
 )
 
 // TopTerms represents an elasticsearch implementation of the top terms tile.

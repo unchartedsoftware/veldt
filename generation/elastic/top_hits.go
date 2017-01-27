@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/veldt/tile"
 )
 
 // TopHits represents an elasticsearch implementation of the top hits tile.

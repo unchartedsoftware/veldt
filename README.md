@@ -1,6 +1,10 @@
-# Prism
+# veldt
 
->Harness the full spectrum of your data.
+> Scalable on-demand tile-based analytics
+
+[![Godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](http://godoc.org/github.com/unchartedsoftware/veldt)
+[![Build Status](https://travis-ci.org/unchartedsoftware/veldt.svg?branch=master)](https://travis-ci.org/unchartedsoftware/veldt)
+[![Go Report Card](https://goreportcard.com/badge/github.com/unchartedsoftware/veldt)](https://goreportcard.com/report/github.com/unchartedsoftware/veldt)
 
 ## Dependencies
 
@@ -13,7 +17,7 @@ Requires the [Go](https://golang.org/) programming language binaries with the `G
 If your project does not use the vendoring tool [Glide](https://glide.sh) to manage dependencies, you can install this package like you would any other:
 
 ```bash
-go get github.com/unchartedsoftware/prism
+go get github.com/unchartedsoftware/veldt
 ```
 
 While this is the simplest way to install the package, due to how `go get` resolves transitive dependencies it may result in version incompatibilities.
@@ -23,14 +27,14 @@ While this is the simplest way to install the package, due to how `go get` resol
 This is the recommended way to install the package and ensures all transitive dependencies are resolved to their compatible versions.
 
 ```bash
-glide get github.com/unchartedsoftware/prism
+glide get github.com/unchartedsoftware/veldt
 ```
 
 NOTE: Requires [Glide](https://glide.sh) along with [Go](https://golang.org/) version 1.6+.
 
 ## Usage
 
-The package provides facilities to implement and connect custom tiling analytics to persistent in-memory storage services.
+The package provides facilities to implement and connect live tile-based analytics to persistent in-memory storage services.
 
 ## Example
 
@@ -40,14 +44,14 @@ This minimalistic application shows how to register tile and meta data generator
 package main
 
 import (
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/generation/elastic"
-	"github.com/unchartedsoftware/prism/store/redis"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/generation/elastic"
+	"github.com/unchartedsoftware/veldt/store/redis"
 )
 
 func main() {
 	// Create pipeline
-	pipeline := prism.NewPipeline()
+	pipeline := veldt.NewPipeline()
 
 	// Add boolean expression types
 	pipeline.Binary(elastic.NewBinaryExpression)
@@ -67,17 +71,17 @@ func main() {
 	// Set the tile requests queue length
 	pipeline.SetQueueLength(1024)
 
-	// Add a store to the pipeline
+	// Add a redis store to the pipeline
 	pipeline.Store(redis.NewStore("localhost", "6379", -1))
 
 	// register the pipeline
-	prism.Register("elastic", pipeline)
+	veldt.Register("elastic", pipeline)
 
 	// Create tile JSON request
 	req :=
 		`
 		{
-			"uri": "twitter_index0",
+			"uri": "sample_index0",
 			"coord": {
 				"z": 4,
 				"x": 12,
@@ -114,12 +118,12 @@ func main() {
 
 	// Generate a tile, this call will block until the tile is ready in the
 	// store.
-	err := prism.GenerateTile("elastic", req)
+	err := veldt.GenerateTile("elastic", req)
 	if err != nil {
 		panic(err)
 	}
 	// Retrieve the tile form the store.
-	tile, err := tile.GetTileFromStore("elastic", t)
+	tile, err := veldt.GetTileFromStore("elastic", t)
 	if err != nil {
 		panic(err)
 	}
@@ -133,12 +137,12 @@ Clone the repository:
 ```bash
 mkdir -p $GOPATH/src/github.com/unchartedsoftware
 cd $GOPATH/src/github.com/unchartedsoftware
-git clone git@github.com:unchartedsoftware/prism.git
+git clone git@github.com:unchartedsoftware/veldt.git
 ```
 
 Install dependencies:
 
 ```bash
-cd prism
+cd veldt
 make install
 ```

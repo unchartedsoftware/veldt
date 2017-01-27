@@ -6,9 +6,9 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/binning"
-	jsonutil "github.com/unchartedsoftware/prism/util/json"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
+	jsonutil "github.com/unchartedsoftware/veldt/util/json"
 )
 
 // DefaultMeta represents a meta data generator that produces default
@@ -19,8 +19,8 @@ type DefaultMeta struct {
 }
 
 // NewDefaultMeta instantiates and returns a pointer to a new generator.
-func NewDefaultMeta(host string, port string) prism.MetaCtor {
-	return func() (prism.Meta, error) {
+func NewDefaultMeta(host string, port string) veldt.MetaCtor {
+	return func() (veldt.Meta, error) {
 		return &DefaultMeta{
 			Host: host,
 			Port: port,

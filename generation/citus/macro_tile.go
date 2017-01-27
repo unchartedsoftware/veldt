@@ -3,9 +3,9 @@ package citus
 import (
 	"math"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/veldt/tile"
 )
 
 // MacroTile represents a citus implementation of the macro tile.
@@ -16,8 +16,8 @@ type MacroTile struct {
 }
 
 // NewMacroTile instantiates and returns a new tile struct.
-func NewMacroTile(host, port string) prism.TileCtor {
-	return func() (prism.Tile, error) {
+func NewMacroTile(host, port string) veldt.TileCtor {
+	return func() (veldt.Tile, error) {
 		m := &MacroTile{}
 		m.Host = host
 		m.Port = port
@@ -36,7 +36,7 @@ func (m *MacroTile) Parse(params map[string]interface{}) error {
 
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
-func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// Initialize the tile processing.
 	client, citusQuery, err := m.InitializeTile(uri, query)
 

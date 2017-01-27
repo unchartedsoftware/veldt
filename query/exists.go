@@ -3,7 +3,7 @@ package query
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism/util/json"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // Exists represents an exists query checking if a field is not null.

@@ -1,9 +1,9 @@
 package citus
 
 import (
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/veldt/tile"
 )
 
 // MicroTile represents a citus implementation of the micro tile.
@@ -15,8 +15,8 @@ type MicroTile struct {
 }
 
 // NewMicroTile instantiates and returns a new tile struct.
-func NewMicroTile(host, port string) prism.TileCtor {
-	return func() (prism.Tile, error) {
+func NewMicroTile(host, port string) veldt.TileCtor {
+	return func() (veldt.Tile, error) {
 		m := &MicroTile{}
 		m.Host = host
 		m.Port = port
@@ -48,7 +48,7 @@ func (m *MicroTile) Parse(params map[string]interface{}) error {
 
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
-func (m *MicroTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (m *MicroTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// Initialize the tile processing.
 	client, citusQuery, err := m.InitializeTile(uri, query)
 

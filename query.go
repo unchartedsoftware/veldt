@@ -1,4 +1,4 @@
-package prism
+package veldt
 
 // Query represents a base query interface.
 type Query interface {

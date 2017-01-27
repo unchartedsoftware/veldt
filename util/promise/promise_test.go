@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/unchartedsoftware/prism/util/promise"
+	"github.com/unchartedsoftware/veldt/util/promise"
 )
 
 var _ = Describe("promise", func() {

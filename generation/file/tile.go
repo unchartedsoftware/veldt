@@ -6,10 +6,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/tile"
-	"github.com/unchartedsoftware/prism/util/json"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/veldt/tile"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // Tile represents a filesystem tile type.
@@ -20,8 +20,8 @@ type Tile struct {
 }
 
 // NewTile instantiates and returns a new filesystem tile.
-func NewTile() prism.TileCtor {
-	return func() (prism.Tile, error) {
+func NewTile() veldt.TileCtor {
+	return func() (veldt.Tile, error) {
 		return &Tile{}, nil
 	}
 }
@@ -49,7 +49,7 @@ func (t *Tile) Parse(params map[string]interface{}) error {
 
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
-func (t *Tile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (t *Tile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// get the format string for the path
 	format := t.getFormat(coord)
 	// get the filepath

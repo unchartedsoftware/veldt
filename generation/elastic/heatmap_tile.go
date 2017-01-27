@@ -3,8 +3,8 @@ package elastic
 import (
 	"encoding/binary"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
 )
 
 // HeatmapTile represents an elasticsearch implementation of the heatmap tile.
@@ -14,8 +14,8 @@ type HeatmapTile struct {
 }
 
 // NewHeatmapTile instantiates and returns a new tile struct.
-func NewHeatmapTile(host, port string) prism.TileCtor {
-	return func() (prism.Tile, error) {
+func NewHeatmapTile(host, port string) veldt.TileCtor {
+	return func() (veldt.Tile, error) {
 		h := &HeatmapTile{}
 		h.Host = host
 		h.Port = port
@@ -30,7 +30,7 @@ func (h *HeatmapTile) Parse(params map[string]interface{}) error {
 
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
-func (h *HeatmapTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (h *HeatmapTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(h.Host, h.Port)
 	if err != nil {

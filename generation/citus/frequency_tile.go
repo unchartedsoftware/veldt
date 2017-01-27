@@ -3,8 +3,8 @@ package citus
 import (
 	"encoding/json"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/binning"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
 )
 
 // FrequencyTile represents a citus implementation of the frequency tile.
@@ -15,8 +15,8 @@ type FrequencyTile struct {
 }
 
 // NewFrequencyTile instantiates and returns a new tile struct.
-func NewFrequencyTile(host, port string) prism.TileCtor {
-	return func() (prism.Tile, error) {
+func NewFrequencyTile(host, port string) veldt.TileCtor {
+	return func() (veldt.Tile, error) {
 		t := &FrequencyTile{}
 		t.Host = host
 		t.Port = port
@@ -35,7 +35,7 @@ func (t *FrequencyTile) Parse(params map[string]interface{}) error {
 
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
-func (t *FrequencyTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
+func (t *FrequencyTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// Initialize the tile processing.
 	client, citusQuery, err := t.InitializeTile(uri, query)
 

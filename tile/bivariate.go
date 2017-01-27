@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/util/json"
+	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // Bivariate represents the parameters required for any bivariate tile.

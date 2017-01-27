@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/olivere/elastic.v3"
 
-	"github.com/unchartedsoftware/prism"
+	"github.com/unchartedsoftware/veldt"
 )
 
 // Tile represents an elasticsearch tile type.
@@ -15,7 +15,7 @@ type Tile struct {
 }
 
 // CreateQuery creates the elasticsearch query from the query struct.
-func (t *Tile) CreateQuery(query prism.Query) (*elastic.BoolQuery, error) {
+func (t *Tile) CreateQuery(query veldt.Query) (*elastic.BoolQuery, error) {
 	// create root query
 	root := elastic.NewBoolQuery()
 	// add filter query

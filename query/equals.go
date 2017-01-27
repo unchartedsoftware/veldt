@@ -3,7 +3,7 @@ package query
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism/util/json"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // Equals represents an equality query, checking if a field equals a provided

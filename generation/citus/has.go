@@ -3,8 +3,8 @@ package citus
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/query"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/query"
 )
 
 // Has represents an citus query on an array.
@@ -13,7 +13,7 @@ type Has struct {
 }
 
 // NewHas instantiates and returns a new query struct.
-func NewHas() (prism.Query, error) {
+func NewHas() (veldt.Query, error) {
 	return &Has{}, nil
 }
 

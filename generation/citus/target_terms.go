@@ -5,7 +5,7 @@ import (
 
 	"github.com/jackc/pgx"
 
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/veldt/tile"
 )
 
 // TargetTerms represents a citus implementation of the target terms tile.

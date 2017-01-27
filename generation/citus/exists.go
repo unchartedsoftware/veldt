@@ -3,8 +3,8 @@ package citus
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism"
-	"github.com/unchartedsoftware/prism/query"
+	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/query"
 )
 
 // Exists checks for the existence of the field (not null).
@@ -13,7 +13,7 @@ type Exists struct {
 }
 
 // NewExists instantiates and returns a new query struct.
-func NewExists() (prism.Query, error) {
+func NewExists() (veldt.Query, error) {
 	return &Exists{}, nil
 }
 

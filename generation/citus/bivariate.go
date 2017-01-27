@@ -6,8 +6,8 @@ import (
 
 	"github.com/jackc/pgx"
 
-	"github.com/unchartedsoftware/prism/binning"
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/veldt/tile"
 )
 
 // Bivariate represents a bivariate tile generator.

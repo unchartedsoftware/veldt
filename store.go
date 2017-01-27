@@ -1,4 +1,4 @@
-package prism
+package veldt
 
 // Store represents an interface for connecting to, setting, and retrieving
 // values from a key-value database or in-memory storage server.

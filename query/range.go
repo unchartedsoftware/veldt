@@ -3,7 +3,7 @@ package query
 import (
 	"fmt"
 
-	"github.com/unchartedsoftware/prism/util/json"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // Range represents a range query, check that the values are within the defined
