@@ -12,6 +12,7 @@ import (
 	"github.com/unchartedsoftware/prism/util/promise"
 )
 
+// Pipeline represents a cohesive tile and meta generation unit.
 type Pipeline struct {
 	queue       *queue
 	queries     map[string]QueryCtor
@@ -24,6 +25,7 @@ type Pipeline struct {
 	compression string
 }
 
+// NewPipeline instantiates and returns a new pipeline struct.
 func NewPipeline() *Pipeline {
 	return &Pipeline{
 		queue:       newQueue(),
@@ -45,30 +47,37 @@ func (p *Pipeline) SetQueueLength(length int) {
 	p.queue.setQueueLength(length)
 }
 
+// Query registers a query type under the provided ID string.
 func (p *Pipeline) Query(id string, ctor QueryCtor) {
 	p.queries[id] = ctor
 }
 
+// Binary registers a binary operator type under the provided ID string.
 func (p *Pipeline) Binary(ctor QueryCtor) {
 	p.binary = ctor
 }
 
+// Unary registers a unary operator type under the provided ID string.
 func (p *Pipeline) Unary(ctor QueryCtor) {
 	p.unary = ctor
 }
 
+// Tile registers a tile generation type under the provided ID string.
 func (p *Pipeline) Tile(id string, ctor TileCtor) {
 	p.tiles[id] = ctor
 }
 
+// Meta registers a metadata generation type under the provided ID string.
 func (p *Pipeline) Meta(id string, ctor MetaCtor) {
 	p.metas[id] = ctor
 }
 
+// Store registers the storage system used to cache generated data.
 func (p *Pipeline) Store(ctor StoreCtor) {
 	p.store = ctor
 }
 
+// GetQuery returns the instantiated query struct from the provided ID and JSON.
 func (p *Pipeline) GetQuery(id string, args interface{}) (Query, error) {
 	params, ok := args.(map[string]interface{})
 	if !ok {
@@ -89,6 +98,8 @@ func (p *Pipeline) GetQuery(id string, args interface{}) (Query, error) {
 	return query, nil
 }
 
+// GetBinary returns the instantiated binary operator struct from the provided
+// ID and JSON.
 func (p *Pipeline) GetBinary() (Query, error) {
 	if p.binary == nil {
 		return nil, fmt.Errorf("no binary query type has been provided")
@@ -96,6 +107,8 @@ func (p *Pipeline) GetBinary() (Query, error) {
 	return p.binary()
 }
 
+// GetUnary returns the instantiated unary operator struct from the provided
+// ID and JSON.
 func (p *Pipeline) GetUnary() (Query, error) {
 	if p.unary == nil {
 		return nil, fmt.Errorf("no unary query type has been provided")
@@ -103,6 +116,8 @@ func (p *Pipeline) GetUnary() (Query, error) {
 	return p.unary()
 }
 
+// GetTile returns the instantiated tile generator struct from the provided
+// ID and JSON.
 func (p *Pipeline) GetTile(id string, args interface{}) (Tile, error) {
 	params, ok := args.(map[string]interface{})
 	if !ok {
@@ -123,6 +138,8 @@ func (p *Pipeline) GetTile(id string, args interface{}) (Tile, error) {
 	return tile, nil
 }
 
+// GetMeta returns the instantiated metedata generator struct from the provided
+// ID and JSON.
 func (p *Pipeline) GetMeta(id string, args interface{}) (Meta, error) {
 	params, ok := args.(map[string]interface{})
 	if !ok {
@@ -143,6 +160,7 @@ func (p *Pipeline) GetMeta(id string, args interface{}) (Meta, error) {
 	return meta, nil
 }
 
+// GetStore returns the instantiated store struct from the provided ID and JSON.
 func (p *Pipeline) GetStore() (Store, error) {
 	if p.store == nil {
 		return nil, fmt.Errorf("no store type has been provided")
@@ -150,6 +168,8 @@ func (p *Pipeline) GetStore() (Store, error) {
 	return p.store()
 }
 
+// NewTileRequest instantiates and returns a tile request struct from the
+// provided JSON.
 func (p *Pipeline) NewTileRequest(args map[string]interface{}) (*TileRequest, error) {
 	// params are modified in place during validation, so create a copy
 	copy, err := copyJSON(args)
@@ -164,6 +184,7 @@ func (p *Pipeline) NewTileRequest(args map[string]interface{}) (*TileRequest, er
 	return req, nil
 }
 
+// GenerateTile generates a tile for the provided tile request.
 func (p *Pipeline) GenerateTile(req *TileRequest) error {
 	// get tile hash
 	hash := p.getTileHash(req)
@@ -186,6 +207,7 @@ func (p *Pipeline) GenerateTile(req *TileRequest) error {
 	return p.getTilePromise(hash, req)
 }
 
+// GetTileFromStore retrieves the generated tile from the store.
 func (p *Pipeline) GetTileFromStore(req *TileRequest) ([]byte, error) {
 	// get tile hash
 	hash := p.getTileHash(req)
@@ -243,6 +265,8 @@ func (p *Pipeline) getTileHash(req *TileRequest) string {
 	return fmt.Sprintf("%s:%s", req.GetHash(), p.compression)
 }
 
+// NewMetaRequest instantiates and returns a metadata request struct from the
+// provided JSON.
 func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, error) {
 	// params are modified in place during validation, so create a copy
 	copy, err := copyJSON(args)
@@ -257,6 +281,7 @@ func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, er
 	return req, nil
 }
 
+// GenerateMeta generates metadata for the provided metadata request.
 func (p *Pipeline) GenerateMeta(req *MetaRequest) error {
 	// get tile hash
 	hash := p.getMetaHash(req)
@@ -279,6 +304,7 @@ func (p *Pipeline) GenerateMeta(req *MetaRequest) error {
 	return p.getMetaPromise(hash, req)
 }
 
+// GetTileFromStore retrieves the generated tile from the store.
 func (p *Pipeline) GetMetaFromStore(req *MetaRequest) ([]byte, error) {
 	// get tile hash
 	hash := p.getMetaHash(req)

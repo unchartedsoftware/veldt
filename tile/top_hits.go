@@ -6,6 +6,8 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
+// TopHits represents a tile which returns the top data points based on a
+// provided field and sort order.
 type TopHits struct {
 	SortField     string
 	SortOrder     string

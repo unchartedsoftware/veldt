@@ -95,16 +95,16 @@ func (f *Frequency) CreateBuckets(results map[int64]float64) ([]*FrequencyResult
 	//Define the window limits.
 	windowStart, windowEnd := int64(0), int64(0)
 	if f.GT != nil {
-		windowStart = f.CastFrequency(f.GT)
+		windowStart = castFrequency(f.GT)
 	} else if f.GTE != nil {
-		windowStart = f.CastFrequency(f.GTE)
+		windowStart = castFrequency(f.GTE)
 	} else {
 		windowStart = min
 	}
 	if f.LT != nil {
-		windowEnd = f.CastFrequency(f.LT)
+		windowEnd = castFrequency(f.LT)
 	} else if f.LTE != nil {
-		windowEnd = f.CastFrequency(f.LTE)
+		windowEnd = castFrequency(f.LTE)
 	} else {
 		windowEnd = max
 	}
@@ -138,6 +138,19 @@ func (f *Frequency) encodeResult(frequency []*FrequencyResult) []map[string]inte
 			"count":     bucket.Value,
 		}
 	}
-
 	return buckets
+}
+
+func castFrequency(val interface{}) int64 {
+	numF, isNum := val.(float64)
+	if isNum {
+		return int64(numF)
+	}
+	numI, isNum := val.(int64)
+	if isNum {
+		return numI
+	}
+	// TODO: Figure out which types are allowed, and what to do if bad data is
+	// received.
+	return -1
 }

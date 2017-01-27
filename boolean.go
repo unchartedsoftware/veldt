@@ -37,6 +37,7 @@ type BinaryExpression struct {
 	Right Query
 }
 
+// Parse should parse through the provided JSON and populate the struct fields.
 func (b *BinaryExpression) Parse(params map[string]interface{}) error {
 	// left
 	l, ok := params["left"]
@@ -77,6 +78,7 @@ type UnaryExpression struct {
 	Op    string
 }
 
+// Parse should parse through the provided JSON and populate the struct fields.
 func (u *UnaryExpression) Parse(params map[string]interface{}) error {
 	// left
 	q, ok := params["query"]

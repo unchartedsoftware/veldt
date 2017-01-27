@@ -13,7 +13,7 @@ all:
 	@echo "  install       - install dependencies"
 
 lint:
-	@go vet $(shell glide novendor)
+	#@go vet $(shell glide novendor)
 	@go list ./... | grep -v /vendor/ | xargs -L1 golint
 
 test:

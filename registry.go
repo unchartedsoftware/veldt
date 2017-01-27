@@ -9,12 +9,12 @@ var (
 	registry = make(map[string]*Pipeline)
 )
 
-// Register registers a tile generator under the provided type id string.
+// Register registers a pipeline under the provided ID string.
 func Register(typeID string, p *Pipeline) {
 	registry[typeID] = p
 }
 
-// GetGenerator instantiates a tile generator from a tile request.
+// GetPipeline retrieves the pipeline registered under the provided ID string.
 func GetPipeline(id string) (*Pipeline, error) {
 	p, ok := registry[id]
 	if !ok {

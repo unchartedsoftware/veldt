@@ -8,6 +8,7 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
+// Bivariate represents the parameters required for any bivariate tile.
 type Bivariate struct {
 	XField     string
 	YField     string
@@ -62,6 +63,7 @@ func (b *Bivariate) Parse(params map[string]interface{}) error {
 	return nil
 }
 
+// GetXBin given an x value, returns the corresponding bin.
 func (b *Bivariate) GetXBin(x int64) int {
 	bounds := b.Bounds
 	fx := float64(x)
@@ -86,7 +88,7 @@ func (b *Bivariate) GetX(x float64) float64 {
 	return ((x - bounds.BottomLeft.X) / rang) * binning.MaxTileResolution
 }
 
-// GetYBin given an y value, returns the corresponding bin.
+// GetYBin given a y value, returns the corresponding bin.
 func (b *Bivariate) GetYBin(y int64) int {
 	bounds := b.Bounds
 	fy := float64(y)

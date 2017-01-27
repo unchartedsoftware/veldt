@@ -7,6 +7,8 @@ import (
 	jsonutil "github.com/unchartedsoftware/prism/util/json"
 )
 
+// Micro represents a tile that returns individual data points with optional
+// included attributes.
 type Micro struct {
 	LOD       int
 	XField    string
@@ -15,12 +17,15 @@ type Micro struct {
 	YIncluded bool
 }
 
+// Parse parses the provided JSON object and populates the structs attributes.
 func (m *Micro) Parse(params map[string]interface{}) error {
 	// parse LOD
 	m.LOD = int(jsonutil.GetNumberDefault(params, 0, "lod"))
 	return nil
 }
 
+// ParseIncludes parses the included attributes to ensure they include the raw
+// data coordinates.
 func (m *Micro) ParseIncludes(includes []string, xField string, yField string) []string {
 	// store x / y field
 	m.XField = xField
@@ -39,6 +44,7 @@ func (m *Micro) ParseIncludes(includes []string, xField string, yField string) [
 	return includes
 }
 
+// Encode will encode the tile results based on the LOD property.
 func (m *Micro) Encode(hits []map[string]interface{}, points []float32) ([]byte, error) {
 	emptyHits := true
 	// remove any non-included fields from hits

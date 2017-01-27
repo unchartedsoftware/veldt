@@ -12,6 +12,7 @@ import (
 	_ "image/jpeg"
 )
 
+// DecodeImage takes an image file and encodes it into RGBA byte array format.
 func DecodeImage(ext string, reader io.Reader) ([]byte, error) {
 	if isImage(ext) {
 		// decode result into bytes

@@ -191,6 +191,16 @@ func (v *Validator) formatVal(val interface{}) string {
 	return fmt.Sprintf("%v", val)
 }
 
+// GetIDAndParams returns the nested key and value from a JSON object of the
+// form:
+//     {
+//         "key": {
+//             "prop0": ...,
+//             "prop1": ...,
+//             "prop2": ...,
+//         }
+//     }
+//
 func (v *Validator) GetIDAndParams(args map[string]interface{}) (string, interface{}, error) {
 	for k, v := range args {
 		return k, v, nil
@@ -233,6 +243,8 @@ func (v *Validator) bufferKeyValue(key string, val interface{}, indent int) {
 	v.Buffer(fmt.Sprintf(`"%s": %v`, key, val), indent)
 }
 
+// BufferKeyValue will buffer the a JSON key and it's value with correct
+// indentation.
 func (v *Validator) BufferKeyValue(key string, val interface{}, indent int, err error) {
 	// if error, start
 	if err != nil {

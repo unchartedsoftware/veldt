@@ -15,16 +15,16 @@ type Frequency struct {
 func (f *Frequency) GetQuery() *elastic.RangeQuery {
 	query := elastic.NewRangeQuery(f.FrequencyField)
 	if f.GTE != nil {
-		query.Gte(f.CastTime(f.GTE))
+		query.Gte(castTime(f.GTE))
 	}
 	if f.GT != nil {
-		query.Gt(f.CastTime(f.GT))
+		query.Gt(castTime(f.GT))
 	}
 	if f.LTE != nil {
-		query.Lte(f.CastTime(f.LTE))
+		query.Lte(castTime(f.LTE))
 	}
 	if f.LT != nil {
-		query.Lt(f.CastTime(f.LT))
+		query.Lt(castTime(f.LT))
 	}
 	return query
 }
@@ -35,18 +35,18 @@ func (f *Frequency) GetAggs() map[string]elastic.Aggregation {
 		Interval(f.Interval).
 		MinDocCount(0)
 	if f.GTE != nil {
-		agg.ExtendedBoundsMin(f.CastTime(f.GTE))
-		agg.Offset(f.CastTimeToString(f.GTE))
+		agg.ExtendedBoundsMin(castTime(f.GTE))
+		agg.Offset(castTimeToString(f.GTE))
 	}
 	if f.GT != nil {
-		agg.ExtendedBoundsMin(f.CastTime(f.GT))
-		agg.Offset(f.CastTimeToString(f.GT))
+		agg.ExtendedBoundsMin(castTime(f.GT))
+		agg.Offset(castTimeToString(f.GT))
 	}
 	if f.LTE != nil {
-		agg.ExtendedBoundsMax(f.CastTime(f.LTE))
+		agg.ExtendedBoundsMax(castTime(f.LTE))
 	}
 	if f.LT != nil {
-		agg.ExtendedBoundsMax(f.CastTime(f.LT))
+		agg.ExtendedBoundsMax(castTime(f.LT))
 	}
 	return map[string]elastic.Aggregation{
 		"frequency": agg,
@@ -59,4 +59,29 @@ func (f *Frequency) GetBuckets(aggs *elastic.Aggregations) ([]*elastic.Aggregati
 		return nil, fmt.Errorf("date histogram aggregation `frequency` was not found")
 	}
 	return frequency.Buckets, nil
+}
+
+func castTimeToString(val interface{}) string {
+	num, isNum := val.(float64)
+	if isNum {
+		// assume milliseconds
+		return fmt.Sprintf("%dms\n", int64(num))
+	}
+	str, isStr := val.(string)
+	if isStr {
+		return str
+	}
+	return ""
+}
+
+func castTime(val interface{}) interface{} {
+	num, isNum := val.(float64)
+	if isNum {
+		return int64(num)
+	}
+	str, isStr := val.(string)
+	if isStr {
+		return str
+	}
+	return val
 }

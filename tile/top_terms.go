@@ -6,6 +6,8 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
+// TopTerms represents a tile which returns counts for the top most occuring
+// terms in a provided field.
 type TopTerms struct {
 	TermsField string
 	TermsCount int

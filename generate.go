@@ -1,5 +1,6 @@
 package prism
 
+// GenerateTile generates a tile for the provided pipeline ID and JSON request.
 func GenerateTile(id string, args map[string]interface{}) error {
 	pipeline, err := GetPipeline(id)
 	if err != nil {
@@ -12,6 +13,8 @@ func GenerateTile(id string, args map[string]interface{}) error {
 	return pipeline.GenerateTile(req)
 }
 
+// GetTileFromStore retrieves a tile from the store for the provided pipeline ID
+// and JSON request.
 func GetTileFromStore(id string, args map[string]interface{}) ([]byte, error) {
 	pipeline, err := GetPipeline(id)
 	if err != nil {
@@ -24,6 +27,8 @@ func GetTileFromStore(id string, args map[string]interface{}) ([]byte, error) {
 	return pipeline.GetTileFromStore(req)
 }
 
+// GenerateMeta generates meta data for the provided pipeline ID and JSON
+// request.
 func GenerateMeta(id string, args map[string]interface{}) error {
 	pipeline, err := GetPipeline(id)
 	if err != nil {
@@ -36,6 +41,8 @@ func GenerateMeta(id string, args map[string]interface{}) error {
 	return pipeline.GenerateMeta(req)
 }
 
+// GetMetaFromStore retrieves metadata from the store for the provided pipeline
+// ID and JSON request.
 func GetMetaFromStore(id string, args map[string]interface{}) ([]byte, error) {
 	pipeline, err := GetPipeline(id)
 	if err != nil {

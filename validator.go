@@ -26,6 +26,8 @@ func NewValidator(pipeline *Pipeline) *Validator {
 	return v
 }
 
+// ValidateTileRequest instantiates and validates the provided tile request
+// JSON.
 func (v *Validator) ValidateTileRequest(args map[string]interface{}) (*TileRequest, error) {
 
 	req := &TileRequest{}
@@ -54,6 +56,8 @@ func (v *Validator) ValidateTileRequest(args map[string]interface{}) (*TileReque
 	return req, nil
 }
 
+// ValidateMetaRequest instantiates and validates the provided metadata request
+// JSON.
 func (v *Validator) ValidateMetaRequest(args map[string]interface{}) (*MetaRequest, error) {
 
 	req := &MetaRequest{}

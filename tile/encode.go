@@ -5,6 +5,8 @@ import (
 	"math"
 )
 
+// Encode takes a slice of floating point values and returns an encoded byte
+// array in little endian format.
 func Encode(points []float32) []byte {
 	bytes := make([]byte, len(points)*4)
 	for i := 0; i < len(points); i += 2 {

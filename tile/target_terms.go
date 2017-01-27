@@ -6,6 +6,8 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
+// TargetTerms represents a tile which returns counts for specific terms in a
+// provided field.
 type TargetTerms struct {
 	TermsField string
 	Terms      []string
