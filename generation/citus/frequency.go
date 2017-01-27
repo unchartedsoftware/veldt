@@ -24,7 +24,7 @@ type FrequencyResult struct {
 // AddAggs adds the tiling aggregations to the provided query object.
 func (f *Frequency) AddAggs(query *Query) *Query {
 	//Bounds extension (empty buckets) will be done in the go code when parsing results
-	//Not 100% sure if we need to substract the min value from the frequency field to
+	//Not 100% sure if we need to subtract the min value from the frequency field to
 	//set the initial bucket.
 	//Ex:
 	//	data starts at 3, with intervals of 5.

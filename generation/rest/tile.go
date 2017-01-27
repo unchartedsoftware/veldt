@@ -67,7 +67,7 @@ func (t *Tile) Create(uri string, coord *binning.TileCoord, query veldt.Query) (
 	if err != nil {
 		return nil, err
 	}
-	// set appropriate headers based on extention
+	// set appropriate headers based on extension
 	handleExt(t.ext, req)
 	// build http request
 	client := &http.Client{}

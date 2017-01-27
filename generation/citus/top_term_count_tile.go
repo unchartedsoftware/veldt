@@ -54,5 +54,8 @@ func (t *TopTermCountTile) Create(uri string, coord *binning.TileCoord, query ve
 
 	// marshal results
 	counts, err := t.TopTerms.GetTerms(res)
+	if err != nil {
+		return nil, err
+	}
 	return json.Marshal(counts)
 }

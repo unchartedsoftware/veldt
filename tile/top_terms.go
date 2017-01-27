@@ -6,7 +6,7 @@ import (
 	"github.com/unchartedsoftware/veldt/util/json"
 )
 
-// TopTerms represents a tile which returns counts for the top most occuring
+// TopTerms represents a tile which returns counts for the top most occurring
 // terms in a provided field.
 type TopTerms struct {
 	TermsField string
