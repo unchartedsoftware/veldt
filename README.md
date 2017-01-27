@@ -1,5 +1,7 @@
 # veldt
 
+<img width="600" src="https://rawgit.com/unchartedsoftware/veldt/master/logo.svg" alt="veldt" />
+
 > Scalable on-demand tile-based analytics
 
 [![Godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](http://godoc.org/github.com/unchartedsoftware/veldt)
