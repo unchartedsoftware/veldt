@@ -11,24 +11,21 @@ const (
 	missing = "???"
 )
 
-// Validator parses a JSON query expression into its typed format. It
+// validator parses a JSON query expression into its typed format. It
 // ensure all types are correct and that the syntax is valid.
-type Validator struct {
+type validator struct {
 	json.Validator
 	pipeline *Pipeline
 }
 
-// NewValidator instantiates and returns a new query expression object.
-func NewValidator(pipeline *Pipeline) *Validator {
-	v := &Validator{
+func newValidator(pipeline *Pipeline) *validator {
+	v := &validator{
 		pipeline: pipeline,
 	}
 	return v
 }
 
-// ValidateTileRequest instantiates and validates the provided tile request
-// JSON.
-func (v *Validator) ValidateTileRequest(args map[string]interface{}) (*TileRequest, error) {
+func (v *validator) validateTileRequest(args map[string]interface{}) (*TileRequest, error) {
 
 	req := &TileRequest{}
 
@@ -56,9 +53,7 @@ func (v *Validator) ValidateTileRequest(args map[string]interface{}) (*TileReque
 	return req, nil
 }
 
-// ValidateMetaRequest instantiates and validates the provided metadata request
-// JSON.
-func (v *Validator) ValidateMetaRequest(args map[string]interface{}) (*MetaRequest, error) {
+func (v *validator) validateMetaRequest(args map[string]interface{}) (*MetaRequest, error) {
 
 	req := &MetaRequest{}
 
@@ -87,7 +82,7 @@ func (v *Validator) ValidateMetaRequest(args map[string]interface{}) (*MetaReque
 //         "uri": "example-uri-value0"
 //     }
 //
-func (v *Validator) parseURI(args map[string]interface{}) (string, error) {
+func (v *validator) parseURI(args map[string]interface{}) (string, error) {
 	val, ok := args["uri"]
 	if !ok {
 		return missing, fmt.Errorf("`uri` not found")
@@ -99,7 +94,7 @@ func (v *Validator) parseURI(args map[string]interface{}) (string, error) {
 	return uri, nil
 }
 
-func (v *Validator) validateURI(args map[string]interface{}, indent int) string {
+func (v *validator) validateURI(args map[string]interface{}, indent int) string {
 	uri, err := v.parseURI(args)
 	v.BufferKeyValue("uri", uri, indent, err)
 	return uri
@@ -116,7 +111,7 @@ func (v *Validator) validateURI(args map[string]interface{}, indent int) string 
 //         }
 //     }
 //
-func (v *Validator) parseCoord(args map[string]interface{}) (interface{}, *binning.TileCoord, error) {
+func (v *validator) parseCoord(args map[string]interface{}) (interface{}, *binning.TileCoord, error) {
 	c, ok := args["coord"]
 	if !ok {
 		return nil, nil, fmt.Errorf("`coord` not found")
@@ -156,7 +151,7 @@ func (v *Validator) parseCoord(args map[string]interface{}) (interface{}, *binni
 	}, nil
 }
 
-func (v *Validator) validateCoord(args map[string]interface{}, indent int) *binning.TileCoord {
+func (v *validator) validateCoord(args map[string]interface{}, indent int) *binning.TileCoord {
 	params, coord, err := v.parseCoord(args)
 	if params != nil {
 		v.BufferKeyValue("coord", params, indent, err)
@@ -183,7 +178,7 @@ func (v *Validator) validateCoord(args map[string]interface{}, indent int) *binn
 //         }
 //     }
 //
-func (v *Validator) parseTile(args map[string]interface{}) (string, interface{}, Tile, error) {
+func (v *validator) parseTile(args map[string]interface{}) (string, interface{}, Tile, error) {
 	id, params, err := v.GetIDAndParams(args)
 	if err != nil {
 		return id, params, nil, err
@@ -195,7 +190,7 @@ func (v *Validator) parseTile(args map[string]interface{}) (string, interface{},
 	return id, params, tile, nil
 }
 
-func (v *Validator) validateTile(args map[string]interface{}, indent int) Tile {
+func (v *validator) validateTile(args map[string]interface{}, indent int) Tile {
 	// check if the tile key exists
 	arg, ok := args["tile"]
 	if !ok {
@@ -231,7 +226,7 @@ func (v *Validator) validateTile(args map[string]interface{}, indent int) Tile {
 //         }
 //     }
 //
-func (v *Validator) parseMeta(args map[string]interface{}) (string, interface{}, Meta, error) {
+func (v *validator) parseMeta(args map[string]interface{}) (string, interface{}, Meta, error) {
 	id, params, err := v.GetIDAndParams(args)
 	if err != nil {
 		return id, params, nil, err
@@ -243,7 +238,7 @@ func (v *Validator) parseMeta(args map[string]interface{}) (string, interface{},
 	return id, params, tile, nil
 }
 
-func (v *Validator) validateMeta(args map[string]interface{}, indent int) Meta {
+func (v *validator) validateMeta(args map[string]interface{}, indent int) Meta {
 	// check if the meta key exists
 	arg, ok := args["meta"]
 	if !ok {
@@ -270,7 +265,7 @@ func (v *Validator) validateMeta(args map[string]interface{}, indent int) Meta {
 	return meta
 }
 
-func (v *Validator) validateQuery(args map[string]interface{}, indent int) Query {
+func (v *validator) validateQuery(args map[string]interface{}, indent int) Query {
 	val, ok := args["query"]
 	if !ok {
 		return nil
@@ -301,7 +296,7 @@ func (v *Validator) validateQuery(args map[string]interface{}, indent int) Query
 //         }
 //     }
 //
-func (v *Validator) parseQuery(args map[string]interface{}) (string, interface{}, Query, error) {
+func (v *validator) parseQuery(args map[string]interface{}) (string, interface{}, Query, error) {
 	id, params, err := v.GetIDAndParams(args)
 	if err != nil {
 		return id, params, nil, err
@@ -313,7 +308,7 @@ func (v *Validator) parseQuery(args map[string]interface{}) (string, interface{}
 	return id, params, query, nil
 }
 
-func (v *Validator) validateQueryToken(args map[string]interface{}, indent int, first bool) Query {
+func (v *validator) validateQueryToken(args map[string]interface{}, indent int, first bool) Query {
 	id, params, query, err := v.parseQuery(args)
 	if id == "" {
 		id = missing
@@ -329,8 +324,20 @@ func (v *Validator) validateQueryToken(args map[string]interface{}, indent int, 
 	return query
 }
 
-func (v *Validator) validateOperatorToken(op string, indent int) interface{} {
-	if !IsBoolOperator(op) {
+func isValidBinaryOperator(op string) bool {
+	return op == And || op == Or
+}
+
+func isValidUnaryOperator(op string) bool {
+	return op == Not
+}
+
+func isValidBoolOperator(op string) bool {
+	return isValidBinaryOperator(op) || isValidUnaryOperator(op)
+}
+
+func (v *validator) validateOperatorToken(op string, indent int) interface{} {
+	if !isValidBoolOperator(op) {
 		v.StartError("invalid operator", indent)
 		v.Buffer(fmt.Sprintf(`"%v"`, op), indent)
 		v.EndError()
@@ -340,7 +347,7 @@ func (v *Validator) validateOperatorToken(op string, indent int) interface{} {
 	return op
 }
 
-func (v *Validator) validateExpressionToken(exp []interface{}, indent int, first bool) interface{} {
+func (v *validator) validateExpressionToken(exp []interface{}, indent int, first bool) interface{} {
 	// open paren
 	if first {
 		v.Buffer(`"query": [`, indent)
@@ -367,7 +374,7 @@ func (v *Validator) validateExpressionToken(exp []interface{}, indent int, first
 	return exp
 }
 
-func (v *Validator) validateToken(arg interface{}, indent int, first bool) interface{} {
+func (v *validator) validateToken(arg interface{}, indent int, first bool) interface{} {
 	// expression
 	exp, ok := arg.([]interface{})
 	if ok {
@@ -401,9 +408,9 @@ func getTokenType(token interface{}) string {
 	}
 	op, ok := token.(string)
 	if ok {
-		if IsBinaryOperator(op) {
+		if isValidBinaryOperator(op) {
 			return "binary"
-		} else if IsUnaryOperator(op) {
+		} else if isValidUnaryOperator(op) {
 			return "unary"
 		} else {
 			return "unrecognized"

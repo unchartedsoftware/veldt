@@ -15,21 +15,6 @@ const (
 	Not = "NOT"
 )
 
-// IsBoolOperator returns true if the operator is a unary operator.
-func IsBoolOperator(op string) bool {
-	return IsBinaryOperator(op) || IsUnaryOperator(op)
-}
-
-// IsBinaryOperator returns true if the operator is a binary operator.
-func IsBinaryOperator(op string) bool {
-	return op == And || op == Or
-}
-
-// IsUnaryOperator returns true if the operator is a unary operator.
-func IsUnaryOperator(op string) bool {
-	return op == Not
-}
-
 // BinaryExpression represents a binary boolean expression.
 type BinaryExpression struct {
 	Left  Query

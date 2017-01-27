@@ -177,7 +177,7 @@ func (p *Pipeline) NewTileRequest(args map[string]interface{}) (*TileRequest, er
 		return nil, err
 	}
 	// validate request
-	req, err := NewValidator(p).ValidateTileRequest(copy)
+	req, err := newValidator(p).validateTileRequest(copy)
 	if err != nil {
 		return nil, fmt.Errorf("invalid tile request:\n%s", err)
 	}
@@ -274,7 +274,7 @@ func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, er
 		return nil, err
 	}
 	// validate request
-	req, err := NewValidator(p).ValidateMetaRequest(copy)
+	req, err := newValidator(p).validateMetaRequest(copy)
 	if err != nil {
 		return nil, fmt.Errorf("invalid meta request:\n%s", err)
 	}
