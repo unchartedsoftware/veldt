@@ -7,11 +7,13 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
+// HeatmapTile represents an elasticsearch implementation of the heatmap tile.
 type HeatmapTile struct {
 	Bivariate
 	Tile
 }
 
+// NewHeatmapTile instantiates and returns a new tile struct.
 func NewHeatmapTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
 		h := &HeatmapTile{}
@@ -21,6 +23,13 @@ func NewHeatmapTile(host, port string) prism.TileCtor {
 	}
 }
 
+// Parse parses the provided JSON object and populates the tiles attributes.
+func (h *HeatmapTile) Parse(params map[string]interface{}) error {
+	return h.Bivariate.Parse(params)
+}
+
+// Create generates a tile from the provided URI, tile coordinate and query
+// parameters.
 func (h *HeatmapTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(h.Host, h.Port)

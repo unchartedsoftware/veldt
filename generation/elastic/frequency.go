@@ -8,10 +8,13 @@ import (
 	"github.com/unchartedsoftware/prism/tile"
 )
 
+// Frequency represents an elasticsearch implementation of the frequency
+// tile.
 type Frequency struct {
 	tile.Frequency
 }
 
+// GetQuery returns the appropriate elasticsearch query for the tile.
 func (f *Frequency) GetQuery() *elastic.RangeQuery {
 	query := elastic.NewRangeQuery(f.FrequencyField)
 	if f.GTE != nil {
@@ -29,6 +32,7 @@ func (f *Frequency) GetQuery() *elastic.RangeQuery {
 	return query
 }
 
+// GetAggs returns the appropriate elasticsearch aggregation for the tile.
 func (f *Frequency) GetAggs() map[string]elastic.Aggregation {
 	agg := elastic.NewDateHistogramAggregation().
 		Field(f.FrequencyField).
@@ -53,6 +57,8 @@ func (f *Frequency) GetAggs() map[string]elastic.Aggregation {
 	}
 }
 
+// GetBuckets returns the individual frequency buckets from an elasticsearch
+// aggregation.
 func (f *Frequency) GetBuckets(aggs *elastic.Aggregations) ([]*elastic.AggregationBucketHistogramItem, error) {
 	frequency, ok := aggs.DateHistogram("frequency")
 	if !ok {

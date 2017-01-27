@@ -12,6 +12,7 @@ type Has struct {
 	query.Has
 }
 
+// NewHas instantiates and returns a new query struct.
 func NewHas() (prism.Query, error) {
 	return &Has{}, nil
 }

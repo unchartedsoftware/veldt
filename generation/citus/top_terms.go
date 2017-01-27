@@ -8,11 +8,12 @@ import (
 	"github.com/unchartedsoftware/prism/tile"
 )
 
-// TopTerms represents a tiling generator that produces heatmaps.
+// TopTerms represents a citus implementation of the top terms tile.
 type TopTerms struct {
 	tile.TopTerms
 }
 
+// AddAggs adds the tiling aggregations to the provided query object.
 func (t *TopTerms) AddAggs(query *Query) *Query {
 	//Assume the backing field is an array. Need to unpack that array and group by the terms.
 	query.Select(fmt.Sprintf("unnest(%s) AS term", t.TermsField))
@@ -31,12 +32,12 @@ func (t *TopTerms) GetTerms(rows *pgx.Rows) (map[string]uint32, error) {
 	counts := make(map[string]uint32)
 	for rows.Next() {
 		var term string
-		var term_count uint32
-		err := rows.Scan(&term, &term_count)
+		var count uint32
+		err := rows.Scan(&term, &count)
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing top terms: %v", err)
 		}
-		counts[term] = term_count
+		counts[term] = count
 	}
 	return counts, nil
 }

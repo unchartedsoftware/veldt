@@ -15,6 +15,7 @@ type Bivariate struct {
 	tile.Bivariate
 }
 
+// AddQuery adds the tiling query to the provided query object.
 func (b *Bivariate) AddQuery(coord *binning.TileCoord, query *Query) *Query {
 
 	extents := &binning.Bounds{
@@ -47,6 +48,7 @@ func (b *Bivariate) AddQuery(coord *binning.TileCoord, query *Query) *Query {
 	return query
 }
 
+// AddAggs adds the tiling aggregations to the provided query object.
 func (b *Bivariate) AddAggs(coord *binning.TileCoord, query *Query) *Query {
 
 	extents := &binning.Bounds{

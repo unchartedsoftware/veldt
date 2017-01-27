@@ -12,6 +12,7 @@ type Range struct {
 	query.Range
 }
 
+// NewRange instantiates and returns a new query struct.
 func NewRange() (prism.Query, error) {
 	return &Range{}, nil
 }

@@ -12,11 +12,12 @@ type Range struct {
 	query.Range
 }
 
+// NewRange instantiates and returns a new query struct.
 func NewRange() (prism.Query, error) {
 	return &Range{}, nil
 }
 
-// Apply adds the query to the tiling job.
+// Get returns the appropriate elasticsearch query for the query.
 func (q *Range) Get() (elastic.Query, error) {
 	rang := elastic.NewRangeQuery(q.Field)
 	if q.GTE != nil {

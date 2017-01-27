@@ -7,11 +7,13 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
+// Count represents an elasticsearch implementation of the count tile.
 type Count struct {
 	Bivariate
 	Tile
 }
 
+// NewCountTile instantiates and returns a new tile struct.
 func NewCountTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
 		t := &Count{}
@@ -21,6 +23,8 @@ func NewCountTile(host, port string) prism.TileCtor {
 	}
 }
 
+// Create generates a tile from the provided URI, tile coordinate and query
+// parameters.
 func (t *Count) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(t.Host, t.Port)

@@ -8,10 +8,12 @@ import (
 	"github.com/unchartedsoftware/prism/tile"
 )
 
+// TopTerms represents an elasticsearch implementation of the top terms tile.
 type TopTerms struct {
 	tile.TopTerms
 }
 
+// GetAggs returns the appropriate elasticsearch aggregation for the tile.
 func (t *TopTerms) GetAggs() map[string]*elastic.TermsAggregation {
 	agg := elastic.NewTermsAggregation().
 		Field(t.TermsField).
@@ -21,6 +23,7 @@ func (t *TopTerms) GetAggs() map[string]*elastic.TermsAggregation {
 	}
 }
 
+// GetTerms returns the individual term buckets from the provided aggregation.
 func (t *TopTerms) GetTerms(aggs *elastic.Aggregations) (map[string]*elastic.AggregationBucketKeyItem, error) {
 	// build map of topics and counts
 	counts := make(map[string]*elastic.AggregationBucketKeyItem)

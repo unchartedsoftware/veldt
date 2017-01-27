@@ -7,12 +7,14 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
+// FrequencyTile represents a citus implementation of the frequency tile.
 type FrequencyTile struct {
 	Bivariate
 	Frequency
 	Tile
 }
 
+// NewFrequencyTile instantiates and returns a new tile struct.
 func NewFrequencyTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
 		t := &FrequencyTile{}
@@ -22,6 +24,7 @@ func NewFrequencyTile(host, port string) prism.TileCtor {
 	}
 }
 
+// Parse parses the provided JSON object and populates the tiles attributes.
 func (t *FrequencyTile) Parse(params map[string]interface{}) error {
 	err := t.Bivariate.Parse(params)
 	if err != nil {
@@ -30,9 +33,11 @@ func (t *FrequencyTile) Parse(params map[string]interface{}) error {
 	return t.Frequency.Parse(params)
 }
 
+// Create generates a tile from the provided URI, tile coordinate and query
+// parameters.
 func (t *FrequencyTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// Initialize the tile processing.
-	client, citusQuery, err := t.InitliazeTile(uri, query)
+	client, citusQuery, err := t.InitializeTile(uri, query)
 
 	// add tiling query
 	citusQuery = t.Bivariate.AddQuery(coord, citusQuery)

@@ -11,6 +11,7 @@ type BinaryExpression struct {
 	prism.BinaryExpression
 }
 
+// NewBinaryExpression instantiates and returns a new binary expression.
 func NewBinaryExpression() (prism.Query, error) {
 	return &BinaryExpression{}, nil
 }
@@ -55,6 +56,7 @@ type UnaryExpression struct {
 	prism.UnaryExpression
 }
 
+// NewUnaryExpression instantiates and returns a new unary expression.
 func NewUnaryExpression() (prism.Query, error) {
 	return &UnaryExpression{}, nil
 }

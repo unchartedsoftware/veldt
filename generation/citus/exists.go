@@ -12,6 +12,7 @@ type Exists struct {
 	query.Exists
 }
 
+// NewExists instantiates and returns a new query struct.
 func NewExists() (prism.Query, error) {
 	return &Exists{}, nil
 }

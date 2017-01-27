@@ -12,6 +12,7 @@ type Equals struct {
 	query.Equals
 }
 
+// NewEquals instantiates and returns a new query struct.
 func NewEquals() (prism.Query, error) {
 	return &Equals{}, nil
 }

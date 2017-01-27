@@ -12,11 +12,12 @@ type Has struct {
 	query.Has
 }
 
+// NewHas instantiates and returns a new tile struct.
 func NewHas() (prism.Query, error) {
 	return &Has{}, nil
 }
 
-// Apply adds the query to the tiling job.
+// Get returns the appropriate elasticsearch query for the query.
 func (q *Has) Get() (elastic.Query, error) {
 	return elastic.NewTermsQuery(q.Field, q.Values...), nil
 }

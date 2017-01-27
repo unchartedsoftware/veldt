@@ -7,12 +7,15 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
+// TopTermCountTile represents an elasticsearch implementation of the
+// top term count tile.
 type TopTermCountTile struct {
 	Bivariate
 	TopTerms
 	Tile
 }
 
+// NewTopTermCountTile instantiates and returns a new tile struct.
 func NewTopTermCountTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
 		t := &TopTermCountTile{}
@@ -22,6 +25,7 @@ func NewTopTermCountTile(host, port string) prism.TileCtor {
 	}
 }
 
+// Parse parses the provided JSON object and populates the tiles attributes.
 func (t *TopTermCountTile) Parse(params map[string]interface{}) error {
 	err := t.Bivariate.Parse(params)
 	if err != nil {
@@ -30,6 +34,8 @@ func (t *TopTermCountTile) Parse(params map[string]interface{}) error {
 	return t.TopTerms.Parse(params)
 }
 
+// Create generates a tile from the provided URI, tile coordinate and query
+// parameters.
 func (t *TopTermCountTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(t.Host, t.Port)

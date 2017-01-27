@@ -7,6 +7,8 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
+// TargetTermFrequencyTile represents an elasticsearch implementation of the
+// target term frequency tile.
 type TargetTermFrequencyTile struct {
 	Bivariate
 	TargetTerms
@@ -14,6 +16,7 @@ type TargetTermFrequencyTile struct {
 	Tile
 }
 
+// NewTargetTermFrequencyTile instantiates and returns a new tile struct.
 func NewTargetTermFrequencyTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
 		t := &TargetTermFrequencyTile{}
@@ -23,6 +26,7 @@ func NewTargetTermFrequencyTile(host, port string) prism.TileCtor {
 	}
 }
 
+// Parse parses the provided JSON object and populates the tiles attributes.
 func (t *TargetTermFrequencyTile) Parse(params map[string]interface{}) error {
 	err := t.Bivariate.Parse(params)
 	if err != nil {
@@ -31,6 +35,8 @@ func (t *TargetTermFrequencyTile) Parse(params map[string]interface{}) error {
 	return t.TargetTerms.Parse(params)
 }
 
+// Create generates a tile from the provided URI, tile coordinate and query
+// parameters.
 func (t *TargetTermFrequencyTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(t.Host, t.Port)

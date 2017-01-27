@@ -12,11 +12,12 @@ type Exists struct {
 	query.Exists
 }
 
+// NewExists instantiates and returns a new query struct.
 func NewExists() (prism.Query, error) {
 	return &Exists{}, nil
 }
 
-// Apply adds the query to the tiling job.
+// Get returns the appropriate elasticsearch query for the query.
 func (q *Exists) Get() (elastic.Query, error) {
 	return elastic.NewExistsQuery(q.Field), nil
 }

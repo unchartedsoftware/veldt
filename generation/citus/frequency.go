@@ -15,11 +15,13 @@ type Frequency struct {
 	tile.Frequency
 }
 
+// FrequencyResult represents a single frequency result bucket.
 type FrequencyResult struct {
 	Bucket int64
 	Value  float64
 }
 
+// AddAggs adds the tiling aggregations to the provided query object.
 func (f *Frequency) AddAggs(query *Query) *Query {
 	//Bounds extension (empty buckets) will be done in the go code when parsing results
 	//Not 100% sure if we need to substract the min value from the frequency field to
@@ -39,6 +41,7 @@ func (f *Frequency) AddAggs(query *Query) *Query {
 	return query
 }
 
+// AddQuery adds the tiling query to the provided query object.
 func (f *Frequency) AddQuery(query *Query) *Query {
 	//TODO: Need to cast the frequency fields to a numeric value most likely.
 	parameter := ""
@@ -61,7 +64,7 @@ func (f *Frequency) AddQuery(query *Query) *Query {
 	return query
 }
 
-// Get the frequency buckets from the query results.
+// GetBuckets returns the frequency buckets from the query results.
 func (f *Frequency) GetBuckets(rows *pgx.Rows) ([]*FrequencyResult, error) {
 	//Need to build all the buckets over the window since empty buckets are needed.
 	results := make(map[int64]float64)
@@ -79,7 +82,7 @@ func (f *Frequency) GetBuckets(rows *pgx.Rows) ([]*FrequencyResult, error) {
 	return f.CreateBuckets(results)
 }
 
-// Create the frequency buckets, including the empty buckets as defined by the tile params.
+// CreateBuckets creates the frequency buckets, including the empty buckets as defined by the tile params.
 func (f *Frequency) CreateBuckets(results map[int64]float64) ([]*FrequencyResult, error) {
 	//Find the min & max buckets.
 	min, max := int64(math.MaxInt64), int64(math.MinInt64)
@@ -118,7 +121,7 @@ func (f *Frequency) CreateBuckets(results map[int64]float64) ([]*FrequencyResult
 	//May be off by 1 as result of type conversion.
 	numberOfBuckets := int64((windowEnd - windowStart)) / int64(intervalNum)
 	buckets := make([]*FrequencyResult, numberOfBuckets)
-	for i, _ := range buckets {
+	for i := range buckets {
 		//If value is not in the map, 0 will be returned as default value.
 		bucket := int64(float64(i)*intervalNum) + windowStart
 		frequency := results[bucket]

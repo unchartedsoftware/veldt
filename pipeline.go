@@ -304,7 +304,7 @@ func (p *Pipeline) GenerateMeta(req *MetaRequest) error {
 	return p.getMetaPromise(hash, req)
 }
 
-// GetTileFromStore retrieves the generated tile from the store.
+// GetMetaFromStore retrieves the generated tile from the store.
 func (p *Pipeline) GetMetaFromStore(req *MetaRequest) ([]byte, error) {
 	// get tile hash
 	hash := p.getMetaHash(req)
@@ -381,7 +381,7 @@ func (p *Pipeline) compress(data []byte) ([]byte, error) {
 
 func (p *Pipeline) decompress(data []byte) ([]byte, error) {
 	buffer := bytes.NewBuffer(data)
-	reader, err, ok := p.getReader(buffer)
+	reader, ok, err := p.getReader(buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -400,17 +400,17 @@ func (p *Pipeline) decompress(data []byte) ([]byte, error) {
 	return data, nil
 }
 
-func (p *Pipeline) getReader(buffer *bytes.Buffer) (io.ReadCloser, error, bool) {
+func (p *Pipeline) getReader(buffer *bytes.Buffer) (io.ReadCloser, bool, error) {
 	// use compression based reader if specified
 	switch p.compression {
 	case "gzip":
 		reader, err := gzip.NewReader(buffer)
-		return reader, err, true
+		return reader, true, err
 	case "zlib":
 		reader, err := zlib.NewReader(buffer)
-		return reader, err, true
+		return reader, true, err
 	default:
-		return nil, nil, false
+		return nil, false, nil
 	}
 }
 

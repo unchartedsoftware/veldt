@@ -63,6 +63,7 @@ func getPropertyMeta(connPool *pgx.ConnPool, schema string, table string, column
 	return &p, nil
 }
 
+// GetNumericExtrema returns the extrema of a numeric field for the provided table.
 func GetNumericExtrema(connPool *pgx.ConnPool, schema string, table string, column string) (*binning.Extrema, error) {
 	// query
 	queryString := fmt.Sprintf("SELECT CAST(MIN(%s) AS FLOAT) as min, CAST(MAX(%s) AS FLOAT) as max FROM %s.%s;", column, column, schema, table)
@@ -88,7 +89,7 @@ func GetNumericExtrema(connPool *pgx.ConnPool, schema string, table string, colu
 	}, nil
 }
 
-// GetTimestampExtrema returns the extrema of a timestamp field for the provided index.
+// GetTimestampExtrema returns the extrema of a timestamp field for the provided table.
 func GetTimestampExtrema(connPool *pgx.ConnPool, schema string, table string, column string) (*binning.Extrema, error) {
 	// query
 	queryString := fmt.Sprintf("SELECT MIN(%s) as min, MAX(%s) as max FROM %s.%s;", column, column, schema, table)
@@ -131,10 +132,12 @@ func NewDefaultMeta(host string, port string) prism.MetaCtor {
 	}
 }
 
+// Parse parses the provided JSON object and populates the structs attributes.
 func (g *DefaultMeta) Parse(params map[string]interface{}) error {
 	return nil
 }
 
+// Create generates metadata from the provided URI.
 func (g *DefaultMeta) Create(uri string) ([]byte, error) {
 	client, err := NewClient(g.Host, g.Port)
 	if err != nil {
@@ -143,7 +146,7 @@ func (g *DefaultMeta) Create(uri string) ([]byte, error) {
 
 	split := strings.Split(uri, ".")
 	if len(split) != 2 {
-		return nil, errors.New("Incorrect format for table. Expect 'schema.table'.")
+		return nil, errors.New("incorrect format for table, expect 'schema.table'")
 	}
 	schemaInput := split[0]
 	tableInput := split[1]

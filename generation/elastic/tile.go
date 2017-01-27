@@ -8,11 +8,13 @@ import (
 	"github.com/unchartedsoftware/prism"
 )
 
+// Tile represents an elasticsearch tile type.
 type Tile struct {
 	Host string
 	Port string
 }
 
+// CreateQuery creates the elasticsearch query from the query struct.
 func (t *Tile) CreateQuery(query prism.Query) (*elastic.BoolQuery, error) {
 	// create root query
 	root := elastic.NewBoolQuery()

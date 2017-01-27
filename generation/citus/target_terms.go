@@ -8,10 +8,12 @@ import (
 	"github.com/unchartedsoftware/prism/tile"
 )
 
+// TargetTerms represents a citus implementation of the target terms tile.
 type TargetTerms struct {
 	tile.TargetTerms
 }
 
+// AddQuery adds the tiling query to the provided query object.
 func (t *TargetTerms) AddQuery(query *Query) *Query {
 	//Want to keep only documents that have the specified terms.
 	//Use the already existing Has construct.
@@ -28,6 +30,7 @@ func (t *TargetTerms) AddQuery(query *Query) *Query {
 	return query
 }
 
+// AddAggs adds the tiling aggregations to the provided query object.
 func (t *TargetTerms) AddAggs(query *Query) *Query {
 	//Count by term, only considering the specified terms.
 	//Assume the backing field is an array. Need to unpack that array and group by the terms.
@@ -54,12 +57,12 @@ func (t *TargetTerms) GetTerms(rows *pgx.Rows) (map[string]uint32, error) {
 	counts := make(map[string]uint32)
 	for rows.Next() {
 		var term string
-		var term_count uint32
-		err := rows.Scan(&term, &term_count)
+		var count uint32
+		err := rows.Scan(&term, &count)
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing top terms: %v", err)
 		}
-		counts[term] = term_count
+		counts[term] = count
 	}
 	return counts, nil
 }

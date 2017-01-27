@@ -6,6 +6,7 @@ import (
 	"github.com/unchartedsoftware/prism/tile"
 )
 
+// MicroTile represents an elasticsearch implementation of the micro tile.
 type MicroTile struct {
 	Tile
 	Bivariate
@@ -13,6 +14,7 @@ type MicroTile struct {
 	tile.Micro
 }
 
+// NewMicroTile instantiates and returns a new tile struct.
 func NewMicroTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
 		m := &MicroTile{}
@@ -22,6 +24,7 @@ func NewMicroTile(host, port string) prism.TileCtor {
 	}
 }
 
+// Parse parses the provided JSON object and populates the tiles attributes.
 func (m *MicroTile) Parse(params map[string]interface{}) error {
 	err := m.Bivariate.Parse(params)
 	if err != nil {
@@ -43,6 +46,8 @@ func (m *MicroTile) Parse(params map[string]interface{}) error {
 	return nil
 }
 
+// Create generates a tile from the provided URI, tile coordinate and query
+// parameters.
 func (m *MicroTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(m.Host, m.Port)

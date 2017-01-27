@@ -8,12 +8,14 @@ import (
 	"github.com/unchartedsoftware/prism/tile"
 )
 
+// MacroTile represents an elasticsearch implementation of the macro tile.
 type MacroTile struct {
 	Tile
 	Bivariate
 	tile.Macro
 }
 
+// NewMacroTile instantiates and returns a new tile struct.
 func NewMacroTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
 		m := &MacroTile{}
@@ -23,6 +25,7 @@ func NewMacroTile(host, port string) prism.TileCtor {
 	}
 }
 
+// Parse parses the provided JSON object and populates the tiles attributes.
 func (m *MacroTile) Parse(params map[string]interface{}) error {
 	err := m.Bivariate.Parse(params)
 	if err != nil {
@@ -31,6 +34,8 @@ func (m *MacroTile) Parse(params map[string]interface{}) error {
 	return m.Macro.Parse(params)
 }
 
+// Create generates a tile from the provided URI, tile coordinate and query
+// parameters.
 func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(m.Host, m.Port)

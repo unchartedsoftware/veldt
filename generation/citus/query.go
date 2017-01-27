@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Query represents a citus implementation of the prism.Query interface.
+// QueryString represents a citus implementation of the prism.Query interface.
 type QueryString interface {
 	Get(*Query) (string, error)
 }
@@ -108,32 +108,32 @@ func (q *Query) AddParameter(param interface{}) string {
 	return "$" + strconv.Itoa(len(q.QueryArgs))
 }
 
-// AddWhereClause adds a where clause to the query.
+// Where adds a where clause to the query.
 func (q *Query) Where(clause string) {
 	q.WhereClauses = append(q.WhereClauses, clause)
 }
 
-// AddGroupByClause adds a groupby to the query.
+// GroupBy adds a groupby to the query.
 func (q *Query) GroupBy(clause string) {
 	q.GroupByClauses = append(q.GroupByClauses, clause)
 }
 
-// AddField adds a field to the query.
+// Select adds a field to the query.
 func (q *Query) Select(field string) {
 	q.Fields = append(q.Fields, field)
 }
 
-// AddTable adds a table to the query.
+// From adds a table to the query.
 func (q *Query) From(table string) {
 	q.Tables = append(q.Tables, table)
 }
 
-// AddOrderByClause adds an orber by clause to the query.
+// OrderBy adds an orber by clause to the query.
 func (q *Query) OrderBy(clause string) {
 	q.OrderByClauses = append(q.OrderByClauses, clause)
 }
 
-// SetLimit sets the limit to the query.
+// Limit sets the limit to the query.
 func (q *Query) Limit(limit uint32) {
 	q.RowLimit = limit
 }

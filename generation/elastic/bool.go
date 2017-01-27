@@ -13,11 +13,12 @@ type BinaryExpression struct {
 	prism.BinaryExpression
 }
 
+// NewBinaryExpression instantiates and returns a new binary expression.
 func NewBinaryExpression() (prism.Query, error) {
 	return &BinaryExpression{}, nil
 }
 
-// Apply adds the query to the tiling job.
+// Get returns the appropriate elasticsearch query for the binary expression.
 func (e *BinaryExpression) Get() (elastic.Query, error) {
 
 	left, ok := e.Left.(Query)
@@ -59,11 +60,12 @@ type UnaryExpression struct {
 	prism.UnaryExpression
 }
 
+// NewUnaryExpression instantiates and returns a new unary expression.
 func NewUnaryExpression() (prism.Query, error) {
 	return &UnaryExpression{}, nil
 }
 
-// Apply adds the query to the tiling job.
+// Get returns the appropriate elasticsearch query for the unary expression.
 func (e *UnaryExpression) Get() (elastic.Query, error) {
 
 	q, ok := e.Query.(Query)

@@ -28,11 +28,12 @@ func NewDefaultMeta(host string, port string) prism.MetaCtor {
 	}
 }
 
+// Parse parses the provided JSON object and populates the structs attributes.
 func (g *DefaultMeta) Parse(params map[string]interface{}) error {
 	return nil
 }
 
-// GetMeta returns the meta data for a given index.
+// Create generates metadata from the provided URI.
 func (g *DefaultMeta) Create(uri string) ([]byte, error) {
 	client, err := NewClient(g.Host, g.Port)
 	if err != nil {

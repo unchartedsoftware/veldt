@@ -10,6 +10,7 @@ import (
 	"github.com/unchartedsoftware/prism/tile"
 )
 
+// Bivariate represents an elasticsearch implementation of the bivariate tile.
 type Bivariate struct {
 	tile.Bivariate
 	// tiling
@@ -65,6 +66,7 @@ func (b *Bivariate) computeBinningProps(coord *binning.TileCoord) {
 	b.binning = true
 }
 
+// GetQuery returns the tiling query.
 func (b *Bivariate) GetQuery(coord *binning.TileCoord) elastic.Query {
 	// compute the tiling properties
 	b.computeTilingProps(coord)
@@ -79,6 +81,7 @@ func (b *Bivariate) GetQuery(coord *binning.TileCoord) elastic.Query {
 	return query
 }
 
+// GetAggs returns the tiling aggregation.
 func (b *Bivariate) GetAggs(coord *binning.TileCoord) map[string]elastic.Aggregation {
 	// compute the binning properties
 	b.computeBinningProps(coord)

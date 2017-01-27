@@ -12,11 +12,12 @@ type Equals struct {
 	query.Equals
 }
 
+// NewEquals instantiates and returns a new query struct.
 func NewEquals() (prism.Query, error) {
 	return &Equals{}, nil
 }
 
-// Apply adds the query to the tiling job.
+// Get returns the appropriate elasticsearch query for the query.
 func (q *Equals) Get() (elastic.Query, error) {
 	return elastic.NewTermQuery(q.Field, q.Value), nil
 }

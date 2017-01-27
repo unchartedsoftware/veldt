@@ -7,12 +7,15 @@ import (
 	"github.com/unchartedsoftware/prism/binning"
 )
 
+// TargetTermCountTile represents an elasticsearch implementation of the
+// target term count tile.
 type TargetTermCountTile struct {
 	Bivariate
 	TargetTerms
 	Tile
 }
 
+// NewTargetTermCountTile instantiates and returns a new tile struct.
 func NewTargetTermCountTile(host, port string) prism.TileCtor {
 	return func() (prism.Tile, error) {
 		t := &TargetTermCountTile{}
@@ -22,6 +25,7 @@ func NewTargetTermCountTile(host, port string) prism.TileCtor {
 	}
 }
 
+// Parse parses the provided JSON object and populates the tiles attributes.
 func (t *TargetTermCountTile) Parse(params map[string]interface{}) error {
 	err := t.Bivariate.Parse(params)
 	if err != nil {
@@ -30,6 +34,8 @@ func (t *TargetTermCountTile) Parse(params map[string]interface{}) error {
 	return t.TargetTerms.Parse(params)
 }
 
+// Create generates a tile from the provided URI, tile coordinate and query
+// parameters.
 func (t *TargetTermCountTile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get client
 	client, err := NewClient(t.Host, t.Port)

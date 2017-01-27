@@ -7,11 +7,13 @@ import (
 	"github.com/unchartedsoftware/prism"
 )
 
+// Tile represents an citus tile type.
 type Tile struct {
 	Host string
 	Port string
 }
 
+// CreateQuery creates the underlying citus query object.
 func (t *Tile) CreateQuery(query prism.Query) (*Query, error) {
 	// create root query
 	root, err := NewQuery()
@@ -38,19 +40,18 @@ func (t *Tile) CreateQuery(query prism.Query) (*Query, error) {
 	return root, nil
 }
 
-func (t *Tile) InitliazeTile(uri string, query prism.Query) (*pgx.ConnPool, *Query, error) {
+// InitializeTile initializes the citus tile type.
+func (t *Tile) InitializeTile(uri string, query prism.Query) (*pgx.ConnPool, *Query, error) {
 	// get client
 	client, err := NewClient(t.Host, t.Port)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	// create root query
 	citusQuery, err := t.CreateQuery(query)
 	if err != nil {
 		return nil, nil, err
 	}
 	citusQuery.From(uri)
-
 	return client, citusQuery, nil
 }

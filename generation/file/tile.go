@@ -12,12 +12,14 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
+// Tile represents a filesystem tile type.
 type Tile struct {
 	path      string
 	ext       string
 	padCoords bool
 }
 
+// NewTile instantiates and returns a new filesystem tile.
 func NewTile() prism.TileCtor {
 	return func() (prism.Tile, error) {
 		return &Tile{}, nil
@@ -45,14 +47,8 @@ func (t *Tile) Parse(params map[string]interface{}) error {
 	return nil
 }
 
-func (t *Tile) getFormat(coord *binning.TileCoord) string {
-	if t.padCoords {
-		digits := strconv.Itoa(int(math.Floor(math.Log10(float64(int(1)<<coord.Z)))) + 1)
-		return "%s/%02d/%0" + digits + "d/%0" + digits + "d.%s"
-	}
-	return "%s/%d/%d/%d.%s"
-}
-
+// Create generates a tile from the provided URI, tile coordinate and query
+// parameters.
 func (t *Tile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// get the format string for the path
 	format := t.getFormat(coord)
@@ -76,4 +72,12 @@ func (t *Tile) Create(uri string, coord *binning.TileCoord, query prism.Query) (
 	defer file.Close()
 	// decode file
 	return tile.DecodeImage(t.ext, file)
+}
+
+func (t *Tile) getFormat(coord *binning.TileCoord) string {
+	if t.padCoords {
+		digits := strconv.Itoa(int(math.Floor(math.Log10(float64(int(1)<<coord.Z)))) + 1)
+		return "%s/%02d/%0" + digits + "d/%0" + digits + "d.%s"
+	}
+	return "%s/%d/%d/%d.%s"
 }

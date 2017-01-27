@@ -11,18 +11,21 @@ import (
 	"github.com/unchartedsoftware/prism/util/json"
 )
 
+// Tile represents a REST tile type.
 type Tile struct {
 	ext      string
 	endpoint string
 	scheme   string
 }
 
+// NewTile instantiates and returns a new REST tile.
 func NewTile() prism.TileCtor {
 	return func() (prism.Tile, error) {
 		return &Tile{}, nil
 	}
 }
 
+// Parse parses the provided JSON object and populates the tiles attributes.
 func (t *Tile) Parse(params map[string]interface{}) error {
 	// get endpoint
 	endpoint, ok := json.GetString(params, "endpoint")
@@ -46,6 +49,8 @@ func (t *Tile) Parse(params map[string]interface{}) error {
 	return nil
 }
 
+// Create generates a tile from the provided URI, tile coordinate and query
+// parameters.
 func (t *Tile) Create(uri string, coord *binning.TileCoord, query prism.Query) ([]byte, error) {
 	// create URL
 	format := "%s://%s/%s/%d/%d/%d.%s"
