@@ -24,7 +24,7 @@ func (t *TopHits) Parse(params map[string]interface{}) error {
 		return fmt.Errorf("`hitsCount` parameter missing from tile")
 	}
 	includeFields, ok := json.GetStringArray(params, "includeFields")
-	if !ok {
+	if !ok || len(includeFields) == 0 {
 		includeFields = nil
 	}
 	t.SortField = sortField
