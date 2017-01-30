@@ -20,7 +20,7 @@ func (t *TargetTerms) Parse(params map[string]interface{}) error {
 		return fmt.Errorf("`termsField` parameter missing from tile")
 	}
 	terms, ok := json.GetStringArray(params, "terms")
-	if !ok || len(Terms) == 0 {
+	if !ok || len(terms) == 0 {
 		return fmt.Errorf("`terms` parameter missing from tile")
 	}
 	t.TermsField = termsField
