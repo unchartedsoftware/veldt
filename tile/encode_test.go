@@ -1,7 +1,7 @@
 package tile_test
 
 import (
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/veldt/tile"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

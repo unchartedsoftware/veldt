@@ -1,7 +1,7 @@
 package query_test
 
 import (
-	"github.com/unchartedsoftware/prism/query"
+	"github.com/unchartedsoftware/veldt/query"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -24,7 +24,7 @@ var _ = Describe("Has", func() {
 		ok := has.Parse(params)
 		Expect(ok).To(BeNil())
 		Expect(has.Field).To(Equal(params["field"]))
-		Expect(has.Values).ToEqual(params["values"])
+		Expect(has.Values).To(Equal(params["values"]))
 	})
 
 	It("should fail on wrong input", func() {

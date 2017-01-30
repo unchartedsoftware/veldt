@@ -1,7 +1,7 @@
 package tile_test
 
 import (
-	"github.com/unchartedsoftware/prism/tile"
+	"github.com/unchartedsoftware/veldt/tile"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,7 +20,7 @@ var _ = Describe("Macro", func() {
 
 	It("should set LOD field", func() {
 		eq.Parse(params)
-		Expect(eq.LOD).To(Equal(0))
+		Expect(eq.LOD).To(Equal(params["lod"]))
 	})
 
 	It("should be nil on wrong input", func() {

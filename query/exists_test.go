@@ -1,7 +1,7 @@
 package query_test
 
 import (
-	"github.com/unchartedsoftware/prism/query"
+	"github.com/unchartedsoftware/veldt/query"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
