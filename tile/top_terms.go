@@ -19,7 +19,7 @@ func (t *TopTerms) Parse(params map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("`termsField` parameter missing from tile")
 	}
-	termsCount, ok := json.GetNumber(params, "termsCount")
+	termsCount, ok := json.GetInt(params, "termsCount")
 	if !ok {
 		return fmt.Errorf("`termsCount` parameter missing from tile")
 	}

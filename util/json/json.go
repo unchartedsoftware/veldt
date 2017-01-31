@@ -1,31 +1,5 @@
 package json
 
-import (
-	"bytes"
-	"sort"
-	"strconv"
-)
-
-// Set sets the value under a given path, creating intermediate nodes along the
-// way if they do not exist.
-func Set(json map[string]interface{}, v interface{}, path ...string) {
-	child := json
-	last := len(path) - 1
-	for _, key := range path[:last] {
-		v, ok := child[key]
-		if !ok {
-			v = make(map[string]interface{})
-		}
-		c, ok := v.(map[string]interface{})
-		if !ok {
-			c = make(map[string]interface{})
-		}
-		child[key] = c
-		child = c
-	}
-	child[path[last]] = v
-}
-
 // Get returns an interface{} under the given path.
 func Get(json map[string]interface{}, path ...string) (interface{}, bool) {
 	child := json
@@ -56,50 +30,6 @@ func Get(json map[string]interface{}, path ...string) (interface{}, bool) {
 func Exists(json map[string]interface{}, path ...string) bool {
 	_, ok := Get(json, path...)
 	return ok
-}
-
-// GetChild returns the child under the given path.
-func GetChild(json map[string]interface{}, path ...string) (map[string]interface{}, bool) {
-	c, ok := Get(json, path...)
-	if !ok {
-		return nil, false
-	}
-	child, ok := c.(map[string]interface{})
-	if !ok {
-		return nil, false
-	}
-	return child, true
-}
-
-// GetRandomChild returns the first key found in the object that is a nested
-// json object.
-func GetRandomChild(json map[string]interface{}, path ...string) (map[string]interface{}, bool) {
-	child, ok := GetChild(json, path...)
-	if !ok {
-		return nil, false
-	}
-	if len(child) == 0 {
-		return nil, false
-	}
-	for _, v := range child {
-		val, ok := v.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		child = val
-		break
-	}
-	return child, true
-}
-
-// GetChildOrEmpty returns the child under the given path, if it doesn't
-// exist, it will return the provided default.
-func GetChildOrEmpty(json map[string]interface{}, path ...string) map[string]interface{} {
-	v, ok := GetChild(json, path...)
-	if ok {
-		return v
-	}
-	return make(map[string]interface{})
 }
 
 // GetString returns a string property under the given path.
@@ -148,35 +78,55 @@ func GetBoolDefault(json map[string]interface{}, def bool, path ...string) bool 
 	return def
 }
 
-// GetNumber returns a float property under the given key.
-func GetNumber(json map[string]interface{}, path ...string) (float64, bool) {
+// GetFloat returns a float property under the given key.
+func GetFloat(json map[string]interface{}, path ...string) (float64, bool) {
 	v, ok := Get(json, path...)
 	if !ok {
 		return 0, false
 	}
-	val, ok := v.(float64)
-	if !ok {
-		// if it is a string value, cast it to float64
-		strval, ok := v.(string)
-		if ok {
-			val, err := strconv.ParseFloat(strval, 64)
-			if err == nil {
-				return val, true
-			}
-		}
-		return 0, false
-	}
-	return val, true
+	return numAsFloat64(v)
 }
 
-// GetNumberDefault returns a float property under the given key, if it doesn't
+// GetFloatDefault returns a float property under the given key, if it doesn't
 // exist, it will return the provided default.
-func GetNumberDefault(json map[string]interface{}, def float64, path ...string) float64 {
-	v, ok := GetNumber(json, path...)
+func GetFloatDefault(json map[string]interface{}, def float64, path ...string) float64 {
+	v, ok := GetFloat(json, path...)
 	if ok {
 		return v
 	}
 	return def
+}
+
+// GetInt returns an int property under the given key.
+func GetInt(json map[string]interface{}, path ...string) (int64, bool) {
+	v, ok := Get(json, path...)
+	if !ok {
+		return 0, false
+	}
+	return numAsInt64(v)
+}
+
+// GetIntDefault returns a float property under the given key, if it doesn't
+// exist, it will return the provided default.
+func GetIntDefault(json map[string]interface{}, def int64, path ...string) int64 {
+	v, ok := GetInt(json, path...)
+	if ok {
+		return v
+	}
+	return def
+}
+
+// GetChild returns the child under the given path.
+func GetChild(json map[string]interface{}, path ...string) (map[string]interface{}, bool) {
+	c, ok := Get(json, path...)
+	if !ok {
+		return nil, false
+	}
+	child, ok := c.(map[string]interface{})
+	if !ok {
+		return nil, false
+	}
+	return child, true
 }
 
 // GetArray returns an []interface{} property under the given key.
@@ -190,6 +140,95 @@ func GetArray(json map[string]interface{}, path ...string) ([]interface{}, bool)
 		return nil, false
 	}
 	return val, true
+}
+
+// GetFloatArray returns a []float64 property under the given key.
+func GetFloatArray(json map[string]interface{}, path ...string) ([]float64, bool) {
+	vs, ok := GetArray(json, path...)
+	if !ok {
+		return nil, false
+	}
+	flts := make([]float64, len(vs))
+	for i, v := range vs {
+		val, ok := numAsFloat64(v)
+		if !ok {
+			return nil, false
+		}
+		flts[i] = val
+	}
+	return flts, true
+}
+
+// GetIntArray returns an []int64 property under the given key.
+func GetIntArray(json map[string]interface{}, path ...string) ([]int64, bool) {
+	vs, ok := GetArray(json, path...)
+	if !ok {
+		return nil, false
+	}
+	flts := make([]int64, len(vs))
+	for i, v := range vs {
+		val, ok := numAsInt64(v)
+		if !ok {
+			return nil, false
+		}
+		flts[i] = val
+	}
+	return flts, true
+}
+
+// GetStringArray returns an []string property under the given key.
+func GetStringArray(json map[string]interface{}, path ...string) ([]string, bool) {
+	vs, ok := GetArray(json, path...)
+	if !ok {
+		return nil, false
+	}
+	strs := make([]string, len(vs))
+	for i, v := range vs {
+		val, ok := v.(string)
+		if !ok {
+			return nil, false
+		}
+		strs[i] = val
+	}
+	return strs, true
+}
+
+// GetBoolArray returns an []bool property under the given key.
+func GetBoolArray(json map[string]interface{}, path ...string) ([]bool, bool) {
+	vs, ok := GetArray(json, path...)
+	if !ok {
+		return nil, false
+	}
+	bools := make([]bool, len(vs))
+	for i, v := range vs {
+		val, ok := v.(bool)
+		if !ok {
+			return nil, false
+		}
+		bools[i] = val
+	}
+	return bools, true
+}
+
+// GetRandomChild returns the first key found in the object that is a nested
+// json object.
+func GetRandomChild(json map[string]interface{}, path ...string) (map[string]interface{}, bool) {
+	child, ok := GetChild(json, path...)
+	if !ok {
+		return nil, false
+	}
+	if len(child) == 0 {
+		return nil, false
+	}
+	for _, v := range child {
+		val, ok := v.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		child = val
+		break
+	}
+	return child, true
 }
 
 // GetChildArray returns a []map[string]interface{} from the given path.
@@ -226,79 +265,46 @@ func GetChildMap(json map[string]interface{}, path ...string) (map[string]map[st
 	return children, true
 }
 
-// GetNumberArray returns an []float64 property under the given key.
-func GetNumberArray(json map[string]interface{}, path ...string) ([]float64, bool) {
-	vs, ok := GetArray(json, path...)
-	if !ok {
-		return nil, false
-	}
-	flts := make([]float64, len(vs))
-	for i, v := range vs {
-		val, ok := v.(float64)
-		if !ok {
-			return nil, false
-		}
-		flts[i] = val
-	}
-	return flts, true
-}
-
-// GetStringArray returns an []string property under the given key.
-func GetStringArray(json map[string]interface{}, path ...string) ([]string, bool) {
-	vs, ok := GetArray(json, path...)
-	if !ok {
-		return nil, false
-	}
-	strs := make([]string, len(vs))
-	for i, v := range vs {
-		val, ok := v.(string)
-		if !ok {
-			return nil, false
-		}
-		strs[i] = val
-	}
-	return strs, true
-}
-
-// GetHash returns a deterministic hash of unmarshalled json
-func GetHash(data interface{}) string {
-	var buffer bytes.Buffer
-	getHash(data, &buffer)
-	return buffer.String()
-}
-
-func getHash(data interface{}, buffer *bytes.Buffer) {
-	switch data.(type) {
-	case map[string]interface{}:
-		jMap := data.(map[string]interface{})
-		var keys []string
-		for k := range jMap {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-
-		buffer.WriteString("{")
-		for _, k := range keys {
-			buffer.WriteString(k)
-			buffer.WriteString(":")
-			getHash(jMap[k], buffer)
-			buffer.WriteString(",")
-		}
-		buffer.WriteString("}")
-	case []interface{}:
-		jArray := data.([]interface{})
-		for _, k := range jArray {
-			getHash(k, buffer)
-			buffer.WriteString(",")
-		}
+func numAsFloat64(num interface{}) (float64, bool) {
+	switch t := num.(type) {
 	case float64:
-		val := data.(float64)
-		buffer.WriteString(strconv.FormatFloat(val, 'f', 6, 64))
-	case string:
-		val := data.(string)
-		buffer.WriteString(val)
-	case bool:
-		val := data.(bool)
-		buffer.WriteString(strconv.FormatBool(val))
+		return t, true
+	case float32:
+		return float64(t), true
+	case int:
+		return float64(t), true
+	case int32:
+		return float64(t), true
+	case int64:
+		return float64(t), true
+	case uint:
+		return float64(t), true
+	case uint32:
+		return float64(t), true
+	case uint64:
+		return float64(t), true
 	}
+	return 0, false
+}
+
+func numAsInt64(num interface{}) (int64, bool) {
+	switch t := num.(type) {
+	case float64:
+		return int64(t), true
+	case float32:
+		return int64(t), true
+	case int:
+		return int64(t), true
+	case int32:
+		return int64(t), true
+	case int64:
+		return t, true
+	case uint:
+		return int64(t), true
+	case uint32:
+		return int64(t), true
+	case uint64:
+		return int64(t), true
+	}
+	return 0, false
 }

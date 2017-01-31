@@ -34,24 +34,24 @@ func (b *Bivariate) Parse(params map[string]interface{}) error {
 		return fmt.Errorf("`yField` parameter missing from tile")
 	}
 	// get left, right, bottom, top extrema
-	left, ok := json.GetNumber(params, "left")
+	left, ok := json.GetFloat(params, "left")
 	if !ok {
 		return fmt.Errorf("`left` parameter missing from tile")
 	}
-	right, ok := json.GetNumber(params, "right")
+	right, ok := json.GetFloat(params, "right")
 	if !ok {
 		return fmt.Errorf("`right` parameter missing from tile")
 	}
-	bottom, ok := json.GetNumber(params, "bottom")
+	bottom, ok := json.GetFloat(params, "bottom")
 	if !ok {
 		return fmt.Errorf("`bottom` parameter missing from tile")
 	}
-	top, ok := json.GetNumber(params, "top")
+	top, ok := json.GetFloat(params, "top")
 	if !ok {
 		return fmt.Errorf("`top` parameter missing from tile")
 	}
 	// get resolution
-	resolution := json.GetNumberDefault(params, 256, "resolution")
+	resolution := json.GetIntDefault(params, 256, "resolution")
 	// set attributes
 	b.XField = xField
 	b.YField = yField

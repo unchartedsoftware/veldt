@@ -23,7 +23,7 @@ var _ = Describe("map", func() {
 			m := promise.NewMap()
 			p := promise.NewPromise()
 			m.Set("test", p)
-			err := fmt.Errorf("This is an error")
+			err := fmt.Errorf("error")
 			p.Resolve(err)
 			o, ok := m.Get("test")
 			Expect(ok).To(Equal(true))
@@ -50,7 +50,7 @@ var _ = Describe("map", func() {
 			m := promise.NewMap()
 			p := promise.NewPromise()
 			m.Set("test", p)
-			err := fmt.Errorf("This is an error")
+			err := fmt.Errorf("error")
 			p.Resolve(err)
 			o, ok := m.Get("test")
 			Expect(ok).To(Equal(true))
@@ -74,7 +74,7 @@ var _ = Describe("map", func() {
 			wg := sync.WaitGroup{}
 			m := promise.NewMap()
 			p := promise.NewPromise()
-			err := fmt.Errorf("This is an error")
+			err := fmt.Errorf("error")
 			m.Set("test", p)
 			for i := 0; i < numConcurrent; i++ {
 				wg.Add(1)
@@ -112,7 +112,7 @@ var _ = Describe("map", func() {
 		It("should be thread safe", func() {
 			wg := sync.WaitGroup{}
 			m := promise.NewMap()
-			err := fmt.Errorf("This is an error")
+			err := fmt.Errorf("error")
 			for i := 0; i < numConcurrent; i++ {
 				wg.Add(1)
 				go func() {
@@ -146,7 +146,7 @@ var _ = Describe("map", func() {
 			wg := sync.WaitGroup{}
 			m := promise.NewMap()
 			p := promise.NewPromise()
-			err := fmt.Errorf("This is an error")
+			err := fmt.Errorf("error")
 			m.Set("test", p)
 			for i := 0; i < numConcurrent; i++ {
 				wg.Add(1)

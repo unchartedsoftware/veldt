@@ -1,7 +1,7 @@
 package json_test
 
 import (
-	j "encoding/json"
+	jencode "encoding/json"
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
@@ -9,158 +9,628 @@ import (
 	"github.com/unchartedsoftware/veldt/util/json"
 )
 
+func jsonify(data string) map[string]interface{} {
+	var j map[string]interface{}
+	err := jencode.Unmarshal([]byte(data), &j)
+	if err != nil {
+		fmt.Println("Error decoding json")
+	}
+	Expect(err).To(BeNil())
+	return j
+}
+
 var _ = Describe("json", func() {
 
-	const (
-		data = `{
-			"nested": {
-				"child": {
-					"number": 2323423
-				}
-			},
-			"binning": {
-				"x":"locality_bag.dateBegin",
-				"left":1350416916775,
-				"right":1446058904529,
-				"y":"feature.author_firstmessage_rank",
-				"bottom":0,
-				"top":78891,
-				"resolution":256
-			},
-			"bool_query": {
-				"must": [
-					{
-						"term": {
-							"field": "feature.firearm_type",
-							"terms":  ["Rifle"]
-						}
-					},
-					{
-						"range": {
-							"field": "feature.indicator_risky",
-							"from": 0.5,
-							"to": 3
-						}
-					}
-				],
-				"must_not": [],
-				"should": [],
-				"filter": []
-			}
-		}`
-	)
-
-	var (
-		jsonNode   map[string]interface{}
-		emptyNode  map[string]interface{}
-		nested     map[string]interface{}
-		binning    map[string]interface{}
-		bool_query map[string]interface{}
-	)
-
-	BeforeEach(func() {
-		// empty node
-		jsonNode = make(map[string]interface{})
-		// json node
-		jsonNode = make(map[string]interface{})
-		err := j.Unmarshal([]byte(data), &jsonNode)
-		if err != nil {
-			fmt.Println("Error decoding json")
-		}
-		Expect(err).To(BeNil())
-		// extract nodes
-		v := jsonNode["nested"]
-		nested = v.(map[string]interface{})
-		v = jsonNode["binning"]
-		binning = v.(map[string]interface{})
-		v = jsonNode["bool_query"]
-		bool_query = v.(map[string]interface{})
-	})
-
 	Describe("Get", func() {
-		It("Should return a true value if a value exists in the provided path", func() {
-			val, ok := json.Get(jsonNode, "binning", "left")
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"obj": {}
+					}
+				}`)
+			_, ok := json.Get(j, "test", "obj")
 			Expect(ok).To(Equal(true))
-			Expect(val).To(Equal(binning["left"]))
 		})
-		It("Should return the root object if no path is provided", func() {
-			val, ok := json.Get(jsonNode)
+		It("should return the root object if no path is provided", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"obj": {}
+					}
+				}`)
+			val, ok := json.Get(j)
 			Expect(ok).To(Equal(true))
-			Expect(val).To(Equal(jsonNode))
+			Expect(val).To(Equal(j))
 		})
-		It("Should return a false value if value does not exist in the provided path", func() {
-			_, ok := json.Get(jsonNode, "binning", "left", "incorrect")
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.Get(j, "missing", "path")
 			Expect(ok).To(Equal(false))
 		})
 	})
 
 	Describe("Exists", func() {
-		It("Should return a true value if the value exists in the provided path", func() {
-			exists := json.Exists(jsonNode, "binning", "left")
+		It("should return true if the value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"obj": {}
+					}
+				}`)
+			exists := json.Exists(j, "test", "obj")
 			Expect(exists).To(Equal(true))
 		})
-		It("Should return a false value if value does not exist in the provided path", func() {
-			exists := json.Exists(jsonNode, "binning", "left", "incorrect")
+		It("should return false if value does not exist in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"obj": {}
+					}
+				}`)
+			exists := json.Exists(j, "test", "missing")
 			Expect(exists).To(Equal(false))
 		})
 	})
 
+	Describe("GetFloat", func() {
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"float": 123.0
+					}
+				}`)
+			_, ok := json.GetFloat(j, "test", "float")
+			Expect(ok).To(Equal(true))
+		})
+		It("should return a float64 if the value is a float", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"float": 123.0
+					}
+				}`)
+			val, ok := json.GetFloat(j, "test", "float")
+			Expect(ok).To(Equal(true))
+			Expect(val).To(Equal(123.0))
+		})
+		It("should return a float64 if the value is an int", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 123
+					}
+				}`)
+			val, ok := json.GetFloat(j, "test", "int")
+			Expect(ok).To(Equal(true))
+			Expect(val).To(Equal(123.0))
+		})
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.GetFloat(j, "test", "missing")
+			Expect(ok).To(Equal(false))
+		})
+		It("should return a false value if value is not a float", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"string": "hello"
+					}
+				}`)
+			_, ok := json.GetFloat(j, "test", "string")
+			Expect(ok).To(Equal(false))
+		})
+	})
+
+	Describe("GetInt", func() {
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 123
+					}
+				}`)
+			_, ok := json.GetInt(j, "test", "int")
+			Expect(ok).To(Equal(true))
+		})
+		It("should return an int64 if the value is an int", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 123
+					}
+				}`)
+			val, ok := json.GetInt(j, "test", "int")
+			Expect(ok).To(Equal(true))
+			Expect(val).To(Equal(int64(123)))
+		})
+		It("should return an int64 if the value is a float", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"float": 123.0
+					}
+				}`)
+			val, ok := json.GetInt(j, "test", "float")
+			Expect(ok).To(Equal(true))
+			Expect(val).To(Equal(int64(123)))
+		})
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.GetInt(j, "test", "missing")
+			Expect(ok).To(Equal(false))
+		})
+		It("should return a false value if value is not an int", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"string": "hello"
+					}
+				}`)
+			_, ok := json.GetInt(j, "test", "string")
+			Expect(ok).To(Equal(false))
+		})
+	})
+
+	Describe("GetString", func() {
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"string": "hello"
+					}
+				}`)
+			_, ok := json.GetString(j, "test", "string")
+			Expect(ok).To(Equal(true))
+		})
+		It("should return a string if the value is a string", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"string": "hello"
+					}
+				}`)
+			val, ok := json.GetString(j, "test", "string")
+			Expect(ok).To(Equal(true))
+			Expect(val).To(Equal("hello"))
+		})
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.GetString(j, "test", "missing")
+			Expect(ok).To(Equal(false))
+		})
+		It("should return a false value if value is not a string", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 5
+					}
+				}`)
+			_, ok := json.GetString(j, "test", "int")
+			Expect(ok).To(Equal(false))
+		})
+	})
+
+	Describe("GetBool", func() {
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"bool": true
+					}
+				}`)
+			_, ok := json.GetBool(j, "test", "bool")
+			Expect(ok).To(Equal(true))
+		})
+		It("should return a bool if the value is a bool", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"bool": false
+					}
+				}`)
+			val, ok := json.GetBool(j, "test", "bool")
+			Expect(ok).To(Equal(true))
+			Expect(val).To(Equal(false))
+		})
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.GetBool(j, "test", "missing")
+			Expect(ok).To(Equal(false))
+		})
+		It("should return a false value if value is not a bool", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 5
+					}
+				}`)
+			_, ok := json.GetBool(j, "test", "int")
+			Expect(ok).To(Equal(false))
+		})
+	})
+
 	Describe("GetChild", func() {
-		It("Should return a true value if an object value exists in the provided path", func() {
-			val, ok := json.GetChild(jsonNode, "nested", "child")
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"child": {}
+					}
+				}`)
+			_, ok := json.GetChild(j, "test", "child")
 			Expect(ok).To(Equal(true))
-			Expect(val).To(Equal(nested["child"]))
 		})
-		It("Should return the root object if no path is provided", func() {
-			val, ok := json.GetChild(jsonNode)
+		It("should return a map[string]interface{} if the value is a map[string]interface{}", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"child": {
+							"a": "a",
+							"b": "b"
+						}
+					}
+				}`)
+			val, ok := json.GetChild(j, "test", "child")
 			Expect(ok).To(Equal(true))
-			Expect(val).To(Equal(jsonNode))
+			Expect(val["a"].(string)).To(Equal("a"))
+			Expect(val["b"].(string)).To(Equal("b"))
 		})
-		It("Should return a false value if an object value does not exist in the provided path or is not an object", func() {
-			_, ok := json.GetChild(jsonNode, "binning", "left")
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.GetChild(j, "test", "missing")
+			Expect(ok).To(Equal(false))
+		})
+		It("should return a false value if value is not a map[string]interface{}", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 5
+					}
+				}`)
+			_, ok := json.GetChild(j, "test", "int")
+			Expect(ok).To(Equal(false))
+		})
+	})
+
+	Describe("GetArray", func() {
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"array": [0, 1, "hello", true]
+					}
+				}`)
+			_, ok := json.GetArray(j, "test", "array")
+			Expect(ok).To(Equal(true))
+		})
+		It("should return a []interface{} if the value is an array", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"array": [0, 1, "hello", true]
+					}
+				}`)
+			val, ok := json.GetArray(j, "test", "array")
+			Expect(ok).To(Equal(true))
+			Expect(len(val)).To(Equal(4))
+		})
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.GetArray(j, "test", "missing")
+			Expect(ok).To(Equal(false))
+		})
+		It("should return a false value if value is not an array", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 5
+					}
+				}`)
+			_, ok := json.GetArray(j, "test", "int")
+			Expect(ok).To(Equal(false))
+		})
+	})
+
+	Describe("GetFloatArray", func() {
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"array": [0, 1, 0.1, 0.2]
+					}
+				}`)
+			_, ok := json.GetFloatArray(j, "test", "array")
+			Expect(ok).To(Equal(true))
+		})
+		It("should return a []float64 if the value is a float array", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"array": [0, 1, 0.1, 0.2]
+					}
+				}`)
+			val, ok := json.GetFloatArray(j, "test", "array")
+			Expect(ok).To(Equal(true))
+			Expect(val[0]).To(Equal(0.0))
+			Expect(val[1]).To(Equal(1.0))
+			Expect(val[2]).To(Equal(0.1))
+			Expect(val[3]).To(Equal(0.2))
+		})
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.GetFloatArray(j, "test", "missing")
+			Expect(ok).To(Equal(false))
+		})
+		It("should return a false value if value is not an array", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 5
+					}
+				}`)
+			_, ok := json.GetFloatArray(j, "test", "int")
+			Expect(ok).To(Equal(false))
+		})
+	})
+
+	Describe("GetIntArray", func() {
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"array": [0, 1, 0.1, 0.2]
+					}
+				}`)
+			_, ok := json.GetIntArray(j, "test", "array")
+			Expect(ok).To(Equal(true))
+		})
+		It("should return a []int64 if the value is an int array", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"array": [0, 1, 0.1, 0.2]
+					}
+				}`)
+			val, ok := json.GetIntArray(j, "test", "array")
+			Expect(ok).To(Equal(true))
+			Expect(val[0]).To(Equal(int64(0)))
+			Expect(val[1]).To(Equal(int64(1)))
+			Expect(val[2]).To(Equal(int64(0)))
+			Expect(val[3]).To(Equal(int64(0)))
+		})
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.GetIntArray(j, "test", "missing")
+			Expect(ok).To(Equal(false))
+		})
+		It("should return a false value if value is not an array", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 5
+					}
+				}`)
+			_, ok := json.GetIntArray(j, "test", "int")
+			Expect(ok).To(Equal(false))
+		})
+	})
+
+	Describe("GetStringArray", func() {
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"array": ["a", "b", "see", "dee"]
+					}
+				}`)
+			_, ok := json.GetStringArray(j, "test", "array")
+			Expect(ok).To(Equal(true))
+		})
+		It("should return a []string if the value is a string array", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"array": ["a", "b", "see", "dee"]
+					}
+				}`)
+			val, ok := json.GetStringArray(j, "test", "array")
+			Expect(ok).To(Equal(true))
+			Expect(val[0]).To(Equal("a"))
+			Expect(val[1]).To(Equal("b"))
+			Expect(val[2]).To(Equal("see"))
+			Expect(val[3]).To(Equal("dee"))
+		})
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.GetStringArray(j, "test", "missing")
+			Expect(ok).To(Equal(false))
+		})
+		It("should return a false value if value is not an array", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 5
+					}
+				}`)
+			_, ok := json.GetStringArray(j, "test", "int")
+			Expect(ok).To(Equal(false))
+		})
+	})
+
+	Describe("GetBoolArray", func() {
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"array": [true, false, false, true]
+					}
+				}`)
+			_, ok := json.GetBoolArray(j, "test", "array")
+			Expect(ok).To(Equal(true))
+		})
+		It("should return a []bool if the value is a bool array", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"array": [true, false, false, true]
+					}
+				}`)
+			val, ok := json.GetBoolArray(j, "test", "array")
+			Expect(ok).To(Equal(true))
+			Expect(val[0]).To(Equal(true))
+			Expect(val[1]).To(Equal(false))
+			Expect(val[2]).To(Equal(false))
+			Expect(val[3]).To(Equal(true))
+		})
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.GetBoolArray(j, "test", "missing")
+			Expect(ok).To(Equal(false))
+		})
+		It("should return a false value if value is not an array", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 5
+					}
+				}`)
+			_, ok := json.GetBoolArray(j, "test", "int")
+			Expect(ok).To(Equal(false))
+		})
+	})
+
+	Describe("GetChildArray", func() {
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"array": [{}, {}]
+					}
+				}`)
+			_, ok := json.GetChildArray(j, "test", "array")
+			Expect(ok).To(Equal(true))
+		})
+		It("should return a []map[string]interface{} if the value is an array of nodes", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"array": [{
+							"a": "a"
+						}]
+					}
+				}`)
+			val, ok := json.GetChildArray(j, "test", "array")
+			Expect(ok).To(Equal(true))
+			Expect(val[0]["a"]).To(Equal("a"))
+		})
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.GetChildArray(j, "test", "missing")
+			Expect(ok).To(Equal(false))
+		})
+		It("should return a false value if value is not an array", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 5
+					}
+				}`)
+			_, ok := json.GetChildArray(j, "test", "int")
+			Expect(ok).To(Equal(false))
+		})
+	})
+
+	Describe("GetChildMap", func() {
+		It("should return a true value if a value exists in the provided path", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"children": {
+							"a": {},
+							"b": {},
+							"c": {}
+						}
+					}
+				}`)
+			_, ok := json.GetChildMap(j, "test", "children")
+			Expect(ok).To(Equal(true))
+		})
+		It("should return a map[string]map[string]interface{} if the value is a map of nodes", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"children": {
+							"a": {
+								"val": "a"
+							},
+							"b": {
+								"val": "b"
+							},
+							"c": {
+								"val": "c"
+							}
+						}
+					}
+				}`)
+			val, ok := json.GetChildMap(j, "test", "children")
+			Expect(ok).To(Equal(true))
+			Expect(val["a"]["val"]).To(Equal("a"))
+			Expect(val["b"]["val"]).To(Equal("b"))
+			Expect(val["c"]["val"]).To(Equal("c"))
+		})
+		It("should return a false value if value does not exist in the provided path", func() {
+			j := jsonify(`{}`)
+			_, ok := json.GetChildMap(j, "test", "missing")
+			Expect(ok).To(Equal(false))
+		})
+		It("should return a false value if value is not an array", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"int": 5
+					}
+				}`)
+			_, ok := json.GetChildMap(j, "test", "int")
 			Expect(ok).To(Equal(false))
 		})
 	})
 
 	Describe("GetRandomChild", func() {
-		It("Should return a true if there is at least one nested object", func() {
-			val, ok := json.GetRandomChild(jsonNode)
+		It("should return a true if there is at least one nested object", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"a": {},
+						"b": {},
+						"c": {}
+					}
+				}`)
+			_, ok := json.GetRandomChild(j, "test")
 			Expect(ok).To(Equal(true))
-			Expect(val).To(Or(Equal(nested), Equal(binning), Equal(bool_query)))
 		})
-		It("Should return a false if there are no nested objects", func() {
-			_, ok := json.GetRandomChild(emptyNode)
+		It("should return a map[string]interface{} if there is at least one nested object", func() {
+			j := jsonify(
+				`{
+					"test": {
+						"child" : {
+							"a": "a"
+						}
+					}
+				}`)
+			val, ok := json.GetRandomChild(j, "test")
+			Expect(ok).To(Equal(true))
+			Expect(val["a"]).To(Equal("a"))
+		})
+		It("should return a false if there are no nested objects", func() {
+			j := jsonify(
+				`{
+					"test": {}
+				}`)
+			_, ok := json.GetRandomChild(j, "test")
 			Expect(ok).To(Equal(false))
 		})
 	})
 
-	Describe("GetChildOrEmpty", func() {
-		It("Should return the nested object if it exists", func() {
-			v := json.GetChildOrEmpty(jsonNode, "binning")
-			Expect(v).To(Equal(binning))
-		})
-		It("Should return an empty map if the node does not exist", func() {
-			v := json.GetChildOrEmpty(emptyNode, "child")
-			Expect(v).To(Not(BeNil()))
-		})
-		It("Should return the root object if no path is provided", func() {
-			val := json.GetChildOrEmpty(jsonNode)
-			Expect(val).To(Equal(jsonNode))
-		})
-	})
-
-	Describe("GetChildArray", func() {
-		It("Should return a list of nodes", func() {
-			jsonChildArray, ok := json.GetChildArray(jsonNode, "bool_query", "must")
-			Expect(ok).To(Equal(true))
-			Expect(len(jsonChildArray)).To(Equal(2))
-		})
-		It("should work with only a single path element", func() {
-			jsonChild, ok := json.GetChild(jsonNode, "bool_query")
-			Expect(ok).To(Equal(true))
-			jsonChildArray, ok := json.GetChildArray(jsonChild, "must")
-			Expect(ok).To(Equal(true))
-			Expect(len(jsonChildArray)).To(Equal(2))
-		})
-	})
 })

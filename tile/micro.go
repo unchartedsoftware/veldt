@@ -11,16 +11,16 @@ import (
 // included attributes.
 type Micro struct {
 	LOD       int
-	XField    string
-	YField    string
-	XIncluded bool
-	YIncluded bool
+	xField    string
+	yField    string
+	xIncluded bool
+	yIncluded bool
 }
 
 // Parse parses the provided JSON object and populates the structs attributes.
 func (m *Micro) Parse(params map[string]interface{}) error {
 	// parse LOD
-	m.LOD = int(jsonutil.GetNumberDefault(params, 0, "lod"))
+	m.LOD = int(jsonutil.GetIntDefault(params, 0, "lod"))
 	return nil
 }
 
@@ -28,18 +28,18 @@ func (m *Micro) Parse(params map[string]interface{}) error {
 // data coordinates.
 func (m *Micro) ParseIncludes(includes []string, xField string, yField string) []string {
 	// store x / y field
-	m.XField = xField
-	m.YField = yField
+	m.xField = xField
+	m.yField = yField
 	// ensure that the x / y field are included
 	if !existsIn(xField, includes) {
 		includes = append(includes, xField)
 	} else {
-		m.XIncluded = true
+		m.xIncluded = true
 	}
 	if !existsIn(yField, includes) {
 		includes = append(includes, yField)
 	} else {
-		m.YIncluded = true
+		m.yIncluded = true
 	}
 	return includes
 }
@@ -48,14 +48,14 @@ func (m *Micro) ParseIncludes(includes []string, xField string, yField string) [
 func (m *Micro) Encode(hits []map[string]interface{}, points []float32) ([]byte, error) {
 	emptyHits := true
 	// remove any non-included fields from hits
-	if !m.XIncluded || !m.YIncluded {
+	if !m.xIncluded || !m.yIncluded {
 		for _, hit := range hits {
 			// remove fields if they weren't explicitly included
-			if !m.XIncluded {
-				delete(hit, m.XField)
+			if !m.xIncluded {
+				delete(hit, m.xField)
 			}
-			if !m.YIncluded {
-				delete(hit, m.YField)
+			if !m.yIncluded {
+				delete(hit, m.yField)
 			}
 			if emptyHits && len(hit) > 0 {
 				emptyHits = false
