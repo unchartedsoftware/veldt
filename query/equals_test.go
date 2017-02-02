@@ -12,7 +12,6 @@ var _ = Describe("Parse", func() {
 	eq2 := &query.Equals{}
 
 	// create params
-	// we use the built in `make` function to allocate the map
 	params := make(map[string]interface{})
 	params["value"] = 35
 	params["field"] = "age"
@@ -21,15 +20,15 @@ var _ = Describe("Parse", func() {
 
 	It("should set Field and Value", func() {
 		ok := eq.Parse(params)
-		Expect(eq.Field).To(Equal("age"))
-		Expect(eq.Value).To(Equal(35))
 		Expect(ok).To(BeNil())
+		Expect(eq.Field).To(Equal(params["field"]))
+		Expect(eq.Value).To(Equal(params["value"]))
 	})
 
 	It("should fail on wrong input", func() {
 		ok := eq2.Parse(params_fail)
+		Expect(ok).NotTo(Equal(nil))
 		Expect(eq2.Field).To(Equal(""))
 		Expect(eq2.Value).To(BeNil())
-		Expect(ok).NotTo(Equal(nil))
 	})
 })

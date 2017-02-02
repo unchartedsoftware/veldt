@@ -14,14 +14,13 @@ var _ = Describe("Boolean", func() {
 	be_f := &veldt.BinaryExpression{}
 	ue_f := &veldt.UnaryExpression{}
 
-	l := &query.Exists{}
-	r := &query.Exists{}
-	// create params
-	// we use the built in `make` function to allocate the map
+	left := &query.Exists{}
+	right := &query.Exists{}
+
 	params := make(map[string]interface{})
-	params["left"] = l
-	params["right"] = r
-	params["query"] = l
+	params["left"] = left
+	params["right"] = right
+	params["query"] = left
 	params["op"] = "AND"
 
 	params_fail := make(map[string]interface{})
@@ -29,9 +28,9 @@ var _ = Describe("Boolean", func() {
 	It("should set binary ops", func() {
 		ok := be.Parse(params)
 		Expect(ok).To(BeNil())
-		Expect(be.Right).To(Equal(r))
-		Expect(be.Left).To(Equal(l))
-		Expect(be.Op).To(Equal("AND"))
+		Expect(be.Right).To(Equal(params["right"]))
+		Expect(be.Left).To(Equal(params["left"]))
+		Expect(be.Op).To(Equal(params["op"]))
 	})
 
 	It("should fail on wrong binary input", func() {
@@ -42,7 +41,7 @@ var _ = Describe("Boolean", func() {
 	It("should set unary ops", func() {
 		ok := ue.Parse(params)
 		Expect(ok).To(BeNil())
-		Expect(ue.Query).To(Equal(l))
+		Expect(ue.Query).To(Equal(params["left"]))
 		Expect(ue.Op).To(Equal("AND"))
 	})
 

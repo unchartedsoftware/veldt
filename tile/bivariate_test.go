@@ -8,11 +8,9 @@ import (
 )
 
 var _ = Describe("Bivariate", func() {
-	eq := &tile.Bivariate{}
-	eq2 := &tile.Bivariate{}
+	bv := &tile.Bivariate{}
+	bv2 := &tile.Bivariate{}
 
-	// create params
-	// we use the built in `make` function to allocate the map
 	params := make(map[string]interface{})
 	params["xField"] = "a"
 	params["yField"] = "b"
@@ -24,18 +22,18 @@ var _ = Describe("Bivariate", func() {
 	params_fail := make(map[string]interface{})
 
 	It("should set fields", func() {
-		ok := eq.Parse(params)
+		ok := bv.Parse(params)
 		Expect(ok).To(BeNil())
-		Expect(eq.XField).To(Equal(params["xField"]))
-		Expect(eq.YField).To(Equal(params["yField"]))
-		Expect(eq.Left).To(Equal(params["left"]))
-		Expect(eq.Right).To(Equal(params["right"]))
-		Expect(eq.Bottom).To(Equal(params["bottom"]))
-		Expect(eq.Top).To(Equal(params["top"]))
+		Expect(bv.XField).To(Equal(params["xField"]))
+		Expect(bv.YField).To(Equal(params["yField"]))
+		Expect(bv.Left).To(Equal(params["left"]))
+		Expect(bv.Right).To(Equal(params["right"]))
+		Expect(bv.Bottom).To(Equal(params["bottom"]))
+		Expect(bv.Top).To(Equal(params["top"]))
 	})
 
 	It("should fail on wrong input", func() {
-		ok := eq2.Parse(params_fail)
+		ok := bv2.Parse(params_fail)
 		Expect(ok).NotTo(BeNil())
 	})
 })

@@ -9,9 +9,7 @@ import (
 
 var _ = Describe("Lod", func() {
 
-	a := make([]float32, 2, 2)
-	a[0] = 1.0
-	a[1] = 1.0
+	a := []float32{1.0, 1.0}
 
 	res := []uint8{8, 0, 0, 0, 4, 0, 0, 0, 0, 0, 128, 63, 0, 0, 128, 63, 0, 0, 0, 0}
 	res_int := []int{0}
@@ -20,7 +18,6 @@ var _ = Describe("Lod", func() {
 	It("should set Field and Value", func() {
 		floats := tile.EncodeLOD(a, int(0))
 		Expect(floats).To(Equal(res))
-		//Expect(ints).To(Equal(1))
 	})
 
 	It("should set LOD", func() {

@@ -8,22 +8,20 @@ import (
 )
 
 var _ = Describe("Micro", func() {
-	eq := &tile.Micro{}
+	mcr := &tile.Micro{}
 
-	// create params
-	// we use the built in `make` function to allocate the map
 	params := make(map[string]interface{})
 	params["lod"] = 1
 
 	It("should set LOD", func() {
-		ok := eq.Parse(params)
+		ok := mcr.Parse(params)
 		Expect(ok).To(BeNil())
-		Expect(eq.LOD).To(Equal(params["lod"]))
+		Expect(mcr.LOD).To(Equal(params["lod"]))
 
 	})
 
-	It("should set LOD 2", func() {
-		result := eq.ParseIncludes([]string{"a", "b"}, "a", "b")
+	It("should set parse includes correctly", func() {
+		result := mcr.ParseIncludes([]string{"a", "b"}, "a", "b")
 		Expect(result).To(Equal([]string{"a", "b"}))
 	})
 

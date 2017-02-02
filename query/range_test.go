@@ -8,13 +8,11 @@ import (
 )
 
 var _ = Describe("Range", func() {
-	eq := &query.Range{}
-	eq2 := &query.Range{}
-	eq3 := &query.Range{}
-	eq4 := &query.Range{}
+	rng := &query.Range{}
+	rng2 := &query.Range{}
+	rng3 := &query.Range{}
+	rng4 := &query.Range{}
 
-	// create params
-	// we use the built in `make` function to allocate the map
 	params := make(map[string]interface{})
 	params["field"] = "range"
 	params["gte"] = true
@@ -33,24 +31,24 @@ var _ = Describe("Range", func() {
 	params_fail_lower["lte"] = true
 
 	It("should set Field and Value", func() {
-		ok := eq.Parse(params)
+		ok := rng.Parse(params)
 		Expect(ok).To(BeNil())
-		Expect(eq.Field).To(Equal("range"))
-		Expect(eq.GTE).To(Equal(true))
+		Expect(rng.Field).To(Equal("range"))
+		Expect(rng.GTE).To(Equal(true))
 	})
 
 	It("should fail on wrong input", func() {
-		ok := eq2.Parse(params_fail)
+		ok := rng2.Parse(params_fail)
 		Expect(ok).NotTo(BeNil())
 	})
 
 	It("should fail if gt and gte are both set", func() {
-		ok := eq3.Parse(params_fail_upper)
+		ok := rng3.Parse(params_fail_upper)
 		Expect(ok).NotTo(BeNil())
 	})
 
 	It("should fail if lt and lte are both set", func() {
-		ok := eq4.Parse(params_fail_lower)
+		ok := rng4.Parse(params_fail_lower)
 		Expect(ok).NotTo(BeNil())
 	})
 })

@@ -8,27 +8,24 @@ import (
 )
 
 var _ = Describe("TopTerms", func() {
-	eq := &tile.TopTerms{}
-	eq2 := &tile.TopTerms{}
+	tt := &tile.TopTerms{}
+	tt2 := &tile.TopTerms{}
 
-	// create params
-	// we use the built in `make` function to allocate the map
 	params := make(map[string]interface{})
-
-	params["termsCount"] = 1.0
+	params["termsCount"] = 1
 	params["termsField"] = "age"
 
 	params_fail := make(map[string]interface{})
 
 	It("should set Field and Value", func() {
-		ok := eq.Parse(params)
+		ok := tt.Parse(params)
 		Expect(ok).To(BeNil())
-		Expect(eq.TermsField).To(Equal(params["termsField"]))
-		Expect(eq.TermsCount).To(Equal(1))
+		Expect(tt.TermsField).To(Equal(params["termsField"]))
+		Expect(tt.TermsCount).To(Equal(params["termsCount"]))
 	})
 
 	It("should fail on wrong input", func() {
-		ok := eq2.Parse(params_fail)
+		ok := tt2.Parse(params_fail)
 		Expect(ok).NotTo(BeNil())
 	})
 })
