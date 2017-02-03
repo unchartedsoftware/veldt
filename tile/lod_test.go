@@ -15,12 +15,12 @@ var _ = Describe("Lod", func() {
 	res_int := []int{0}
 	res_float := []float32{1, 1}
 
-	It("should set Field and Value", func() {
+	It("should set return encoded array", func() {
 		floats := tile.EncodeLOD(a, int(0))
 		Expect(floats).To(Equal(res))
 	})
 
-	It("should set LOD", func() {
+	It("should set return encoded array of ints", func() {
 		floats, ints := tile.LOD(a, int(0))
 		Expect(floats).To(Equal(res_float))
 		Expect(ints).To(Equal(res_int))
