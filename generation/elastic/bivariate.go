@@ -14,11 +14,11 @@ import (
 type Bivariate struct {
 	tile.Bivariate
 	// tiling
-	tiling bool
-	minX   int64
-	maxX   int64
-	minY   int64
-	maxY   int64
+	isTilingComputed bool
+	minX             int64
+	maxX             int64
+	minY             int64
+	maxY             int64
 	// binning
 	binning   bool
 	intervalX int64
@@ -26,7 +26,7 @@ type Bivariate struct {
 }
 
 func (b *Bivariate) computeTilingProps(coord *binning.TileCoord) {
-	if b.tiling {
+	if b.isTilingComputed {
 		return
 	}
 	// tiling params
@@ -46,7 +46,7 @@ func (b *Bivariate) computeTilingProps(coord *binning.TileCoord) {
 	b.minY = int64(math.Min(b.Bounds.BottomLeft.Y, b.Bounds.TopRight.Y))
 	b.maxY = int64(math.Max(b.Bounds.BottomLeft.Y, b.Bounds.TopRight.Y))
 	// flag as computed
-	b.tiling = true
+	b.isTilingComputed = true
 }
 
 func (b *Bivariate) computeBinningProps(coord *binning.TileCoord) {
