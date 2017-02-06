@@ -3,3 +3,5 @@
 .idea
 TODO.md
 vendor
+coverage
+*.coverprofile
