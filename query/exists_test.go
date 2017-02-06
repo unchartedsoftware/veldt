@@ -8,23 +8,26 @@ import (
 )
 
 var _ = Describe("Exists", func() {
-	ex := &query.Exists{}
-	ex2 := &query.Exists{}
 
-	params := make(map[string]interface{})
-	params["field"] = "field"
+	var exists *query.Exists
+	var params map[string]interface{}
 
-	params_fail := make(map[string]interface{})
-
-	It("should set Field", func() {
-		ok := ex.Parse(params)
-		Expect(ok).To(BeNil())
-		Expect(ex.Field).To(Equal("field"))
+	BeforeEach(func() {
+		exists = &query.Exists{}
+		params = make(map[string]interface{})
 	})
 
-	It("should fail on missing field", func() {
-		ok := ex2.Parse(params_fail)
-		Expect(ok).NotTo(BeNil())
-		Expect(ex2.Field).To(Equal(""))
+	Describe("Parse", func() {
+		It("should parse properties from the params argument", func() {
+			params["field"] = "field"
+			err := exists.Parse(params)
+			Expect(err).To(BeNil())
+			Expect(exists.Field).To(Equal("field"))
+		})
+
+		It("should return an error if `field` property is not specified", func() {
+			err := exists.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
 	})
 })

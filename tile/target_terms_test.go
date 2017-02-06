@@ -1,38 +1,51 @@
 package tile_test
 
 import (
-	"github.com/unchartedsoftware/veldt/tile"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/unchartedsoftware/veldt/util/test"
+
+	"github.com/unchartedsoftware/veldt/tile"
 )
 
 var _ = Describe("TargetTerms", func() {
-	//eq := &tile.TargetTerms{}
-	eq2 := &tile.TargetTerms{}
 
-	// create params
-	// we use the built in `make` function to allocate the map
-	params := make(map[string]interface{})
+	var terms *tile.TargetTerms
 
-	a := make([]string, 2, 2)
-	a[0] = "one"
-	a[1] = "two"
+	BeforeEach(func() {
+		terms = &tile.TargetTerms{}
+	})
 
-	params["termsField"] = "age"
-	params["terms"] = a
+	Describe("Parse", func() {
+		It("should parse properties from the params argument", func() {
+			params := JSON(
+				`{
+					"termsField": "age",
+					"terms": ["one", "two"]
+				}`)
+			err := terms.Parse(params)
+			Expect(err).To(BeNil())
+			Expect(terms.TermsField).To(Equal(params["termsField"]))
+			Expect(terms.Terms[0]).To(Equal("one"))
+			Expect(terms.Terms[1]).To(Equal("two"))
+		})
 
-	params_fail := make(map[string]interface{})
+		It("should return an error if `termsField` property is not specified", func() {
+			params := JSON(`{}`)
+			err := terms.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
 
-	/*It("should set Field and Value", func() {
-		ok := eq.Parse(params)
-		Expect(ok).To(BeNil())
-		Expect(eq.TermsField).To(Equal(params["termsField"]))
-		Expect(eq.Terms).To(Equal(params["terms"]))
-	})*/
-
-	It("should fail on wrong input", func() {
-		ok := eq2.Parse(params_fail)
-		Expect(ok).NotTo(BeNil())
+		It("should return an error if `terms` property is not specified or empty", func() {
+			paramsA := JSON(`{}`)
+			paramsB := JSON(
+				`{
+					"terms": []
+				}`)
+			errA := terms.Parse(paramsA)
+			Expect(errA).NotTo(BeNil())
+			errB := terms.Parse(paramsB)
+			Expect(errB).NotTo(BeNil())
+		})
 	})
 })

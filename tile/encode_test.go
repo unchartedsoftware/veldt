@@ -9,7 +9,7 @@ import (
 
 var _ = Describe("Encode", func() {
 
-	a := []float32{1,1}
+	a := []float32{1, 1}
 
 	result := []uint8{0, 0, 128, 63, 0, 0, 128, 63}
 
