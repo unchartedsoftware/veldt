@@ -20,12 +20,12 @@ var _ = Describe("TargetTerms", func() {
 		It("should parse properties from the params argument", func() {
 			params := JSON(
 				`{
-					"termsField": "age",
+					"termsField": "field",
 					"terms": ["one", "two"]
 				}`)
 			err := terms.Parse(params)
 			Expect(err).To(BeNil())
-			Expect(terms.TermsField).To(Equal(params["termsField"]))
+			Expect(terms.TermsField).To(Equal("field"))
 			Expect(terms.Terms[0]).To(Equal("one"))
 			Expect(terms.Terms[1]).To(Equal("two"))
 		})
@@ -40,6 +40,7 @@ var _ = Describe("TargetTerms", func() {
 			paramsA := JSON(`{}`)
 			paramsB := JSON(
 				`{
+					"termsField": "field",
 					"terms": []
 				}`)
 			errA := terms.Parse(paramsA)

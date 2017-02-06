@@ -11,17 +11,17 @@ var _ = Describe("pixel", func() {
 
 	var (
 		bottomLeftLonLat = binning.NewLonLat(-180, -85.05112878)
-		centerLonLat = binning.NewLonLat(0, 0)
-		topRightLonLat = binning.NewLonLat(180, 85.05112878)
-		bottomLeftCoord = binning.NewCoord(-1, -1)
-		centerCoord = binning.NewCoord(0, 0)
-		topRightCoord = binning.NewCoord(1, 1)
+		centerLonLat     = binning.NewLonLat(0, 0)
+		topRightLonLat   = binning.NewLonLat(180, 85.05112878)
+		bottomLeftCoord  = binning.NewCoord(-1, -1)
+		centerCoord      = binning.NewCoord(0, 0)
+		topRightCoord    = binning.NewCoord(1, 1)
 		centerPixelCoord = binning.NewPixelCoord(
-			uint64(binning.MaxPixels / 2),
-			uint64(binning.MaxPixels / 2))
+			uint64(binning.MaxPixels/2),
+			uint64(binning.MaxPixels/2))
 		topRightPixel = binning.NewPixelCoord(
-			uint64(binning.MaxPixels - 1),
-			uint64(binning.MaxPixels - 1))
+			uint64(binning.MaxPixels-1),
+			uint64(binning.MaxPixels-1))
 	)
 
 	Describe("CoordToPixelCoord", func() {
@@ -29,7 +29,7 @@ var _ = Describe("pixel", func() {
 
 			extent := binning.Bounds{
 				BottomLeft: binning.NewCoord(-1, -1),
-				TopRight: binning.NewCoord(1, 1),
+				TopRight:   binning.NewCoord(1, 1),
 			}
 
 			pixel := binning.CoordToPixelCoord(bottomLeftCoord, &extent)

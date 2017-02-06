@@ -123,7 +123,7 @@ var _ = Describe("json", func() {
 			_, ok := json.GetInt(j, "test", "int")
 			Expect(ok).To(Equal(true))
 		})
-		It("should return an int64 if the value is an int", func() {
+		It("should return an int if the value is an int", func() {
 			j := JSON(
 				`{
 					"test": {
@@ -132,9 +132,9 @@ var _ = Describe("json", func() {
 				}`)
 			val, ok := json.GetInt(j, "test", "int")
 			Expect(ok).To(Equal(true))
-			Expect(val).To(Equal(int64(123)))
+			Expect(val).To(Equal(123))
 		})
-		It("should return an int64 if the value is a float", func() {
+		It("should return an int if the value is a float", func() {
 			j := JSON(
 				`{
 					"test": {
@@ -143,7 +143,7 @@ var _ = Describe("json", func() {
 				}`)
 			val, ok := json.GetInt(j, "test", "float")
 			Expect(ok).To(Equal(true))
-			Expect(val).To(Equal(int64(123)))
+			Expect(val).To(Equal(123))
 		})
 		It("should return a false value if value does not exist in the provided path", func() {
 			j := JSON(`{}`)
@@ -375,7 +375,7 @@ var _ = Describe("json", func() {
 			_, ok := json.GetIntArray(j, "test", "array")
 			Expect(ok).To(Equal(true))
 		})
-		It("should return a []int64 if the value is an int array", func() {
+		It("should return a []int if the value is an int array", func() {
 			j := JSON(
 				`{
 					"test": {
@@ -384,10 +384,10 @@ var _ = Describe("json", func() {
 				}`)
 			val, ok := json.GetIntArray(j, "test", "array")
 			Expect(ok).To(Equal(true))
-			Expect(val[0]).To(Equal(int64(0)))
-			Expect(val[1]).To(Equal(int64(1)))
-			Expect(val[2]).To(Equal(int64(0)))
-			Expect(val[3]).To(Equal(int64(0)))
+			Expect(val[0]).To(Equal(0))
+			Expect(val[1]).To(Equal(1))
+			Expect(val[2]).To(Equal(0))
+			Expect(val[3]).To(Equal(0))
 		})
 		It("should return a false value if value does not exist in the provided path", func() {
 			j := JSON(`{}`)

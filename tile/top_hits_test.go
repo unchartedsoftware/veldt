@@ -5,33 +5,84 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/unchartedsoftware/veldt/util/test"
 )
 
 var _ = Describe("TopHits", func() {
-	th := &tile.TopHits{}
-	th2 := &tile.TopHits{}
 
-	params := make(map[string]interface{})
-	a := []string{"first", "second"}
+	var hits *tile.TopHits
 
-	params["sortField"] = "field"
-	params["sortOrder"] = "order"
-	params["hitsCount"] = 2
-	params["includeFields"] = a
-
-	params_fail := make(map[string]interface{})
-
-	It("should set fields", func() {
-		ok := th.Parse(params)
-		Expect(ok).To(BeNil())
-		Expect(th.SortField).To(Equal(params["sortField"]))
-		Expect(th.SortOrder).To(Equal(params["sortOrder"]))
-		Expect(th.HitsCount).To(Equal(params["hitsCount"]))
-		//Expect(eq.IncludeFields).To(Equal(a))
+	BeforeEach(func() {
+		hits = &tile.TopHits{}
 	})
 
-	It("should fail on wrong input", func() {
-		ok := th2.Parse(params_fail)
-		Expect(ok).NotTo(BeNil())
+	Describe("Parse", func() {
+		It("should parse properties from the params argument", func() {
+			params := JSON(
+				`{
+					"sortField": "field",
+					"sortOrder": "desc",
+					"hitsCount": 2,
+					"includeFields": ["a", "b", "c"]
+				}
+				`)
+			err := hits.Parse(params)
+			Expect(err).To(BeNil())
+			Expect(hits.SortField).To(Equal("field"))
+			Expect(hits.SortOrder).To(Equal("desc"))
+			Expect(hits.HitsCount).To(Equal(2))
+			Expect(hits.IncludeFields[0]).To(Equal("a"))
+			Expect(hits.IncludeFields[1]).To(Equal("b"))
+			Expect(hits.IncludeFields[2]).To(Equal("c"))
+		})
+
+		It("should return an error if `sortField` property is not specified", func() {
+			params := JSON(`{}`)
+			err := hits.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should return an error if `sortOrder` property is not specified", func() {
+			params := JSON(
+				`{
+					"sortField": "field"
+				}
+				`)
+			err := hits.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should return an error if `sortOrder` property is not `desc` or `asc`", func() {
+			params := JSON(
+				`{
+					"sortField": "field",
+					"sortOrder": "invalid"
+				}
+				`)
+			err := hits.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should return an error if `hitsCount` property is not specified", func() {
+			params := JSON(
+				`{
+					"sortField": "field",
+					"sortOrder": "desc"
+				}
+				`)
+			err := hits.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should gracefully handle empty `includeFields` array", func() {
+			params := JSON(
+				`{
+					"hitsCount": 2,
+					"includeFields": []
+				}
+				`)
+			err := hits.Parse(params)
+			Expect(err).To(BeNil())
+		})
 	})
 })

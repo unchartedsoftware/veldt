@@ -5,38 +5,54 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/unchartedsoftware/veldt/util/test"
 )
 
 var _ = Describe("Micro", func() {
-	mcr := &tile.Micro{}
 
-	params := make(map[string]interface{})
-	params["lod"] = 1
+	var micro *tile.Micro
 
-	encd := make([]map[string]interface{},2)
-	hit1 := make(map[string]interface{})
-	hit2 := make(map[string]interface{})
-	encd[0] = hit1
-	encd[1] = hit2
-	encd_rslt := []byte(`{"hits":null,"offsets":[0,8,8,8],"points":[1,1]}`)
-
-	It("should set LOD", func() {
-		ok := mcr.Parse(params)
-		Expect(ok).To(BeNil())
-		Expect(mcr.LOD).To(Equal(params["lod"]))
-
+	BeforeEach(func() {
+		micro = &tile.Micro{}
 	})
 
-	It("should set parse includes correctly", func() {
-		result := mcr.ParseIncludes([]string{"a", "b"}, "a", "b")
-		Expect(result).To(Equal([]string{"a", "b"}))
+	Describe("Parse", func() {
+		It("should parse properties from the params argument", func() {
+			params := JSON(
+				`{
+					"lod": 4
+				}`)
+			err := micro.Parse(params)
+			Expect(err).To(BeNil())
+			Expect(micro.LOD).To(Equal(4))
+		})
 	})
 
-	It("should set parse includes correctly", func() {
-		result, ok := mcr.Encode(encd, []float32{1,1})
-		Expect(ok).To(BeNil());
-		Expect(result).To(Equal(encd_rslt))
+	Describe("ParseIncludes", func() {
+		It("should ensure provide xField and yField are included in the includes", func() {
+			includesA := micro.ParseIncludes([]string{}, "a", "b")
+			includesB := micro.ParseIncludes([]string{"a"}, "a", "b")
+			includesC := micro.ParseIncludes([]string{"b"}, "a", "b")
+			includesD := micro.ParseIncludes([]string{"a", "b"}, "a", "b")
+			Expect(includesA).To(Equal([]string{"a", "b"}))
+			Expect(includesB).To(Equal([]string{"a", "b"}))
+			Expect(includesC).To(Equal([]string{"b", "a"}))
+			Expect(includesD).To(Equal([]string{"a", "b"}))
+		})
 	})
 
+	Describe("Encode", func() {
+		It("should encode results properly", func() {
+			correct := []byte(`{"hits":null,"offsets":[0,8,8,8],"points":[1,1]}`)
+			params := JSON(
+				`{
+					"lod": 1
+				}`)
+			err := micro.Parse(params)
+			bytes, err := micro.Encode(nil, []float32{1, 1})
+			Expect(err).To(BeNil())
+			Expect(bytes).To(Equal(correct))
+		})
+	})
 
 })

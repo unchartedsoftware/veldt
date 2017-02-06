@@ -5,35 +5,102 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/unchartedsoftware/veldt/util/test"
 )
 
 var _ = Describe("Bivariate", func() {
-	bv := &tile.Bivariate{}
-	bv2 := &tile.Bivariate{}
 
-	params := make(map[string]interface{})
-	params["xField"] = "a"
-	params["yField"] = "b"
-	params["left"] = 1.0
-	params["right"] = 1.0
-	params["bottom"] = 1.0
-	params["top"] = 1.0
+	var bivariate *tile.Bivariate
 
-	params_fail := make(map[string]interface{})
-
-	It("should set fields", func() {
-		ok := bv.Parse(params)
-		Expect(ok).To(BeNil())
-		Expect(bv.XField).To(Equal(params["xField"]))
-		Expect(bv.YField).To(Equal(params["yField"]))
-		Expect(bv.Left).To(Equal(params["left"]))
-		Expect(bv.Right).To(Equal(params["right"]))
-		Expect(bv.Bottom).To(Equal(params["bottom"]))
-		Expect(bv.Top).To(Equal(params["top"]))
+	BeforeEach(func() {
+		bivariate = &tile.Bivariate{}
 	})
 
-	It("should fail on wrong input", func() {
-		ok := bv2.Parse(params_fail)
-		Expect(ok).NotTo(BeNil())
+	Describe("Parse", func() {
+		It("should parse properties from the params argument", func() {
+			params := JSON(
+				`{
+					"xField": "x",
+					"yField": "y",
+					"left": -1.0,
+					"right": 1.0,
+					"bottom": -1.0,
+					"top": 1.0
+				}`)
+			err := bivariate.Parse(params)
+			Expect(err).To(BeNil())
+			Expect(bivariate.XField).To(Equal("x"))
+			Expect(bivariate.YField).To(Equal("y"))
+			Expect(bivariate.Left).To(Equal(-1.0))
+			Expect(bivariate.Right).To(Equal(1.0))
+			Expect(bivariate.Bottom).To(Equal(-1.0))
+			Expect(bivariate.Top).To(Equal(1.0))
+		})
+
+		It("should return an error if `xField` property is not specified", func() {
+			params := JSON(`{}`)
+			err := bivariate.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should return an error if `yField` property is not specified", func() {
+			params := JSON(
+				`{
+					"xField": "x"
+				}
+				`)
+			err := bivariate.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should return an error if `left` property is not specified", func() {
+			params := JSON(
+				`{
+					"xField": "x",
+					"yField": "y"
+				}
+				`)
+			err := bivariate.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should return an error if `right` property is not specified", func() {
+			params := JSON(
+				`{
+					"xField": "x",
+					"yField": "y",
+					"left": -1.0
+				}
+				`)
+			err := bivariate.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should return an error if `bottom` property is not specified", func() {
+			params := JSON(
+				`{
+					"xField": "x",
+					"yField": "y",
+					"left": -1.0,
+					"right": 1.0
+				}
+				`)
+			err := bivariate.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should return an error if `top` property is not specified", func() {
+			params := JSON(
+				`{
+					"xField": "x",
+					"yField": "y",
+					"left": -1.0,
+					"right": 1.0,
+					"bottom": -1.0
+				}
+				`)
+			err := bivariate.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
 	})
 })

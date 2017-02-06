@@ -5,26 +5,26 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/unchartedsoftware/veldt/util/test"
 )
 
 var _ = Describe("Macro", func() {
-	eq := &tile.Macro{}
-	eq2 := &tile.Macro{}
 
-	params := make(map[string]interface{})
-	params["lod"] = 1
+	var macro *tile.Macro
 
-	params_2 := []float32{1.0, 1.0}
-
-	result := []uint8{0, 0, 128, 63, 0, 0, 128, 63}
-
-	It("should set LOD field", func() {
-		eq.Parse(params)
-		Expect(eq.LOD).To(Equal(params["lod"]))
+	BeforeEach(func() {
+		macro = &tile.Macro{}
 	})
 
-	It("should be nil on wrong input", func() {
-		rslt, _ := eq2.Encode(params_2)
-		Expect(rslt).To(Equal(result))
+	Describe("Parse", func() {
+		It("should parse properties from the params argument", func() {
+			params := JSON(
+				`{
+					"lod": 4
+				}`)
+			err := macro.Parse(params)
+			Expect(err).To(BeNil())
+			Expect(macro.LOD).To(Equal(4))
+		})
 	})
 })

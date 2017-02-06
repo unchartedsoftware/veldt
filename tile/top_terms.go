@@ -24,6 +24,6 @@ func (t *TopTerms) Parse(params map[string]interface{}) error {
 		return fmt.Errorf("`termsCount` parameter missing from tile")
 	}
 	t.TermsField = termsField
-	t.TermsCount = int(termsCount)
+	t.TermsCount = termsCount
 	return nil
 }

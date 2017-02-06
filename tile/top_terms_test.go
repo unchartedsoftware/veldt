@@ -5,27 +5,45 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/unchartedsoftware/veldt/util/test"
 )
 
 var _ = Describe("TopTerms", func() {
-	tt := &tile.TopTerms{}
-	tt2 := &tile.TopTerms{}
 
-	params := make(map[string]interface{})
-	params["termsCount"] = 1
-	params["termsField"] = "age"
+	var terms *tile.TopTerms
 
-	params_fail := make(map[string]interface{})
-
-	It("should set Field and Value", func() {
-		ok := tt.Parse(params)
-		Expect(ok).To(BeNil())
-		Expect(tt.TermsField).To(Equal(params["termsField"]))
-		Expect(tt.TermsCount).To(Equal(params["termsCount"]))
+	BeforeEach(func() {
+		terms = &tile.TopTerms{}
 	})
 
-	It("should fail on wrong input", func() {
-		ok := tt2.Parse(params_fail)
-		Expect(ok).NotTo(BeNil())
+	Describe("Parse", func() {
+		It("should parse properties from the params argument", func() {
+			params := JSON(
+				`{
+					"termsCount": 1,
+					"termsField": "age"
+				}
+				`)
+			ok := terms.Parse(params)
+			Expect(ok).To(BeNil())
+			Expect(terms.TermsCount).To(Equal(1))
+			Expect(terms.TermsField).To(Equal("age"))
+		})
+
+		It("should return an error if `termsField` property is not specified", func() {
+			params := JSON(`{}`)
+			err := terms.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should return an error if `termsCount` property is not specified", func() {
+			params := JSON(
+				`{
+					"termsField": "age"
+				}
+				`)
+			err := terms.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
 	})
 })
