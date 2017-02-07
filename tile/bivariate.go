@@ -11,16 +11,13 @@ import (
 
 // Bivariate represents the parameters required for any bivariate tile.
 type Bivariate struct {
-	XField     string
-	YField     string
-	Left       float64
-	Right      float64
-	Bottom     float64
-	Top        float64
-	Resolution int
-	Bounds     *geometry.Bounds
-	BinSizeX   float64
-	BinSizeY   float64
+	XField      string
+	YField      string
+	Resolution  int
+	BinSizeX    float64
+	BinSizeY    float64
+	TileBounds  *geometry.Bounds
+	WorldBounds *geometry.Bounds
 }
 
 // Parse parses the provided JSON object and populates the tiles attributes.
@@ -34,39 +31,24 @@ func (b *Bivariate) Parse(params map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("`yField` parameter missing from tile")
 	}
-	// get left, right, bottom, top extrema
-	left, ok := json.GetFloat(params, "left")
-	if !ok {
-		return fmt.Errorf("`left` parameter missing from tile")
+	worldBounds, err := geometry.NewBoundsByParse(params)
+	if err != nil {
+		return fmt.Errorf("left, right, bottom or top missing from tile")
 	}
-	right, ok := json.GetFloat(params, "right")
-	if !ok {
-		return fmt.Errorf("`right` parameter missing from tile")
-	}
-	bottom, ok := json.GetFloat(params, "bottom")
-	if !ok {
-		return fmt.Errorf("`bottom` parameter missing from tile")
-	}
-	top, ok := json.GetFloat(params, "top")
-	if !ok {
-		return fmt.Errorf("`top` parameter missing from tile")
-	}
+
 	// get resolution
 	resolution := json.GetIntDefault(params, 256, "resolution")
 	// set attributes
 	b.XField = xField
 	b.YField = yField
-	b.Left = left
-	b.Right = right
-	b.Bottom = bottom
-	b.Top = top
 	b.Resolution = resolution
+	b.WorldBounds = worldBounds
 	return nil
 }
 
 // GetXBin given an x value, returns the corresponding bin.
 func (b *Bivariate) GetXBin(x int64) int {
-	bounds := b.Bounds
+	bounds := b.TileBounds
 	fx := float64(x)
 	var bin int64
 	if bounds.BottomLeft().X > bounds.TopRight().X {
@@ -80,7 +62,7 @@ func (b *Bivariate) GetXBin(x int64) int {
 // GetX given an x value, returns the corresponding coord within the range of
 // [0 : 256) for the tile.
 func (b *Bivariate) GetX(x float64) float64 {
-	bounds := b.Bounds
+	bounds := b.TileBounds
 	if bounds.BottomLeft().X > bounds.TopRight().X {
 		rang := bounds.BottomLeft().X - bounds.TopRight().X
 		return binning.MaxTileResolution - (((x - bounds.TopRight().X) / rang) * binning.MaxTileResolution)
@@ -91,7 +73,7 @@ func (b *Bivariate) GetX(x float64) float64 {
 
 // GetYBin given a y value, returns the corresponding bin.
 func (b *Bivariate) GetYBin(y int64) int {
-	bounds := b.Bounds
+	bounds := b.TileBounds
 	fy := float64(y)
 	var bin int64
 	if bounds.BottomLeft().Y > bounds.TopRight().Y {
@@ -105,7 +87,7 @@ func (b *Bivariate) GetYBin(y int64) int {
 // GetY given an y value, returns the corresponding coord within the range of
 // [0 : 256) for the tile.
 func (b *Bivariate) GetY(y float64) float64 {
-	bounds := b.Bounds
+	bounds := b.TileBounds
 	if bounds.BottomLeft().Y > bounds.TopRight().Y {
 		rang := bounds.BottomLeft().Y - bounds.TopRight().Y
 		return binning.MaxTileResolution - (((y - bounds.TopRight().Y) / rang) * binning.MaxTileResolution)
