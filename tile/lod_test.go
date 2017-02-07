@@ -72,7 +72,7 @@ var _ = Describe("Lod", func() {
 	})
 
 	Describe("EncodeLOD", func() {
-		It("should sorted provided []float32 by morton code and encode the results along with appropriate LOD offsets", func() {
+		It("should sort the provided []float32 by morton code and encode the results along with appropriate LOD offsets", func() {
 			bs := tile.EncodeLOD(input, lod)
 			Expect(bs).To(Equal(bytes))
 		})
