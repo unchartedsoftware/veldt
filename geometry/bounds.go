@@ -2,16 +2,22 @@ package geometry
 
 import (
 	"fmt"
+	"math"
 
 	jsonUtil "github.com/unchartedsoftware/veldt/util/json"
 )
 
 // Bounds represents an Immutable bounding rectangle with convenience getters.
 type Bounds struct {
-	left   float64
-	right  float64
-	bottom float64
-	top    float64
+	left               float64
+	right              float64
+	bottom             float64
+	top                float64
+	minX               float64
+	maxX               float64
+	minY               float64
+	maxY               float64
+	isMinMaxCalculated bool
 }
 
 // Rectangle represents a pair of Coords
@@ -105,4 +111,44 @@ func (b Bounds) Bottom() float64 {
 // Top returns the top extremum
 func (b Bounds) Top() float64 {
 	return b.top
+}
+
+func (b *Bounds) calculateMinMax() {
+	b.minX = math.Min(b.left, b.right)
+	b.maxX = math.Max(b.left, b.right)
+	b.minY = math.Min(b.bottom, b.top)
+	b.maxY = math.Max(b.bottom, b.top)
+	b.isMinMaxCalculated = true
+}
+
+// MinX returns the minimum value of Left and Right
+func (b Bounds) MinX() float64 {
+	if !b.isMinMaxCalculated {
+		b.calculateMinMax()
+	}
+	return b.minX
+}
+
+// MaxX returns the maximum value of Left and Right
+func (b Bounds) MaxX() float64 {
+	if !b.isMinMaxCalculated {
+		b.calculateMinMax()
+	}
+	return b.maxX
+}
+
+// MinY returns the minimum value of Bottom and Top
+func (b Bounds) MinY() float64 {
+	if !b.isMinMaxCalculated {
+		b.calculateMinMax()
+	}
+	return b.minY
+}
+
+// MaxY returns the maximum value of Bottom and Top
+func (b Bounds) MaxY() float64 {
+	if !b.isMinMaxCalculated {
+		b.calculateMinMax()
+	}
+	return b.maxY
 }

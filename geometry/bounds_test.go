@@ -71,7 +71,7 @@ var _ = Describe("geometry.Bounds", func() {
 		})
 	})
 
-	Describe("Corners", func() {
+	Describe("Calculated values", func() {
 		It("should return an equivalent set of corners", func() {
 			corners := bounds.Corners()
 			Expect(corners.BottomLeft.X).To(Equal(left))
@@ -84,6 +84,13 @@ var _ = Describe("geometry.Bounds", func() {
 			Expect(bounds.BottomLeft().Y).To(Equal(bottom))
 			Expect(bounds.TopRight().X).To(Equal(right))
 			Expect(bounds.TopRight().Y).To(Equal(top))
+		})
+		It("should calculate the mathematical extrema", func() {
+			b := geometry.NewBounds(1.0, -1.0, 1.0, -1.0)
+			Expect(b.MinX()).To(Equal(-1.0))
+			Expect(b.MaxX()).To(Equal(1.0))
+			Expect(b.MinY()).To(Equal(-1.0))
+			Expect(b.MaxY()).To(Equal(1.0))
 		})
 	})
 

@@ -15,10 +15,7 @@ type Bivariate struct {
 	tile.Bivariate
 	// tiling
 	isTilingComputed bool
-	minX             int64
-	maxX             int64
-	minY             int64
-	maxY             int64
+
 	// binning
 	binning   bool
 	intervalX int64
@@ -31,10 +28,7 @@ func (b *Bivariate) computeTilingProps(coord *binning.TileCoord) {
 	}
 	// tiling params
 	b.TileBounds = binning.GetTileBounds(coord, b.WorldBounds)
-	b.minX = int64(math.Min(b.TileBounds.BottomLeft().X, b.TileBounds.TopRight().X))
-	b.maxX = int64(math.Max(b.TileBounds.BottomLeft().X, b.TileBounds.TopRight().X))
-	b.minY = int64(math.Min(b.TileBounds.BottomLeft().Y, b.TileBounds.TopRight().Y))
-	b.maxY = int64(math.Max(b.TileBounds.BottomLeft().Y, b.TileBounds.TopRight().Y))
+
 	// flag as computed
 	b.isTilingComputed = true
 }
@@ -63,11 +57,11 @@ func (b *Bivariate) GetQuery(coord *binning.TileCoord) elastic.Query {
 	// create the range queries
 	query := elastic.NewBoolQuery()
 	query.Must(elastic.NewRangeQuery(b.XField).
-		Gte(b.minX).
-		Lt(b.maxX))
+		Gte(int64(b.TileBounds.MinX())).
+		Lt(int64(b.TileBounds.MaxX())))
 	query.Must(elastic.NewRangeQuery(b.YField).
-		Gte(b.minY).
-		Lt(b.maxY))
+		Gte(int64(b.TileBounds.MinY())).
+		Lt(int64(b.TileBounds.MaxY())))
 	return query
 }
 
@@ -78,12 +72,12 @@ func (b *Bivariate) GetAggs(coord *binning.TileCoord) map[string]elastic.Aggrega
 	// create the binning aggregations
 	x := elastic.NewHistogramAggregation().
 		Field(b.XField).
-		Offset(b.minX).
+		Offset(int64(b.TileBounds.MinX())).
 		Interval(b.intervalX).
 		MinDocCount(1)
 	y := elastic.NewHistogramAggregation().
 		Field(b.YField).
-		Offset(b.minY).
+		Offset(int64(b.TileBounds.MinY())).
 		Interval(b.intervalY).
 		MinDocCount(1)
 	x.SubAggregation("y", y)

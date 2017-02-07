@@ -2,7 +2,6 @@ package elastic
 
 import (
 	"fmt"
-	"math"
 
 	elastic "gopkg.in/olivere/elastic.v3"
 
@@ -16,11 +15,7 @@ type EdgeTile struct {
 	Tile
 	TopHits
 	tile.Edge
-	// Extremes of the single tile
-	minX             int64
-	maxX             int64
-	minY             int64
-	maxY             int64
+
 	isTilingComputed bool
 }
 
@@ -41,10 +36,7 @@ func (e *EdgeTile) computeTilingProps(coord *binning.TileCoord) {
 	}
 	// tiling params
 	e.TileBounds = binning.GetTileBounds(coord, e.WorldBounds)
-	e.minX = int64(math.Min(e.TileBounds.BottomLeft().X, e.TileBounds.TopRight().X))
-	e.maxX = int64(math.Max(e.TileBounds.BottomLeft().X, e.TileBounds.TopRight().X))
-	e.minY = int64(math.Min(e.TileBounds.BottomLeft().Y, e.TileBounds.TopRight().Y))
-	e.maxY = int64(math.Max(e.TileBounds.BottomLeft().Y, e.TileBounds.TopRight().Y))
+
 	// flag as computed
 	e.isTilingComputed = true
 }
@@ -75,11 +67,11 @@ func (e *EdgeTile) GetQuery(coord *binning.TileCoord) elastic.Query {
 	// create the range queries
 	query := elastic.NewBoolQuery()
 	query.Must(elastic.NewRangeQuery(e.SrcXField).
-		Gte(e.minX).
-		Lt(e.maxX))
+		Gte(int64(e.TileBounds.MinX())).
+		Lt(int64(e.TileBounds.MaxX())))
 	query.Must(elastic.NewRangeQuery(e.SrcYField).
-		Gte(e.minY).
-		Lt(e.maxY))
+		Gte(int64(e.TileBounds.MinY())).
+		Lt(int64(e.TileBounds.MaxY())))
 	return query
 }
 
@@ -115,7 +107,7 @@ func (e *EdgeTile) Create(uri string, coord *binning.TileCoord, query veldt.Quer
 	// send query
 	res, err := search.Pretty(true).Do()
 	if err != nil {
-		_ = fmt.Errorf("EdgeTile: query error %s\n", err)
+		_ = fmt.Errorf("EdgeTile: query error %s", err)
 		return nil, err
 	}
 
@@ -134,12 +126,12 @@ func (e *EdgeTile) Create(uri string, coord *binning.TileCoord, query veldt.Quer
 		// get hit x/y in tile coords
 		x, y, ok := e.GetSrcXY(hit, zoom)
 		if !ok {
-			_ = fmt.Errorf("Couldn't GetSrcXY\n")
+			_ = fmt.Errorf("Couldn't GetSrcXY")
 			continue
 		}
 		x2, y2, ok := e.GetDstXY(hit, zoom)
 		if !ok {
-			_ = fmt.Errorf("Couldn't GetDstXY\n")
+			_ = fmt.Errorf("Couldn't GetDstXY")
 			continue
 		}
 		// add to point array
