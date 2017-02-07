@@ -1,8 +1,6 @@
 package binning_test
 
 import (
-	"math"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -12,37 +10,19 @@ import (
 
 var _ = Describe("pixel", func() {
 
-	const (
-		epsilon = 0.000001
-	)
-
 	var (
-		maxPixels = uint64(float64(binning.MaxTileResolution) *
-			math.Pow(2, float64(binning.MaxLevelSupported)))
-		bottomLeftLonLat = binning.LonLat{
-			Lon: -180,
-			Lat: -85.05112878,
-		}
-		centerLonLat = binning.LonLat{
-			Lon: 0,
-			Lat: 0,
-		}
-		topRightLonLat = binning.LonLat{
-			Lon: 180,
-			Lat: 85.05112878,
-		}
-		bottomLeftCoord = geometry.Coord{
-			X: -1,
-			Y: -1,
-		}
-		centerCoord = geometry.Coord{
-			X: 0,
-			Y: 0,
-		}
-		topRightCoord = geometry.Coord{
-			X: 1,
-			Y: 1,
-		}
+		bottomLeftLonLat = binning.NewLonLat(-180, -85.05112878)
+		centerLonLat     = binning.NewLonLat(0, 0)
+		topRightLonLat   = binning.NewLonLat(180, 85.05112878)
+		bottomLeftCoord  = geometry.NewCoord(-1, -1)
+		centerCoord      = geometry.NewCoord(0, 0)
+		topRightCoord    = geometry.NewCoord(1, 1)
+		centerPixelCoord = binning.NewPixelCoord(
+			uint64(binning.MaxPixels/2),
+			uint64(binning.MaxPixels/2))
+		topRightPixel = binning.NewPixelCoord(
+			uint64(binning.MaxPixels-1),
+			uint64(binning.MaxPixels-1))
 	)
 
 	Describe("CoordToPixelCoord", func() {
@@ -50,44 +30,38 @@ var _ = Describe("pixel", func() {
 
 			extent := geometry.NewBoundsFromRectangle(
 				&geometry.Rectangle{
-					BottomLeft: &geometry.Coord{
-						X: -1,
-						Y: -1,
-					},
-					TopRight: &geometry.Coord{
-						X: 1,
-						Y: 1,
-					},
+					BottomLeft: geometry.NewCoord(-1, -1),
+					TopRight:   geometry.NewCoord(1, 1),
 				},
 			)
 
-			pixel := binning.CoordToPixelCoord(&bottomLeftCoord, extent)
+			pixel := binning.CoordToPixelCoord(bottomLeftCoord, extent)
 			Expect(pixel.X).To(Equal(uint64(0)))
 			Expect(pixel.Y).To(Equal(uint64(0)))
 
-			pixel = binning.CoordToPixelCoord(&centerCoord, extent)
-			Expect(pixel.X).To(Equal(uint64(maxPixels / 2)))
-			Expect(pixel.Y).To(Equal(uint64(maxPixels / 2)))
+			pixel = binning.CoordToPixelCoord(centerCoord, extent)
+			Expect(pixel.X).To(Equal(centerPixelCoord.X))
+			Expect(pixel.Y).To(Equal(centerPixelCoord.Y))
 
-			pixel = binning.CoordToPixelCoord(&topRightCoord, extent)
-			Expect(pixel.X).To(Equal(uint64(maxPixels - 1)))
-			Expect(pixel.Y).To(Equal(uint64(maxPixels - 1)))
+			pixel = binning.CoordToPixelCoord(topRightCoord, extent)
+			Expect(pixel.X).To(Equal(topRightPixel.X))
+			Expect(pixel.Y).To(Equal(topRightPixel.Y))
 		})
 	})
 
 	Describe("LonLatToPixelCoord", func() {
 		It("should return a tile coordinate", func() {
-			pixel := binning.LonLatToPixelCoord(&bottomLeftLonLat)
+			pixel := binning.LonLatToPixelCoord(bottomLeftLonLat)
 			Expect(pixel.X).To(Equal(uint64(0)))
 			Expect(pixel.X).To(Equal(uint64(0)))
 
-			pixel = binning.LonLatToPixelCoord(&centerLonLat)
-			Expect(pixel.X).To(Equal(uint64(maxPixels / 2)))
-			Expect(pixel.Y).To(Equal(uint64(maxPixels / 2)))
+			pixel = binning.LonLatToPixelCoord(centerLonLat)
+			Expect(pixel.X).To(Equal(centerPixelCoord.X))
+			Expect(pixel.Y).To(Equal(centerPixelCoord.Y))
 
-			pixel = binning.LonLatToPixelCoord(&topRightLonLat)
-			Expect(pixel.X).To(Equal(uint64(maxPixels - 1)))
-			Expect(pixel.Y).To(Equal(uint64(maxPixels - 1)))
+			pixel = binning.LonLatToPixelCoord(topRightLonLat)
+			Expect(pixel.X).To(Equal(topRightPixel.X))
+			Expect(pixel.Y).To(Equal(topRightPixel.Y))
 		})
 	})
 

@@ -84,7 +84,11 @@ func GetFloat(json map[string]interface{}, path ...string) (float64, bool) {
 	if !ok {
 		return 0, false
 	}
-	return numAsFloat64(v)
+	flt, ok := v.(float64)
+	if !ok {
+		return 0, false
+	}
+	return flt, true
 }
 
 // GetFloatDefault returns a float property under the given key, if it doesn't
@@ -98,17 +102,21 @@ func GetFloatDefault(json map[string]interface{}, def float64, path ...string) f
 }
 
 // GetInt returns an int property under the given key.
-func GetInt(json map[string]interface{}, path ...string) (int64, bool) {
+func GetInt(json map[string]interface{}, path ...string) (int, bool) {
 	v, ok := Get(json, path...)
 	if !ok {
 		return 0, false
 	}
-	return numAsInt64(v)
+	flt, ok := v.(float64)
+	if !ok {
+		return 0, false
+	}
+	return int(flt), true
 }
 
 // GetIntDefault returns a float property under the given key, if it doesn't
 // exist, it will return the provided default.
-func GetIntDefault(json map[string]interface{}, def int64, path ...string) int64 {
+func GetIntDefault(json map[string]interface{}, def int, path ...string) int {
 	v, ok := GetInt(json, path...)
 	if ok {
 		return v
@@ -150,30 +158,30 @@ func GetFloatArray(json map[string]interface{}, path ...string) ([]float64, bool
 	}
 	flts := make([]float64, len(vs))
 	for i, v := range vs {
-		val, ok := numAsFloat64(v)
+		flt, ok := v.(float64)
 		if !ok {
 			return nil, false
 		}
-		flts[i] = val
+		flts[i] = flt
 	}
 	return flts, true
 }
 
 // GetIntArray returns an []int64 property under the given key.
-func GetIntArray(json map[string]interface{}, path ...string) ([]int64, bool) {
+func GetIntArray(json map[string]interface{}, path ...string) ([]int, bool) {
 	vs, ok := GetArray(json, path...)
 	if !ok {
 		return nil, false
 	}
-	flts := make([]int64, len(vs))
+	ints := make([]int, len(vs))
 	for i, v := range vs {
-		val, ok := numAsInt64(v)
+		flt, ok := v.(float64)
 		if !ok {
 			return nil, false
 		}
-		flts[i] = val
+		ints[i] = int(flt)
 	}
-	return flts, true
+	return ints, true
 }
 
 // GetStringArray returns an []string property under the given key.
@@ -263,48 +271,4 @@ func GetChildMap(json map[string]interface{}, path ...string) (map[string]map[st
 		}
 	}
 	return children, true
-}
-
-func numAsFloat64(num interface{}) (float64, bool) {
-	switch t := num.(type) {
-	case float64:
-		return t, true
-	case float32:
-		return float64(t), true
-	case int:
-		return float64(t), true
-	case int32:
-		return float64(t), true
-	case int64:
-		return float64(t), true
-	case uint:
-		return float64(t), true
-	case uint32:
-		return float64(t), true
-	case uint64:
-		return float64(t), true
-	}
-	return 0, false
-}
-
-func numAsInt64(num interface{}) (int64, bool) {
-	switch t := num.(type) {
-	case float64:
-		return int64(t), true
-	case float32:
-		return int64(t), true
-	case int:
-		return int64(t), true
-	case int32:
-		return int64(t), true
-	case int64:
-		return t, true
-	case uint:
-		return int64(t), true
-	case uint32:
-		return int64(t), true
-	case uint64:
-		return int64(t), true
-	}
-	return 0, false
 }

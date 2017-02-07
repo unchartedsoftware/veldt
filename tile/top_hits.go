@@ -19,6 +19,9 @@ type TopHits struct {
 func (t *TopHits) Parse(params map[string]interface{}) error {
 	sortField := json.GetStringDefault(params, "", "sortField")
 	sortOrder := json.GetStringDefault(params, "desc", "sortOrder")
+	if sortOrder != "desc" && sortOrder != "asc" {
+		return fmt.Errorf("`sortOrder` must be either `desc` or `asc`")
+	}
 	hitsCount, ok := json.GetInt(params, "hitsCount")
 	if !ok {
 		return fmt.Errorf("`hitsCount` parameter missing from tile")
@@ -29,7 +32,7 @@ func (t *TopHits) Parse(params map[string]interface{}) error {
 	}
 	t.SortField = sortField
 	t.SortOrder = sortOrder
-	t.HitsCount = int(hitsCount)
+	t.HitsCount = hitsCount
 	t.IncludeFields = includeFields
 	return nil
 }

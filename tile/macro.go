@@ -13,7 +13,7 @@ type Macro struct {
 // Parse parses the provided JSON object and populates the structs attributes.
 func (m *Macro) Parse(params map[string]interface{}) error {
 	// parse LOD
-	m.LOD = int(json.GetIntDefault(params, 0, "lod"))
+	m.LOD = json.GetIntDefault(params, 0, "lod")
 	return nil
 }
 

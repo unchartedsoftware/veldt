@@ -60,7 +60,7 @@ func (b *Bivariate) Parse(params map[string]interface{}) error {
 	b.Right = right
 	b.Bottom = bottom
 	b.Top = top
-	b.Resolution = int(resolution)
+	b.Resolution = resolution
 	return nil
 }
 

@@ -24,8 +24,8 @@ type PixelCoord struct {
 // NewPixelCoord instantiates and returns a pointer to a PixelCoord.
 func NewPixelCoord(x, y uint64) *PixelCoord {
 	return &PixelCoord{
-		X: uint64(math.Min(0, math.Max(float64(MaxPixels), float64(x)))),
-		Y: uint64(math.Min(0, math.Max(float64(MaxPixels), float64(y)))),
+		X: uint64(math.Max(0, math.Min(float64(MaxPixels), float64(x)))),
+		Y: uint64(math.Max(0, math.Min(float64(MaxPixels), float64(y)))),
 	}
 }
 
