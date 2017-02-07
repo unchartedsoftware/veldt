@@ -53,10 +53,7 @@ var _ = Describe("Micro", func() {
 				`{
 					"lod": 1
 				}`)
-			/*hits[1] = JSON(
-				`{
-					"lod": 1
-				}`)*/
+
 			err := micro.Parse(params)
 			bytes, err := micro.Encode(hits, []float32{1, 1})
 			Expect(err).To(BeNil())
