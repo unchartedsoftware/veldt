@@ -43,13 +43,22 @@ var _ = Describe("Micro", func() {
 
 	Describe("Encode", func() {
 		It("should encode results properly", func() {
-			correct := []byte(`{"hits":null,"offsets":[0,8,8,8],"points":[1,1]}`)
+			correct := []byte(`{"hits":[{"lod":1}],"offsets":[0,8,8,8],"points":[1,1]}`)
 			params := JSON(
 				`{
 					"lod": 1
 				}`)
+			hits := make([]map[string]interface{},1)
+			hits[0] = JSON(
+				`{
+					"lod": 1
+				}`)
+			/*hits[1] = JSON(
+				`{
+					"lod": 1
+				}`)*/
 			err := micro.Parse(params)
-			bytes, err := micro.Encode(nil, []float32{1, 1})
+			bytes, err := micro.Encode(hits, []float32{1, 1})
 			Expect(err).To(BeNil())
 			Expect(bytes).To(Equal(correct))
 		})
