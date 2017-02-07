@@ -146,7 +146,7 @@ func (e *Edge) GetDstXY(hit map[string]interface{}, zoom uint32) (float32, float
 	return e.getXY(hit, e.DstXField, e.DstYField, zoom)
 }
 
-// Encode will encode the tile results todo: DRY out (Micro)
+// Encode will encode the tile results
 func (e *Edge) Encode(hits []map[string]interface{}, points []float32) ([]byte, error) {
 	emptyHits := true
 	// remove any non-included fields from hits

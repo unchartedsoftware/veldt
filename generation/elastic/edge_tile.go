@@ -29,7 +29,6 @@ func NewEdgeTile(host, port string) veldt.TileCtor {
 	}
 }
 
-//TODO: move to edge.go. this isn't elastic-specific afaik.
 func (e *EdgeTile) computeTilingProps(coord *binning.TileCoord) {
 	if e.isTilingComputed {
 		return

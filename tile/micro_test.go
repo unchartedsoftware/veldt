@@ -49,6 +49,7 @@ var _ = Describe("Micro", func() {
 					"lod": 1
 				}`)
 			err := micro.Parse(params)
+			Expect(err).To(BeNil())
 			bytes, err := micro.Encode(nil, []float32{1, 1})
 			Expect(err).To(BeNil())
 			Expect(bytes).To(Equal(correct))
