@@ -16,7 +16,7 @@ type EdgeTile struct {
 	Tile
 	TopHits
 	tile.Edge
-	// Bounds of the single tile
+	// Extremes of the single tile
 	minX             int64
 	maxX             int64
 	minY             int64
@@ -34,38 +34,17 @@ func NewEdgeTile(host, port string) veldt.TileCtor {
 	}
 }
 
-//
-// func (e *EdgeTile) computeTileBounds(tileCoord *binning.TileCoord) {
-// 	pow2 := math.Pow(2, float64(tileCoord.Z)) // TODO: DRY xy.go's GetTileBounds
-// 	tileXSize := (e.Right - e.Left) / pow2
-// 	tileYSize := (e.Top - e.Bottom) / pow2
-// 	e.minX = int64(e.Left + tileXSize*float64(tileCoord.X))
-// 	e.maxX = int64(e.Left + tileXSize*float64(tileCoord.X+1))
-// 	e.minY = int64(e.Bottom + tileYSize*float64(tileCoord.Y))
-// 	e.maxY = int64(e.Bottom + tileYSize*float64(tileCoord.Y+1))
-// }
-
 //TODO: move to edge.go. this isn't elastic-specific afaik.
 func (e *EdgeTile) computeTilingProps(coord *binning.TileCoord) {
 	if e.isTilingComputed {
 		return
 	}
 	// tiling params
-	extents := &binning.Bounds{
-		BottomLeft: &binning.Coord{
-			X: e.Left,
-			Y: e.Bottom,
-		},
-		TopRight: &binning.Coord{
-			X: e.Right,
-			Y: e.Top,
-		},
-	}
-	e.Bounds = binning.GetTileBounds(coord, extents)
-	e.minX = int64(math.Min(e.Bounds.BottomLeft.X, e.Bounds.TopRight.X))
-	e.maxX = int64(math.Max(e.Bounds.BottomLeft.X, e.Bounds.TopRight.X))
-	e.minY = int64(math.Min(e.Bounds.BottomLeft.Y, e.Bounds.TopRight.Y))
-	e.maxY = int64(math.Max(e.Bounds.BottomLeft.Y, e.Bounds.TopRight.Y))
+	e.TileBounds = binning.GetTileBounds(coord, e.WorldBounds)
+	e.minX = int64(math.Min(e.TileBounds.BottomLeft().X, e.TileBounds.TopRight().X))
+	e.maxX = int64(math.Max(e.TileBounds.BottomLeft().X, e.TileBounds.TopRight().X))
+	e.minY = int64(math.Min(e.TileBounds.BottomLeft().Y, e.TileBounds.TopRight().Y))
+	e.maxY = int64(math.Max(e.TileBounds.BottomLeft().Y, e.TileBounds.TopRight().Y))
 	// flag as computed
 	e.isTilingComputed = true
 }
@@ -148,10 +127,9 @@ func (e *EdgeTile) Create(uri string, coord *binning.TileCoord, query veldt.Quer
 
 	// convert to point array
 	points := make([]float32, len(hits)*4)
-	fmt.Printf("<><><> EdgeTile: hits %d\n", len(hits))
 	for i, hit := range hits {
-		//zoom := hit["hierarchyLevel"].(uint32)
-		zoom := uint32(1) //uint32(coord.Z) //coord.Z
+
+		zoom := uint32(0)
 
 		// get hit x/y in tile coords
 		x, y, ok := e.GetSrcXY(hit, zoom)

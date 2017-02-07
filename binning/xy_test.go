@@ -3,11 +3,10 @@ package binning_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/prism/binning"
 )
 
-var _ = Describe("xy", func() {
+var _ = Describe("bounds", func() {
 
 	const (
 		epsilon = 0.000001

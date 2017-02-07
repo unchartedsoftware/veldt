@@ -3,8 +3,10 @@ package tile
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 
 	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/veldt/geometry"
 	jsonUtil "github.com/unchartedsoftware/veldt/util/json"
 )
 
@@ -17,18 +19,14 @@ type Edge struct {
 	SrcYField      string
 	isSrcXIncluded bool
 	isSrcYIncluded bool
-	//dst
+	// dst
 	DstXField      string
 	DstYField      string
 	isDstXIncluded bool
 	isDstYIncluded bool
-	// layer bounds // TODO: this is weird and confusing to have here.
-	Left   float64
-	Right  float64
-	Bottom float64
-	Top    float64
-	// tile bounds
-	Bounds *binning.Bounds
+	// Bounds
+	WorldBounds *geometry.Bounds
+	TileBounds  *geometry.Bounds
 }
 
 // Parse parses the provided JSON object and populates the structs attributes.
@@ -51,32 +49,18 @@ func (e *Edge) Parse(params map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("`dstYField` parameter missing from tile")
 	}
-	// get left, right, bottom, top extrema
-	left, ok := jsonUtil.GetFloat(params, "left")
-	if !ok {
-		return fmt.Errorf("`left` parameter missing from tile")
+	worldBounds, err := geometry.NewBoundsByParse(params)
+	if err != nil {
+		return fmt.Errorf("left, right, bottom or top missing from tile")
 	}
-	right, ok := jsonUtil.GetFloat(params, "right")
-	if !ok {
-		return fmt.Errorf("`right` parameter missing from tile")
-	}
-	bottom, ok := jsonUtil.GetFloat(params, "bottom")
-	if !ok {
-		return fmt.Errorf("`bottom` parameter missing from tile")
-	}
-	top, ok := jsonUtil.GetFloat(params, "top")
-	if !ok {
-		return fmt.Errorf("`top` parameter missing from tile")
-	}
+
 	// set attributes
+	e.WorldBounds = worldBounds
 	e.SrcXField = srcXField
 	e.SrcYField = srcYField
 	e.DstXField = dstXField
 	e.DstYField = dstYField
-	e.Left = left
-	e.Right = right
-	e.Bottom = bottom
-	e.Top = top
+
 	return nil
 }
 
@@ -103,33 +87,27 @@ func (e *Edge) ParseIncludes(includes []string) []string {
 // GetX given an x value, returns the corresponding coord within the range of
 // [0 : 2^zoom * 256) for the tile.
 func (e *Edge) GetX(x float64, zoom uint32) float64 {
-	// extent := binning.MaxTileResolution * math.Pow(2, float64(zoom))
-	// if e.Left > e.Right {
-	// 	rang := e.Left - e.Right
-	// 	return extent - ((x-e.Right)/rang)*extent
-	// }
-	// rang := e.Right - e.Left
-	// return ((x - e.Left) / rang) * extent
-	bounds := e.Bounds
-	if bounds.BottomLeft.X > bounds.TopRight.X {
-		rang := bounds.BottomLeft.X - bounds.TopRight.X
-		return binning.MaxTileResolution - (((x - bounds.TopRight.X) / rang) * binning.MaxTileResolution)
+	extent := binning.MaxTileResolution * math.Pow(2, float64(zoom))
+	bounds := e.TileBounds
+	if bounds.BottomLeft().X > bounds.TopRight().X {
+		rang := bounds.BottomLeft().X - bounds.TopRight().X
+		return extent - (((x - bounds.TopRight().X) / rang) * extent)
 	}
-	rang := bounds.TopRight.X - bounds.BottomLeft.X
-	return ((x - bounds.BottomLeft.X) / rang) * binning.MaxTileResolution
+	rang := bounds.TopRight().X - bounds.BottomLeft().X
+	return ((x - bounds.BottomLeft().X) / rang) * extent
 }
 
 // GetY given an y value, returns the corresponding coord within the range of
 // [0 : 2^zoom * 256) for the tile.
 func (e *Edge) GetY(y float64, zoom uint32) float64 {
-
-	bounds := e.Bounds
-	if bounds.BottomLeft.Y > bounds.TopRight.Y {
-		rang := bounds.BottomLeft.Y - bounds.TopRight.Y
-		return binning.MaxTileResolution - (((y - bounds.TopRight.Y) / rang) * binning.MaxTileResolution)
+	extent := binning.MaxTileResolution * math.Pow(2, float64(zoom))
+	bounds := e.TileBounds
+	if bounds.BottomLeft().Y > bounds.TopRight().Y {
+		rang := bounds.BottomLeft().Y - bounds.TopRight().Y
+		return extent - (((y - bounds.TopRight().Y) / rang) * extent)
 	}
-	rang := bounds.TopRight.Y - bounds.BottomLeft.Y
-	return ((y - bounds.BottomLeft.Y) / rang) * binning.MaxTileResolution
+	rang := bounds.TopRight().Y - bounds.BottomLeft().Y
+	return ((y - bounds.BottomLeft().Y) / rang) * extent
 }
 
 // GetSrcXY given a data hit, returns the corresponding coord within the range of

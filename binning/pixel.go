@@ -2,6 +2,8 @@ package binning
 
 import (
 	"math"
+
+	"github.com/unchartedsoftware/veldt/geometry"
 )
 
 const (
@@ -31,10 +33,8 @@ func NewPixelCoord(x, y uint64) *PixelCoord {
 func LonLatToPixelCoord(lonLat *LonLat) *PixelCoord {
 	// Converting to range from [0:1] where 0,0 is bottom-left
 	normalizedTile := LonLatToFractionalTile(lonLat, 0)
-	normalizedCoord := &Coord{
-		X: normalizedTile.X,
-		Y: normalizedTile.Y,
-	}
+	normalizedCoord := geometry.NewCoord(normalizedTile.X, normalizedTile.Y)
+
 	return &PixelCoord{
 		X: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.X*MaxPixels))),
 		Y: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.Y*MaxPixels))),
@@ -42,13 +42,11 @@ func LonLatToPixelCoord(lonLat *LonLat) *PixelCoord {
 }
 
 // CoordToPixelCoord translates a coordinate to a pixel coordinate.
-func CoordToPixelCoord(coord *Coord, bounds *Bounds) *PixelCoord {
+func CoordToPixelCoord(coord *geometry.Coord, bounds *geometry.Bounds) *PixelCoord {
 	// Converting to range from [0:1] where 0,0 is bottom-left
 	normalizedTile := CoordToFractionalTile(coord, 0, bounds)
-	normalizedCoord := &Coord{
-		X: normalizedTile.X,
-		Y: normalizedTile.Y,
-	}
+	normalizedCoord := geometry.NewCoord(normalizedTile.X, normalizedTile.Y)
+
 	return &PixelCoord{
 		X: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.X*MaxPixels))),
 		Y: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.Y*MaxPixels))),

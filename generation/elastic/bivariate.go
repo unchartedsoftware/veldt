@@ -7,6 +7,7 @@ import (
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/veldt/geometry"
 	"github.com/unchartedsoftware/veldt/tile"
 )
 
@@ -30,21 +31,12 @@ func (b *Bivariate) computeTilingProps(coord *binning.TileCoord) {
 		return
 	}
 	// tiling params
-	extents := &binning.Bounds{
-		BottomLeft: &binning.Coord{
-			X: b.Left,
-			Y: b.Bottom,
-		},
-		TopRight: &binning.Coord{
-			X: b.Right,
-			Y: b.Top,
-		},
-	}
+	extents := geometry.NewBounds(b.Left, b.Right, b.Bottom, b.Top)
 	b.Bounds = binning.GetTileBounds(coord, extents)
-	b.minX = int64(math.Min(b.Bounds.BottomLeft.X, b.Bounds.TopRight.X))
-	b.maxX = int64(math.Max(b.Bounds.BottomLeft.X, b.Bounds.TopRight.X))
-	b.minY = int64(math.Min(b.Bounds.BottomLeft.Y, b.Bounds.TopRight.Y))
-	b.maxY = int64(math.Max(b.Bounds.BottomLeft.Y, b.Bounds.TopRight.Y))
+	b.minX = int64(math.Min(b.Bounds.BottomLeft().X, b.Bounds.TopRight().X))
+	b.maxX = int64(math.Max(b.Bounds.BottomLeft().X, b.Bounds.TopRight().X))
+	b.minY = int64(math.Min(b.Bounds.BottomLeft().Y, b.Bounds.TopRight().Y))
+	b.maxY = int64(math.Max(b.Bounds.BottomLeft().Y, b.Bounds.TopRight().Y))
 	// flag as computed
 	b.isTilingComputed = true
 }
@@ -56,8 +48,8 @@ func (b *Bivariate) computeBinningProps(coord *binning.TileCoord) {
 	// ensure we have tiling props
 	b.computeTilingProps(coord)
 	// binning params
-	xRange := math.Abs(b.Bounds.TopRight.X - b.Bounds.BottomLeft.X)
-	yRange := math.Abs(b.Bounds.TopRight.Y - b.Bounds.BottomLeft.Y)
+	xRange := math.Abs(b.Bounds.TopRight().X - b.Bounds.BottomLeft().X)
+	yRange := math.Abs(b.Bounds.TopRight().Y - b.Bounds.BottomLeft().Y)
 	b.intervalX = int64(math.Max(1, xRange/float64(b.Resolution)))
 	b.intervalY = int64(math.Max(1, yRange/float64(b.Resolution)))
 	b.BinSizeX = xRange / float64(b.Resolution)
