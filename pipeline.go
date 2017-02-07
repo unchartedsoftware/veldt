@@ -242,7 +242,7 @@ func (p *Pipeline) getTilePromise(hash string, req *TileRequest) error {
 
 func (p *Pipeline) generateAndStoreTile(hash string, req *TileRequest) error {
 	// queue the tile to be generated
-	res, err := p.queue.queueTile(req)
+	res, err := p.queue.queueRequest(req)
 	if err != nil {
 		return err
 	}
@@ -339,7 +339,7 @@ func (p *Pipeline) getMetaPromise(hash string, req *MetaRequest) error {
 
 func (p *Pipeline) generateAndStoreMeta(hash string, req *MetaRequest) error {
 	// queue the tile to be generated
-	res, err := p.queue.queueMeta(req)
+	res, err := p.queue.queueRequest(req)
 	if err != nil {
 		return err
 	}

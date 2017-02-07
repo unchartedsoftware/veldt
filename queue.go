@@ -53,7 +53,7 @@ func (q *queue) decrementPending() {
 	runtime.Gosched()
 }
 
-func (q *queue) queueTile(req *TileRequest) ([]byte, error) {
+func (q *queue) queueRequest(req Request) ([]byte, error) {
 	// increment the q.pending query count
 	err := q.incrementPending()
 	if err != nil {
@@ -62,33 +62,14 @@ func (q *queue) queueTile(req *TileRequest) ([]byte, error) {
 	// wait until equalizer is ready
 	<-q.ready
 	// dispatch the query
-	tile, err := req.Tile.Create(req.URI, req.Coord, req.Query)
+	res, err := req.Create()
 	// decrement the q.pending count
 	q.decrementPending()
 	go func() {
 		// inform queue that it is ready to generate another tile
 		q.ready <- true
 	}()
-	return tile, err
-}
-
-func (q *queue) queueMeta(req *MetaRequest) ([]byte, error) {
-	// increment the q.pending query count
-	err := q.incrementPending()
-	if err != nil {
-		return nil, err
-	}
-	// wait until equalizer is ready
-	<-q.ready
-	// dispatch the query
-	tile, err := req.Meta.Create(req.URI)
-	// decrement the q.pending count
-	q.decrementPending()
-	go func() {
-		// inform queue that it is ready to generate another tile
-		q.ready <- true
-	}()
-	return tile, err
+	return res, err
 }
 
 func (q *queue) setMaxConcurrent(max int) {
