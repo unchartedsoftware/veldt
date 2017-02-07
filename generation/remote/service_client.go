@@ -158,6 +158,12 @@ func (c *ServiceClient) getClientRequestsData() map[string]interface{} {
 	tileData["clusterCount"] = initialRequest.clusterCount
 	tileData["wordCount"] = initialRequest.wordCount
 
+	// Add time range parameters.
+	time := make(map[string]int64)
+	time["from"] = initialRequest.timeFrom
+	time["to"] = initialRequest.timeTo
+	tileData["time"] = time
+
 	// Get the tile coordinates.
 	coordinates := make([]interface{}, c.requestCount)
 	for i, t := range c.requests {

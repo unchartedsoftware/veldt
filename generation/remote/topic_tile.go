@@ -17,6 +17,8 @@ type TopicTile struct {
 	exclusiveness  int
 	clusterCount   int
 	wordCount      int
+	timeFrom int64
+	timeTo int64
 	x              uint32
 	y              uint32
 	z              uint32
@@ -64,12 +66,24 @@ func (t *TopicTile) Parse(params map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("`tileCount` parameter missing from topic tile")
 	}
+	// get time from
+	timeFrom, ok := jsonUtil.GetNumber(params, "timeFrom")
+	if !ok {
+		return fmt.Errorf("`timeFrom` parameter missing from topic tile")
+	}
+	// get time time
+	timeTo, ok := jsonUtil.GetNumber(params, "timeTo")
+	if !ok {
+		return fmt.Errorf("`timeTo` parameter missing from topic tile")
+	}
 
 	t.inclusionTerms = include
 	t.exclusionTerms = exclude
 	t.exclusiveness = int(exclusiveness)
 	t.wordCount = int(wordCount)
 	t.clusterCount = int(clusterCount)
+	t.timeFrom = int64(timeFrom)
+	t.timeTo = int64(timeTo)
 	t.requestId = requestId
 	t.tileCount = int(tileCount)
 
