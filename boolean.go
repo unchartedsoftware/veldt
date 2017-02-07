@@ -2,6 +2,8 @@ package veldt
 
 import (
 	"fmt"
+
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 const (
@@ -35,13 +37,12 @@ func (b *BinaryExpression) Parse(params map[string]interface{}) error {
 	}
 	b.Left = left
 	// op
-	o, ok := params["op"]
+	op, ok := json.GetString(params, "op")
 	if !ok {
 		return fmt.Errorf("`op` parameter missing from query")
 	}
-	op, ok := o.(string)
-	if !ok {
-		return fmt.Errorf("`op` is not of type string")
+	if op != And && op != Or {
+		return fmt.Errorf("`op` parameter value is not recognized")
 	}
 	b.Op = op
 	// right
@@ -76,13 +77,12 @@ func (u *UnaryExpression) Parse(params map[string]interface{}) error {
 	}
 	u.Query = query
 	// op
-	o, ok := params["op"]
+	op, ok := json.GetString(params, "op")
 	if !ok {
 		return fmt.Errorf("`op` parameter missing from query")
 	}
-	op, ok := o.(string)
-	if !ok {
-		return fmt.Errorf("`op` is not of type string")
+	if op != Not {
+		return fmt.Errorf("`op` parameter value is not recognized")
 	}
 	u.Op = op
 	return nil

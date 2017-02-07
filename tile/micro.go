@@ -20,7 +20,7 @@ type Micro struct {
 // Parse parses the provided JSON object and populates the structs attributes.
 func (m *Micro) Parse(params map[string]interface{}) error {
 	// parse LOD
-	m.LOD = int(jsonutil.GetIntDefault(params, 0, "lod"))
+	m.LOD = jsonutil.GetIntDefault(params, 0, "lod")
 	return nil
 }
 

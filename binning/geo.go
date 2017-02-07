@@ -25,7 +25,7 @@ type LonLat struct {
 func NewLonLat(lon, lat float64) *LonLat {
 	return &LonLat{
 		Lon: math.Min(180, math.Max(-180, lon)),
-		Lat: math.Min(85.0, math.Max(-85.0, lat)),
+		Lat: math.Min(85.05112878, math.Max(-85.05112878, lat)),
 	}
 }
 

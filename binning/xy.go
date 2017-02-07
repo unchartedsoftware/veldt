@@ -58,13 +58,3 @@ func GetTileBounds(tile *TileCoord, bounds *Bounds) *Bounds {
 		},
 	}
 }
-
-// GetTileExtrema returns the data coordinate bounds of the tile coordinate.
-func GetTileExtrema(coord uint32, level uint32, extrema *Extrema) *Extrema {
-	pow2 := math.Pow(2, float64(level))
-	interval := (extrema.Max - extrema.Min) / pow2
-	return &Extrema{
-		Min: extrema.Min + interval*float64(coord),
-		Max: extrema.Min + interval*float64(coord+1),
-	}
-}
