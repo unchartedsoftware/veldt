@@ -5,30 +5,44 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/unchartedsoftware/veldt/util/test"
 )
 
 var _ = Describe("Parse", func() {
-	eq := &query.Equals{}
-	eq2 := &query.Equals{}
 
-	// create params
-	params := make(map[string]interface{})
-	params["value"] = 35
-	params["field"] = "age"
+	var equals *query.Equals
 
-	params_fail := make(map[string]interface{})
-
-	It("should set Field and Value", func() {
-		ok := eq.Parse(params)
-		Expect(ok).To(BeNil())
-		Expect(eq.Field).To(Equal(params["field"]))
-		Expect(eq.Value).To(Equal(params["value"]))
+	BeforeEach(func() {
+		equals = &query.Equals{}
 	})
 
-	It("should fail on wrong input", func() {
-		ok := eq2.Parse(params_fail)
-		Expect(ok).NotTo(Equal(nil))
-		Expect(eq2.Field).To(Equal(""))
-		Expect(eq2.Value).To(BeNil())
+	Describe("Parse", func() {
+		It("should parse properties from the params argument", func() {
+			params := JSON(
+				`{
+					"field": "field",
+					"value": "value"
+				}`)
+			err := equals.Parse(params)
+			Expect(err).To(BeNil())
+			Expect(equals.Field).To(Equal("field"))
+			Expect(equals.Value).To(Equal("value"))
+		})
+
+		It("should return an error if `field` property is not specified", func() {
+			params := JSON(`{}`)
+			err := equals.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should return an error if `value` property is not specified", func() {
+			params := JSON(
+				`{
+					"field": "field"
+				}`)
+			err := equals.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
 	})
+
 })
