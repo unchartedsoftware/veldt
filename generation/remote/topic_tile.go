@@ -17,8 +17,8 @@ type TopicTile struct {
 	exclusiveness  int
 	clusterCount   int
 	wordCount      int
-	timeFrom int64
-	timeTo int64
+	timeFrom       int64
+	timeTo         int64
 	x              uint32
 	y              uint32
 	z              uint32
