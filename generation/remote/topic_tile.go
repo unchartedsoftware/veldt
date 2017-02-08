@@ -77,8 +77,8 @@ func (t *TopicTile) Parse(params map[string]interface{}) error {
 
 	// Use hash of all parameters to identify request.
 	requestId := fmt.Sprintf("%v::%v::%v::%v::%v::%v::%v",
-		 wordCount, clusterCount, timeFrom, timeTo, exclusiveness,
-		  strings.Join(include, ","), strings.Join(exclude, ","))
+		wordCount, clusterCount, timeFrom, timeTo, exclusiveness,
+		strings.Join(include, ","), strings.Join(exclude, ","))
 
 	t.requestId = requestId
 
