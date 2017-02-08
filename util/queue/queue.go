@@ -1,4 +1,4 @@
-package veldt
+package queue
 
 import (
 	"fmt"
@@ -6,7 +6,13 @@ import (
 	"sync"
 )
 
-type queue struct {
+// Request represents a basic request interface.
+type Request interface {
+	Create() ([]byte, error)
+}
+
+// Queue represents a queue for orchestating concurrent requests.
+type Queue struct {
 	ready      chan bool
 	pending    int
 	mu         *sync.Mutex
@@ -14,8 +20,9 @@ type queue struct {
 	maxLength  int
 }
 
-func newQueue() *queue {
-	q := &queue{
+// NewQueue instantiates and returns a new queue struct.
+func NewQueue() *Queue {
+	q := &Queue{
 		ready:      make(chan bool),
 		mu:         &sync.Mutex{},
 		maxPending: 32,
@@ -33,27 +40,8 @@ func newQueue() *queue {
 	return q
 }
 
-func (q *queue) incrementPending() error {
-	q.mu.Lock()
-	defer runtime.Gosched()
-	defer q.mu.Unlock()
-	if q.pending-q.maxPending > q.maxLength {
-		return fmt.Errorf("queue has reached maximum length of %d and is no longer accepting requests",
-			q.maxLength)
-	}
-	// increment count
-	q.pending++
-	return nil
-}
-
-func (q *queue) decrementPending() {
-	q.mu.Lock()
-	q.pending--
-	q.mu.Unlock()
-	runtime.Gosched()
-}
-
-func (q *queue) queueRequest(req Request) ([]byte, error) {
+// Send will put the request on the queue and send it when ready.
+func (q *Queue) Send(req Request) ([]byte, error) {
 	// increment the q.pending query count
 	err := q.incrementPending()
 	if err != nil {
@@ -66,13 +54,14 @@ func (q *queue) queueRequest(req Request) ([]byte, error) {
 	// decrement the q.pending count
 	q.decrementPending()
 	go func() {
-		// inform queue that it is ready to generate another tile
+		// inform Queue that it is ready to generate another tile
 		q.ready <- true
 	}()
 	return res, err
 }
 
-func (q *queue) setMaxConcurrent(max int) {
+// SetMaxConcurrent sets the maximum concurrent pending requests for the queue.
+func (q *Queue) SetMaxConcurrent(max int) {
 	q.mu.Lock()
 	diff := max - q.maxPending
 	q.maxPending = max
@@ -97,9 +86,30 @@ func (q *queue) setMaxConcurrent(max int) {
 	runtime.Gosched()
 }
 
-func (q *queue) setQueueLength(length int) {
+// SetLength sets the maximum length of the queue.
+func (q *Queue) SetLength(length int) {
 	q.mu.Lock()
 	q.maxLength = length
+	q.mu.Unlock()
+	runtime.Gosched()
+}
+
+func (q *Queue) incrementPending() error {
+	q.mu.Lock()
+	defer runtime.Gosched()
+	defer q.mu.Unlock()
+	if q.pending-q.maxPending > q.maxLength {
+		return fmt.Errorf("Queue has reached maximum length of %d and is no longer accepting requests",
+			q.maxLength)
+	}
+	// increment count
+	q.pending++
+	return nil
+}
+
+func (q *Queue) decrementPending() {
+	q.mu.Lock()
+	q.pending--
 	q.mu.Unlock()
 	runtime.Gosched()
 }

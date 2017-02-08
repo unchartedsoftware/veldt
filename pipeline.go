@@ -10,11 +10,12 @@ import (
 	"io/ioutil"
 
 	"github.com/unchartedsoftware/veldt/util/promise"
+	"github.com/unchartedsoftware/veldt/util/queue"
 )
 
 // Pipeline represents a cohesive tile and meta generation unit.
 type Pipeline struct {
-	queue       *queue
+	queue       *queue.Queue
 	queries     map[string]QueryCtor
 	binary      QueryCtor
 	unary       QueryCtor
@@ -28,7 +29,7 @@ type Pipeline struct {
 // NewPipeline instantiates and returns a new pipeline struct.
 func NewPipeline() *Pipeline {
 	return &Pipeline{
-		queue:       newQueue(),
+		queue:       queue.NewQueue(),
 		queries:     make(map[string]QueryCtor),
 		tiles:       make(map[string]TileCtor),
 		metas:       make(map[string]MetaCtor),
@@ -39,12 +40,12 @@ func NewPipeline() *Pipeline {
 
 // SetMaxConcurrent sets the maximum concurrent tile requests allowed.
 func (p *Pipeline) SetMaxConcurrent(max int) {
-	p.queue.setMaxConcurrent(max)
+	p.queue.SetMaxConcurrent(max)
 }
 
 // SetQueueLength sets the queue length for tiles to hold in the queue.
 func (p *Pipeline) SetQueueLength(length int) {
-	p.queue.setQueueLength(length)
+	p.queue.SetLength(length)
 }
 
 // Query registers a query type under the provided ID string.
@@ -242,7 +243,7 @@ func (p *Pipeline) getTilePromise(hash string, req *TileRequest) error {
 
 func (p *Pipeline) generateAndStoreTile(hash string, req *TileRequest) error {
 	// queue the tile to be generated
-	res, err := p.queue.queueRequest(req)
+	res, err := p.queue.Send(req)
 	if err != nil {
 		return err
 	}
@@ -339,7 +340,7 @@ func (p *Pipeline) getMetaPromise(hash string, req *MetaRequest) error {
 
 func (p *Pipeline) generateAndStoreMeta(hash string, req *MetaRequest) error {
 	// queue the tile to be generated
-	res, err := p.queue.queueRequest(req)
+	res, err := p.queue.Send(req)
 	if err != nil {
 		return err
 	}

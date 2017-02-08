@@ -9,12 +9,6 @@ import (
 	"github.com/unchartedsoftware/veldt/binning"
 )
 
-// Request represents a basic request interface.
-type Request interface {
-	Create() ([]byte, error)
-	GetHash() string
-}
-
 // TileRequest represents a tile data generation request.
 type TileRequest struct {
 	URI   string
