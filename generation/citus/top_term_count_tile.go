@@ -38,7 +38,7 @@ func (t *TopTermCountTile) Parse(params map[string]interface{}) error {
 // parameters.
 func (t *TopTermCountTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// Initialize the tile processing.
-	client, citusQuery, err := t.InitializeTile(uri, query)
+	client, citusQuery, _ := t.InitializeTile(uri, query)
 
 	// add tiling query
 	citusQuery = t.Bivariate.AddQuery(coord, citusQuery)

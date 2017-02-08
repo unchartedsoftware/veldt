@@ -44,21 +44,21 @@ func (f *Frequency) AddAggs(query *Query) *Query {
 // AddQuery adds the tiling query to the provided query object.
 func (f *Frequency) AddQuery(query *Query) *Query {
 	//TODO: Need to cast the frequency fields to a numeric value most likely.
-	parameter := ""
+
 	if f.GTE != nil {
-		parameter = query.AddParameter(f.GTE)
+		parameter := query.AddParameter(f.GTE)
 		query.Where(fmt.Sprintf("%s >= %s", f.FrequencyField, parameter))
 	}
 	if f.GT != nil {
-		parameter = query.AddParameter(f.GT)
+		parameter := query.AddParameter(f.GT)
 		query.Where(fmt.Sprintf("%s > %s", f.FrequencyField, parameter))
 	}
 	if f.LTE != nil {
-		parameter = query.AddParameter(f.LTE)
+		parameter := query.AddParameter(f.LTE)
 		query.Where(fmt.Sprintf("%s <= %s", f.FrequencyField, parameter))
 	}
 	if f.LT != nil {
-		parameter = query.AddParameter(f.LT)
+		parameter := query.AddParameter(f.LT)
 		query.Where(fmt.Sprintf("%s < %s", f.FrequencyField, parameter))
 	}
 	return query

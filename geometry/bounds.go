@@ -17,6 +17,8 @@ type Bounds struct {
 	maxX               float64
 	minY               float64
 	maxY               float64
+	rangeX             float64
+	rangeY             float64
 	isMinMaxCalculated bool
 }
 
@@ -118,6 +120,8 @@ func (b *Bounds) calculateMinMax() {
 	b.maxX = math.Max(b.left, b.right)
 	b.minY = math.Min(b.bottom, b.top)
 	b.maxY = math.Max(b.bottom, b.top)
+	b.rangeX = math.Abs(b.right - b.left)
+	b.rangeY = math.Abs(b.top - b.bottom)
 	b.isMinMaxCalculated = true
 }
 
@@ -151,4 +155,20 @@ func (b Bounds) MaxY() float64 {
 		b.calculateMinMax()
 	}
 	return b.maxY
+}
+
+// RangeX returns the absolute distance between left and right
+func (b Bounds) RangeX() float64 {
+	if !b.isMinMaxCalculated {
+		b.calculateMinMax()
+	}
+	return b.rangeX
+}
+
+// RangeY returns the absolute distance between bottom and top
+func (b Bounds) RangeY() float64 {
+	if !b.isMinMaxCalculated {
+		b.calculateMinMax()
+	}
+	return b.rangeY
 }

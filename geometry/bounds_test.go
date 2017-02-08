@@ -91,6 +91,10 @@ var _ = Describe("geometry.Bounds", func() {
 			Expect(b.MaxX()).To(Equal(1.0))
 			Expect(b.MinY()).To(Equal(-1.0))
 			Expect(b.MaxY()).To(Equal(1.0))
+
+			// Ranges
+			Expect(b.RangeX()).To(Equal(2.0))
+			Expect(b.RangeY()).To(Equal(2.0))
 		})
 	})
 
