@@ -18,30 +18,16 @@ type Bivariate struct {
 // AddQuery adds the tiling query to the provided query object.
 func (b *Bivariate) AddQuery(coord *binning.TileCoord, query *Query) *Query {
 
-	extents := &binning.Bounds{
-		BottomLeft: &binning.Coord{
-			X: b.Left,
-			Y: b.Bottom,
-		},
-		TopRight: &binning.Coord{
-			X: b.Right,
-			Y: b.Top,
-		},
-	}
-	bounds := binning.GetTileBounds(coord, extents)
-	minX := int64(math.Min(bounds.BottomLeft.X, bounds.TopRight.X))
-	maxX := int64(math.Max(bounds.BottomLeft.X, bounds.TopRight.X))
-	minY := int64(math.Min(bounds.BottomLeft.Y, bounds.TopRight.Y))
-	maxY := int64(math.Max(bounds.BottomLeft.Y, bounds.TopRight.Y))
-	b.Bounds = bounds
+	bounds := binning.GetTileBounds(coord, b.WorldBounds)
+	b.TileBounds = bounds
 
-	minXArg := query.AddParameter(minX)
-	maxXArg := query.AddParameter(maxX)
+	minXArg := query.AddParameter(int64(b.TileBounds.MinX()))
+	maxXArg := query.AddParameter(int64(b.TileBounds.MaxX()))
 	rangeQueryX := fmt.Sprintf("%s >= %s and %s < %s", b.XField, minXArg, b.XField, maxXArg)
 	query.Where(rangeQueryX)
 
-	minYArg := query.AddParameter(minY)
-	maxYArg := query.AddParameter(maxY)
+	minYArg := query.AddParameter(int64(b.TileBounds.MinY()))
+	maxYArg := query.AddParameter(int64(b.TileBounds.MaxY()))
 	rangeQueryY := fmt.Sprintf("%s >= %s and %s < %s", b.YField, minYArg, b.YField, maxYArg)
 	query.Where(rangeQueryY)
 
@@ -51,26 +37,14 @@ func (b *Bivariate) AddQuery(coord *binning.TileCoord, query *Query) *Query {
 // AddAggs adds the tiling aggregations to the provided query object.
 func (b *Bivariate) AddAggs(coord *binning.TileCoord, query *Query) *Query {
 
-	extents := &binning.Bounds{
-		BottomLeft: &binning.Coord{
-			X: b.Left,
-			Y: b.Bottom,
-		},
-		TopRight: &binning.Coord{
-			X: b.Right,
-			Y: b.Top,
-		},
-	}
-	bounds := binning.GetTileBounds(coord, extents)
-	minX := int64(math.Min(bounds.BottomLeft.X, bounds.TopRight.X))
-	minY := int64(math.Min(bounds.BottomLeft.Y, bounds.TopRight.Y))
-	xRange := math.Abs(bounds.TopRight.X - bounds.BottomLeft.X)
-	yRange := math.Abs(bounds.TopRight.Y - bounds.BottomLeft.Y)
-	intervalX := int64(math.Max(1, xRange/float64(b.Resolution)))
-	intervalY := int64(math.Max(1, yRange/float64(b.Resolution)))
-	b.Bounds = bounds
-	b.BinSizeX = xRange / float64(b.Resolution)
-	b.BinSizeY = yRange / float64(b.Resolution)
+	bounds := binning.GetTileBounds(coord, b.WorldBounds)
+	minX := int64(bounds.MinX())
+	minY := int64(bounds.MinY())
+	intervalX := int64(math.Max(1, bounds.RangeX()/float64(b.Resolution)))
+	intervalY := int64(math.Max(1, bounds.RangeY()/float64(b.Resolution)))
+	b.TileBounds = bounds
+	b.BinSizeX = bounds.RangeX() / float64(b.Resolution)
+	b.BinSizeY = bounds.RangeY() / float64(b.Resolution)
 
 	minXArg := query.AddParameter(minX)
 	intervalXArg := query.AddParameter(intervalX)

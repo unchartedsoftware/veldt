@@ -20,21 +20,21 @@ func NewRange() (veldt.Query, error) {
 // Get adds the parameters to the query and returns the string representation.
 func (q *Range) Get(query *Query) (string, error) {
 	clause := ""
-	valueParam := ""
+
 	if q.GTE != nil {
-		valueParam = query.AddParameter(q.GTE)
+		valueParam := query.AddParameter(q.GTE)
 		clause = clause + fmt.Sprintf(" AND %s >= %v", q.Field, valueParam)
 	}
 	if q.GT != nil {
-		valueParam = query.AddParameter(q.GT)
+		valueParam := query.AddParameter(q.GT)
 		clause = clause + fmt.Sprintf(" AND %s > %v", q.Field, valueParam)
 	}
 	if q.LTE != nil {
-		valueParam = query.AddParameter(q.LTE)
+		valueParam := query.AddParameter(q.LTE)
 		clause = clause + fmt.Sprintf(" AND %s <= %v", q.Field, valueParam)
 	}
 	if q.LT != nil {
-		valueParam = query.AddParameter(q.LT)
+		valueParam := query.AddParameter(q.LT)
 		clause = clause + fmt.Sprintf(" AND %s < %v", q.Field, valueParam)
 	}
 	//Remove leading " AND "

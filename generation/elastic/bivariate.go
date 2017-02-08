@@ -14,11 +14,8 @@ import (
 type Bivariate struct {
 	tile.Bivariate
 	// tiling
-	tiling bool
-	minX   int64
-	maxX   int64
-	minY   int64
-	maxY   int64
+	isTilingComputed bool
+
 	// binning
 	binning   bool
 	intervalX int64
@@ -26,27 +23,14 @@ type Bivariate struct {
 }
 
 func (b *Bivariate) computeTilingProps(coord *binning.TileCoord) {
-	if b.tiling {
+	if b.isTilingComputed {
 		return
 	}
 	// tiling params
-	extents := &binning.Bounds{
-		BottomLeft: &binning.Coord{
-			X: b.Left,
-			Y: b.Bottom,
-		},
-		TopRight: &binning.Coord{
-			X: b.Right,
-			Y: b.Top,
-		},
-	}
-	b.Bounds = binning.GetTileBounds(coord, extents)
-	b.minX = int64(math.Min(b.Bounds.BottomLeft.X, b.Bounds.TopRight.X))
-	b.maxX = int64(math.Max(b.Bounds.BottomLeft.X, b.Bounds.TopRight.X))
-	b.minY = int64(math.Min(b.Bounds.BottomLeft.Y, b.Bounds.TopRight.Y))
-	b.maxY = int64(math.Max(b.Bounds.BottomLeft.Y, b.Bounds.TopRight.Y))
+	b.TileBounds = binning.GetTileBounds(coord, b.WorldBounds)
+
 	// flag as computed
-	b.tiling = true
+	b.isTilingComputed = true
 }
 
 func (b *Bivariate) computeBinningProps(coord *binning.TileCoord) {
@@ -56,8 +40,8 @@ func (b *Bivariate) computeBinningProps(coord *binning.TileCoord) {
 	// ensure we have tiling props
 	b.computeTilingProps(coord)
 	// binning params
-	xRange := math.Abs(b.Bounds.TopRight.X - b.Bounds.BottomLeft.X)
-	yRange := math.Abs(b.Bounds.TopRight.Y - b.Bounds.BottomLeft.Y)
+	xRange := math.Abs(b.TileBounds.TopRight().X - b.TileBounds.BottomLeft().X)
+	yRange := math.Abs(b.TileBounds.TopRight().Y - b.TileBounds.BottomLeft().Y)
 	b.intervalX = int64(math.Max(1, xRange/float64(b.Resolution)))
 	b.intervalY = int64(math.Max(1, yRange/float64(b.Resolution)))
 	b.BinSizeX = xRange / float64(b.Resolution)
@@ -73,11 +57,11 @@ func (b *Bivariate) GetQuery(coord *binning.TileCoord) elastic.Query {
 	// create the range queries
 	query := elastic.NewBoolQuery()
 	query.Must(elastic.NewRangeQuery(b.XField).
-		Gte(b.minX).
-		Lt(b.maxX))
+		Gte(int64(b.TileBounds.MinX())).
+		Lt(int64(b.TileBounds.MaxX())))
 	query.Must(elastic.NewRangeQuery(b.YField).
-		Gte(b.minY).
-		Lt(b.maxY))
+		Gte(int64(b.TileBounds.MinY())).
+		Lt(int64(b.TileBounds.MaxY())))
 	return query
 }
 
@@ -88,12 +72,12 @@ func (b *Bivariate) GetAggs(coord *binning.TileCoord) map[string]elastic.Aggrega
 	// create the binning aggregations
 	x := elastic.NewHistogramAggregation().
 		Field(b.XField).
-		Offset(b.minX).
+		Offset(int64(b.TileBounds.MinX())).
 		Interval(b.intervalX).
 		MinDocCount(1)
 	y := elastic.NewHistogramAggregation().
 		Field(b.YField).
-		Offset(b.minY).
+		Offset(int64(b.TileBounds.MinY())).
 		Interval(b.intervalY).
 		MinDocCount(1)
 	x.SubAggregation("y", y)

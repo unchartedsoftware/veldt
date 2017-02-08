@@ -31,10 +31,10 @@ var _ = Describe("Bivariate", func() {
 			Expect(err).To(BeNil())
 			Expect(bivariate.XField).To(Equal("x"))
 			Expect(bivariate.YField).To(Equal("y"))
-			Expect(bivariate.Left).To(Equal(-1.0))
-			Expect(bivariate.Right).To(Equal(1.0))
-			Expect(bivariate.Bottom).To(Equal(-1.0))
-			Expect(bivariate.Top).To(Equal(1.0))
+			Expect(bivariate.WorldBounds.Left()).To(Equal(-1.0))
+			Expect(bivariate.WorldBounds.Right()).To(Equal(1.0))
+			Expect(bivariate.WorldBounds.Bottom()).To(Equal(-1.0))
+			Expect(bivariate.WorldBounds.Top()).To(Equal(1.0))
 		})
 
 		It("should return an error if `xField` property is not specified", func() {

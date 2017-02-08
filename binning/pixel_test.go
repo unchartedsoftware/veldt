@@ -5,6 +5,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/veldt/geometry"
 )
 
 var _ = Describe("pixel", func() {
@@ -13,9 +14,9 @@ var _ = Describe("pixel", func() {
 		bottomLeftLonLat = binning.NewLonLat(-180, -85.05112878)
 		centerLonLat     = binning.NewLonLat(0, 0)
 		topRightLonLat   = binning.NewLonLat(180, 85.05112878)
-		bottomLeftCoord  = binning.NewCoord(-1, -1)
-		centerCoord      = binning.NewCoord(0, 0)
-		topRightCoord    = binning.NewCoord(1, 1)
+		bottomLeftCoord  = geometry.NewCoord(-1, -1)
+		centerCoord      = geometry.NewCoord(0, 0)
+		topRightCoord    = geometry.NewCoord(1, 1)
 		centerPixelCoord = binning.NewPixelCoord(
 			uint64(binning.MaxPixels/2),
 			uint64(binning.MaxPixels/2))
@@ -27,20 +28,22 @@ var _ = Describe("pixel", func() {
 	Describe("CoordToPixelCoord", func() {
 		It("should return a fractional tile coordinate", func() {
 
-			extent := binning.Bounds{
-				BottomLeft: binning.NewCoord(-1, -1),
-				TopRight:   binning.NewCoord(1, 1),
-			}
+			extent := geometry.NewBoundsFromRectangle(
+				&geometry.Rectangle{
+					BottomLeft: geometry.NewCoord(-1, -1),
+					TopRight:   geometry.NewCoord(1, 1),
+				},
+			)
 
-			pixel := binning.CoordToPixelCoord(bottomLeftCoord, &extent)
+			pixel := binning.CoordToPixelCoord(bottomLeftCoord, extent)
 			Expect(pixel.X).To(Equal(uint64(0)))
 			Expect(pixel.Y).To(Equal(uint64(0)))
 
-			pixel = binning.CoordToPixelCoord(centerCoord, &extent)
+			pixel = binning.CoordToPixelCoord(centerCoord, extent)
 			Expect(pixel.X).To(Equal(centerPixelCoord.X))
 			Expect(pixel.Y).To(Equal(centerPixelCoord.Y))
 
-			pixel = binning.CoordToPixelCoord(topRightCoord, &extent)
+			pixel = binning.CoordToPixelCoord(topRightCoord, extent)
 			Expect(pixel.X).To(Equal(topRightPixel.X))
 			Expect(pixel.Y).To(Equal(topRightPixel.Y))
 		})
