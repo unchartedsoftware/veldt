@@ -37,30 +37,12 @@ var _ = Describe("Range", func() {
 			Expect(err).NotTo(BeNil())
 		})
 
-		It("should return an error if both `gte` and `gt` are not specified", func() {
-			params := JSON(
-				`{
-					"field": "field"
-				}`)
-			err := rang.Parse(params)
-			Expect(err).NotTo(BeNil())
-		})
-
 		It("should return an error if both `gte` and `gt` are specified", func() {
 			params := JSON(
 				`{
 					"field": "field",
 					"gte": 0.0,
 					"gt": 0.0
-				}`)
-			err := rang.Parse(params)
-			Expect(err).NotTo(BeNil())
-		})
-		It("should return an error if both `lte` and `lt` are not specified", func() {
-			params := JSON(
-				`{
-					"field": "field",
-					"gte": 0.0
 				}`)
 			err := rang.Parse(params)
 			Expect(err).NotTo(BeNil())
@@ -73,6 +55,15 @@ var _ = Describe("Range", func() {
 					"gte": 0.0,
 					"lte": 256.0,
 					"lt": 256.0
+				}`)
+			err := rang.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should return an error if `gte`, `gt`, `lte`, and `lt` are not specified", func() {
+			params := JSON(
+				`{
+					"field": "field"
 				}`)
 			err := rang.Parse(params)
 			Expect(err).NotTo(BeNil())
