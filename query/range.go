@@ -24,19 +24,16 @@ func (q *Range) Parse(params map[string]interface{}) error {
 	}
 	gte, gteOk := json.Get(params, "gte")
 	gt, gtOk := json.Get(params, "gt")
-	if !gteOk && !gtOk {
-		return fmt.Errorf("range has no valid lower bound")
-	}
+	lte, lteOk := json.Get(params, "lte")
+	lt, ltOk := json.Get(params, "lt")
 	if gteOk && gtOk {
 		return fmt.Errorf("both `gte` and `gt` have been provided, only one upper bound may be provided")
 	}
-	lte, lteOk := json.Get(params, "lte")
-	lt, ltOk := json.Get(params, "lt")
-	if !lteOk && !ltOk {
-		return fmt.Errorf("range has no valid upper bound")
-	}
 	if lteOk && ltOk {
 		return fmt.Errorf("both `lte` and `lt` have been provided, only one lower bound may be provided")
+	}
+	if !gteOk && !gtOk && !lteOk && !ltOk {
+		return fmt.Errorf("range has no valid range parameters")
 	}
 	q.Field = field
 	q.GTE = gte
