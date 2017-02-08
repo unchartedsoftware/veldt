@@ -33,6 +33,9 @@ func (h *HeatmapTile) Parse(params map[string]interface{}) error {
 func (h *HeatmapTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// Initialize the tile processing.
 	client, citusQuery, err := h.InitializeTile(uri, query)
+	if err != nil {
+		return nil, err
+	}
 
 	// add tiling query
 	citusQuery = h.Bivariate.AddQuery(coord, citusQuery)
