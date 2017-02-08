@@ -27,7 +27,10 @@ func NewCountTile(host, port string) veldt.TileCtor {
 // parameters.
 func (t *Count) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// Initialize the tile processing.
-	client, citusQuery, _ := t.InitializeTile(uri, query)
+	client, citusQuery, err := t.InitializeTile(uri, query)
+	if err != nil {
+		return nil, err
+	}
 
 	// add tiling query
 	citusQuery = t.Bivariate.AddQuery(coord, citusQuery)

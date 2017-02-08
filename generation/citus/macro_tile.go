@@ -38,7 +38,10 @@ func (m *MacroTile) Parse(params map[string]interface{}) error {
 // parameters.
 func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// Initialize the tile processing.
-	client, citusQuery, _ := m.InitializeTile(uri, query)
+	client, citusQuery, err := m.InitializeTile(uri, query)
+	if err != nil {
+		return nil, err
+	}
 
 	// add tiling query
 	citusQuery = m.Bivariate.AddQuery(coord, citusQuery)
