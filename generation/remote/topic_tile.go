@@ -3,6 +3,7 @@ package remote
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
@@ -13,7 +14,6 @@ type TopicTile struct {
 	inclusionTerms []string
 	exclusionTerms []string
 	requestId      string
-	tileCount      int
 	exclusiveness  int
 	clusterCount   int
 	wordCount      int
@@ -40,16 +40,6 @@ func (t *TopicTile) Parse(params map[string]interface{}) error {
 	exclude, ok := jsonUtil.GetStringArray(params, "exclude")
 	if !ok {
 		return fmt.Errorf("`exclude` parameter missing from topic tile")
-	}
-	// get request id
-	requestId, ok := jsonUtil.GetString(params, "requestId")
-	if !ok {
-		return fmt.Errorf("`requestId` parameter missing from topic tile")
-	}
-	// get tile count
-	tileCount, ok := jsonUtil.GetNumber(params, "tileCount")
-	if !ok {
-		return fmt.Errorf("`tileCount` parameter missing from topic tile")
 	}
 	// get exclusiveness
 	exclusiveness, ok := jsonUtil.GetNumber(params, "exclusiveness")
@@ -84,8 +74,13 @@ func (t *TopicTile) Parse(params map[string]interface{}) error {
 	t.clusterCount = int(clusterCount)
 	t.timeFrom = int64(timeFrom)
 	t.timeTo = int64(timeTo)
+
+	// Use hash of all parameters to identify request.
+	requestId := fmt.Sprintf("%v::%v::%v::%v::%v::%v::%v",
+		 wordCount, clusterCount, timeFrom, timeTo, exclusiveness,
+		  strings.Join(include, ","), strings.Join(exclude, ","))
+
 	t.requestId = requestId
-	t.tileCount = int(tileCount)
 
 	return nil
 }
@@ -150,6 +145,7 @@ func (t *TopicTile) Create(uri string, coord *binning.TileCoord, query veldt.Que
 				return nil, fmt.Errorf("Unexpected response format from topic modelling service: cannot find 'score' in %v", res)
 			}
 
+			// For now, use straight sum of weights to determine overall weight.
 			counts[word] = counts[word] + uint32(weight)
 		}
 	}

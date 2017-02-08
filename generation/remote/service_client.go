@@ -9,6 +9,10 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
+const (
+	batchWaitTime = 500
+)
+
 var (
 	mutex    = sync.Mutex{} //May want to create a mutex / client.
 	handlers = make(map[string]*ServiceClient)
@@ -39,7 +43,6 @@ type ServiceClient struct {
 	requestId        string
 	requests         []*TopicTile
 	responseChannels map[string]chan interface{}
-	requestCount     int
 	processing       bool
 }
 
@@ -56,7 +59,7 @@ func NewServiceClient() *ServiceClient {
 
 // Add a request to the batch.
 func (c *ServiceClient) AddRequest(tile *TopicTile) (chan interface{}, error) {
-	// Could get duplicate requests to return the same channel that is already setup.
+	// Get duplicate requests to return the same channel that is already setup.
 	// TODO: Need to actually handle the duplcate request case because right now Only
 	// a single message gets written to the channel.
 	hash := c.getTileCoordinateHash(tile.x, tile.y, tile.z)
@@ -74,10 +77,6 @@ func (c *ServiceClient) AddRequest(tile *TopicTile) (chan interface{}, error) {
 	channel := make(chan interface{})
 	c.responseChannels[hash] = channel
 
-	// Append the request.
-	if c.requestCount == 0 {
-		c.requestCount = tile.tileCount
-	}
 	c.requests = append(c.requests, tile)
 
 	return channel, nil
@@ -85,11 +84,17 @@ func (c *ServiceClient) AddRequest(tile *TopicTile) (chan interface{}, error) {
 
 // Main function to be called on initialization in a separate thread.
 func (c *ServiceClient) HandleRequests() {
-	// Read the requests data.
-	requests := c.getClientRequestsData()
+	// Batch the requests.
+	c.waitForRequests()
+
+	// About to process batched requests. Remove this handler to allow for another batch.
 	mutex.Lock()
 	c.processing = true
+	delete(handlers, c.requestId)
 	mutex.Unlock()
+
+	// Read the requests data.
+	requests := c.getClientRequestsData()
 
 	// Send the request to the server.
 	response, err := c.sendRequest(requests)
@@ -114,8 +119,9 @@ func (c *ServiceClient) HandleRequests() {
 		// Remove the handler.
 		delete(c.responseChannels, hash)
 	}
-	delete(handlers, c.requestId)
 	mutex.Unlock()
+
+	// Could have a check to make sure c.responseChannels is empty.
 }
 
 func (c *ServiceClient) sendRequest(requestData map[string]interface{}) (string, error) {
@@ -142,10 +148,9 @@ func (c *ServiceClient) handleError(err error) {
 
 // Create the request to the remote service.
 func (c *ServiceClient) getClientRequestsData() map[string]interface{} {
-	// Wait until all the requests have come in!
-	c.waitForRequests()
 	initialRequest := c.requests[0]
 
+	// This code may be better off in the tile.
 	// All tiles have the same parameters except for tile coordinates.
 	terms := make(map[string][]string)
 	terms["include"] = initialRequest.inclusionTerms
@@ -165,7 +170,7 @@ func (c *ServiceClient) getClientRequestsData() map[string]interface{} {
 	tileData["time"] = time
 
 	// Get the tile coordinates.
-	coordinates := make([]interface{}, c.requestCount)
+	coordinates := make([]interface{}, len(c.requests))
 	for i, t := range c.requests {
 		coordinates[i] = c.getTileCoordinate(t)
 	}
@@ -233,9 +238,7 @@ func (c *ServiceClient) getTileCoordinateHash(x, y, z uint32) string {
 	return fmt.Sprintf("%v/%v/%v", z, x, y)
 }
 
-// Wait until we have all the expected requests.
+// Wait for 500 ms to batch requests to the server.
 func (c *ServiceClient) waitForRequests() {
-	for c.requestCount != len(c.requests) {
-		time.Sleep(500 * time.Millisecond)
-	}
+	time.Sleep(batchWaitTime * time.Millisecond)
 }
