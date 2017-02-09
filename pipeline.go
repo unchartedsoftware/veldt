@@ -185,87 +185,6 @@ func (p *Pipeline) NewTileRequest(args map[string]interface{}) (*TileRequest, er
 	return req, nil
 }
 
-// GenerateTile generates a tile for the provided tile request.
-func (p *Pipeline) GenerateTile(req *TileRequest) error {
-	// get tile hash
-	hash := p.getTileHash(req)
-	// get store
-	store, err := p.GetStore()
-	if err != nil {
-		return err
-	}
-	defer store.Close()
-	// check if tile already exists in store
-	exists, err := store.Exists(hash)
-	if err != nil {
-		return err
-	}
-	// if it exists, return as success
-	if exists {
-		return nil
-	}
-	// otherwise, initiate the tiling job and return error
-	return p.getTilePromise(hash, req)
-}
-
-// GetTileFromStore retrieves the generated tile from the store.
-func (p *Pipeline) GetTileFromStore(req *TileRequest) ([]byte, error) {
-	// get tile hash
-	hash := p.getTileHash(req)
-	// get store
-	store, err := p.GetStore()
-	if err != nil {
-		return nil, err
-	}
-	defer store.Close()
-	// get tile data from store
-	res, err := store.Get(hash)
-	if err != nil {
-		return nil, err
-	}
-	return p.decompress(res)
-}
-
-func (p *Pipeline) getTilePromise(hash string, req *TileRequest) error {
-	promise, exists := p.promises.GetOrCreate(hash)
-	if exists {
-		// promise already existed, return it
-		return promise.Wait()
-	}
-	// promise had to be created, generate tile
-	go func() {
-		err := p.generateAndStoreTile(hash, req)
-		promise.Resolve(err)
-		p.promises.Remove(hash)
-	}()
-	return promise.Wait()
-}
-
-func (p *Pipeline) generateAndStoreTile(hash string, req *TileRequest) error {
-	// queue the tile to be generated
-	res, err := p.queue.Send(req)
-	if err != nil {
-		return err
-	}
-	// compress tile payload
-	res, err = p.compress(res)
-	if err != nil {
-		return err
-	}
-	// get store
-	store, err := p.GetStore()
-	if err != nil {
-		return err
-	}
-	defer store.Close()
-	// add tile to store
-	return store.Set(hash, res)
-}
-
-func (p *Pipeline) getTileHash(req *TileRequest) string {
-	return fmt.Sprintf("%s:%s", req.GetHash(), p.compression)
-}
-
 // NewMetaRequest instantiates and returns a metadata request struct from the
 // provided JSON.
 func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, error) {
@@ -282,10 +201,10 @@ func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, er
 	return req, nil
 }
 
-// GenerateMeta generates metadata for the provided metadata request.
-func (p *Pipeline) GenerateMeta(req *MetaRequest) error {
+// Generate generates data for the provided request.
+func (p *Pipeline) Generate(req Request) error {
 	// get tile hash
-	hash := p.getMetaHash(req)
+	hash := p.getHash(req)
 	// get store
 	store, err := p.GetStore()
 	if err != nil {
@@ -302,13 +221,13 @@ func (p *Pipeline) GenerateMeta(req *MetaRequest) error {
 		return nil
 	}
 	// otherwise, initiate the tiling job and return error
-	return p.getMetaPromise(hash, req)
+	return p.getPromise(hash, req)
 }
 
-// GetMetaFromStore retrieves the generated tile from the store.
-func (p *Pipeline) GetMetaFromStore(req *MetaRequest) ([]byte, error) {
+// GetFromStore retrieves the generated data from the store.
+func (p *Pipeline) GetFromStore(req Request) ([]byte, error) {
 	// get tile hash
-	hash := p.getMetaHash(req)
+	hash := p.getHash(req)
 	// get store
 	store, err := p.GetStore()
 	if err != nil {
@@ -323,22 +242,22 @@ func (p *Pipeline) GetMetaFromStore(req *MetaRequest) ([]byte, error) {
 	return p.decompress(res)
 }
 
-func (p *Pipeline) getMetaPromise(hash string, req *MetaRequest) error {
+func (p *Pipeline) getPromise(hash string, req Request) error {
 	promise, exists := p.promises.GetOrCreate(hash)
 	if exists {
 		// promise already existed, return it
 		return promise.Wait()
 	}
-	// promise had to be created, generate tile
+	// promise had to be created, generate data
 	go func() {
-		err := p.generateAndStoreMeta(hash, req)
+		err := p.generateAndStore(hash, req)
 		promise.Resolve(err)
 		p.promises.Remove(hash)
 	}()
 	return promise.Wait()
 }
 
-func (p *Pipeline) generateAndStoreMeta(hash string, req *MetaRequest) error {
+func (p *Pipeline) generateAndStore(hash string, req Request) error {
 	// queue the tile to be generated
 	res, err := p.queue.Send(req)
 	if err != nil {
@@ -359,7 +278,7 @@ func (p *Pipeline) generateAndStoreMeta(hash string, req *MetaRequest) error {
 	return store.Set(hash, res)
 }
 
-func (p *Pipeline) getMetaHash(req *MetaRequest) string {
+func (p *Pipeline) getHash(req Request) string {
 	return fmt.Sprintf("%s:%s", req.GetHash(), p.compression)
 }
 
@@ -401,7 +320,7 @@ func (p *Pipeline) decompress(data []byte) ([]byte, error) {
 	return data, nil
 }
 
-func (p *Pipeline) getReader(buffer *bytes.Buffer) (io.ReadCloser, bool, error) {
+func (p *Pipeline) getReader(buffer io.Reader) (io.ReadCloser, bool, error) {
 	// use compression based reader if specified
 	switch p.compression {
 	case "gzip":
@@ -415,7 +334,7 @@ func (p *Pipeline) getReader(buffer *bytes.Buffer) (io.ReadCloser, bool, error) 
 	}
 }
 
-func (p *Pipeline) getWriter(buffer *bytes.Buffer) (io.WriteCloser, bool) {
+func (p *Pipeline) getWriter(buffer io.Writer) (io.WriteCloser, bool) {
 	// use compression based reader if specified
 	switch p.compression {
 	case "gzip":

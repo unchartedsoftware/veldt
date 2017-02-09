@@ -14,7 +14,7 @@ all:
 
 lint:
 	@go vet $(shell glide novendor)
-	@go list ./... | grep -v /vendor/ | xargs -L1 golint
+	#@gometalinter --vendor
 
 test:
 	@ginkgo -r -cover
@@ -30,7 +30,8 @@ build: lint
 	@go build $(shell glide novendor)
 
 install:
-	@go get -u github.com/golang/lint/golint
+	@go get -u github.com/alecthomas/gometalinter
+	@gometalinter --install --force
 	@go get -u github.com/Masterminds/glide
 	@go get -u github.com/onsi/ginkgo/ginkgo
 	@go get -u github.com/wadey/gocovmerge

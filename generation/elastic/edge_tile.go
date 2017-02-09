@@ -1,9 +1,7 @@
 package elastic
 
 import (
-	"fmt"
-
-	elastic "gopkg.in/olivere/elastic.v3"
+	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
@@ -15,8 +13,6 @@ type EdgeTile struct {
 	Tile
 	TopHits
 	tile.Edge
-
-	isTilingComputed bool
 }
 
 // NewEdgeTile instantiates and returns a new tile struct.
@@ -29,48 +25,33 @@ func NewEdgeTile(host, port string) veldt.TileCtor {
 	}
 }
 
-func (e *EdgeTile) computeTilingProps(coord *binning.TileCoord) {
-	if e.isTilingComputed {
-		return
-	}
-	// tiling params
-	e.TileBounds = binning.GetTileBounds(coord, e.WorldBounds)
-
-	// flag as computed
-	e.isTilingComputed = true
-}
-
 // Parse parses the provided JSON object and populates the tiles attributes.
 func (e *EdgeTile) Parse(params map[string]interface{}) error {
-
 	err := e.Edge.Parse(params)
 	if err != nil {
 		return err
 	}
-
 	err = e.TopHits.Parse(params)
 	if err != nil {
 		return err
 	}
-
 	// parse includes
-	e.TopHits.IncludeFields = e.ParseIncludes(e.TopHits.IncludeFields)
-
+	e.TopHits.IncludeFields = e.Edge.ParseIncludes(e.TopHits.IncludeFields)
 	return nil
 }
 
 // GetQuery returns the tiling query.
 func (e *EdgeTile) GetQuery(coord *binning.TileCoord) elastic.Query {
-	e.computeTilingProps(coord)
-
+	// get tile bounds
+	bounds := e.TileBounds(coord)
 	// create the range queries
 	query := elastic.NewBoolQuery()
 	query.Must(elastic.NewRangeQuery(e.SrcXField).
-		Gte(int64(e.TileBounds.MinX())).
-		Lt(int64(e.TileBounds.MaxX())))
+		Gte(int64(bounds.MinX())).
+		Lt(int64(bounds.MaxX())))
 	query.Must(elastic.NewRangeQuery(e.SrcYField).
-		Gte(int64(e.TileBounds.MinY())).
-		Lt(int64(e.TileBounds.MaxY())))
+		Gte(int64(bounds.MinY())).
+		Lt(int64(bounds.MaxY())))
 	return query
 }
 
@@ -106,7 +87,6 @@ func (e *EdgeTile) Create(uri string, coord *binning.TileCoord, query veldt.Quer
 	// send query
 	res, err := search.Pretty(true).Do()
 	if err != nil {
-		_ = fmt.Errorf("EdgeTile: query error %s", err)
 		return nil, err
 	}
 
@@ -118,26 +98,21 @@ func (e *EdgeTile) Create(uri string, coord *binning.TileCoord, query veldt.Quer
 
 	// convert to point array
 	points := make([]float32, len(hits)*4)
+	// get hit x/y in tile coords
 	for i, hit := range hits {
-
-		zoom := uint32(0)
-
-		// get hit x/y in tile coords
-		x, y, ok := e.GetSrcXY(hit, zoom)
+		srcX, srcY, ok := e.GetSrcXY(coord, hit)
 		if !ok {
-			_ = fmt.Errorf("Couldn't GetSrcXY")
 			continue
 		}
-		x2, y2, ok := e.GetDstXY(hit, zoom)
+		dstX, dstY, ok := e.GetDstXY(coord, hit)
 		if !ok {
-			_ = fmt.Errorf("Couldn't GetDstXY")
 			continue
 		}
 		// add to point array
-		points[i*4] = x
-		points[i*4+1] = y
-		points[i*4+2] = x2
-		points[i*4+3] = y2
+		points[i*4] = float32(srcX)
+		points[i*4+1] = float32(srcY)
+		points[i*4+2] = float32(dstX)
+		points[i*4+3] = float32(dstY)
 	}
 	// encode and return results
 	return e.Edge.Encode(hits, points)

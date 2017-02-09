@@ -8,7 +8,12 @@ import (
 )
 
 const (
-	missing = "???"
+	missing     = "???"
+	expType     = iota
+	queryType   = iota
+	binaryType  = iota
+	unaryType   = iota
+	invalidType = iota
 )
 
 // validator parses a JSON query expression into its typed format. It
@@ -401,26 +406,26 @@ func (v *validator) validateToken(arg interface{}, indent int, first bool) inter
 	return arg
 }
 
-func getTokenType(token interface{}) string {
+func getTokenType(token interface{}) int {
 	_, ok := token.([]interface{})
 	if ok {
-		return "exp"
+		return expType
 	}
 	op, ok := token.(string)
 	if ok {
 		if isValidBinaryOperator(op) {
-			return "binary"
+			return binaryType
 		} else if isValidUnaryOperator(op) {
-			return "unary"
+			return unaryType
 		} else {
-			return "unrecognized"
+			return invalidType
 		}
 	}
 	_, ok = token.(map[string]interface{})
 	if ok {
-		return "query"
+		return queryType
 	}
-	return "unrecognized"
+	return invalidType
 }
 
 func isTokenValid(c interface{}, n interface{}) bool {
@@ -433,20 +438,20 @@ func isTokenValid(c interface{}, n interface{}) bool {
 func nextTokenIsValid(c interface{}, n interface{}) bool {
 	current := getTokenType(c)
 	next := getTokenType(n)
-	if current == "unrecognized" || next == "unrecognized" {
+	if current == invalidType || next == invalidType {
 		// NOTE: consider unrecognized tokens as valid to allow the parsing to
 		// continue correctly
 		return true
 	}
 	switch current {
-	case "exp":
-		return next == "binary"
-	case "query":
-		return next == "binary"
-	case "binary":
-		return next == "unary" || next == "query" || next == "exp"
-	case "unary":
-		return next == "query" || next == "exp"
+	case expType:
+		return next == binaryType
+	case queryType:
+		return next == binaryType
+	case binaryType:
+		return next == unaryType || next == queryType || next == expType
+	case unaryType:
+		return next == queryType || next == expType
 	}
 	return false
 }
@@ -454,11 +459,11 @@ func nextTokenIsValid(c interface{}, n interface{}) bool {
 func firstTokenIsValid(n interface{}) bool {
 	next := getTokenType(n)
 	switch next {
-	case "exp":
+	case expType:
 		return true
-	case "query":
+	case queryType:
 		return true
-	case "unary":
+	case unaryType:
 		return true
 	}
 	return false

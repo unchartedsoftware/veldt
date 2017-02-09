@@ -90,13 +90,13 @@ func (m *MicroTile) Create(uri string, coord *binning.TileCoord, query veldt.Que
 	points := make([]float32, len(hits)*2)
 	for i, hit := range hits {
 		// get hit x/y in tile coords
-		x, y, ok := m.Bivariate.GetXY(hit)
+		x, y, ok := m.Bivariate.GetXY(coord, hit)
 		if !ok {
 			continue
 		}
 		// add to point array
-		points[i*2] = x
-		points[i*2+1] = y
+		points[i*2] = float32(x)
+		points[i*2+1] = float32(y)
 	}
 
 	// encode and return results

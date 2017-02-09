@@ -63,7 +63,7 @@ func (h *HeatmapTile) Create(uri string, coord *binning.TileCoord, query veldt.Q
 	}
 
 	// get bins
-	bins, err := h.Bivariate.GetBins(&res.Aggregations)
+	bins, err := h.Bivariate.GetBins(coord, &res.Aggregations)
 	if err != nil {
 		return nil, err
 	}
