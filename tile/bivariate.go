@@ -82,11 +82,10 @@ func (b *Bivariate) GetXBin(coord *binning.TileCoord, x float64) int {
 // [0 : 256) for the tile.
 func (b *Bivariate) GetX(coord *binning.TileCoord, x float64) float64 {
 	bounds := b.TileBounds(coord)
+	rang := bounds.RangeX()
 	if bounds.Left > bounds.Right {
-		rang := bounds.Left - bounds.Right
 		return binning.MaxTileResolution - (((x - bounds.Right) / rang) * binning.MaxTileResolution)
 	}
-	rang := bounds.Right - bounds.Left
 	return ((x - bounds.Left) / rang) * binning.MaxTileResolution
 }
 
@@ -107,11 +106,10 @@ func (b *Bivariate) GetYBin(coord *binning.TileCoord, y float64) int {
 // [0 : 256) for the tile.
 func (b *Bivariate) GetY(coord *binning.TileCoord, y float64) float64 {
 	bounds := b.TileBounds(coord)
+	rang := bounds.RangeY()
 	if bounds.Bottom > bounds.Top {
-		rang := bounds.Bottom - bounds.Top
 		return binning.MaxTileResolution - (((y - bounds.Top) / rang) * binning.MaxTileResolution)
 	}
-	rang := bounds.Top - bounds.Bottom
 	return ((y - bounds.Bottom) / rang) * binning.MaxTileResolution
 }
 
