@@ -99,7 +99,7 @@ func (q *Queue) incrementPending() error {
 	defer runtime.Gosched()
 	defer q.mu.Unlock()
 	if q.pending-q.maxPending > q.maxLength {
-		return fmt.Errorf("Queue has reached maximum length of %d and is no longer accepting requests",
+		return fmt.Errorf("queue has reached maximum length of %d and is no longer accepting requests",
 			q.maxLength)
 	}
 	// increment count
