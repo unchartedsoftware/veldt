@@ -45,6 +45,7 @@ func (b *Bivariate) Parse(params map[string]interface{}) error {
 	return b.globalBounds.Parse(params)
 }
 
+// TileBounds computes and returns the tile bounds for the provided tile coord.
 func (b *Bivariate) TileBounds(coord *binning.TileCoord) *geometry.Bounds {
 	if b.tileBounds == nil {
 		b.tileBounds = binning.GetTileBounds(coord, b.globalBounds)
@@ -52,10 +53,14 @@ func (b *Bivariate) TileBounds(coord *binning.TileCoord) *geometry.Bounds {
 	return b.tileBounds
 }
 
+// BinSizeX computes and returns the size of a bin across the x axis for the
+// provided tile coord.
 func (b *Bivariate) BinSizeX(coord *binning.TileCoord) float64 {
 	return b.TileBounds(coord).RangeX() / float64(b.Resolution)
 }
 
+// BinSizeY computes and returns the size of a bin across the x axis for the
+// provided tile coord.
 func (b *Bivariate) BinSizeY(coord *binning.TileCoord) float64 {
 	return b.TileBounds(coord).RangeY() / float64(b.Resolution)
 }

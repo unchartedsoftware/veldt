@@ -61,6 +61,7 @@ func (e *Edge) Parse(params map[string]interface{}) error {
 	return e.globalBounds.Parse(params)
 }
 
+// TileBounds computes and returns the tile bounds for the provided tile coord.
 func (e *Edge) TileBounds(coord *binning.TileCoord) *geometry.Bounds {
 	if e.tileBounds == nil {
 		e.tileBounds = binning.GetTileBounds(coord, e.globalBounds)
