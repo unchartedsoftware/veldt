@@ -2,7 +2,6 @@ package queue_test
 
 import (
 	"sync"
-	"time"
 
 	"github.com/unchartedsoftware/veldt/util/queue"
 
@@ -40,16 +39,23 @@ func (r *countRequest) Count() int {
 	return r.count
 }
 
-type sleepRequest struct {
+type pauseRequest struct {
+	c chan bool
 }
 
-func newSleepRequest() *sleepRequest {
-	return &sleepRequest{}
+func newPauseRequest() *pauseRequest {
+	return &pauseRequest{
+		c: make(chan bool),
+	}
 }
 
-func (r *sleepRequest) Create() ([]byte, error) {
-	time.Sleep(time.Millisecond * 200)
+func (r *pauseRequest) Create() ([]byte, error) {
+	<-r.c
 	return nil, nil
+}
+
+func (r *pauseRequest) Unpause() {
+	r.c <- true
 }
 
 var _ = Describe("Queue", func() {
@@ -127,26 +133,42 @@ var _ = Describe("Queue", func() {
 
 	Describe("SetLength", func() {
 
-		It("should set the queue length", func() {
+		It("should set the queue length, returning an error when surpassed", func() {
 			n := 20
+			p := 20
+			q.SetMaxConcurrent(p)
 			q.SetLength(n)
-			var err error
-			c := make(chan error)
+			reqs := make([]*pauseRequest, m)
+			mu := &sync.Mutex{}
+			wg := &sync.WaitGroup{}
+			wg.Add(m - n - p - 1)
+			errCount := 0
+			// asynchronously send m requests
 			for i := 0; i < m; i++ {
-				select {
-				case err = <-c:
-					break
-				default:
-					go func() {
-						_, err = q.Send(newSleepRequest())
-						if err != nil {
-							c <- err
-						}
-					}()
-				}
-
+				go func(index int) {
+					req := newPauseRequest()
+					reqs[index] = req
+					_, err := q.Send(req)
+					if err != nil {
+						mu.Lock()
+						errCount++
+						reqs[index] = nil
+						mu.Unlock()
+						wg.Done()
+					}
+				}(i)
 			}
-			Expect(err).ToNot(BeNil())
+			// ensure all err'd requests have returned at this point
+			wg.Wait()
+			// unpause all paused requests
+			for _, req := range reqs {
+				if req != nil {
+					go func(req *pauseRequest) {
+						req.Unpause()
+					}(req)
+				}
+			}
+			Expect(errCount).To(BeNumerically("==", m-n-p-1))
 		})
 
 	})
