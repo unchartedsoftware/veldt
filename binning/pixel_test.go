@@ -27,13 +27,7 @@ var _ = Describe("pixel", func() {
 
 	Describe("CoordToPixelCoord", func() {
 		It("should return a fractional tile coordinate", func() {
-
-			extent := geometry.NewBoundsFromRectangle(
-				&geometry.Rectangle{
-					BottomLeft: geometry.NewCoord(-1, -1),
-					TopRight:   geometry.NewCoord(1, 1),
-				},
-			)
+			extent := geometry.NewBounds(-1, 1, -1, 1)
 
 			pixel := binning.CoordToPixelCoord(bottomLeftCoord, extent)
 			Expect(pixel.X).To(Equal(uint64(0)))

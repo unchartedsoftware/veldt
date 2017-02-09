@@ -24,31 +24,25 @@ type PixelCoord struct {
 // NewPixelCoord instantiates and returns a pointer to a PixelCoord.
 func NewPixelCoord(x, y uint64) *PixelCoord {
 	return &PixelCoord{
-		X: uint64(math.Max(0, math.Min(float64(MaxPixels), float64(x)))),
-		Y: uint64(math.Max(0, math.Min(float64(MaxPixels), float64(y)))),
+		X: uint64(math.Max(0, math.Min(float64(MaxPixels-1), float64(x)))),
+		Y: uint64(math.Max(0, math.Min(float64(MaxPixels-1), float64(y)))),
 	}
 }
 
 // LonLatToPixelCoord translates a geographic coordinate to a pixel coordinate.
 func LonLatToPixelCoord(lonLat *LonLat) *PixelCoord {
 	// Converting to range from [0:1] where 0,0 is bottom-left
-	normalizedTile := LonLatToFractionalTile(lonLat, 0)
-	normalizedCoord := geometry.NewCoord(normalizedTile.X, normalizedTile.Y)
-
-	return &PixelCoord{
-		X: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.X*MaxPixels))),
-		Y: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.Y*MaxPixels))),
-	}
+	normalized := LonLatToFractionalTile(lonLat, 0)
+	return NewPixelCoord(
+		uint64(normalized.X*MaxPixels),
+		uint64(normalized.Y*MaxPixels))
 }
 
 // CoordToPixelCoord translates a coordinate to a pixel coordinate.
 func CoordToPixelCoord(coord *geometry.Coord, bounds *geometry.Bounds) *PixelCoord {
 	// Converting to range from [0:1] where 0,0 is bottom-left
-	normalizedTile := CoordToFractionalTile(coord, 0, bounds)
-	normalizedCoord := geometry.NewCoord(normalizedTile.X, normalizedTile.Y)
-
-	return &PixelCoord{
-		X: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.X*MaxPixels))),
-		Y: uint64(math.Min(MaxPixels-1, math.Floor(normalizedCoord.Y*MaxPixels))),
-	}
+	normalized := CoordToFractionalTile(coord, 0, bounds)
+	return NewPixelCoord(
+		uint64(normalized.X*MaxPixels),
+		uint64(normalized.Y*MaxPixels))
 }

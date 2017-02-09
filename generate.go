@@ -10,7 +10,7 @@ func GenerateTile(id string, args map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-	return pipeline.GenerateTile(req)
+	return pipeline.Generate(req)
 }
 
 // GetTileFromStore retrieves a tile from the store for the provided pipeline ID
@@ -24,7 +24,7 @@ func GetTileFromStore(id string, args map[string]interface{}) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pipeline.GetTileFromStore(req)
+	return pipeline.GetFromStore(req)
 }
 
 // GenerateMeta generates meta data for the provided pipeline ID and JSON
@@ -38,7 +38,7 @@ func GenerateMeta(id string, args map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-	return pipeline.GenerateMeta(req)
+	return pipeline.Generate(req)
 }
 
 // GetMetaFromStore retrieves metadata from the store for the provided pipeline
@@ -52,5 +52,5 @@ func GetMetaFromStore(id string, args map[string]interface{}) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pipeline.GetMetaFromStore(req)
+	return pipeline.GetFromStore(req)
 }

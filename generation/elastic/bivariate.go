@@ -13,72 +13,39 @@ import (
 // Bivariate represents an elasticsearch implementation of the bivariate tile.
 type Bivariate struct {
 	tile.Bivariate
-	// tiling
-	isTilingComputed bool
-
-	// binning
-	binning   bool
-	intervalX int64
-	intervalY int64
-}
-
-func (b *Bivariate) computeTilingProps(coord *binning.TileCoord) {
-	if b.isTilingComputed {
-		return
-	}
-	// tiling params
-	b.TileBounds = binning.GetTileBounds(coord, b.WorldBounds)
-
-	// flag as computed
-	b.isTilingComputed = true
-}
-
-func (b *Bivariate) computeBinningProps(coord *binning.TileCoord) {
-	if b.binning {
-		return
-	}
-	// ensure we have tiling props
-	b.computeTilingProps(coord)
-	// binning params
-	xRange := math.Abs(b.TileBounds.TopRight().X - b.TileBounds.BottomLeft().X)
-	yRange := math.Abs(b.TileBounds.TopRight().Y - b.TileBounds.BottomLeft().Y)
-	b.intervalX = int64(math.Max(1, xRange/float64(b.Resolution)))
-	b.intervalY = int64(math.Max(1, yRange/float64(b.Resolution)))
-	b.BinSizeX = xRange / float64(b.Resolution)
-	b.BinSizeY = yRange / float64(b.Resolution)
-	// flag as computed
-	b.binning = true
 }
 
 // GetQuery returns the tiling query.
 func (b *Bivariate) GetQuery(coord *binning.TileCoord) elastic.Query {
-	// compute the tiling properties
-	b.computeTilingProps(coord)
+	// get tile bounds
+	bounds := b.TileBounds(coord)
 	// create the range queries
 	query := elastic.NewBoolQuery()
 	query.Must(elastic.NewRangeQuery(b.XField).
-		Gte(int64(b.TileBounds.MinX())).
-		Lt(int64(b.TileBounds.MaxX())))
+		Gte(int64(bounds.MinX())).
+		Lt(int64(bounds.MaxX())))
 	query.Must(elastic.NewRangeQuery(b.YField).
-		Gte(int64(b.TileBounds.MinY())).
-		Lt(int64(b.TileBounds.MaxY())))
+		Gte(int64(bounds.MinY())).
+		Lt(int64(bounds.MaxY())))
 	return query
 }
 
 // GetAggs returns the tiling aggregation.
 func (b *Bivariate) GetAggs(coord *binning.TileCoord) map[string]elastic.Aggregation {
-	// compute the binning properties
-	b.computeBinningProps(coord)
+	bounds := b.TileBounds(coord)
+	// compute binning itnernal
+	intervalX := int64(math.Max(1, b.BinSizeX(coord)))
+	intervalY := int64(math.Max(1, b.BinSizeY(coord)))
 	// create the binning aggregations
 	x := elastic.NewHistogramAggregation().
 		Field(b.XField).
-		Offset(int64(b.TileBounds.MinX())).
-		Interval(b.intervalX).
+		Offset(int64(bounds.MinX())).
+		Interval(intervalX).
 		MinDocCount(1)
 	y := elastic.NewHistogramAggregation().
 		Field(b.YField).
-		Offset(int64(b.TileBounds.MinY())).
-		Interval(b.intervalY).
+		Offset(int64(bounds.MinY())).
+		Interval(intervalY).
 		MinDocCount(1)
 	x.SubAggregation("y", y)
 	return map[string]elastic.Aggregation{
@@ -88,10 +55,7 @@ func (b *Bivariate) GetAggs(coord *binning.TileCoord) map[string]elastic.Aggrega
 }
 
 // GetBins parses the resulting histograms into bins.
-func (b *Bivariate) GetBins(aggs *elastic.Aggregations) ([]*elastic.AggregationBucketHistogramItem, error) {
-	if !b.binning {
-		return nil, fmt.Errorf("binning properties have not been computed, ensure `GetAggs` is called")
-	}
+func (b *Bivariate) GetBins(coord *binning.TileCoord, aggs *elastic.Aggregations) ([]*elastic.AggregationBucketHistogramItem, error) {
 	// parse aggregations
 	xAgg, ok := aggs.Histogram("x")
 	if !ok {
@@ -102,14 +66,14 @@ func (b *Bivariate) GetBins(aggs *elastic.Aggregations) ([]*elastic.AggregationB
 	// fill bins
 	for _, xBucket := range xAgg.Buckets {
 		x := xBucket.Key
-		xBin := b.GetXBin(x)
+		xBin := b.GetXBin(coord, float64(x))
 		yAgg, ok := xBucket.Histogram("y")
 		if !ok {
 			return nil, fmt.Errorf("histogram aggregation `y` was not found")
 		}
 		for _, yBucket := range yAgg.Buckets {
 			y := yBucket.Key
-			yBin := b.GetYBin(y)
+			yBin := b.GetYBin(coord, float64(y))
 			index := xBin + b.Resolution*yBin
 			bins[index] = yBucket
 		}

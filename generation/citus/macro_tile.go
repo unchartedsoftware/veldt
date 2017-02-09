@@ -58,7 +58,7 @@ func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query veldt.Que
 	}
 
 	// get bins
-	bins, err := m.Bivariate.GetBins(res)
+	bins, err := m.Bivariate.GetBins(coord, res)
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +72,10 @@ func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query veldt.Que
 	numPoints := 0
 	for i, bin := range bins {
 		if bin > 0 {
-			x := float32(float64(i%m.Resolution)*binSize + halfSize)
-			y := float32(math.Floor(float64(i/m.Resolution))*binSize + halfSize)
-			points[numPoints*2] = x
-			points[numPoints*2+1] = y
+			x := float64(i%m.Resolution)*binSize + halfSize
+			y := math.Floor(float64(i/m.Resolution))*binSize + halfSize
+			points[numPoints*2] = float32(x)
+			points[numPoints*2+1] = float32(y)
 			numPoints++
 		}
 	}

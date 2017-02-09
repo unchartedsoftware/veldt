@@ -25,8 +25,8 @@ type Edge struct {
 	isDstXIncluded bool
 	isDstYIncluded bool
 	// Bounds
-	WorldBounds *geometry.Bounds
-	TileBounds  *geometry.Bounds
+	tileBounds   *geometry.Bounds
+	globalBounds *geometry.Bounds
 }
 
 // Parse parses the provided JSON object and populates the structs attributes.
@@ -49,19 +49,24 @@ func (e *Edge) Parse(params map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("`dstYField` parameter missing from tile")
 	}
-	worldBounds, err := geometry.NewBoundsByParse(params)
-	if err != nil {
-		return fmt.Errorf("left, right, bottom or top missing from tile")
-	}
-
 	// set attributes
-	e.WorldBounds = worldBounds
 	e.SrcXField = srcXField
 	e.SrcYField = srcYField
 	e.DstXField = dstXField
 	e.DstYField = dstYField
+	// clear tile bounds
+	e.tileBounds = nil
+	// get the global bounds
+	e.globalBounds = &geometry.Bounds{}
+	return e.globalBounds.Parse(params)
+}
 
-	return nil
+// TileBounds computes and returns the tile bounds for the provided tile coord.
+func (e *Edge) TileBounds(coord *binning.TileCoord) *geometry.Bounds {
+	if e.tileBounds == nil {
+		e.tileBounds = binning.GetTileBounds(coord, e.globalBounds)
+	}
+	return e.tileBounds
 }
 
 // ParseIncludes parses the included attributes to ensure they include the raw
@@ -86,33 +91,33 @@ func (e *Edge) ParseIncludes(includes []string) []string {
 
 // GetX given an x value, returns the corresponding coord within the range of
 // [0 : 2^zoom * 256) for the tile.
-func (e *Edge) GetX(x float64, zoom uint32) float64 {
-	extent := binning.MaxTileResolution * math.Pow(2, float64(zoom))
-	bounds := e.TileBounds
-	if bounds.BottomLeft().X > bounds.TopRight().X {
-		rang := bounds.BottomLeft().X - bounds.TopRight().X
-		return extent - (((x - bounds.TopRight().X) / rang) * extent)
+func (e *Edge) GetX(coord *binning.TileCoord, x float64) float64 {
+	extent := binning.MaxTileResolution * math.Pow(2, float64(coord.Z))
+	bounds := e.TileBounds(coord)
+	if bounds.Left > bounds.Right {
+		rang := bounds.Left - bounds.Right
+		return extent - (((x - bounds.Right) / rang) * extent)
 	}
-	rang := bounds.TopRight().X - bounds.BottomLeft().X
-	return ((x - bounds.BottomLeft().X) / rang) * extent
+	rang := bounds.Right - bounds.Left
+	return ((x - bounds.Left) / rang) * extent
 }
 
 // GetY given an y value, returns the corresponding coord within the range of
 // [0 : 2^zoom * 256) for the tile.
-func (e *Edge) GetY(y float64, zoom uint32) float64 {
-	extent := binning.MaxTileResolution * math.Pow(2, float64(zoom))
-	bounds := e.TileBounds
-	if bounds.BottomLeft().Y > bounds.TopRight().Y {
-		rang := bounds.BottomLeft().Y - bounds.TopRight().Y
-		return extent - (((y - bounds.TopRight().Y) / rang) * extent)
+func (e *Edge) GetY(coord *binning.TileCoord, y float64) float64 {
+	extent := binning.MaxTileResolution * math.Pow(2, float64(coord.Z))
+	bounds := e.TileBounds(coord)
+	if bounds.Bottom > bounds.Top {
+		rang := bounds.Bottom - bounds.Top
+		return extent - (((y - bounds.Top) / rang) * extent)
 	}
-	rang := bounds.TopRight().Y - bounds.BottomLeft().Y
-	return ((y - bounds.BottomLeft().Y) / rang) * extent
+	rang := bounds.Top - bounds.Bottom
+	return ((y - bounds.Bottom) / rang) * extent
 }
 
 // GetSrcXY given a data hit, returns the corresponding coord within the range of
 // [0 : 2^zoom * 256) for the tile.
-func (e *Edge) getXY(hit map[string]interface{}, xField string, yField string, zoom uint32) (float32, float32, bool) {
+func (e *Edge) getXY(coord *binning.TileCoord, hit map[string]interface{}, xField string, yField string) (float64, float64, bool) {
 	// get x / y fields from data
 	ix, ok := hit[xField]
 	if !ok {
@@ -128,22 +133,22 @@ func (e *Edge) getXY(hit map[string]interface{}, xField string, yField string, z
 		return 0, 0, false
 	}
 	// convert to tile pixel coords in the range [0 : 2^zoom * 256)
-	tx := e.GetX(x, zoom)
-	ty := e.GetY(y, zoom)
+	tx := e.GetX(coord, x)
+	ty := e.GetY(coord, y)
 	// return position in tile coords with 2 decimal places
-	return toFixed(float32(tx), 2), toFixed(float32(ty), 2), true
+	return tx, ty, true
 }
 
 // GetSrcXY given a data hit, returns the corresponding coord within the range of
 // [0 : 2^zoom * 256) for the tile.
-func (e *Edge) GetSrcXY(hit map[string]interface{}, zoom uint32) (float32, float32, bool) {
-	return e.getXY(hit, e.SrcXField, e.SrcYField, zoom)
+func (e *Edge) GetSrcXY(coord *binning.TileCoord, hit map[string]interface{}) (float64, float64, bool) {
+	return e.getXY(coord, hit, e.SrcXField, e.SrcYField)
 }
 
 // GetDstXY given a data hit, returns the corresponding coord within the range of
 // [0 : 2^zoom * 256) for the tile.
-func (e *Edge) GetDstXY(hit map[string]interface{}, zoom uint32) (float32, float32, bool) {
-	return e.getXY(hit, e.DstXField, e.DstYField, zoom)
+func (e *Edge) GetDstXY(coord *binning.TileCoord, hit map[string]interface{}) (float64, float64, bool) {
+	return e.getXY(coord, hit, e.DstXField, e.DstYField)
 }
 
 // Encode will encode the tile results

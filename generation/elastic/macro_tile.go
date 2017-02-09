@@ -69,7 +69,7 @@ func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query veldt.Que
 	}
 
 	// get bins
-	bins, err := m.Bivariate.GetBins(&res.Aggregations)
+	bins, err := m.Bivariate.GetBins(coord, &res.Aggregations)
 	if err != nil {
 		return nil, err
 	}
