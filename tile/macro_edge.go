@@ -38,10 +38,10 @@ func (e *MacroEdge) ParseIncludes(includes []string, srcXField string, srcYField
 }
 
 // Encode will encode the tile results
-func (e *MacroEdge) Encode(points []float32) ([]byte, error) {
+func (e *MacroEdge) Encode(edges []float32) ([]byte, error) {
 	// encode the results
 	if e.LOD > 0 {
-		return EncodeLOD(points, e.LOD), nil
+		return EncodeEdgeLOD(edges, e.LOD), nil
 	}
-	return Encode(points), nil
+	return EncodeFloat32(edges), nil
 }

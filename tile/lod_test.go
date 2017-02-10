@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Lod", func() {
+var _ = Describe("LOD", func() {
 
 	const lod = 3
 

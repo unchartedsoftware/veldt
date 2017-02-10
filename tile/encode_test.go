@@ -30,9 +30,9 @@ var _ = Describe("Encode", func() {
 		}
 	})
 
-	Describe("Encode", func() {
+	Describe("EncodeFloat32", func() {
 		It("should encode provided []float32 into a []byte", func() {
-			bs := tile.Encode(input)
+			bs := tile.EncodeFloat32(input)
 			Expect(bs).To(Equal(bytes))
 		})
 	})

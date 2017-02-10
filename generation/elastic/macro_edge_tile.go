@@ -41,7 +41,7 @@ func (e *MacroEdgeTile) Parse(params map[string]interface{}) error {
 		e.Edge.SrcYField,
 		e.Edge.DstXField,
 		e.Edge.DstYField)
-	return nil
+	return e.MacroEdge.Parse(params)
 }
 
 // Create generates a tile from the provided URI, tile coordinate and query
@@ -103,6 +103,7 @@ func (e *MacroEdgeTile) Create(uri string, coord *binning.TileCoord, query veldt
 		points[i*4+2] = float32(dstX)
 		points[i*4+3] = float32(dstY)
 	}
+
 	// encode and return results
 	return e.MacroEdge.Encode(points)
 }

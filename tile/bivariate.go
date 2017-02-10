@@ -133,7 +133,7 @@ func (b *Bivariate) GetXY(coord *binning.TileCoord, hit map[string]interface{}) 
 	// convert to tile pixel coords in the range [0 - 256)
 	tx := b.GetX(coord, x)
 	ty := b.GetY(coord, y)
-	// return position in tile coords with 2 decimal places
+	// return position in tile coords
 	return tx, ty, true
 }
 

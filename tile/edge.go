@@ -104,7 +104,7 @@ func (e *Edge) getXY(coord *binning.TileCoord, hit map[string]interface{}, xFiel
 	// convert to tile pixel coords in the range [0 : 2^zoom * 256)
 	tx := e.GetX(coord, x)
 	ty := e.GetY(coord, y)
-	// return position in tile coords with 2 decimal places
+	// return position in tile coords
 	return tx, ty, true
 }
 
