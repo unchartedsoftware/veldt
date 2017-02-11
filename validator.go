@@ -184,9 +184,9 @@ func (v *validator) validateCoord(args map[string]interface{}) *binning.TileCoor
 //     }
 //
 func (v *validator) parseTile(args map[string]interface{}) (string, interface{}, Tile, error) {
-	id, params, err := v.GetIDAndParams(args)
-	if err != nil {
-		return id, params, nil, err
+	id, params, ok := json.GetRandomChild(args)
+	if !ok {
+		return id, params, nil, fmt.Errorf("no tile type found")
 	}
 	tile, err := v.pipeline.GetTile(id, params)
 	if err != nil {
@@ -232,9 +232,9 @@ func (v *validator) validateTile(args map[string]interface{}) Tile {
 //     }
 //
 func (v *validator) parseMeta(args map[string]interface{}) (string, interface{}, Meta, error) {
-	id, params, err := v.GetIDAndParams(args)
-	if err != nil {
-		return id, params, nil, err
+	id, params, ok := json.GetRandomChild(args)
+	if !ok {
+		return id, params, nil, fmt.Errorf("no meta type found")
 	}
 	tile, err := v.pipeline.GetMeta(id, params)
 	if err != nil {
@@ -302,9 +302,9 @@ func (v *validator) validateQuery(args map[string]interface{}) Query {
 //     }
 //
 func (v *validator) parseQuery(args map[string]interface{}) (string, interface{}, Query, error) {
-	id, params, err := v.GetIDAndParams(args)
-	if err != nil {
-		return id, params, nil, err
+	id, params, ok := json.GetRandomChild(args)
+	if !ok {
+		return id, params, nil, fmt.Errorf("no query type found")
 	}
 	query, err := v.pipeline.GetQuery(id, params)
 	if err != nil {

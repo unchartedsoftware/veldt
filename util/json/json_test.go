@@ -596,7 +596,7 @@ var _ = Describe("json", func() {
 						"c": {}
 					}
 				}`)
-			_, ok := json.GetRandomChild(j, "test")
+			_, _, ok := json.GetRandomChild(j, "test")
 			Expect(ok).To(Equal(true))
 		})
 		It("should return a map[string]interface{} if there is at least one nested object", func() {
@@ -608,8 +608,9 @@ var _ = Describe("json", func() {
 						}
 					}
 				}`)
-			val, ok := json.GetRandomChild(j, "test")
+			key, val, ok := json.GetRandomChild(j, "test")
 			Expect(ok).To(Equal(true))
+			Expect(key).To(Equal("child"))
 			Expect(val["a"]).To(Equal("a"))
 		})
 		It("should return a false if there are no nested objects", func() {
@@ -617,7 +618,7 @@ var _ = Describe("json", func() {
 				`{
 					"test": {}
 				}`)
-			_, ok := json.GetRandomChild(j, "test")
+			_, _, ok := json.GetRandomChild(j, "test")
 			Expect(ok).To(Equal(false))
 		})
 	})

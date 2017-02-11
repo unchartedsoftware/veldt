@@ -220,23 +220,26 @@ func GetBoolArray(json map[string]interface{}, path ...string) ([]bool, bool) {
 
 // GetRandomChild returns the first key found in the object that is a nested
 // json object.
-func GetRandomChild(json map[string]interface{}, path ...string) (map[string]interface{}, bool) {
+func GetRandomChild(json map[string]interface{}, path ...string) (string, map[string]interface{}, bool) {
 	child, ok := GetChild(json, path...)
 	if !ok {
-		return nil, false
+		return "", nil, false
 	}
 	if len(child) == 0 {
-		return nil, false
+		return "", nil, false
 	}
-	for _, v := range child {
+	var value map[string]interface{}
+	var key string
+	for k, v := range child {
 		val, ok := v.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		child = val
+		value = val
+		key = k
 		break
 	}
-	return child, true
+	return key, value, true
 }
 
 // GetChildArray returns a []map[string]interface{} from the given path.

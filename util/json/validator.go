@@ -212,26 +212,6 @@ func (v *Validator) getIndentString(indent int) string {
 	return strings.Join(strs, "")
 }
 
-// GetIDAndParams returns the nested key and value from a JSON object containing
-// a single key / value entry.
-//
-// Example:
-//
-//     {
-//         "key": {
-//             "prop0": ...,
-//             "prop1": ...,
-//             "prop2": ...,
-//         }
-//     }
-//
-func (v *Validator) GetIDAndParams(args map[string]interface{}) (string, interface{}, error) {
-	for k, v := range args {
-		return k, v, nil
-	}
-	return "", nil, fmt.Errorf("no id found")
-}
-
 func (v *Validator) bufferKeyValue(key string, val interface{}) {
 	// string
 	str, ok := val.(string)

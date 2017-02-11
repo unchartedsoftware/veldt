@@ -49,7 +49,7 @@ func (g *DefaultMeta) Create(uri string) ([]byte, error) {
 	// response will be nested under the original index name. Since we are only
 	// getting the mapping of a single index at a time, we can simply get the
 	// 'first' and only node.
-	index, ok := jsonutil.GetRandomChild(mapping)
+	_, index, ok := jsonutil.GetRandomChild(mapping)
 	if !ok {
 		return nil, fmt.Errorf("Unable to retrieve the mappings response for %s",
 			uri)
