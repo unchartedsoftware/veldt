@@ -32,9 +32,9 @@ func newValidator(pipeline *Pipeline) *validator {
 
 func (v *validator) validateTileRequest(args map[string]interface{}) (*TileRequest, error) {
 
-	req := &TileRequest{}
-
 	v.Buffer("{", 0)
+
+	req := &TileRequest{}
 
 	// validate URI
 	req.URI = v.validateURI(args, 1)
@@ -67,7 +67,7 @@ func (v *validator) validateMetaRequest(args map[string]interface{}) (*MetaReque
 	// validate URI
 	req.URI = v.validateURI(args, 1)
 
-	// validate tile
+	// validate meta
 	req.Meta = v.validateMeta(args, 1)
 
 	v.Buffer("}", 0)
