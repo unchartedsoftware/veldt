@@ -152,28 +152,29 @@ func (c *ServiceClient) getClientRequestsData() map[string]interface{} {
 
 	// This code may be better off in the tile.
 	// All tiles have the same parameters except for tile coordinates.
-	terms := make(map[string][]string)
-	terms["include"] = initialRequest.inclusionTerms
-	terms["exclude"] = initialRequest.exclusionTerms
-	tileData := make(map[string]interface{})
-	tileData["terms"] = terms
+	parameters := make(map[string]interface{})
+	parameters["include_words"] = initialRequest.inclusionTerms
+	parameters["exclude_words"] = initialRequest.exclusionTerms
 
 	// Add simple parameters.
-	tileData["exclusiveness"] = initialRequest.exclusiveness
-	tileData["clusterCount"] = initialRequest.clusterCount
-	tileData["wordCount"] = initialRequest.wordCount
+	parameters["exclusiveness"] = initialRequest.exclusiveness
+	parameters["topic_count"] = initialRequest.clusterCount
+	parameters["word_count"] = initialRequest.wordCount
 
 	// Add time range parameters.
 	time := make(map[string]int64)
 	time["from"] = initialRequest.timeFrom
 	time["to"] = initialRequest.timeTo
-	tileData["time"] = time
+	parameters["time"] = time
 
 	// Get the tile coordinates.
 	coordinates := make([]interface{}, len(c.requests))
 	for i, t := range c.requests {
 		coordinates[i] = c.getTileCoordinate(t)
 	}
+
+	tileData := make(map[string]interface{})
+	tileData["parameters"] = parameters
 	tileData["tiles"] = coordinates
 
 	return tileData
