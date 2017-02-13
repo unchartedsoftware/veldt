@@ -84,7 +84,7 @@ func (t *Tile) Create(uri string, coord *binning.TileCoord, query veldt.Query) (
 		}
 		return nil, fmt.Errorf(string(body))
 	}
-	return tile.DecodeImage(t.ext, res.Body)
+	return tile.Decode(t.ext, res.Body)
 }
 
 func handleExt(ext string, req *http.Request) {
