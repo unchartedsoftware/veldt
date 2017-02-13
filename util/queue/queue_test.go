@@ -158,7 +158,7 @@ var _ = Describe("Queue", func() {
 					}
 				}(i)
 			}
-			// ensure all err'd requests have returned at this point
+			// ensure all erroneous requests have returned at this point
 			wg.Wait()
 			// unpause all paused requests
 			for _, req := range reqs {

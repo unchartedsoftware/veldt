@@ -23,5 +23,5 @@ func (m *Macro) Encode(points []float32) ([]byte, error) {
 	if m.LOD > 0 {
 		return EncodeLOD(points, m.LOD), nil
 	}
-	return Encode(points), nil
+	return EncodeFloat32(points), nil
 }
