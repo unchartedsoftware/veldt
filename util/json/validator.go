@@ -14,23 +14,57 @@ const (
 // Validator parses a JSON query expression into its typed format. It
 // ensure all types are correct and that the syntax is valid.
 type Validator struct {
-	output         []string
-	errLines       map[int]bool
-	indentation    []int
-	errStartIndex  int
-	errEndIndex    int
-	errIndent      int
-	errHeaderIndex int
-	errFooterIndex int
-	errMsg         string
-	err            bool
+	output          []string
+	errLines        map[int]bool
+	nextIndentation int
+	indentation     []int
+	errStartIndex   int
+	errEndIndex     int
+	errIndent       int
+	errHeaderIndex  int
+	errFooterIndex  int
+	errMsg          string
+	err             bool
 }
 
-// Buffer adds a string at the appropriate indent to the output buffer.
-func (v *Validator) Buffer(str string, indent int) {
-	line := fmt.Sprintf("%s%s", v.getIndent(indent), str)
-	v.output = append(v.output, line)
-	v.indentation = append(v.indentation, indent)
+// StartObject begins the buffering of an object.
+func (v *Validator) StartObject() {
+	v.buffer("{")
+	v.nextIndentation++
+}
+
+// StartSubObject begins the buffering of a nested object to a key.
+func (v *Validator) StartSubObject(key string) {
+	v.buffer(fmt.Sprintf(`"%s": {`, key))
+	v.nextIndentation++
+}
+
+// EndObject ends the buffering of the current object.
+func (v *Validator) EndObject() {
+	if v.nextIndentation > 0 {
+		v.nextIndentation--
+	}
+	v.buffer("}")
+}
+
+// StartArray begins the buffering of an array.
+func (v *Validator) StartArray() {
+	v.buffer("[")
+	v.nextIndentation++
+}
+
+// StartSubArray begins the buffering of an array value to a key.
+func (v *Validator) StartSubArray(key string) {
+	v.buffer(fmt.Sprintf(`"%s": [`, key))
+	v.nextIndentation++
+}
+
+// EndArray ends the buffering of the current array.
+func (v *Validator) EndArray() {
+	if v.nextIndentation > 0 {
+		v.nextIndentation--
+	}
+	v.buffer("]")
 }
 
 // Size returns the length of the current output buffer.
@@ -53,7 +87,7 @@ func (v *Validator) Error() error {
 
 // String returns the string in the output buffer.
 func (v *Validator) String() string {
-	length := len(v.output)
+	length := v.Size()
 	formatted := make([]string, length)
 	// determine whether or not to append a comma on the end based on the next
 	// lines indentation
@@ -82,10 +116,12 @@ func (v *Validator) String() string {
 			// no more lines, this means the output is malformed
 			break
 		}
-		if v.indentation[i] != v.indentation[j] {
+		if v.indentation[i] != v.indentation[j] ||
+			v.output[i] == "{" ||
+			v.output[i] == "[" {
 			formatted[i] = v.output[i]
 		} else {
-			formatted[i] = v.output[i] + ","
+			formatted[i] = fmt.Sprintf("%s,", v.output[i])
 		}
 	}
 	// return the concatenated output
@@ -93,19 +129,19 @@ func (v *Validator) String() string {
 }
 
 // StartError begins wrapping an error portion of the output buffer.
-func (v *Validator) StartError(msg string, indent int) {
+func (v *Validator) StartError(msg string) {
 	v.err = true
 	v.errHeaderIndex = v.Size()
 	v.errStartIndex = v.Size() + 1
-	v.errIndent = indent
+	v.errIndent = v.nextIndentation
 	v.errMsg = msg
-	v.Buffer("", 0) // header line
+	v.buffer("") // header line
 }
 
 // EndError ends wrapping an error portion of the output buffer.
 func (v *Validator) EndError() {
 	v.errEndIndex = v.Size()
-	v.Buffer("", 0) // footer line
+	v.buffer("") // footer line
 	width := v.getErrWidth()
 	header := v.getErrHeader(width)
 	footer := v.getErrFooter(width)
@@ -115,8 +151,9 @@ func (v *Validator) EndError() {
 	if v.errLines == nil {
 		v.errLines = make(map[int]bool)
 	}
-	v.errLines[v.errHeaderIndex] = true
-	v.errLines[v.errEndIndex] = true
+	for i := v.errHeaderIndex; i <= v.errEndIndex; i++ {
+		v.errLines[i] = true
+	}
 }
 
 func (v *Validator) getErrAnnotations(width int, char string) string {
@@ -131,12 +168,12 @@ func (v *Validator) getErrHeader(width int) string {
 	if color.ColorTerminal {
 		return fmt.Sprintf("%s%s%s%s",
 			color.Red,
-			v.getIndent(v.errIndent),
+			v.getIndentString(v.errIndent),
 			v.getErrAnnotations(width, "v"),
 			color.Reset)
 	}
 	return fmt.Sprintf("%s%s",
-		v.getIndent(v.errIndent),
+		v.getIndentString(v.errIndent),
 		v.getErrAnnotations(width, "v"))
 }
 
@@ -144,13 +181,13 @@ func (v *Validator) getErrFooter(width int) string {
 	if color.ColorTerminal {
 		return fmt.Sprintf("%s%s%s Error: %s%s",
 			color.Red,
-			v.getIndent(v.errIndent),
+			v.getIndentString(v.errIndent),
 			v.getErrAnnotations(width, "^"),
 			v.errMsg,
 			color.Reset)
 	}
 	return fmt.Sprintf("%s%s Error: %s",
-		v.getIndent(v.errIndent),
+		v.getIndentString(v.errIndent),
 		v.getErrAnnotations(width, "^"),
 		v.errMsg)
 }
@@ -167,7 +204,7 @@ func (v *Validator) getErrWidth() int {
 	return maxWidth
 }
 
-func (v *Validator) getIndent(indent int) string {
+func (v *Validator) getIndentString(indent int) string {
 	var strs []string
 	for i := 0; i < indent; i++ {
 		strs = append(strs, indentor)
@@ -175,85 +212,105 @@ func (v *Validator) getIndent(indent int) string {
 	return strings.Join(strs, "")
 }
 
-func (v *Validator) formatVal(val interface{}) string {
-	str, ok := val.(string)
-	if ok {
-		return fmt.Sprintf(`"%s"`, str)
-	}
-	arr, ok := val.([]interface{})
-	if ok {
-		vals := make([]string, len(arr))
-		for i, sub := range arr {
-			vals[i] = v.formatVal(sub)
-		}
-		return fmt.Sprintf("[ %s ]", strings.Join(vals, ", "))
-	}
-	return fmt.Sprintf("%v", val)
-}
-
-// GetIDAndParams returns the nested key and value from a JSON object of the
-// form:
-//     {
-//         "key": {
-//             "prop0": ...,
-//             "prop1": ...,
-//             "prop2": ...,
-//         }
-//     }
-//
-func (v *Validator) GetIDAndParams(args map[string]interface{}) (string, interface{}, error) {
-	for k, v := range args {
-		return k, v, nil
-	}
-	return "", nil, fmt.Errorf("no id found")
-}
-
-func (v *Validator) bufferKeyValue(key string, val interface{}, indent int) {
+func (v *Validator) bufferKeyValue(key string, val interface{}) {
 	// string
 	str, ok := val.(string)
 	if ok {
-		v.Buffer(fmt.Sprintf(`"%s": "%s"`, key, str), indent)
+		v.buffer(fmt.Sprintf(`"%s": "%s"`, key, str))
 		return
 	}
 
 	// array
-	// TODO: split this into multiline
 	arr, ok := val.([]interface{})
 	if ok {
-		vals := make([]string, len(arr))
-		for i, sub := range arr {
-			vals[i] = v.formatVal(sub)
+		v.StartSubArray(key)
+		for _, sub := range arr {
+			v.bufferValue(sub)
 		}
-		v.Buffer(fmt.Sprintf(`"%s": [ %s ]`, key, strings.Join(vals, ", ")), indent)
+		v.EndArray()
 		return
 	}
 
 	// obj
 	obj, ok := val.(map[string]interface{})
 	if ok {
-		v.Buffer(fmt.Sprintf(`"%s": {`, key), indent)
+		v.StartSubObject(key)
 		for subkey, subval := range obj {
-			v.bufferKeyValue(subkey, subval, indent+1)
+			v.bufferKeyValue(subkey, subval)
 		}
-		v.Buffer("}", indent)
+		v.EndObject()
 		return
 	}
 
 	// other
-	v.Buffer(fmt.Sprintf(`"%s": %v`, key, val), indent)
+	v.buffer(fmt.Sprintf(`"%s": %v`, key, val))
 }
 
 // BufferKeyValue will buffer the a JSON key and it's value with correct
 // indentation.
-func (v *Validator) BufferKeyValue(key string, val interface{}, indent int, err error) {
+func (v *Validator) BufferKeyValue(key string, val interface{}, err error) {
 	// if error, start
 	if err != nil {
-		v.StartError(fmt.Sprintf("%v", err), indent)
+		v.StartError(fmt.Sprintf("%v", err))
 	}
 	// buffer key / val
-	v.bufferKeyValue(key, val, indent)
+	v.bufferKeyValue(key, val)
 	// if error, end
 	if err != nil {
 		v.EndError()
 	}
+}
+
+func (v *Validator) bufferValue(val interface{}) {
+	// string
+	str, ok := val.(string)
+	if ok {
+		v.buffer(fmt.Sprintf(`"%s"`, str))
+		return
+	}
+
+	// array
+	arr, ok := val.([]interface{})
+	if ok {
+		v.StartArray()
+		for _, sub := range arr {
+			v.bufferValue(sub)
+		}
+		v.EndArray()
+		return
+	}
+
+	// obj
+	obj, ok := val.(map[string]interface{})
+	if ok {
+		v.StartObject()
+		for subkey, subval := range obj {
+			v.bufferKeyValue(subkey, subval)
+		}
+		v.EndObject()
+		return
+	}
+
+	// other
+	v.buffer(fmt.Sprintf("%v", val))
+}
+
+// BufferValue will buffer the a JSON value with correct indentation.
+func (v *Validator) BufferValue(val interface{}, err error) {
+	// if error, start
+	if err != nil {
+		v.StartError(fmt.Sprintf("%v", err))
+	}
+	// buffer val
+	v.bufferValue(val)
+	// if error, end
+	if err != nil {
+		v.EndError()
+	}
+}
+
+func (v *Validator) buffer(str string) {
+	line := fmt.Sprintf("%s%s", v.getIndentString(v.nextIndentation), str)
+	v.output = append(v.output, line)
+	v.indentation = append(v.indentation, v.nextIndentation)
 }
