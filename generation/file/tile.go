@@ -71,7 +71,7 @@ func (t *Tile) Create(uri string, coord *binning.TileCoord, query veldt.Query) (
 	}
 	defer file.Close()
 	// decode file
-	return tile.DecodeImage(t.ext, file)
+	return tile.Decode(t.ext, file)
 }
 
 func (t *Tile) getFormat(coord *binning.TileCoord) string {
