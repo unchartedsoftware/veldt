@@ -1,39 +1,68 @@
-hash: 75fce8e3903c5c3b2625142d837eaebf8f58f4d2710081b5d0165e19952f84f6
-updated: 2017-01-27T15:28:44.521645139-05:00
+hash: ad18beef08076921744cc47e1e56c8b9419c4b2006f41226d66f5c5647b04349
+updated: 2017-02-21T21:32:19.529287287-05:00
 imports:
 - name: github.com/coocood/freecache
-  version: bc9053bc20ecba4f091ffe1c83040ae4b8f9e845
+  version: d0d9ceb35b1ceab3a11265b4130e418fd485474d
 - name: github.com/davecgh/go-spew
   version: 346938d642f2ec3594ed81d874461961cd0faa76
   subpackages:
   - spew
 - name: github.com/garyburd/redigo
-  version: 8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13
+  version: 0d253a66e6e1349f4581d6d2b300ee434ee2da9f
   subpackages:
   - internal
   - redis
 - name: github.com/jackc/pgx
-  version: 6c5b4703172c5a71b5fd59160188d6857b2cd579
+  version: a52a6bd5558b1450ee69178739caf0489c23c3e6
+- name: github.com/liyinhgqw/typesafe-config
+  version: c8ba452ab033d7f2642481c62b4b67c3229bbfbb
+  subpackages:
+  - parse
+- name: github.com/mattn/go-colorable
+  version: 5411d3eea5978e6cdc258b30de592b60df6aba96
 - name: github.com/mattn/go-isatty
-  version: 30a891c33c7cde7b02a981314b4228ec99380cca
+  version: 281032e84ae07510239465db46bf442aa44b953a
 - name: github.com/mgutz/ansi
-  version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
+  version: 9520e82c474b0a04dd04f8a40959027271bab992
+- name: github.com/onsi/gomega
+  version: c463cd2a8578290d4be7a25cba69de81cf35785e
+  subpackages:
+  - format
+  - internal/assertion
+  - internal/asyncassertion
+  - internal/oraclematcher
+  - internal/testingtsupport
+  - matchers
+  - matchers/support/goraph/bipartitegraph
+  - matchers/support/goraph/edge
+  - matchers/support/goraph/node
+  - matchers/support/goraph/util
+  - types
 - name: github.com/spaolacci/murmur3
   version: 0d12bf811670bf6a1a63828dfbd003eded177fce
+- name: github.com/streadway/amqp
+  version: d75c3a341ff43309ad0cb69ac8bdbd1d8772775f
 - name: github.com/unchartedsoftware/plog
-  version: bbb4bc4151f23ea489aff06d2a27f10e1a935993
+  version: e7b290aff4666be1962aedc5dabf494c2e7818c7
+- name: golang.org/x/net
+  version: b4690f45fa1cafc47b1c280c2e75116efe40cc13
+  subpackages:
+  - context
+  - context/ctxhttp
 - name: golang.org/x/sys
-  version: 30237cf4eefd639b184d1f2cb77a581ea0be8947
+  version: e24f485414aeafb646f6fca458b0bf869c0880a1
   subpackages:
   - unix
 - name: gopkg.in/olivere/elastic.v3
-  version: 787ebbb5a7600662bca364e4e8ca959f315e442f
+  version: 9da4058517104766446811c87c0890f26c03d945
   subpackages:
   - backoff
   - uritemplates
+- name: gopkg.in/yaml.v2
+  version: a3f3340b5840cee44f372bddb5880fcbc419b46a
 testImports:
 - name: github.com/onsi/ginkgo
-  version: a23f924ce96d61f963fb6219b8ff069d8d768cc2
+  version: bb93381d543b0e5725244abe752214a110791d01
   subpackages:
   - config
   - internal/codelocation
@@ -51,19 +80,3 @@ testImports:
   - reporters/stenographer/support/go-colorable
   - reporters/stenographer/support/go-isatty
   - types
-- name: github.com/onsi/gomega
-  version: e85f63af4302dc0e4277c6008ecf803f1d80e4f0
-  subpackages:
-  - format
-  - internal/assertion
-  - internal/asyncassertion
-  - internal/oraclematcher
-  - internal/testingtsupport
-  - matchers
-  - matchers/support/goraph/bipartitegraph
-  - matchers/support/goraph/edge
-  - matchers/support/goraph/node
-  - matchers/support/goraph/util
-  - types
-- name: gopkg.in/yaml.v2
-  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
