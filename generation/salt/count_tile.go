@@ -13,7 +13,7 @@ type Count struct {
 }
 
 // NewCountTile returns a salt-based data-counting tile
-func NewCountTile (rmqConfig Configuration) veldt.TileCtor {
+func NewCountTile (rmqConfig *Configuration) veldt.TileCtor {
 	return func() (veldt.Tile, error) {
 		t := &Count{}
 		t.rmqConfig = rmqConfig

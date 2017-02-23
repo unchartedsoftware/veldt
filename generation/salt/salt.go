@@ -4,7 +4,9 @@ import (
 	"runtime"
 	"fmt"
 	"sync"
+
 	"github.com/streadway/amqp"
+	"github.com/unchartedsoftware/plog"
 )
 
 // RabbitMQConnection describes a connection to a RabbitMQ server
@@ -13,6 +15,15 @@ type RabbitMQConnection struct {
 	channel		*amqp.Channel
 	queues		map[string]amqp.Queue
 }
+
+const (
+	// Yellow "SALT" - code derived from github.com/mgutz/ansi,
+	// but I wanted it as a const, so couldn't use that directly
+	preLog = "\033[1;38;5;3mSALT\033[0m: "
+	// And codes to make the message red, similarly as constants
+	preMsg = "\033[1;97;3m"
+	postMsg = "\033[0m"
+)
 
 var (
 	mutex = sync.Mutex{}
@@ -23,10 +34,12 @@ var (
 )
 
 // NewConnection returns a connection to the Salt tile server via RabbitMQ
-func NewConnection (config Configuration) (*RabbitMQConnection, error) {
+func NewConnection (config *Configuration) (*RabbitMQConnection, error) {
 	mutex.Lock()
 	rmq, contained := connections[config.Key()]
 	if !contained {
+		log.Infof(preLog+"New connection request")
+
 		url := fmt.Sprintf("amqp://%s:%d", config.host, config.port)
 		var connection *amqp.Connection
 		var channel *amqp.Channel
@@ -69,11 +82,13 @@ func NewConnection (config Configuration) (*RabbitMQConnection, error) {
 	mutex.Unlock()
 	runtime.Gosched()
 
+	log.Infof(preLog+"connection request fulfilled: %v", rmq)
 	return rmq, nil
 }
 
 // Close closes this RabbitMQ connection
 func (rmq *RabbitMQConnection) Close () {
+	log.Infof(preLog+"Closing connection")
 	rmq.channel.Close()
 	rmq.connection.Close()
 }
@@ -88,6 +103,7 @@ func (rmq *RabbitMQConnection) Declare (qName string, qc *QueueConfiguration) er
 		return err
 	}
 	rmq.queues[qName] = q
+	log.Infof(preLog+"Declaring channel '%s'=(%v)", qName, q)
 	return nil
 }
 
@@ -131,8 +147,10 @@ func (rmq *RabbitMQConnection) Query (queue string, message []byte) ([]byte, err
 	responseChannel := make(chan amqp.Delivery)
 	responseChannels[msgID] = responseChannel
 
+	log.Infof(preLog+"Publishing message \"%s%s%s\" (query queue: %s(=%s)) (response queue: %s(=%s))", preMsg, string(message), postMsg, queue, queryQ.Name, "response", responseQ.Name)
 	rmq.channel.Publish("", queryQ.Name, false, false, amqp.Publishing{Body: message, ReplyTo: responseQ.Name, MessageId: msgID})
 
 	response := <- responseChannel
+	log.Infof(preLog+"Response received: \"%s%s%s\"", preMsg, string(response.Body), postMsg)
 	return response.Body, nil
 }
