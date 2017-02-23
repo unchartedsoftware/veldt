@@ -2,6 +2,7 @@ package salt
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"io/ioutil"
 	"github.com/liyinhgqw/typesafe-config/parse"
@@ -22,6 +23,34 @@ type Configuration struct {
 	port                int64
 	serverQueue         string
 	queueConfigurations map[string]*QueueConfiguration
+}
+
+func tOrF (b bool) string {
+	if b {
+		return "T"
+	}
+	return "F"
+}
+// Key returns a unique key that completely describes this configuration
+func (c *Configuration) Key () string {
+	qcs := make([]string, len(c.queueConfigurations))
+	i := 0
+	for k := range c.queueConfigurations {
+		qcs[i] = k
+	}
+	sort.Strings(qcs)
+	qcKey := ""
+	first := true
+	for _, k := range qcs {
+		qc := c.queueConfigurations[k]
+		if first {
+			qcKey = fmt.Sprintf("%s.%s.%s%s%s%s", k, qc.queue, tOrF(qc.durable), tOrF(qc.deletable), tOrF(qc.exclusive), tOrF(qc.noWait))
+		} else {
+			qcKey = qcKey+fmt.Sprintf(":%s.%s.%s%s%s%s", k, qc.queue, tOrF(qc.durable), tOrF(qc.deletable), tOrF(qc.exclusive), tOrF(qc.noWait))
+		}
+	}
+		
+	return fmt.Sprintf("%s:%d|%s|%s", c.host, c.port, c.serverQueue, qcKey)
 }
 
 func getConfigString (key string, config *parse.Config) Option {

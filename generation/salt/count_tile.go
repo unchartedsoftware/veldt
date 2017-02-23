@@ -13,17 +13,21 @@ type Count struct {
 }
 
 // NewCountTile returns a salt-based data-counting tile
-func NewCountTile (host, port string) veldt.TileCtor {
+func NewCountTile (rmqConfig Configuration) veldt.TileCtor {
 	return func() (veldt.Tile, error) {
 		t := &Count{}
-		t.host = host
-		t.port = port
+		t.rmqConfig = rmqConfig
 		return t, nil
 	}
 }
 
 // Create generates a tile from the provided URI, tile coordinate, and query parameters
 func (t *Count) Create (uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
-	return []byte("this is a test"), nil
+	connection, err := NewConnection(t.rmqConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return connection.Query(t.rmqConfig.serverQueue, []byte("this is a test"))
 }
 
