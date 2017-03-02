@@ -136,6 +136,31 @@ func (c *ServiceClient) sendRequest(requestData map[string]interface{}) (string,
 	}
 
 	return result, nil
+	//return c.fakeResponse(requestData)
+}
+
+func (c * ServiceClient) fakeResponse(requestData map[string]interface{}) (string, error) {
+	result := ""
+	for _, tile := range requestData["tiles"].([]interface{}) {
+		tileData := tile.(map[string]uint32)
+		result = fmt.Sprintf(`%v, {
+			"tile": {"x": %v, "y": %v, "level": %v},
+			"topic": [{
+				"score": 4.32,
+				"exclusiveness": 1.23,
+				"words": [
+					{"score": 13.23, "word": "fries", "count": 10},
+					{"score": 9.13, "word": "drinks", "count": 7},
+					{"score": 2.99, "word": "burger", "count": 3}
+				]
+			}]
+			}`, result, tileData["x"], tileData["y"], tileData["level"])
+	}
+
+	result = fmt.Sprintf("[%s]", result[1:])
+	fmt.Printf("Result: %s", result)
+
+	return result, nil
 }
 
 // Handle errors raised during the processing of the batch.
@@ -186,6 +211,7 @@ func (c *ServiceClient) parseResponse(response []byte) (map[string]string, error
 	var raw interface{}
 	err := json.Unmarshal([]byte(response), &raw)
 	if err != nil {
+		fmt.Printf("Error parsing JSON!")
 		return nil, err
 	}
 

@@ -119,9 +119,12 @@ func (t *TopicTile) Create(uri string, coord *binning.TileCoord, query veldt.Que
 		return nil, fmt.Errorf("Unexpected response format from topic modelling service: incorrect structure in %v", res)
 	}
 
-	counts := make(map[string]uint32)
+	counts := make(map[uint32]map[string]interface{})
 	topics, ok := jsonUtil.GetArray(topicsParsed, "topic")
+	topicGroup := uint32(0)
 	for _, topic := range topics {
+		counts[topicGroup] = make(map[string]interface{})
+		topicWords := make(map[string]uint32)
 		topicMap, ok := topic.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("Unexpected response format from topic modelling service: incorrect topic structure in %v", res)
@@ -145,9 +148,16 @@ func (t *TopicTile) Create(uri string, coord *binning.TileCoord, query veldt.Que
 				return nil, fmt.Errorf("Unexpected response format from topic modelling service: cannot find 'score' in %v", res)
 			}
 
-			// For now, use straight sum of weights to determine overall weight.
-			counts[word] = counts[word] + uint32(weight)
+			// Set the weight & topic group of the word.
+			topicWords[word] = uint32(weight)
 		}
+		exclusiveness, ok := jsonUtil.GetNumber(topicMap, "exclusiveness")
+		if !ok {
+			return nil, fmt.Errorf("Unexpected response format from topic modelling service: cannot find 'exclusiveness' in %v", res)
+		}
+		counts[topicGroup]["exclusiveness"] = exclusiveness
+		counts[topicGroup]["words"] = topicWords
+		topicGroup = topicGroup + 1
 	}
 
 	// marshal results
