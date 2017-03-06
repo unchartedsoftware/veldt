@@ -11,17 +11,14 @@ import (
 )
 
 type TopicTile struct {
+	APITile
 	inclusionTerms []string
 	exclusionTerms []string
-	requestId      string
 	exclusiveness  int
 	clusterCount   int
 	wordCount      int
 	timeFrom       int64
 	timeTo         int64
-	x              uint32
-	y              uint32
-	z              uint32
 }
 
 func NewTopicTile() veldt.TileCtor {
@@ -81,8 +78,14 @@ func (t *TopicTile) Parse(params map[string]interface{}) error {
 		strings.Join(include, ","), strings.Join(exclude, ","))
 
 	t.requestId = requestId
+	t.tileType = "topic"
 
 	return nil
+}
+
+func (t *TopicTile) GetApiUrl() string {
+	// TODO: Have the URL configurable!
+	return "http://163.152.20.64:5000/GET_TOPICS/test"
 }
 
 func (t *TopicTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
@@ -162,6 +165,26 @@ func (t *TopicTile) Create(uri string, coord *binning.TileCoord, query veldt.Que
 
 	// marshal results
 	return json.Marshal(counts)
+}
+
+// Create the request to the remote service.
+func (t *TopicTile) GetRequestParameters() map[string]interface{} {
+	parameters := make(map[string]interface{})
+	parameters["include_words"] = t.inclusionTerms
+	parameters["exclude_words"] = t.exclusionTerms
+
+	// Add simple parameters.
+	parameters["exclusiveness"] = t.exclusiveness
+	parameters["topic_count"] = t.clusterCount
+	parameters["word_count"] = t.wordCount
+
+	// Add time range parameters.
+	time := make(map[string]int64)
+	time["from"] = t.timeFrom
+	time["to"] = t.timeTo
+	parameters["time"] = time
+
+	return parameters
 }
 
 func (t *TopicTile) GetTileId() string {

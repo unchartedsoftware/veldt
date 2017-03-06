@@ -18,9 +18,55 @@ var (
 	handlers = make(map[string]*ServiceClient)
 )
 
+// Create the hash for the tile.
+func getTileCoordinateHash(x, y, z uint32) string {
+	return fmt.Sprintf("%v/%v/%v", z, x, y)
+}
+
+type APIRequest interface {
+	GetApiUrl() string
+	GetRequestId() string
+	GetRequestParameters() map[string]interface{}
+	GetTileCoordinateHash() string
+	GetTileCoordinate() map[string]uint32
+	GetTileType() string
+}
+
+type APITile struct {
+    requestId   string
+	tileType	string
+	x              uint32
+	y              uint32
+	z              uint32
+}
+
+func (t *APITile) GetRequestId() string {
+	return fmt.Sprintf("%s:%s", t.tileType, t.requestId)
+}
+
+func (t *APITile) GetTileType() string {
+	return t.tileType
+}
+
+// Create the hash for the tile.
+func (t *APITile) GetTileCoordinateHash() string {
+	return getTileCoordinateHash(t.x, t.y, t.z)
+}
+
+// Create the hash for the tile.
+func (t *APITile) GetTileCoordinate() map[string]uint32 {
+	coordinates := make(map[string]uint32)
+
+	coordinates["x"] = t.x
+	coordinates["y"] = t.y
+	coordinates["level"] = t.z
+
+	return coordinates
+}
+
 // A service client exists to handle a batch of tile requests.
-func getServiceClient(tile *TopicTile) *ServiceClient {
-	requestId := tile.requestId
+func getServiceClient(tile APIRequest) *ServiceClient {
+	requestId := tile.GetRequestId()
 
 	// Not the most efficient use of locks. Will probably need to be optimized.
 	mutex.Lock()
@@ -31,6 +77,7 @@ func getServiceClient(tile *TopicTile) *ServiceClient {
 
 	client := NewServiceClient()
 	client.requestId = requestId
+	client.apiURL = tile.GetApiUrl()
 	handlers[requestId] = client
 
 	go client.HandleRequests()
@@ -41,8 +88,9 @@ func getServiceClient(tile *TopicTile) *ServiceClient {
 // Handles a batch of topic tile requests.
 type ServiceClient struct {
 	requestId        string
-	requests         []*TopicTile
+	requests         []APIRequest
 	responseChannels map[string]chan interface{}
+	apiURL	string
 	processing       bool
 }
 
@@ -50,7 +98,7 @@ type ServiceClient struct {
 // since we do not know how many topic tiles are expected yet.
 func NewServiceClient() *ServiceClient {
 	service := ServiceClient{}
-	service.requests = make([]*TopicTile, 0)
+	service.requests = make([]APIRequest, 0)
 	service.responseChannels = make(map[string]chan interface{})
 	service.processing = false
 
@@ -58,11 +106,11 @@ func NewServiceClient() *ServiceClient {
 }
 
 // Add a request to the batch.
-func (c *ServiceClient) AddRequest(tile *TopicTile) (chan interface{}, error) {
+func (c *ServiceClient) AddRequest(tile APIRequest) (chan interface{}, error) {
 	// Get duplicate requests to return the same channel that is already setup.
 	// TODO: Need to actually handle the duplcate request case because right now Only
 	// a single message gets written to the channel.
-	hash := c.getTileCoordinateHash(tile.x, tile.y, tile.z)
+	hash := tile.GetTileCoordinateHash()
 	mutex.Lock()
 	defer mutex.Unlock()
 	if channel, ok := c.responseChannels[hash]; ok {
@@ -127,7 +175,7 @@ func (c *ServiceClient) HandleRequests() {
 func (c *ServiceClient) sendRequest(requestData map[string]interface{}) (string, error) {
 	// TODO: Have the URL configurable!
 	request := gorequest.New()
-	_, result, errs := request.Post("http://163.152.20.64:5000/GET_TOPICS/test").Send(requestData).End()
+	_, result, errs := request.Post(c.apiURL).Send(requestData).End()
 
 	// TODO: Check the return values (the response) to make sure it is 200.
 	// For now return the first error.
@@ -143,18 +191,29 @@ func (c * ServiceClient) fakeResponse(requestData map[string]interface{}) (strin
 	result := ""
 	for _, tile := range requestData["tiles"].([]interface{}) {
 		tileData := tile.(map[string]uint32)
-		result = fmt.Sprintf(`%v, {
-			"tile": {"x": %v, "y": %v, "level": %v},
-			"topic": [{
-				"score": 4.32,
-				"exclusiveness": 1.23,
-				"words": [
-					{"score": 13.23, "word": "fries", "count": 10},
-					{"score": 9.13, "word": "drinks", "count": 7},
-					{"score": 2.99, "word": "burger", "count": 3}
-				]
-			}]
-			}`, result, tileData["x"], tileData["y"], tileData["level"])
+		if c.requests[0].GetTileType() == "topic" {
+			result = fmt.Sprintf(`%v, {
+				"tile": {"x": %v, "y": %v, "level": %v},
+				"topic": [{
+					"score": 4.32,
+					"exclusiveness": 1.23,
+					"words": [
+						{"score": 13.23, "word": "fries", "count": 10},
+						{"score": 9.13, "word": "drinks", "count": 7},
+						{"score": 2.99, "word": "burger", "count": 3}
+					]
+				}]
+				}`, result, tileData["x"], tileData["y"], tileData["level"])
+		} else {
+			result = fmt.Sprintf(`%v,
+				{
+					"tile": {"x": %v, "y": %v, "level": %v},
+					"exclusiveness": [
+						"value": 0.8,
+						"date": "22-01-2015"
+					]
+				}`, result, tileData["x"], tileData["y"], tileData["level"])
+		}
 	}
 
 	result = fmt.Sprintf("[%s]", result[1:])
@@ -177,25 +236,12 @@ func (c *ServiceClient) getClientRequestsData() map[string]interface{} {
 
 	// This code may be better off in the tile.
 	// All tiles have the same parameters except for tile coordinates.
-	parameters := make(map[string]interface{})
-	parameters["include_words"] = initialRequest.inclusionTerms
-	parameters["exclude_words"] = initialRequest.exclusionTerms
-
-	// Add simple parameters.
-	parameters["exclusiveness"] = initialRequest.exclusiveness
-	parameters["topic_count"] = initialRequest.clusterCount
-	parameters["word_count"] = initialRequest.wordCount
-
-	// Add time range parameters.
-	time := make(map[string]int64)
-	time["from"] = initialRequest.timeFrom
-	time["to"] = initialRequest.timeTo
-	parameters["time"] = time
+	parameters := initialRequest.GetRequestParameters()
 
 	// Get the tile coordinates.
 	coordinates := make([]interface{}, len(c.requests))
 	for i, t := range c.requests {
-		coordinates[i] = c.getTileCoordinate(t)
+		coordinates[i] = t.GetTileCoordinate()
 	}
 
 	tileData := make(map[string]interface{})
@@ -243,26 +289,10 @@ func (c *ServiceClient) parseResponse(response []byte) (map[string]string, error
 		x := uint32(tileCoord["x"].(float64))
 		y := uint32(tileCoord["y"].(float64))
 		z := uint32(tileCoord["level"].(float64))
-		parsed[c.getTileCoordinateHash(x, y, z)] = string(tileString)
+		parsed[getTileCoordinateHash(x, y, z)] = string(tileString)
 	}
 
 	return parsed, nil
-}
-
-// Create the coordinate structure from the tile.
-func (c *ServiceClient) getTileCoordinate(tile *TopicTile) interface{} {
-	coordinates := make(map[string]uint32)
-
-	coordinates["x"] = tile.x
-	coordinates["y"] = tile.y
-	coordinates["level"] = tile.z
-
-	return coordinates
-}
-
-// Create the hash for the tile.
-func (c *ServiceClient) getTileCoordinateHash(x, y, z uint32) string {
-	return fmt.Sprintf("%v/%v/%v", z, x, y)
 }
 
 // Wait for 500 ms to batch requests to the server.
