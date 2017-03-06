@@ -14,6 +14,7 @@ type RabbitMQConnection struct {
 	connection	*amqp.Connection
 	channel		*amqp.Channel
 	queues		map[string]amqp.Queue
+	serverQueue string
 }
 
 const (
@@ -54,7 +55,7 @@ func NewConnection (config *Configuration) (*RabbitMQConnection, error) {
 			return nil, err
 		}
 
-		rmq = &RabbitMQConnection{connection, channel, make(map[string]amqp.Queue)}
+		rmq = &RabbitMQConnection{connection, channel, make(map[string]amqp.Queue), config.serverQueue}
 
 		// Register our standard queues
 		for k, v := range config.queueConfigurations {
@@ -132,9 +133,25 @@ func nextMessageID () string {
 	return msgID
 }
 
-// Query the salt server for a tile
-func (rmq *RabbitMQConnection) Query (queue string, message []byte) ([]byte, error) {
-	queryQ, err := rmq.GetQueue(queue)
+// Dataset sets up a dataset on the Salt server for future use
+func (rmq *RabbitMQConnection) Dataset (message []byte) ([]byte, error) {
+	return rmq.sendServerMessage("dataset", message)
+}
+
+// QueryTiles queries the salt server for a tile
+func (rmq *RabbitMQConnection) QueryTiles (message []byte) ([]byte, error) {
+	return rmq.sendServerMessage("tiles", message)
+}
+
+// QueryMetadata queries the salt server for metadata on a dataset
+func (rmq *RabbitMQConnection) QueryMetadata (message []byte) ([]byte, error) {
+	return rmq.sendServerMessage("metadata", message)
+}
+
+// sendServerMessage is a low-level generic function to do exactly what it says.  It is used by
+// Query and Dataset
+func (rmq *RabbitMQConnection) sendServerMessage (messageType string, message []byte) ([]byte, error) {
+	queryQ, err := rmq.GetQueue(rmq.serverQueue)
 	if err != nil {
 		return emptyResponse, err
 	}
@@ -147,8 +164,15 @@ func (rmq *RabbitMQConnection) Query (queue string, message []byte) ([]byte, err
 	responseChannel := make(chan amqp.Delivery)
 	responseChannels[msgID] = responseChannel
 
-	log.Infof(preLog+"Publishing message \"%s%s%s\" (query queue: %s(=%s)) (response queue: %s(=%s))", preMsg, string(message), postMsg, queue, queryQ.Name, "response", responseQ.Name)
-	rmq.channel.Publish("", queryQ.Name, false, false, amqp.Publishing{Body: message, ReplyTo: responseQ.Name, MessageId: msgID})
+	log.Infof(preLog+"Publishing message \"%s%s%s\" (query queue: %s(=%s)) (response queue: %s(=%s))",
+		preMsg, string(message), postMsg, rmq.serverQueue, queryQ.Name, "response", responseQ.Name)
+
+	rmq.channel.Publish("", queryQ.Name, false, false,
+		amqp.Publishing{
+			Type: messageType,
+			Body: message,
+			ReplyTo: responseQ.Name,
+			MessageId: msgID})
 
 	response := <- responseChannel
 	log.Infof(preLog+"Response received: \"%s%s%s\"", preMsg, string(response.Body), postMsg)

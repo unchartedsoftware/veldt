@@ -21,8 +21,8 @@ type QueueConfiguration struct {
 type Configuration struct {
 	host                string
 	port                int64
-	serverQueue         string
 	queueConfigurations map[string]*QueueConfiguration
+	serverQueue         string
 }
 
 func tOrF (b bool) string {
@@ -126,6 +126,11 @@ func getKeys (root parse.Node, path ...string) ([]string, error) {
 	return getKeys(elem, path[1:]...)
 }
 
+// ReadDatasetConfiguration reads a file into a string, so it can be passed to Salt
+func ReadDatasetConfiguration (filename string) ([]byte, error) {
+	return ioutil.ReadFile(filename)
+}
+
 // ReadConfiguration reads a typesafe-config configuration file that sets up our salt connection
 func ReadConfiguration (filename string) (*Configuration, error) {
 	// Read the config file
@@ -172,5 +177,5 @@ func ReadConfiguration (filename string) (*Configuration, error) {
 		queues[queueKey] = &QueueConfiguration{queue, durable, autoDelete, exclusive, noWait}
 	}
 
-	return &Configuration{host, port, serverQueue, queues}, nil
+	return &Configuration{host, port, queues, serverQueue}, nil
 }
