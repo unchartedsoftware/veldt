@@ -44,10 +44,21 @@ This minimalistic application shows how to register tile and meta data generator
 package main
 
 import (
+	"encoding/json"
+
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/generation/elastic"
 	"github.com/unchartedsoftware/veldt/store/redis"
 )
+
+func JSON(str string) map[string]interface{} {
+	var j map[string]interface{}
+	err := json.Unmarshal([]byte(str), &j)
+	if err != nil {
+		panic(err)
+	}
+	return j
+}
 
 func main() {
 	// Create pipeline
@@ -75,7 +86,7 @@ func main() {
 	pipeline.Store(redis.NewStore("localhost", "6379", -1))
 
 	// Create tile JSON request
-	json :=
+	arg := JSON(
 		`
 		{
 			"uri": "sample_index0",
@@ -111,12 +122,12 @@ func main() {
 				}
 			]
 		}
-		`
+		`)
 
 	// Generate a tile directly from the pipeline
 
 	// Instantiate a request object
-	req, err := pipeline.NewTileRequest(json)
+	req, err := pipeline.NewTileRequest(arg)
 	if err != nil {
 		panic(err)
 	}
@@ -141,13 +152,13 @@ func main() {
 
 	// Generate a tile, this call will block until the tile is ready in the
 	// store.
-	err = veldt.GenerateTile("elastic", json)
+	err = veldt.GenerateTile("elastic", arg)
 	if err != nil {
 		panic(err)
 	}
 
 	// Retrieve the tile from the store
-	bytes, err := veldt.GetTileFromStore("elastic", json)
+	bytes, err = veldt.GetTileFromStore("elastic", arg)
 	if err != nil {
 		panic(err)
 	}
