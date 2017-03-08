@@ -209,10 +209,10 @@ func (c * ServiceClient) fakeResponse(requestData map[string]interface{}) (strin
 				{
 					"tile": {"x": %v, "y": %v, "level": %v},
 					"exclusiveness": [
-						"value": 0.8,
-						"date": "22-01-2015"
+						{"value": %v, "date": "22-01-2015"}
 					]
-				}`, result, tileData["x"], tileData["y"], tileData["level"])
+				}`, result, tileData["x"], tileData["y"], tileData["level"],
+				float64((tileData["x"] + tileData["y"])) / float64(tileData["level"]))
 		}
 	}
 
