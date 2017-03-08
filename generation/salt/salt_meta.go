@@ -23,6 +23,9 @@ func (meta *Meta) Create (uri string) ([]byte, error) {
 		return nil, err
 	}
 
+	// TODO: Always transmit full dataset description and tile type with every metadata request,
+	// the former in case the server has restarted, the later so that the server can return us
+	// appropriate metadata
 	return connection.QueryMetadata([]byte(uri))
 }
 

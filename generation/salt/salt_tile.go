@@ -70,6 +70,7 @@ func (t *Tile) Create (uri string, coord *binning.TileCoord, query veldt.Query) 
 	tileSpec := make(map[string]interface{})
 	tileSpec["type"] = t.tileType
 	tileSpec["coordinates"] = coordMap
+	// TODO: Always transmit full dataset description with every tile request (in case the server has restarted)
 
 	fullConfiguration := make(map[string]interface{})
 	fullConfiguration["tile-spec"] = tileSpec
