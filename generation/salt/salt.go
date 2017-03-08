@@ -164,8 +164,8 @@ func (rmq *RabbitMQConnection) sendServerMessage (messageType string, message []
 	responseChannel := make(chan amqp.Delivery)
 	responseChannels[msgID] = responseChannel
 
-	log.Infof(preLog+"Publishing message \"%s%s%s\" (query queue: %s(=%s)) (response queue: %s(=%s))",
-		preMsg, string(message), postMsg, rmq.serverQueue, queryQ.Name, "response", responseQ.Name)
+	log.Infof(preLog+"Publishing message \"%s%s%s\"\n\t(query queue: %s(=%s))\n\t(response queue: %s(=%s))\n\t(type: %s)",
+		preMsg, string(message), postMsg, rmq.serverQueue, queryQ.Name, "response", responseQ.Name, messageType)
 
 	rmq.channel.Publish("", queryQ.Name, false, false,
 		amqp.Publishing{
