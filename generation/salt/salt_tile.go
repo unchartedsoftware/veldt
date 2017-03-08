@@ -11,12 +11,13 @@ import (
 // Tile represents any tile served to Veldt by Salt
 type Tile struct {
 	rmqConfig *Configuration // The configuration defining how we connect to the RabbitMQ server
+	tileType string          // The type of tile to produce, as interpretted by the salt server
 	tileConfiguration map[string]interface{} // The JSON description of the tile configuration
 }
 
 // NewSaltTile returns a constructor for salt-based tiles of all sorts.  It also initializes the
 // salt server with the datasets it expects to use.
-func NewSaltTile (rmqConfig *Configuration, datasetConfigurations ...[]byte) veldt.TileCtor {
+func NewSaltTile (rmqConfig *Configuration, tileType string, datasetConfigurations ...[]byte) veldt.TileCtor {
 	// Send any dataset configurations to salt immediately
 	// Need a connection for that
 	connection, err := NewConnection(rmqConfig)
@@ -35,6 +36,7 @@ func NewSaltTile (rmqConfig *Configuration, datasetConfigurations ...[]byte) vel
 		log.Infof(preLog+"new tile constructor request")
 		t := &Tile{}
 		t.rmqConfig = rmqConfig
+		t.tileType = tileType
 		return t, nil
 	}
 }
@@ -61,7 +63,16 @@ func (t *Tile) Create (uri string, coord *binning.TileCoord, query veldt.Query) 
 		saltQueryConfig = saltQuery.GetQueryConfiguration()
 	}
 
+	coordMap := make(map[string]interface{})
+	coordMap["x"] = coord.X
+	coordMap["y"] = coord.Y
+	coordMap["level"] = coord.Z
+	tileSpec := make(map[string]interface{})
+	tileSpec["type"] = t.tileType
+	tileSpec["coordinates"] = coordMap
+
 	fullConfiguration := make(map[string]interface{})
+	fullConfiguration["tile-spec"] = tileSpec
 	fullConfiguration["tile"] = t.tileConfiguration
 	fullConfiguration["query"] = saltQueryConfig
 
