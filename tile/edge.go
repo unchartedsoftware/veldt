@@ -2,6 +2,7 @@ package tile
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/geometry"
@@ -86,18 +87,21 @@ func (e *Edge) GetY(coord *binning.TileCoord, y float64) float64 {
 
 // GetSrcXY given a data hit, returns the corresponding coord within the range of
 // [0 : 2^zoom * 256) for the tile.
+func (e *Edge) GetSrcXY(coord *binning.TileCoord, hit map[string]interface{}) (float64, float64, bool) {
+	return e.getXY(coord, hit, e.SrcXField, e.SrcYField)
+}
+
+// GetDstXY given a data hit, returns the corresponding coord within the range of
+// [0 : 2^zoom * 256) for the tile.
+func (e *Edge) GetDstXY(coord *binning.TileCoord, hit map[string]interface{}) (float64, float64, bool) {
+	return e.getXY(coord, hit, e.DstXField, e.DstYField)
+}
+
+// GetSrcXY given a data hit, returns the corresponding coord within the range of
+// [0 : 2^zoom * 256) for the tile.
 func (e *Edge) getXY(coord *binning.TileCoord, hit map[string]interface{}, xField string, yField string) (float64, float64, bool) {
-	// get x / y fields from data
-	ix, ok := hit[xField]
-	if !ok {
-		return 0, 0, false
-	}
-	iy, ok := hit[yField]
-	if !ok {
-		return 0, 0, false
-	}
 	// get X / Y of the data
-	x, y, ok := castPixel(ix, iy)
+	x, y, ok := e.getPixel(hit, xField, yField)
 	if !ok {
 		return 0, 0, false
 	}
@@ -108,14 +112,16 @@ func (e *Edge) getXY(coord *binning.TileCoord, hit map[string]interface{}, xFiel
 	return tx, ty, true
 }
 
-// GetSrcXY given a data hit, returns the corresponding coord within the range of
-// [0 : 2^zoom * 256) for the tile.
-func (e *Edge) GetSrcXY(coord *binning.TileCoord, hit map[string]interface{}) (float64, float64, bool) {
-	return e.getXY(coord, hit, e.SrcXField, e.SrcYField)
-}
-
-// GetDstXY given a data hit, returns the corresponding coord within the range of
-// [0 : 2^zoom * 256) for the tile.
-func (e *Edge) GetDstXY(coord *binning.TileCoord, hit map[string]interface{}) (float64, float64, bool) {
-	return e.getXY(coord, hit, e.DstXField, e.DstYField)
+func (e *Edge) getPixel(hit map[string]interface{}, xField string, yField string) (float64, float64, bool) {
+	xPath := strings.Split(xField, ".")
+	yPath := strings.Split(yField, ".")
+	x, ok := getFloat64(hit, xPath...)
+	if !ok {
+		return 0, 0, false
+	}
+	y, ok := getFloat64(hit, yPath...)
+	if !ok {
+		return 0, 0, false
+	}
+	return x, y, true
 }

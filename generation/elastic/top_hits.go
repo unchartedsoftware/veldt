@@ -50,24 +50,7 @@ func (t *TopHits) GetTopHits(aggs *elastic.Aggregations) ([]map[string]interface
 			return nil, err
 		}
 		// flatten the source paths
-		flattened := make(map[string]interface{})
-		t.flattenSource(flattened, src, "")
-		hits[index] = flattened
+		hits[index] = src
 	}
 	return hits, nil
-}
-
-func (t *TopHits) flattenSource(res map[string]interface{}, node map[string]interface{}, path string) {
-	for key, val := range node {
-		subpath := key
-		if path != "" {
-			subpath = path + "." + key
-		}
-		sub, ok := val.(map[string]interface{})
-		if ok {
-			t.flattenSource(res, sub, subpath)
-			continue
-		}
-		res[subpath] = val
-	}
 }

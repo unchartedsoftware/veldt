@@ -2,6 +2,7 @@ package tile
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/geometry"
@@ -116,17 +117,8 @@ func (b *Bivariate) GetY(coord *binning.TileCoord, y float64) float64 {
 // GetXY given a data hit, returns the corresponding coord within the range of
 // [0 : 256) for the tile.
 func (b *Bivariate) GetXY(coord *binning.TileCoord, hit map[string]interface{}) (float64, float64, bool) {
-	// get x / y fields from data
-	ix, ok := hit[b.XField]
-	if !ok {
-		return 0, 0, false
-	}
-	iy, ok := hit[b.YField]
-	if !ok {
-		return 0, 0, false
-	}
 	// get X / Y of the data
-	x, y, ok := castPixel(ix, iy)
+	x, y, ok := b.getPixel(hit)
 	if !ok {
 		return 0, 0, false
 	}
@@ -147,16 +139,63 @@ func (b *Bivariate) clampBin(bin int64) int {
 	return int(bin)
 }
 
-func castPixel(x interface{}, y interface{}) (float64, float64, bool) {
-	xfval, xok := x.(float64)
-	yfval, yok := y.(float64)
-	if xok && yok {
-		return xfval, yfval, true
+func getInterface(arg map[string]interface{}, path ...string) (interface{}, bool) {
+	child := arg
+	last := len(path) - 1
+	var val interface{} = child
+	for index, key := range path {
+		// does a child exists?
+		v, ok := child[key]
+		if !ok {
+			return nil, false
+		}
+		// is it the target?
+		if index == last {
+			val = v
+			break
+		}
+		// if not, does it have children to traverse?
+		c, ok := v.(map[string]interface{})
+		if !ok {
+			return nil, false
+		}
+		child = c
 	}
-	xival, xok := x.(int64)
-	yival, yok := y.(int64)
-	if xok && yok {
-		return float64(xival), float64(yival), true
+	return val, true
+}
+
+func getFloat64(arg map[string]interface{}, path ...string) (float64, bool) {
+	i, ok := getInterface(arg, path...)
+	if !ok {
+		return 0, false
 	}
-	return 0, 0, false
+	switch v := i.(type) {
+	case float32:
+		return float64(v), true
+	case float64:
+		return v, true
+	case int16:
+		return float64(v), true
+	case int32:
+		return float64(v), true
+	case int:
+		return float64(v), true
+	case int64:
+		return float64(v), true
+	}
+	return 0, false
+}
+
+func (b *Bivariate) getPixel(hit map[string]interface{}) (float64, float64, bool) {
+	xPath := strings.Split(b.XField, ".")
+	yPath := strings.Split(b.YField, ".")
+	x, ok := getFloat64(hit, xPath...)
+	if !ok {
+		return 0, 0, false
+	}
+	y, ok := getFloat64(hit, yPath...)
+	if !ok {
+		return 0, 0, false
+	}
+	return x, y, true
 }
