@@ -23,9 +23,16 @@ func NewCountTile(host, port string) veldt.TileCtor {
 	}
 }
 
+
+// Parse parses the provided JSON object and populates the tiles attributes.
+func (t *Count) Parse (name string, params map[string]interface{}) error {
+	return t.Bivariate.Parse(params)
+}
+
+
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
-func (t *Count) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
+func (t *Count) Create (uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// Initialize the tile processing.
 	client, citusQuery, err := t.InitializeTile(uri, query)
 	if err != nil {
@@ -53,3 +60,4 @@ func (t *Count) Create(uri string, coord *binning.TileCoord, query veldt.Query) 
 
 	return []byte(fmt.Sprintf(`{"count":%d}`, uint64(value))), nil
 }
+

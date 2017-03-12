@@ -24,7 +24,7 @@ func NewHeatmapTile(host, port string) veldt.TileCtor {
 }
 
 // Parse parses the provided JSON object and populates the tiles attributes.
-func (h *HeatmapTile) Parse(params map[string]interface{}) error {
+func (h *HeatmapTile) Parse(name string, params map[string]interface{}) error {
 	return h.Bivariate.Parse(params)
 }
 
