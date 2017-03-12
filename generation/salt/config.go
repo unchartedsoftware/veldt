@@ -136,13 +136,13 @@ func ReadConfiguration (filename string) (*Configuration, error) {
 	// Read the config file
 	configString, err := ioutil.ReadFile(filename)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// Parse it out into a config map
 	configMap, err := parse.Parse("salt", string(configString))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// We need to get the list of queues from the map, before it is made into a config
@@ -166,7 +166,7 @@ func ReadConfiguration (filename string) (*Configuration, error) {
 		queueConfig := getSubConfig("rabbitmq.queues."+queueKey, config).OrElse(&parse.Config{}).(*parse.Config)
 		queueInterface, err := getConfigString("name", queueConfig).Value()
 		if nil != err {
-			panic(err)
+			return nil, err
 		}
 		queue := stripTerminalQuotes(queueInterface.(string))
 		durable := getConfigBool("durable", queueConfig).OrElse(false).(bool)

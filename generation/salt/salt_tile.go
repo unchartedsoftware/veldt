@@ -3,6 +3,9 @@ package salt
 import (
 	"fmt"
 	"encoding/json"
+
+	"github.com/liyinhgqw/typesafe-config/parse"
+
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/plog"
@@ -15,9 +18,24 @@ type Tile struct {
 	tileConfiguration map[string]interface{} // The JSON description of the tile configuration
 }
 
+var datasets = make(map[string]string)
+
+func getDatasetName (datasetConfigRaw []byte) (string, error) {
+	datasetConfigMap, err := parse.Parse("dataset", string(datasetConfigRaw))
+	if err != nil {
+		return "", err
+	}
+	datasetConfig := datasetConfigMap.GetConfig()
+	result, err := datasetConfig.GetString("name")
+	if err != nil {
+		return "", err
+	}
+	return stripTerminalQuotes(result), nil
+}
+
 // NewSaltTile returns a constructor for salt-based tiles of all sorts.  It also initializes the
 // salt server with the datasets it expects to use.
-func NewSaltTile (rmqConfig *Configuration, tileType string, datasetConfigurations ...[]byte) veldt.TileCtor {
+func NewSaltTile (rmqConfig *Configuration, datasetConfigurations ...[]byte) veldt.TileCtor {
 	// Send any dataset configurations to salt immediately
 	// Need a connection for that
 	connection, err := NewConnection(rmqConfig)
@@ -25,9 +43,16 @@ func NewSaltTile (rmqConfig *Configuration, tileType string, datasetConfiguratio
 		log.Errorf("Error connecting to salt server to configure datasets: %v", err)
 	} else {
 		for _, datasetConfig := range datasetConfigurations {
-			_, err = connection.Dataset(datasetConfig)
+			name, err := getDatasetName(datasetConfig)
 			if nil != err {
-				log.Errorf("Error registering dataset: %v", err)
+				log.Errorf("Error registering dataset: can't find name of dataset %v", string(datasetConfig))
+			} else {
+				_, err = connection.Dataset(datasetConfig)
+				if nil != err {
+					log.Errorf("Error registering dataset %v: %v", name, err)
+				} else {
+					datasets[name] = string(datasetConfig)
+				}
 			}
 		}
 	}
@@ -36,13 +61,13 @@ func NewSaltTile (rmqConfig *Configuration, tileType string, datasetConfiguratio
 		log.Infof(preLog+"new tile constructor request")
 		t := &Tile{}
 		t.rmqConfig = rmqConfig
-		t.tileType = tileType
 		return t, nil
 	}
 }
 
 // Parse stores tile parameters so that they can be sent to Salt when the tile request is made
-func (t *Tile) Parse (params map[string]interface{}) error {
+func (t *Tile) Parse (tileType string, params map[string]interface{}) error {
+	t.tileType = tileType
 	t.tileConfiguration = params
 	return nil
 }
@@ -54,7 +79,7 @@ func (t *Tile) Create (uri string, coord *binning.TileCoord, query veldt.Query) 
 		return nil, err
 	}
 
-	var saltQueryConfig map[string]interface{} = nil
+	var saltQueryConfig map[string]interface{}
 	if nil != query {
 		saltQuery, ok := query.(*Query)
 		if !ok {
@@ -70,12 +95,29 @@ func (t *Tile) Create (uri string, coord *binning.TileCoord, query veldt.Query) 
 	tileSpec := make(map[string]interface{})
 	tileSpec["type"] = t.tileType
 	tileSpec["coordinates"] = coordMap
-	// TODO: Always transmit full dataset description with every tile request (in case the server has restarted)
 
 	fullConfiguration := make(map[string]interface{})
 	fullConfiguration["tile-spec"] = tileSpec
 	fullConfiguration["tile"] = t.tileConfiguration
 	fullConfiguration["query"] = saltQueryConfig
+	fullConfiguration["dataset"] = datasets[uri]
+
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+	fmt.Println("Sending tile request")
+	fmt.Println("Full configuration:")
+	fmt.Println(fullConfiguration)
+	fmt.Println()
+	fmt.Printf("Dataset is \"%v\" (%v)\n", uri, []byte(uri))
+	fmt.Println("Dataset keys are:")
+	for k := range datasets {
+		fmt.Printf("\t\"%v\" = (%v)\n", k, []byte(k))
+	}
+	fmt.Println()
+	fmt.Printf("uri's dataset: %v\n", datasets[uri])
+	fmt.Println()
+	fmt.Println()
 
 	configBytes, err := json.Marshal(fullConfiguration)
 	if nil != err {
