@@ -25,7 +25,7 @@ func NewMicroTile(host, port string) veldt.TileCtor {
 }
 
 // Parse parses the provided JSON object and populates the tiles attributes.
-func (m *MicroTile) Parse(name string, params map[string]interface{}) error {
+func (m *MicroTile) Parse (params map[string]interface{}) error {
 	err := m.Bivariate.Parse(params)
 	if err != nil {
 		return err

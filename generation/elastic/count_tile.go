@@ -25,7 +25,7 @@ func NewCountTile(host, port string) veldt.TileCtor {
 
 
 // Parse parses the provided JSON object and populates the tiles attributes.
-func (t *Count) Parse (name string, params map[string]interface{}) error {
+func (t *Count) Parse (params map[string]interface{}) error {
 	return t.Bivariate.Parse(params)
 }
 

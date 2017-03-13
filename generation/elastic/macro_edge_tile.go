@@ -25,7 +25,7 @@ func NewMacroEdgeTile(host, port string) veldt.TileCtor {
 }
 
 // Parse parses the provided JSON object and populates the tiles attributes.
-func (e *MacroEdgeTile) Parse(name string, params map[string]interface{}) error {
+func (e *MacroEdgeTile) Parse (params map[string]interface{}) error {
 	err := e.Edge.Parse(params)
 	if err != nil {
 		return err

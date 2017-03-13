@@ -26,7 +26,7 @@ func NewTopTermCountTile(host, port string) veldt.TileCtor {
 }
 
 // Parse parses the provided JSON object and populates the tiles attributes.
-func (t *TopTermCountTile) Parse(name string, params map[string]interface{}) error {
+func (t *TopTermCountTile) Parse (params map[string]interface{}) error {
 	err := t.Bivariate.Parse(params)
 	if err != nil {
 		return err

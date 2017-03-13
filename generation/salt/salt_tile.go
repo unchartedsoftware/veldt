@@ -35,7 +35,16 @@ func getDatasetName (datasetConfigRaw []byte) (string, error) {
 
 // NewSaltTile returns a constructor for salt-based tiles of all sorts.  It also initializes the
 // salt server with the datasets it expects to use.
-func NewSaltTile (rmqConfig *Configuration, datasetConfigurations ...[]byte) veldt.TileCtor {
+//
+// parameter 1: tileType: An identifier used to tell salt how to tile this tile.  Currently
+//              supported options:
+//                 heatmap (for a heatmap tile)
+//                 <fully qualified class name> - A class that implements SeriesFactory, for
+//                     any custom tile generation
+// parameter 2: rmqConfig: The configuration information needed to connect to RabbitMQ, through
+//              which to connect to the salt server
+// parameters 3+: Any dataset configurations that will be needed for tiles using this constructor
+func NewSaltTile (tileType string, rmqConfig *Configuration, datasetConfigurations ...[]byte) veldt.TileCtor {
 	// Send any dataset configurations to salt immediately
 	// Need a connection for that
 	connection, err := NewConnection(rmqConfig)
@@ -61,13 +70,13 @@ func NewSaltTile (rmqConfig *Configuration, datasetConfigurations ...[]byte) vel
 		log.Infof(preLog+"new tile constructor request")
 		t := &Tile{}
 		t.rmqConfig = rmqConfig
+		t.tileType = tileType
 		return t, nil
 	}
 }
 
 // Parse stores tile parameters so that they can be sent to Salt when the tile request is made
-func (t *Tile) Parse (tileType string, params map[string]interface{}) error {
-	t.tileType = tileType
+func (t *Tile) Parse (params map[string]interface{}) error {
 	t.tileConfiguration = params
 	return nil
 }

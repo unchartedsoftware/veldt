@@ -132,7 +132,7 @@ func (p *Pipeline) GetTile(id string, args interface{}) (Tile, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = tile.Parse(id, params)
+	err = tile.Parse(params)
 	if err != nil {
 		return nil, err
 	}

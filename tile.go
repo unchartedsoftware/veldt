@@ -7,11 +7,9 @@ import (
 // Tile represents an interface for generating tile data.
 type Tile interface {
 	// Parse parses a tile request for future creation
-	// parameter 1 (string): the name under which this tile constructor is registered
-	//             in the pipeline
-	// parameter 2 (map[string]interface{}) Any parameters specifying the how this tile
+	// parameter 1 (map[string]interface{}) Any parameters specifying the how this tile
 	//             is to be created
-	Parse(string, map[string]interface{}) error
+	Parse(map[string]interface{}) error
 	// Create creates a tile.
 	// parameter 1 (string): A dataset ID (typically called uri)
 	// parameter 2 (*binning.TileCoord): the coordinates of the requested tile
