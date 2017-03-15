@@ -17,15 +17,6 @@ type RabbitMQConnection struct {
 	serverQueue string
 }
 
-const (
-	// Yellow "SALT" - code derived from github.com/mgutz/ansi,
-	// but I wanted it as a const, so couldn't use that directly
-	preLog = "\033[1;38;5;3mSALT\033[0m: "
-	// And codes to make the message red, similarly as constants
-	preMsg = "\033[1;97;3m"
-	postMsg = "\033[0m"
-)
-
 var (
 	mutex = sync.Mutex{}
 	connections = make(map[string]*RabbitMQConnection)
@@ -41,7 +32,7 @@ func NewConnection (config *Configuration) (*RabbitMQConnection, error) {
 	mutex.Lock()
 	rmq, contained := connections[config.Key()]
 	if !contained {
-		log.Infof(preLog+"New connection request")
+		saltInfof("New connection request")
 
 		url := fmt.Sprintf("amqp://%s:%d", config.host, config.port)
 		var connection *amqp.Connection
@@ -85,13 +76,13 @@ func NewConnection (config *Configuration) (*RabbitMQConnection, error) {
 	mutex.Unlock()
 	runtime.Gosched()
 
-	log.Infof(preLog+"connection request fulfilled: %v", rmq)
+	saltInfof("connection request fulfilled: %v", rmq)
 	return rmq, nil
 }
 
 // Close closes this RabbitMQ connection
 func (rmq *RabbitMQConnection) Close () {
-	log.Infof(preLog+"Closing connection")
+	saltInfof("Closing connection")
 	rmq.channel.Close()
 	rmq.connection.Close()
 }
@@ -106,7 +97,7 @@ func (rmq *RabbitMQConnection) Declare (qName string, qc *QueueConfiguration) er
 		return err
 	}
 	rmq.queues[qName] = q
-	log.Infof(preLog+"Declaring channel '%s'=(%v)", qName, q)
+	saltInfof("Declaring channel '%s'=(%v)", qName, q)
 	return nil
 }
 
@@ -166,7 +157,7 @@ func (rmq *RabbitMQConnection) sendServerMessage (messageType string, message []
 	responseChannel := make(chan amqp.Delivery)
 	responseChannels[msgID] = responseChannel
 
-	log.Debugf(preLog+"Publishing message \"%s%s%s\"\n\t(query queue: %s(=%s))\n\t(response queue: %s(=%s))\n\t(type: %s)",
+	saltDebugf("Publishing message \"%s%s%s\"\n\t(query queue: %s(=%s))\n\t(response queue: %s(=%s))\n\t(type: %s)",
 		preMsg, string(message), postMsg, rmq.serverQueue, queryQ.Name, "response", responseQ.Name, messageType)
 
 	rmq.channel.Publish("", queryQ.Name, false, false,
@@ -177,6 +168,6 @@ func (rmq *RabbitMQConnection) sendServerMessage (messageType string, message []
 			MessageId: msgID})
 
 	response := <- responseChannel
-	log.Debugf(preLog+"Response received: \"%s%s%s\"", preMsg, string(response.Body), postMsg)
+	saltDebugf("Response received: \"%s%s%s\"", preMsg, string(response.Body), postMsg)
 	return response.Body, nil
 }

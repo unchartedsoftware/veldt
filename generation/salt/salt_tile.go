@@ -11,7 +11,6 @@ import (
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/generation/batch"
- 	"github.com/unchartedsoftware/plog"
 )
 
 // Tile represents any tile served to Veldt by Salt
@@ -53,7 +52,7 @@ func NewSaltTile (rmqConfig *Configuration,
 		setupConnection(rmqConfig, datasetConfigs...)
 
 		return func() (veldt.Tile, error) {
-			log.Infof(preLog+"new tile constructor request")
+			saltInfof("new tile constructor request")
 			t := &Tile{}
 			t.rmqConfig = rmqConfig
 			t.defaultTileConfig = defaultTileConfig
@@ -80,7 +79,7 @@ func NewSaltTileFactory (rmqConfig *Configuration,
 		setupConnection(rmqConfig, datasetConfigs...)
 
 		return func() (batch.TileFactory, error) {
-			log.Infof(preLog+"new tile factory constructor request")
+			saltInfof("new tile factory constructor request")
 			tf := &Tile{}
 			tf.rmqConfig = rmqConfig
 			tf.defaultTileConfig = defaultTileConfig
@@ -93,16 +92,16 @@ func setupConnection (rmqConfig *Configuration, datasetConfigs ...[]byte) {
 	// Need a connection for that
 	connection, err := NewConnection(rmqConfig)
 	if err != nil {
-		log.Errorf("Error connecting to salt server to configure datasets: %v", err)
+		saltErrorf("Error connecting to salt server to configure datasets: %v", err)
 	} else {
 		for _, datasetConfig := range datasetConfigs {
 			name, err := getDatasetName(datasetConfig)
 			if nil != err {
-				log.Errorf("Error registering dataset: can't find name of dataset %v", string(datasetConfig))
+				saltErrorf("Error registering dataset: can't find name of dataset %v", string(datasetConfig))
 			} else {
 				_, err = connection.Dataset(datasetConfig)
 				if nil != err {
-					log.Errorf("Error registering dataset %v: %v", name, err)
+					saltErrorf("Error registering dataset %v: %v", name, err)
 				} else {
 						datasets[name] = string(datasetConfig)
 				}
@@ -124,14 +123,14 @@ func (t *Tile) Create (uri string, coord *binning.TileCoord, query veldt.Query) 
 	t.CreateTiles([]*batch.TileRequest{request})
 	response := <-responseChan
 	if nil != response.Tile {
-		log.Debugf("Create: Got response tile of length %d", len(response.Tile))
+		saltDebugf("Create: Got response tile of length %d", len(response.Tile))
 	} else {
-		log.Debugf("Create: Got nil response tile")
+		saltDebugf("Create: Got nil response tile")
 	}
 	if nil != response.Err {
-		log.Debugf("Create: Got non-nil error")
+		saltDebugf("Create: Got non-nil error")
 	} else {
-		log.Debugf("Create: no error")
+		saltDebugf("Create: no error")
 	}
 	return response.Tile, response.Err
 }
@@ -172,7 +171,7 @@ func (t *Tile) extractJointRequest (request *batch.TileRequest) *jointRequest {
 	if nil != request.Query {
 		saltQuery, ok := request.Query.(*Query)
 		if !ok {
-			log.Errorf(preLog+"Query for salt tile was not a salt query")
+			saltErrorf("Query for salt tile was not a salt query")
 		} else {
 			queryConfig = saltQuery.GetQueryConfiguration()
 		}
@@ -186,7 +185,7 @@ func (t *Tile) extractJointRequest (request *batch.TileRequest) *jointRequest {
 
 // CreateTiles generates multiple tiles from the provided information
 func (t *Tile) CreateTiles (requests []*batch.TileRequest) {
-	log.Infof(preLog+"CreateTiles: Processing %d requests\n", len(requests))
+	saltInfof("CreateTiles: Processing %d requests", len(requests))
 	// Create our connection
 	connection, err := NewConnection(t.rmqConfig)
 	if err != nil {
@@ -223,7 +222,7 @@ func (t *Tile) CreateTiles (requests []*batch.TileRequest) {
 	// Requests are all merged
 	// Now actually make our requests of the server
 	for _, request := range consolidatedRequests {
-		log.Infof(preLog+"Request for %d tiles for dataset %s\n", len(request.tiles), request.dataset)
+		saltInfof("Request for %d tiles for dataset %s", len(request.tiles), request.dataset)
 		// Create our consolidated configuration
 		fullConfig := make(map[string]interface{})
 		fullConfig["tile"] = request.tileConfig
@@ -260,11 +259,11 @@ func (t *Tile) CreateTiles (requests []*batch.TileRequest) {
 		for key, channel := range responseChannels {
 			tile, ok := tiles[key]
 			if ok {
-				log.Infof("Found tile for key %s of length ", key, len(tile))
+				saltInfof("Found tile for key %s of length ", key, len(tile))
 				channel <- batch.TileResponse{tile, nil}
 			} else {
 				// No tile, but no error either
-				log.Infof("No tile found for key %s", key)
+				saltInfof("No tile found for key %s", key)
 				channel <- batch.TileResponse{nil, nil}
 			}
 		}
@@ -295,7 +294,7 @@ func unpackTiles (saltMsg []byte) map[string][]byte {
 		size  := int(binary.BigEndian.Uint64(saltMsg[p:p+8]))
 		p = p + 8
 		key := coordToString(int(level), int(x), int(y))
-		log.Infof("Unpacking tile [%d: %d, %d] = %s", level, x, y, key)
+		saltInfof("Unpacking tile [%d: %d, %d] = %s", level, x, y, key)
 		results[key] = saltMsg[p:p+size]
 		p = p + size
 	}
