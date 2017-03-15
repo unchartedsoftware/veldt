@@ -2,20 +2,26 @@ package salt
 
 import (
 	"fmt"
+	"math"
 	"encoding/json"
+	"encoding/binary"
 
 	"github.com/liyinhgqw/typesafe-config/parse"
 
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
-	"github.com/unchartedsoftware/plog"
+	"github.com/unchartedsoftware/veldt/generation/batch"
+ 	"github.com/unchartedsoftware/plog"
 )
 
 // Tile represents any tile served to Veldt by Salt
 type Tile struct {
-	rmqConfig *Configuration // The configuration defining how we connect to the RabbitMQ server
-	tileType string          // The type of tile to produce, as interpretted by the salt server
-	tileConfiguration map[string]interface{} // The JSON description of the tile configuration
+	 // The configuration defining how we connect to the RabbitMQ server
+	rmqConfig *Configuration
+	// The default configuration to merge into any parameters that are passed in
+	defaultTileConfig map[string]interface{}
+	// The The full configuration of the requested tile
+	tileConfig map[string]interface{}
 }
 
 var datasets = make(map[string]string)
@@ -36,15 +42,14 @@ func getDatasetName (datasetConfigRaw []byte) (string, error) {
 // NewSaltTile returns a constructor for salt-based tiles of all sorts.  It also initializes the
 // salt server with the datasets it expects to use.
 //
-// parameter 1: tileType: An identifier used to tell salt how to tile this tile.  Currently
-//              supported options:
-//                 heatmap (for a heatmap tile)
-//                 <fully qualified class name> - A class that implements SeriesFactory, for
-//                     any custom tile generation
-// parameter 2: rmqConfig: The configuration information needed to connect to RabbitMQ, through
-//              which to connect to the salt server
-// parameters 3+: Any dataset configurations that will be needed for tiles using this constructor
-func NewSaltTile (tileType string, rmqConfig *Configuration, datasetConfigurations ...[]byte) veldt.TileCtor {
+// rmqConfig The configuration information needed to connect to RabbitMQ, through
+//           which to connect to the salt server
+// defaultTileConfig A default configuration that will get merged into any
+//                   parameters passed into tile requests
+// datasetConfigurations Any dataset configurations that will be needed for tiles using this constructor
+func NewSaltTile (rmqConfig *Configuration,
+	defaultTileConfig map[string]interface{},
+	datasetConfigurations ...[]byte) veldt.TileCtor {
 	// Send any dataset configurations to salt immediately
 	// Need a connection for that
 	connection, err := NewConnection(rmqConfig)
@@ -70,68 +75,240 @@ func NewSaltTile (tileType string, rmqConfig *Configuration, datasetConfiguratio
 		log.Infof(preLog+"new tile constructor request")
 		t := &Tile{}
 		t.rmqConfig = rmqConfig
-		t.tileType = tileType
+		t.defaultTileConfig = defaultTileConfig
 		return t, nil
 	}
 }
 
 // Parse stores tile parameters so that they can be sent to Salt when the tile request is made
 func (t *Tile) Parse (params map[string]interface{}) error {
-	t.tileConfiguration = params
+	t.tileConfig = params
 	return nil
 }
 
-// Create generates a tile from the provided URI, tile coordinate, and query parameters
+// Create generates a single tile from the provided URI, tile coordinate, and query parameters
 func (t *Tile) Create (uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
+	responseChan := make(chan batch.TileResponse)
+	request := &batch.TileRequest{t.tileConfig, uri, coord, query, responseChan}
+	t.CreateTiles([]*batch.TileRequest{request})
+	response := <-responseChan
+	return response.Tile, response.Err
+}
+
+
+
+type separateTileRequest struct {
+	coord *binning.TileCoord
+	sendTo chan batch.TileResponse
+}
+type jointRequest struct {
+	tileConfig map[string]interface{}
+	query map[string]interface{}
+	dataset string
+	tiles []separateTileRequest
+}
+
+func canMerge (a, b jointRequest) bool {
+	if !configurationsEqual(a.tileConfig, b.tileConfig) {
+		return false
+	}
+	if !configurationsEqual(a.query, b.query) {
+		return false
+	}
+	return a.dataset == b.dataset
+}
+
+func (t *Tile) extractJointRequest (request *batch.TileRequest) jointRequest {
+	tileConfig := mergeConfigurations(request.Parameters, t.defaultTileConfig)
+
+	var queryConfig map[string]interface{}
+	if nil != request.Query {
+		saltQuery, ok := request.Query.(*Query)
+		if !ok {
+			log.Errorf(preLog+"Query for salt tile was not a salt query")
+		} else {
+			queryConfig = saltQuery.GetQueryConfiguration()
+		}
+	}
+
+	separateRequest := separateTileRequest{request.Coordinates, request.ResultChannel}
+	separateRequests := []separateTileRequest{separateRequest}
+	
+	return jointRequest{tileConfig, queryConfig, request.URI, separateRequests}
+}
+
+// CreateTiles generates multiple tiles from the provided information
+func (t *Tile) CreateTiles (requests []*batch.TileRequest) {
+	// Create our connection
 	connection, err := NewConnection(t.rmqConfig)
 	if err != nil {
-		return nil, err
-	}
-
-	var saltQueryConfig map[string]interface{}
-	if nil != query {
-		saltQuery, ok := query.(*Query)
-		if !ok {
-			return nil, fmt.Errorf("query is not salt.Query")
+		for _, request := range requests {
+			request.ResultChannel <- batch.TileResponse{nil, err}
 		}
-		saltQueryConfig = saltQuery.GetQueryConfiguration()
+		return
 	}
 
-	coordMap := make(map[string]interface{})
-	coordMap["x"] = coord.X
-	coordMap["y"] = coord.Y
-	coordMap["level"] = coord.Z
-	tileSpec := make(map[string]interface{})
-	tileSpec["type"] = t.tileType
-	tileSpec["coordinates"] = coordMap
-
-	fullConfiguration := make(map[string]interface{})
-	fullConfiguration["tile-spec"] = tileSpec
-	fullConfiguration["tile"] = t.tileConfiguration
-	fullConfiguration["query"] = saltQueryConfig
-	fullConfiguration["dataset"] = datasets[uri]
-
-	fmt.Println()
-	fmt.Println()
-	fmt.Println()
-	fmt.Println("Sending tile request")
-	fmt.Println("Full configuration:")
-	fmt.Println(fullConfiguration)
-	fmt.Println()
-	fmt.Printf("Dataset is \"%v\" (%v)\n", uri, []byte(uri))
-	fmt.Println("Dataset keys are:")
-	for k := range datasets {
-		fmt.Printf("\t\"%v\" = (%v)\n", k, []byte(k))
-	}
-	fmt.Println()
-	fmt.Printf("uri's dataset: %v\n", datasets[uri])
-	fmt.Println()
-	fmt.Println()
-
-	configBytes, err := json.Marshal(fullConfiguration)
-	if nil != err {
-		return nil, fmt.Errorf("Tile or query configuration could not be marshalled into JSON for transport to salt")
+	// For requests to be grouped, they have to share tile configuration, query
+	// configuration, and dataset - i.e., uri - for the moment.
+	//
+	// Eventually, we should be able to eliminate the need to share tile
+	// configuration, so as to get multiple layers in a single tiling, but
+	// that's a secondary consideration
+	// 
+	// Ideally, we'd just do this with maps, but GO doesn't support complex map
+	// keys, so we're stuck doing this the hard way
+	consolidatedRequests := make([]jointRequest, 0)
+	for _, tileRequest := range requests {
+		request := t.extractJointRequest(tileRequest)
+		requestMerged := false
+		for _, currentRequest := range consolidatedRequests {
+			if !requestMerged && canMerge(request, currentRequest) {
+				for _, tile := range request.tiles {
+					currentRequest.tiles = append(currentRequest.tiles, tile)
+				}
+				requestMerged = true
+			}
+		}
+		if !requestMerged {
+			consolidatedRequests = append(consolidatedRequests, request)
+		}
 	}
 
-	return connection.QueryTiles(configBytes)
+	// Requests are all merged
+	// Now actually make our requests of the server
+	for _, request := range consolidatedRequests {
+		// Create our consolidated configuration
+		fullConfig := make(map[string]interface{})
+		fullConfig["tile"] = request.tileConfig
+		fullConfig["query"] = request.query
+		fullConfig["dataset"] = datasets[request.dataset]
+		// Put in all our tile requests, recording our response channel for each as we go
+		responseChannels := make(map[string]chan batch.TileResponse)
+		tileSpecs := make(map[string]interface{})
+		for _, tileReq := range request.tiles {
+			c := tileReq.coord
+			tileSpec := make(map[string]interface{})
+			tileSpec["level"] = int(c.Z)
+			tileSpec["x"] = int(c.X)
+			tileSpec["y"] = int(c.Y)
+			responseChannels[coordToString(int(c.Z), int(c.X), int(c.Y))] = tileReq.sendTo
+		}
+		fullConfig["tiles"] = tileSpecs
+
+		// Marshal the consolidated request into a string
+		requestBytes, err := json.Marshal(fullConfig)
+		if nil != err {
+			err := fmt.Errorf("Tile request(s) could not be marshalled into JSON for transport to salt")
+			for _, tileReq := range request.tiles {
+				tileReq.sendTo <- batch.TileResponse{nil, err}
+			}
+			return
+		}
+
+		// Send the marshalled request to Salt, and await a response
+		result, err := connection.QueryTiles(requestBytes)
+		// Unpack the results
+		tiles := unpackTiles(result)
+		for key, channel := range responseChannels {
+			tile, ok := tiles[key]
+			if ok {
+				channel <- batch.TileResponse{tile, nil}
+			} else {
+				// No tile, but no error either
+				channel <- batch.TileResponse{nil, nil}
+			}
+		}
+	}
+}
+
+// Get a unique string ID for use in maps for a tile coordinate
+func coordToString (level, x, y int) string {
+    max := 1 << uint64(level)
+	digits := int64(math.Floor(math.Log10(float64(max)))) + 1
+	format := fmt.Sprintf("%%02d:%%0%dd:%%0%dd", digits, digits)
+	return fmt.Sprintf(format, level, x, y)
+}
+
+// unpackTiles unpacks the message sent to us by salt into a series of tiles,
+// keyed by the coordToString function above
+func unpackTiles (saltMsg []byte) map[string][]byte {
+	p := 0
+	maxP := len(saltMsg)
+	results := make(map[string][]byte)
+	for p < maxP {
+		level := binary.BigEndian.Uint64(saltMsg[p:p+8])
+		p = p + 8
+		x     := binary.BigEndian.Uint64(saltMsg[p:p+8])
+		p = p + 8
+		y     := binary.BigEndian.Uint64(saltMsg[p:p+8])
+		p = p + 8
+		size  := int(binary.BigEndian.Uint64(saltMsg[p:p+8]))
+		p = p + 8
+		key := coordToString(int(level), int(x), int(y))
+		results[key] = saltMsg[p:p+size]
+		p = p + size
+	}
+	return results
+}
+
+// MergeConfigurations takes two configuration mappings (created from JSON,
+// presumably) and merges them into one.
+// 
+// If both input maps have values for a given key, the first map wins.
+func mergeConfigurations (a, b map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+
+	// Copy in values from A
+	for k, v := range a {
+		// generally, start by just taking the value from A
+		result[k] = v
+
+		// but if the value from A is a map, and there is a value from B, and
+		// it's a map too, we need to merge them.
+		subMapA, ok := v.(map[string]interface{})
+		if ok {
+			valB, ok := b[k]
+			if ok {
+				subMapB, ok := valB.(map[string]interface{})
+				if ok {
+					result[k] = mergeConfigurations(subMapA, subMapB)
+				}
+			}
+		}
+	}
+
+	// Copy in values from B that won't overwrite existing values
+	for k, v := range b {
+		_, ok := result[k]
+		if !ok {
+			result[k] = v
+		}
+	}
+
+	return result
+}
+
+func configurationsEqual (a, b map[string]interface{}) bool {
+	// Check keys
+	if len(a) != len(b) {
+		return false
+	}
+	for k, valA := range a {
+		valB, ok := b[k]
+		if !ok {
+			return false
+		}
+		subMapA, isSubMapA := valA.(map[string]interface{})
+		subMapB, isSubMapB := valB.(map[string]interface{})
+		if isSubMapA && isSubMapB {
+			if !configurationsEqual(subMapA, subMapB) {
+				return false
+			}
+		} else if isSubMapA || isSubMapB {
+			return false
+		} else if valA != valB {
+			return false
+		}
+	}
+	return true
 }

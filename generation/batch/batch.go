@@ -19,6 +19,8 @@ type tileRequestInfo struct {
 	factoryID     string
 	// How long this tile has before its request must be made, in milliseconds
 	maxWait       int64
+	// A channel on which the tile should be returned to us by the tile factory
+	resultChannel chan TileResponse
 	// An indicator of whether this tile request is ready to be fulfilled
 	ready         bool
 }
@@ -59,7 +61,7 @@ func NewBatchTile (factoryID string, factory *TileFactory, maxWait int64) veldt.
 
 // Parse records the request parameters for the factory
 func (t *tileRequestInfo) Parse (params map[string]interface{}) error {
-	t.parameters = params
+	t.Parameters = params
 	return nil
 }
 
@@ -71,9 +73,9 @@ func (t *tileRequestInfo) Parse (params map[string]interface{}) error {
 // coord The coordinates of the desired tile
 // query The filter to apply to the data when creating the tile
 func (t *tileRequestInfo) Create (uri string, coords *binning.TileCoord, query veldt.Query) ([]byte, error) {
-	t.uri = uri
-	t.coordinates = coords
-	t.query = query
+	t.URI = uri
+	t.Coordinates = coords
+	t.Query = query
 
 	// Lock things down - we want to make sure we're listening for a response
 	// from our factory before we release the lock
@@ -85,7 +87,7 @@ func (t *tileRequestInfo) Create (uri string, coords *binning.TileCoord, query v
 
 	// And wait for a response
 	response := <- t.resultChannel
-	return response.tile, response.err
+	return response.Tile, response.Err
 }
 
 // Enqueue puts this request on the queue, and makes sure the queue is active
@@ -125,7 +127,7 @@ func processQueue () {
 		}
 
 		// Call our factory, have it create tiles
-		(*factory).Create(factoryRequests)
+		(*factory).CreateTiles(factoryRequests)
 	}
 	
 	// All done - clear our queue, and remove our timer
