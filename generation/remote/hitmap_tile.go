@@ -11,9 +11,9 @@ import (
 )
 
 type HitmapTile struct {
-    APITile
-	timeFrom       int64
-	timeTo         int64
+	APITile
+	timeFrom int64
+	timeTo   int64
 }
 
 func NewHitmapTile() veldt.TileCtor {
@@ -42,14 +42,14 @@ func (t *HitmapTile) Parse(params map[string]interface{}) error {
 		timeFrom, timeTo)
 
 	t.requestId = requestId
-    t.tileType = "hitmap"
+	t.tileType = "hitmap"
 
 	return nil
 }
 
 func (t *HitmapTile) GetApiUrl() string {
 	// TODO: Have the URL configurable!
-	return "http://163.152.20.64:5000/GET_HITMAP/test"
+	return "http://163.152.20.64:5000/GET_HEATMAP/test"
 }
 
 func (t *HitmapTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
@@ -95,17 +95,17 @@ func (t *HitmapTile) Create(uri string, coord *binning.TileCoord, query veldt.Qu
 			return nil, fmt.Errorf("Unexpected response format from topic modelling service: incorrect exclusiveness structure in %v", res)
 		}
 
-        date, ok := jsonUtil.GetString(exMap, "date")
-        if !ok {
-            return nil, fmt.Errorf("Unexpected response format from topic modelling service: incorrect date structure in %v", res)
-        }
+		date, ok := jsonUtil.GetString(exMap, "date")
+		if !ok {
+			return nil, fmt.Errorf("Unexpected response format from topic modelling service: incorrect date structure in %v", res)
+		}
 
-        value, ok := jsonUtil.GetNumber(exMap, "value")
-        if !ok {
-            return nil, fmt.Errorf("Unexpected response format from topic modelling service: incorrect value structure in %v", res)
-        }
+		value, ok := jsonUtil.GetNumber(exMap, "value")
+		if !ok {
+			return nil, fmt.Errorf("Unexpected response format from topic modelling service: incorrect value structure in %v", res)
+		}
 
-        exclusiveness[date] = value
+		exclusiveness[date] = value
 		exclusivenessValue = value
 	}
 
@@ -113,7 +113,7 @@ func (t *HitmapTile) Create(uri string, coord *binning.TileCoord, query veldt.Qu
 	bits := make([]byte, 4)
 	binary.LittleEndian.PutUint32(
 		bits[0:4],
-		uint32(exclusivenessValue * 10))
+		uint32(exclusivenessValue*10))
 	return bits, nil
 }
 

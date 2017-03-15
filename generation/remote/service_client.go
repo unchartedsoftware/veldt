@@ -33,11 +33,11 @@ type APIRequest interface {
 }
 
 type APITile struct {
-    requestId   string
-	tileType	string
-	x              uint32
-	y              uint32
-	z              uint32
+	requestId string
+	tileType  string
+	x         uint32
+	y         uint32
+	z         uint32
 }
 
 func (t *APITile) GetRequestId() string {
@@ -90,7 +90,7 @@ type ServiceClient struct {
 	requestId        string
 	requests         []APIRequest
 	responseChannels map[string]chan interface{}
-	apiURL	string
+	apiURL           string
 	processing       bool
 }
 
@@ -187,7 +187,7 @@ func (c *ServiceClient) sendRequest(requestData map[string]interface{}) (string,
 	//return c.fakeResponse(requestData)
 }
 
-func (c * ServiceClient) fakeResponse(requestData map[string]interface{}) (string, error) {
+func (c *ServiceClient) fakeResponse(requestData map[string]interface{}) (string, error) {
 	result := ""
 	for _, tile := range requestData["tiles"].([]interface{}) {
 		tileData := tile.(map[string]uint32)
@@ -196,7 +196,6 @@ func (c * ServiceClient) fakeResponse(requestData map[string]interface{}) (strin
 				"tile": {"x": %v, "y": %v, "level": %v},
 				"topic": [{
 					"score": 4.32,
-					"exclusiveness": 1.23,
 					"words": [
 						{"score": 13.23, "word": "fries", "count": 10},
 						{"score": 9.13, "word": "drinks", "count": 7},
@@ -212,7 +211,7 @@ func (c * ServiceClient) fakeResponse(requestData map[string]interface{}) (strin
 						{"value": %v, "date": "22-01-2015"}
 					]
 				}`, result, tileData["x"], tileData["y"], tileData["level"],
-				float64((tileData["x"] + tileData["y"])) / float64(tileData["level"]))
+				float64((tileData["x"]+tileData["y"]))/float64(tileData["level"]))
 		}
 	}
 

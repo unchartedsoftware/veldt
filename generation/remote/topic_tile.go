@@ -146,19 +146,14 @@ func (t *TopicTile) Create(uri string, coord *binning.TileCoord, query veldt.Que
 			if !ok {
 				return nil, fmt.Errorf("Unexpected response format from topic modelling service: cannot find 'word' in %v", res)
 			}
-			weight, ok := jsonUtil.GetNumber(wordParsed, "score")
+			count, ok := jsonUtil.GetNumber(wordParsed, "count")
 			if !ok {
-				return nil, fmt.Errorf("Unexpected response format from topic modelling service: cannot find 'score' in %v", res)
+				return nil, fmt.Errorf("Unexpected response format from topic modelling service: cannot find 'count' in %v", res)
 			}
 
 			// Set the weight & topic group of the word.
-			topicWords[word] = uint32(weight)
+			topicWords[word] = uint32(count)
 		}
-		exclusiveness, ok := jsonUtil.GetNumber(topicMap, "exclusiveness")
-		if !ok {
-			return nil, fmt.Errorf("Unexpected response format from topic modelling service: cannot find 'exclusiveness' in %v", res)
-		}
-		counts[topicGroup]["exclusiveness"] = exclusiveness
 		counts[topicGroup]["words"] = topicWords
 		topicGroup = topicGroup + 1
 	}
@@ -177,12 +172,7 @@ func (t *TopicTile) GetRequestParameters() map[string]interface{} {
 	parameters["exclusiveness"] = t.exclusiveness
 	parameters["topic_count"] = t.clusterCount
 	parameters["word_count"] = t.wordCount
-
-	// Add time range parameters.
-	time := make(map[string]int64)
-	time["from"] = t.timeFrom
-	time["to"] = t.timeTo
-	parameters["time"] = time
+	parameters["date"] = t.timeFrom
 
 	return parameters
 }
