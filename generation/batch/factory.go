@@ -32,9 +32,12 @@ type TileRequest struct {
 }
 
 
-// TileFactory is minimal set of functions required to construct tiles from a
-// set of tile requests.
+// TileFactory represents an interface for generating data for multiple tiles
+// simultaneously
 type TileFactory interface {
 	// CreateTiles creates tiles for the given tile requests
 	CreateTiles(requests []*TileRequest)
 }
+// TileFactoryCtor represents a function that instantiates and returns a new
+// tile factory type
+type TileFactoryCtor func () (TileFactory, error)

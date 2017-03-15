@@ -36,6 +36,8 @@ var (
 
 // NewConnection returns a connection to the Salt tile server via RabbitMQ
 func NewConnection (config *Configuration) (*RabbitMQConnection, error) {
+	log.SetLevel(log.InfoLevel)
+
 	mutex.Lock()
 	rmq, contained := connections[config.Key()]
 	if !contained {
@@ -164,7 +166,7 @@ func (rmq *RabbitMQConnection) sendServerMessage (messageType string, message []
 	responseChannel := make(chan amqp.Delivery)
 	responseChannels[msgID] = responseChannel
 
-	log.Infof(preLog+"Publishing message \"%s%s%s\"\n\t(query queue: %s(=%s))\n\t(response queue: %s(=%s))\n\t(type: %s)",
+	log.Debugf(preLog+"Publishing message \"%s%s%s\"\n\t(query queue: %s(=%s))\n\t(response queue: %s(=%s))\n\t(type: %s)",
 		preMsg, string(message), postMsg, rmq.serverQueue, queryQ.Name, "response", responseQ.Name, messageType)
 
 	rmq.channel.Publish("", queryQ.Name, false, false,
@@ -175,6 +177,6 @@ func (rmq *RabbitMQConnection) sendServerMessage (messageType string, message []
 			MessageId: msgID})
 
 	response := <- responseChannel
-	log.Infof(preLog+"Response received: \"%s%s%s\"", preMsg, string(response.Body), postMsg)
+	log.Debugf(preLog+"Response received: \"%s%s%s\"", preMsg, string(response.Body), postMsg)
 	return response.Body, nil
 }
