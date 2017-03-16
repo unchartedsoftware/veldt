@@ -50,7 +50,6 @@ func NewBatchTile (factoryID string, factory TileFactoryCtor, maxWait int64) vel
 	return func() (veldt.Tile, error) {
 		batchDebugf("New batched tile request")
 		t := &tileRequestInfo{}
-		t.ResultChannel = make(chan TileResponse, 1)
 		t.maxWait = maxWait
 		t.factoryID = factoryID
 		t.ready   = false
@@ -75,12 +74,14 @@ func (t *tileRequestInfo) Create (uri string, coords *binning.TileCoord, query v
 	t.URI = uri
 	t.Coordinates = coords
 	t.Query = query
+	t.ResultChannel = make(chan TileResponse, 1)
 
 	batchDebugf("Queueing up request for tile set %s, tile %v", uri, coords)
 	t.enqueue()
 
-	batchDebugf("Waiting for response for tile set %s, tile %v", uri, coords)
+	batchInfof("Waiting for response for tile set %s, tile %v", uri, coords)
 	response := <- t.ResultChannel
+	batchInfof("Response received for tile set %s, tile %v - length=%d", uri, coords, len(response.Tile))
 	return response.Tile, response.Err
 }
 
