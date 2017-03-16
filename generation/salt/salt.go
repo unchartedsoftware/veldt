@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/streadway/amqp"
-	"github.com/unchartedsoftware/plog"
 )
 
 // RabbitMQConnection describes a connection to a RabbitMQ server
@@ -27,8 +26,6 @@ var (
 
 // NewConnection returns a connection to the Salt tile server via RabbitMQ
 func NewConnection (config *Configuration) (*RabbitMQConnection, error) {
-	log.SetLevel(log.InfoLevel)
-
 	mutex.Lock()
 	rmq, contained := connections[config.Key()]
 	if !contained {

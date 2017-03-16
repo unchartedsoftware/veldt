@@ -16,14 +16,18 @@ const (
 )
 
 func batchErrorf (format string, args ...interface{}) {
-	log.Errorf(preLog+format+"\n", args...)
+	log.SetLevel(log.WarnLevel)
+	log.Errorf(preLog+format, args...)
 }
 func batchWarnf (format string, args ...interface{}) {
-	log.Warnf(preLog+format+"\n", args...)
+	log.SetLevel(log.WarnLevel)
+	log.Warnf(preLog+format, args...)
 }
 func batchInfof (format string, args ...interface{}) {
-	log.Infof(preLog+format+"\n", args...)
+	log.SetLevel(log.InfoLevel)
+	log.Infof(preLog+format, args...)
 }
 func batchDebugf (format string, args ...interface{}) {
-	log.Debugf(preLog+format+"\n", args...)
+	log.SetLevel(log.InfoLevel)
+	log.Debugf(preLog+format, args...)
 }

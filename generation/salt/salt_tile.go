@@ -166,17 +166,21 @@ func (j *jointRequest) merge (from *jointRequest) {
 
 func (t *Tile) extractJointRequest (request *batch.TileRequest) *jointRequest {
 	tileConfig := mergeConfigurations(request.Parameters, t.defaultTileConfig)
-
+	
 	var queryConfig map[string]interface{}
 	if nil != request.Query {
-		saltQuery, ok := request.Query.(*Query)
+		saltQuery, ok := request.Query.(Query)
 		if !ok {
 			saltErrorf("Query for salt tile was not a salt query")
 		} else {
-			queryConfig = saltQuery.GetQueryConfiguration()
+			var err error
+			queryConfig, err = saltQuery.Get()
+			if nil != err {
+				saltErrorf("Error parsing query for salt tiles: %v", err)
+			}
 		}
 	}
-
+	
 	separateRequest := separateTileRequest{request.Coordinates, request.ResultChannel}
 	separateRequests := []*separateTileRequest{&separateRequest}
 	

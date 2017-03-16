@@ -19,14 +19,18 @@ const (
 )
 
 func saltErrorf (format string, args ...interface{}) {
-	log.Errorf(preLog+format+"\n", args...)
+	log.SetLevel(log.WarnLevel)
+	log.Errorf(preLog+format, args...)
 }
 func saltWarnf (format string, args ...interface{}) {
-	log.Warnf(preLog+format+"\n", args...)
+	log.SetLevel(log.WarnLevel)
+	log.Warnf(preLog+format, args...)
 }
 func saltInfof (format string, args ...interface{}) {
-	log.Infof(preLog+format+"\n", args...)
+	log.SetLevel(log.WarnLevel)
+	log.Infof(preLog+format, args...)
 }
 func saltDebugf (format string, args ...interface{}) {
-	log.Debugf(preLog+format+"\n", args...)
+	log.SetLevel(log.WarnLevel)
+	log.Debugf(preLog+format, args...)
 }
