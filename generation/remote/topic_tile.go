@@ -124,6 +124,10 @@ func (t *TopicTile) Create(uri string, coord *binning.TileCoord, query veldt.Que
 
 	counts := make(map[uint32]map[string]interface{})
 	topics, ok := jsonUtil.GetArray(topicsParsed, "topic")
+	if !ok {
+		return nil, fmt.Errorf("Unexpected response format from topic modelling service: could not parse topics from %v", res)
+	}
+
 	topicGroup := uint32(0)
 	for _, topic := range topics {
 		counts[topicGroup] = make(map[string]interface{})

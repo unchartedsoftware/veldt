@@ -87,7 +87,11 @@ func (t *HitmapTile) Create(uri string, coord *binning.TileCoord, query veldt.Qu
 	}
 
 	exclusiveness := make(map[string]float64)
-	exclusivenessValues, ok := jsonUtil.GetArray(hitmapParsed, "exclusiveness")
+	exclusivenessValues, ok := jsonUtil.GetArray(hitmapParsed, "exclusiveness_score")
+	if !ok {
+		return nil, fmt.Errorf("Unexpected response format from topic modelling service: could not parse exclusiveness score from %v", res)
+	}
+
 	exclusivenessValue := 0.0
 	for _, ex := range exclusivenessValues {
 		exMap, ok := ex.(map[string]interface{})
