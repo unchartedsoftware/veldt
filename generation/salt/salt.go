@@ -166,5 +166,9 @@ func (rmq *RabbitMQConnection) sendServerMessage (messageType string, message []
 
 	response := <- responseChannel
 	saltDebugf("Response received: \"%s%s%s\"", preMsg, string(response.Body), postMsg)
-	return response.Body, nil
+	if "error" == response.Type {
+		return nil, fmt.Errorf(string(response.Body))
+	} else {
+		return response.Body, nil
+	}
 }

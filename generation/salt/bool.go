@@ -51,7 +51,7 @@ func (e *BinaryExpression) Get () (map[string]interface{}, error) {
 	}
 
 	result := make(map[string]interface{})
-	result["op"] = e.Op
+	result["operation"] = e.Op
 	result["left"] = leftConfig
 	result["right"] = rightConfig
 
@@ -70,7 +70,7 @@ func (e *UnaryExpression) Get () (map[string]interface{}, error) {
 	}
 
 	result := make(map[string]interface{})
-	result["op"] = e.Op
+	result["operation"] = e.Op
 	result["operand"] = qConfig
 
 	return result, nil

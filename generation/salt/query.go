@@ -34,7 +34,8 @@ func (q *GenericQuery) Parse (parameters map[string]interface{}) error {
 // Get retrieves the configuration from a query for use by the salt server
 func (q *GenericQuery) Get () (map[string]interface{}, error) {
 	result := make(map[string]interface{})
-	result[q.queryType] = q.parameters
+	result["operation"] = q.queryType
+	result["parameters"] = q.parameters
 	return result, nil
 }
 
