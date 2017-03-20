@@ -13,18 +13,26 @@ import (
 	"github.com/unchartedsoftware/veldt/generation/batch"
 )
 
-// Tile represents any tile served to Veldt by Salt
-type Tile struct {
+// ConfigurationBuilder is function responsible for producing Salt tile
+// configurations
+type ConfigurationBuilder func() (map[string]interface{}, error)
+
+// TileData represents the data needed by every tile request that is backed by
+// Salt to connect to the Salt tile server
+type TileData struct {
 	 // The configuration defining how we connect to the RabbitMQ server
 	rmqConfig *Configuration
-	// The default configuration to merge into any parameters that are passed in
-	defaultTileConfig map[string]interface{}
-	// The The full configuration of the requested tile
-	tileConfig map[string]interface{}
+	// The parameters passed into the Parse method
+	// We just keep them around until later, so that our single-tile and batch-
+	// tile code can work the same way.
+	parameters *map[string]interface{}
+	// A builder that can build Salt configurations for us
+	builder ConfigurationBuilder
 }
 
 var datasets = make(map[string]string)
 
+// getDatasetName gets the name of a dataset from its raw configuration
 func getDatasetName (datasetConfigRaw []byte) (string, error) {
 	datasetConfigMap, err := parse.Parse("dataset", string(datasetConfigRaw))
 	if err != nil {
@@ -38,55 +46,9 @@ func getDatasetName (datasetConfigRaw []byte) (string, error) {
 	return stripTerminalQuotes(result), nil
 }
 
-// NewSaltTile returns a constructor for salt-based tiles of all sorts.  It also initializes the
-// salt server with the datasets it expects to use.
-//
-// rmqConfig The configuration information needed to connect to RabbitMQ, through
-//           which to connect to the salt server
-// defaultTileConfig A default configuration that will get merged into any
-//                   parameters passed into tile requests
-// datasetConfigurations Any dataset configurations that will be needed for tiles using this constructor
-func NewSaltTile (rmqConfig *Configuration,
-	defaultTileConfig map[string]interface{},
-	datasetConfigs ...[]byte) veldt.TileCtor {
-		setupConnection(rmqConfig, datasetConfigs...)
-
-		return func() (veldt.Tile, error) {
-			saltInfof("new tile constructor request")
-			t := &Tile{}
-			t.rmqConfig = rmqConfig
-			t.defaultTileConfig = defaultTileConfig
-			return t, nil
-		}
-	}
-
-// NewSaltTileFactory returns a constructor for a tile factory for salt-based
-// tiles of all sorts.  It also initializes the salt server with the datasets
-// it expects to use.
-//
-// This is identical to NewSaltTile except in the type it assigns to its
-// return value.
-// TODO: Work this type into TileCTor perhaps?
-//
-// rmqConfig The configuration information needed to connect to RabbitMQ, through
-//           which to connect to the salt server
-// defaultTileConfig A default configuration that will get merged into any
-//                   parameters passed into tile requests
-// datasetConfigurations Any dataset configurations that will be needed for tiles using this constructor
-func NewSaltTileFactory (rmqConfig *Configuration,
-	defaultTileConfig map[string]interface{},
-	datasetConfigs ...[]byte) batch.TileFactoryCtor {
-		setupConnection(rmqConfig, datasetConfigs...)
-
-		return func() (batch.TileFactory, error) {
-			saltInfof("new tile factory constructor request")
-			tf := &Tile{}
-			tf.rmqConfig = rmqConfig
-			tf.defaultTileConfig = defaultTileConfig
-			return tf, nil
-		}
-	}
-
+// setupConnection is used by every Salt tile request to initialize the
+// connection with the salt server, and to initialize the dataset this request
+// requires
 func setupConnection (rmqConfig *Configuration, datasetConfigs ...[]byte) {
 	// Send any dataset configurations to salt immediately
 	// Need a connection for that
@@ -110,16 +72,17 @@ func setupConnection (rmqConfig *Configuration, datasetConfigs ...[]byte) {
 	}
 }
 
-// Parse stores tile parameters so that they can be sent to Salt when the tile request is made
-func (t *Tile) Parse (params map[string]interface{}) error {
-	t.tileConfig = params
+ 
+// Parse parses the parameters for a heatmap tile
+func (t *TileData) Parse (params map[string]interface{}) error {
+	t.parameters = &params
 	return nil
 }
 
 // Create generates a single tile from the provided URI, tile coordinate, and query parameters
-func (t *Tile) Create (uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
+func (t *TileData) Create (uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	responseChan := make(chan batch.TileResponse, 1)
-	request := &batch.TileRequest{t.tileConfig, uri, coord, query, responseChan}
+	request := &batch.TileRequest{*t.parameters, uri, coord, query, responseChan}
 	t.CreateTiles([]*batch.TileRequest{request})
 	response := <-responseChan
 	if nil != response.Tile {
@@ -135,60 +98,8 @@ func (t *Tile) Create (uri string, coord *binning.TileCoord, query veldt.Query) 
 	return response.Tile, response.Err
 }
 
-
-
-type separateTileRequest struct {
-	coord *binning.TileCoord
-	sendTo chan batch.TileResponse
-}
-type jointRequest struct {
-	tileConfig map[string]interface{}
-	query map[string]interface{}
-	dataset string
-	tiles []*separateTileRequest
-}
-
-func canMerge (a, b *jointRequest) bool {
-	if !configurationsEqual(a.tileConfig, b.tileConfig) {
-		return false
-	}
-	if !configurationsEqual(a.query, b.query) {
-		return false
-	}
-	return a.dataset == b.dataset
-}
-
-func (j *jointRequest) merge (from *jointRequest) {
-	for _, tile := range from.tiles {
-		j.tiles = append(j.tiles, tile)
-	}
-}
-
-func (t *Tile) extractJointRequest (request *batch.TileRequest) *jointRequest {
-	tileConfig := mergeConfigurations(request.Parameters, t.defaultTileConfig)
-	
-	var queryConfig map[string]interface{}
-	if nil != request.Query {
-		saltQuery, ok := request.Query.(Query)
-		if !ok {
-			saltErrorf("Query for salt tile was not a salt query")
-		} else {
-			var err error
-			queryConfig, err = saltQuery.Get()
-			if nil != err {
-				saltErrorf("Error parsing query for salt tiles: %v", err)
-			}
-		}
-	}
-	
-	separateRequest := separateTileRequest{request.Coordinates, request.ResultChannel}
-	separateRequests := []*separateTileRequest{&separateRequest}
-	
-	return &jointRequest{tileConfig, queryConfig, request.URI, separateRequests}
-}
-
 // CreateTiles generates multiple tiles from the provided information
-func (t *Tile) CreateTiles (requests []*batch.TileRequest) {
+func (t *TileData) CreateTiles (requests []*batch.TileRequest) {
 	saltInfof("CreateTiles: Processing %d requests", len(requests))
 	// Create our connection
 	connection, err := NewConnection(t.rmqConfig)
@@ -199,27 +110,26 @@ func (t *Tile) CreateTiles (requests []*batch.TileRequest) {
 		return
 	}
 
-	// For requests to be grouped, they have to share tile configuration, query
-	// configuration, and dataset - i.e., uri - for the moment.
+	// Go through every request, generating the joint (non-tile-coordinate)
+	// configuration for each.
 	//
-	// Eventually, we should be able to eliminate the need to share tile
-	// configuration, so as to get multiple layers in a single tiling, but
-	// that's a secondary consideration
-	// 
-	// Ideally, we'd just do this with maps, but GO doesn't support complex map
-	// keys, so we're stuck doing this the hard way
+	// Requests with the same joint configuration are consolidated. 
 	consolidatedRequests := make([]*jointRequest, 0)
 	for _, tileRequest := range requests {
-		request := t.extractJointRequest(tileRequest)
-		requestMerged := false
-		for _, currentRequest := range consolidatedRequests {
-			if !requestMerged && canMerge(request, currentRequest) {
-				currentRequest.merge(request)
-				requestMerged = true
+		request, err := t.extractJointRequest(tileRequest)
+		if nil != err {
+			tileRequest.ResultChannel <- batch.TileResponse{nil, err}
+		} else {
+			requestMerged := false
+			for _, currentRequest := range consolidatedRequests {
+				if !requestMerged && canMerge(request, currentRequest) {
+					currentRequest.merge(request)
+					requestMerged = true
+				}
 			}
-		}
-		if !requestMerged {
-			consolidatedRequests = append(consolidatedRequests, request)
+			if !requestMerged {
+				consolidatedRequests = append(consolidatedRequests, request)
+			}
 		}
 	}
 
@@ -249,29 +159,90 @@ func (t *Tile) CreateTiles (requests []*batch.TileRequest) {
 		// Marshal the consolidated request into a string
 		requestBytes, err := json.Marshal(fullConfig)
 		if nil != err {
-			err := fmt.Errorf("Tile request(s) could not be marshalled into JSON for transport to salt")
-			for _, tileReq := range request.tiles {
-				tileReq.sendTo <- batch.TileResponse{nil, err}
+			for _, channel := range responseChannels {
+				channel <- batch.TileResponse{nil, err}
 			}
-			return
-		}
-
-		// Send the marshalled request to Salt, and await a response
-		result, err := connection.QueryTiles(requestBytes)
-		// Unpack the results
-		tiles := unpackTiles(result)
-		for key, channel := range responseChannels {
-			tile, ok := tiles[key]
-			if ok {
-				saltInfof("Found tile for key %s of length %d", key, len(tile))
-				channel <- batch.TileResponse{tile, nil}
+		} else {
+			// Send the marshalled request to Salt, and await a response
+			result, err := connection.QueryTiles(requestBytes)
+			if nil != err {
+				for _, channel := range responseChannels {
+					channel <- batch.TileResponse{nil, err}
+				}
 			} else {
-				// No tile, but no error either
-				saltInfof("No tile found for key %s", key)
-				channel <- batch.TileResponse{nil, nil}
+				// Unpack the results
+				tiles := unpackTiles(result)
+				for key, channel := range responseChannels {
+					tile, ok := tiles[key]
+					if ok {
+						saltInfof("Found tile for key %s of length %d", key, len(tile))
+						channel <- batch.TileResponse{tile, nil}
+					} else {
+						// No tile, but no error either
+						saltInfof("No tile found for key %s", key)
+						channel <- batch.TileResponse{nil, nil}
+					}
+				}
 			}
 		}
 	}
+}
+
+
+
+
+type separateTileRequest struct {
+	coord *binning.TileCoord
+	sendTo chan batch.TileResponse
+}
+type jointRequest struct {
+	tileConfig map[string]interface{}
+	query map[string]interface{}
+	dataset string
+	tiles []*separateTileRequest
+}
+
+func canMerge (a, b *jointRequest) bool {
+	if !propertiesEqual(a.tileConfig, b.tileConfig) {
+		return false
+	}
+	if !propertiesEqual(a.query, b.query) {
+		return false
+	}
+	return a.dataset == b.dataset
+}
+
+func (j *jointRequest) merge (from *jointRequest) {
+	for _, tile := range from.tiles {
+		j.tiles = append(j.tiles, tile)
+	}
+}
+
+func (t *TileData) extractJointRequest (request *batch.TileRequest) (*jointRequest, error) {
+	t.Parse(request.Parameters)
+	tileConfig, err := t.builder()
+	if nil != err {
+		return nil, err
+	}
+
+	var queryConfig map[string]interface{}
+	if nil != request.Query {
+		saltQuery, ok := request.Query.(Query)
+		if !ok {
+			return nil, fmt.Errorf("Query for salt tile was not a salt query")
+		}
+
+		var err error
+		queryConfig, err = saltQuery.Get()
+		if nil != err {
+			return nil, err
+		}
+	}
+	
+	separateRequest := separateTileRequest{request.Coordinates, request.ResultChannel}
+	separateRequests := []*separateTileRequest{&separateRequest}
+	
+	return &jointRequest{tileConfig, queryConfig, request.URI, separateRequests}, nil
 }
 
 // Get a unique string ID for use in maps for a tile coordinate
@@ -303,66 +274,4 @@ func unpackTiles (saltMsg []byte) map[string][]byte {
 		p = p + size
 	}
 	return results
-}
-
-// MergeConfigurations takes two configuration mappings (created from JSON,
-// presumably) and merges them into one.
-// 
-// If both input maps have values for a given key, the first map wins.
-func mergeConfigurations (a, b map[string]interface{}) map[string]interface{} {
-	result := make(map[string]interface{})
-
-	// Copy in values from A
-	for k, v := range a {
-		// generally, start by just taking the value from A
-		result[k] = v
-
-		// but if the value from A is a map, and there is a value from B, and
-		// it's a map too, we need to merge them.
-		subMapA, ok := v.(map[string]interface{})
-		if ok {
-			valB, ok := b[k]
-			if ok {
-				subMapB, ok := valB.(map[string]interface{})
-				if ok {
-					result[k] = mergeConfigurations(subMapA, subMapB)
-				}
-			}
-		}
-	}
-
-	// Copy in values from B that won't overwrite existing values
-	for k, v := range b {
-		_, ok := result[k]
-		if !ok {
-			result[k] = v
-		}
-	}
-
-	return result
-}
-
-func configurationsEqual (a, b map[string]interface{}) bool {
-	// Check keys
-	if len(a) != len(b) {
-		return false
-	}
-	for k, valA := range a {
-		valB, ok := b[k]
-		if !ok {
-			return false
-		}
-		subMapA, isSubMapA := valA.(map[string]interface{})
-		subMapB, isSubMapB := valB.(map[string]interface{})
-		if isSubMapA && isSubMapB {
-			if !configurationsEqual(subMapA, subMapB) {
-				return false
-			}
-		} else if isSubMapA || isSubMapB {
-			return false
-		} else if valA != valB {
-			return false
-		}
-	}
-	return true
 }
