@@ -130,7 +130,8 @@ func processQueue () {
 				sendError(err, factoryRequestInfos)
 			} else {
 				batchDebugf("\tFactory obtained.  Requests are:")
-				// Take out our meta-request info
+				// Take out our meta-request info, leaving just the simple
+				// request info for the factory
 				n := len(factoryRequestInfos)
 				factoryRequests := make([]*TileRequest, n, n)
 				for i := 0; i < n; i++ {
