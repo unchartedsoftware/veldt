@@ -65,6 +65,43 @@ func getProperty(key string, props map[string]interface{}) (interface{}, error) 
 	return getProperty(descendentKey, subConfig)
 }
 
+// getFloat32Property gets the value of the specified multi-leveld) key from the given property map, as a float32 value
+func getFloat32Property (key string, props map[string]interface{}) (float32, error) {
+	rawValue, err := getProperty(key, props)
+	if nil != err {
+		return 0.0, err
+	}
+
+	switch n := rawValue.(type) {
+	case int:
+		return float32(n), nil
+	case int8:
+		return float32(n), nil
+	case int16:
+		return float32(n), nil
+	case int32:
+		return float32(n), nil
+	case int64:
+		return float32(n), nil
+	case uint:
+		return float32(n), nil
+	case uint8:
+		return float32(n), nil
+	case uint16:
+		return float32(n), nil
+	case uint32:
+		return float32(n), nil
+	case uint64:
+		return float32(n), nil
+	case float32:
+		return float32(n), nil
+	case float64:
+		return float32(n), nil
+	default:
+		return 0.0, fmt.Errorf("Can't convert %v to float", rawValue)
+	}
+}
+
 // propertiesEqual determines if two property maps are equivalent
 func propertiesEqual (a, b map[string]interface{}) bool {
 	// Check keys
