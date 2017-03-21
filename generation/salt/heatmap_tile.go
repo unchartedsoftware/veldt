@@ -22,8 +22,11 @@ func NewHeatmapTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.T
 		saltInfof("New heatmap tile constructor request")
 		t := &HeatmapTile{}
 		t.rmqConfig = rmqConfig
-		t.builder = func () (map[string]interface{}, error) {
-			return t.GetTileConfiguration()
+		t.buildConfig = func () (map[string]interface{}, error) {
+			return t.getTileConfiguration()
+		}
+		t.convert = func (input []byte) ([]byte, error) {
+			return input, nil
 		}
 		return t, nil
 	}
@@ -37,8 +40,11 @@ func NewHeatmapTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) 
 		saltInfof("New heatmap tile factory constructor request")
 		tf := &HeatmapTile{}
 		tf.rmqConfig = rmqConfig
-		tf.builder = func () (map[string]interface{}, error) {
-			return tf.GetTileConfiguration()
+		tf.buildConfig = func () (map[string]interface{}, error) {
+			return tf.getTileConfiguration()
+		}
+		tf.convert = func (input []byte) ([]byte, error) {
+			return input, nil
 		}
 		return tf, nil
 	}
@@ -49,6 +55,8 @@ func (h *HeatmapTile) Parse (params map[string]interface{}) error {
 	return h.TileData.Parse(params)
 }
 
+// parseHeatmapParameters actually parses the provided JSON object, and
+// populates the tile attributes.
 func (h *HeatmapTile) parseHeatmapParameters(params map[string]interface{}) error {
 	valueField, ok := json.GetString(params, "valueField")
 	if ok {
@@ -61,7 +69,7 @@ func (h *HeatmapTile) parseHeatmapParameters(params map[string]interface{}) erro
 
 // GetTileConfiguration gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
-func (h *HeatmapTile) GetTileConfiguration () (map[string]interface{}, error) {
+func (h *HeatmapTile) getTileConfiguration () (map[string]interface{}, error) {
 	err := h.parseHeatmapParameters(*h.parameters)
 	if nil != err {
 		return nil, err

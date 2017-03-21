@@ -17,6 +17,10 @@ import (
 // configurations
 type ConfigurationBuilder func() (map[string]interface{}, error)
 
+// TileConverter converts the output of the Salt tile server into the format
+// Veldt wants for a given tile type
+type TileConverter func ([]byte) ([]byte, error)
+
 // TileData represents the data needed by every tile request that is backed by
 // Salt to connect to the Salt tile server
 type TileData struct {
@@ -27,7 +31,10 @@ type TileData struct {
 	// tile code can work the same way.
 	parameters *map[string]interface{}
 	// A builder that can build Salt configurations for us
-	builder ConfigurationBuilder
+	buildConfig ConfigurationBuilder
+	// A converter that can convert the results from what Salt gives us to
+	// what Veldt wants
+	convert TileConverter
 }
 
 var datasets = make(map[string]string)
@@ -176,7 +183,12 @@ func (t *TileData) CreateTiles (requests []*batch.TileRequest) {
 					tile, ok := tiles[key]
 					if ok {
 						saltInfof("Found tile for key %s of length %d", key, len(tile))
-						channel <- batch.TileResponse{tile, nil}
+						converted, err := t.convert(tile)
+						if nil != err {
+							channel <- batch.TileResponse{nil, err}
+						} else {
+							channel <- batch.TileResponse{converted, nil}
+						}
 					} else {
 						// No tile, but no error either
 						saltInfof("No tile found for key %s", key)
@@ -220,7 +232,7 @@ func (j *jointRequest) merge (from *jointRequest) {
 
 func (t *TileData) extractJointRequest (request *batch.TileRequest) (*jointRequest, error) {
 	t.Parse(request.Parameters)
-	tileConfig, err := t.builder()
+	tileConfig, err := t.buildConfig()
 	if nil != err {
 		return nil, err
 	}
