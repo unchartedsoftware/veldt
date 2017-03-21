@@ -44,10 +44,21 @@ This minimalistic application shows how to register tile and meta data generator
 package main
 
 import (
+	"encoding/json"
+
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/generation/elastic"
 	"github.com/unchartedsoftware/veldt/store/redis"
 )
+
+func JSON(str string) map[string]interface{} {
+	var j map[string]interface{}
+	err := json.Unmarshal([]byte(str), &j)
+	if err != nil {
+		panic(err)
+	}
+	return j
+}
 
 func main() {
 	// Create pipeline
@@ -74,11 +85,8 @@ func main() {
 	// Add a redis store to the pipeline
 	pipeline.Store(redis.NewStore("localhost", "6379", -1))
 
-	// register the pipeline
-	veldt.Register("elastic", pipeline)
-
 	// Create tile JSON request
-	req :=
+	arg := JSON(
 		`
 		{
 			"uri": "sample_index0",
@@ -114,16 +122,43 @@ func main() {
 				}
 			]
 		}
-		`
+		`)
 
-	// Generate a tile, this call will block until the tile is ready in the
-	// store.
-	err := veldt.GenerateTile("elastic", req)
+	// Generate a tile directly from the pipeline
+
+	// Instantiate a request object
+	req, err := pipeline.NewTileRequest(arg)
 	if err != nil {
 		panic(err)
 	}
-	// Retrieve the tile form the store.
-	tile, err := veldt.GetTileFromStore("elastic", t)
+
+	// Generate the tile, this call will block until the tile is ready in the
+	// store.
+	err = pipeline.Generate(req)
+	if err != nil {
+		panic(err)
+	}
+
+	// Retrieve the tile from the store
+	bytes, err := pipeline.GetFromStore(req)
+	if err != nil {
+		panic(err)
+	}
+
+	// Generate a tile by pipeline ID (useful when using HTTP / WebSocket API)
+
+	// Register the pipeline under a string ID
+	veldt.Register("elastic", pipeline)
+
+	// Generate a tile, this call will block until the tile is ready in the
+	// store.
+	err = veldt.GenerateTile("elastic", arg)
+	if err != nil {
+		panic(err)
+	}
+
+	// Retrieve the tile from the store
+	bytes, err = veldt.GetTileFromStore("elastic", arg)
 	if err != nil {
 		panic(err)
 	}

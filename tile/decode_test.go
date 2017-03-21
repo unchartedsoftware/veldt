@@ -3,8 +3,8 @@ package tile_test
 import (
 	"bytes"
 	"image"
-	"image/png"
 	"image/color"
+	"image/png"
 
 	"github.com/unchartedsoftware/veldt/tile"
 
@@ -31,9 +31,9 @@ var _ = Describe("Decode", func() {
 		for x := 0; x < 16; x++ {
 			for y := 0; y < 16; y++ {
 				c := color.RGBA{
-					uint8(x*16),
-					uint8(y*16),
-					uint8(x+y%256),
+					uint8(x * 16),
+					uint8(y * 16),
+					uint8(x + y%256),
 					255,
 				}
 				img.Set(x, y, c)
