@@ -23,15 +23,7 @@ func NewMicroTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.Til
 
 	return func() (veldt.Tile, error) {
 		saltInfof("New micro tile constructor request")
-		t := &MicroTile{}
-		t.rmqConfig = rmqConfig
-		t.buildConfig = func () (map[string]interface{}, error) {
-			return t.getTileConfiguration()
-		}
-		t.convert = func (input []byte) ([]byte, error) {
-			return t.convertResults(input)
-		}
-		return t, nil
+		return newMicroTile(rmqConfig), nil
 	}
 }
 
@@ -41,16 +33,21 @@ func NewMicroTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) ba
 
 	return func() (batch.TileFactory, error) {
 		saltInfof("New micro tile factory constructor request")
-		tf := &MicroTile{}
-		tf.rmqConfig = rmqConfig
-		tf.buildConfig = func () (map[string]interface{}, error) {
-			return tf.getTileConfiguration()
-		}
-		tf.convert = func (input []byte) ([]byte, error) {
-			return input, nil
-		}
-		return tf, nil
+		return newMicroTile(rmqConfig), nil
 	}
+}
+
+func newMicroTile (rmqConfig *Configuration) *MicroTile {
+	mt := &MicroTile{}
+	mt.tileType = "micro"
+	mt.rmqConfig = rmqConfig
+	mt.buildConfig = func () (map[string]interface{}, error) {
+		return mt.getTileConfiguration()
+	}
+	mt.convert = func (input []byte) ([]byte, error) {
+		return mt.convertResults(input)
+	}
+	return mt
 }
 
 // Parse does the standard salt tile parsing of parameters - i.e., saving them for later

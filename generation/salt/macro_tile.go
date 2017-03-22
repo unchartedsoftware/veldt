@@ -22,15 +22,7 @@ func NewMacroTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.Til
 
 	return func() (veldt.Tile, error) {
 		saltInfof("New macro tile constructor request")
-		t := &MacroTile{}
-		t.rmqConfig = rmqConfig
-		t.buildConfig = func () (map[string]interface{}, error) {
-			return t.getTileConfiguration()
-		}
-		t.convert = func (input []byte) ([]byte, error) {
-			return t.convertResults(input)
-		}
-		return t, nil
+		return newMacroTile(rmqConfig), nil
 	}
 }
 
@@ -40,16 +32,21 @@ func NewMacroTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) ba
 
 	return func() (batch.TileFactory, error) {
 		saltInfof("New macro tile factory constructor request")
-		tf := &MacroTile{}
-		tf.rmqConfig = rmqConfig
-		tf.buildConfig = func () (map[string]interface{}, error) {
-			return tf.getTileConfiguration()
-		}
-		tf.convert = func (input []byte) ([]byte, error) {
-			return input, nil
-		}
-		return tf, nil
+		return newMacroTile(rmqConfig), nil
 	}
+}
+
+func newMacroTile (rmqConfig *Configuration) *MacroTile {
+	mt := &MacroTile{}
+	mt.tileType = "macro"
+	mt.rmqConfig = rmqConfig
+	mt.buildConfig = func () (map[string]interface{}, error) {
+		return mt.getTileConfiguration()
+	}
+	mt.convert = func (input []byte) ([]byte, error) {
+		return mt.convertResults(input)
+	}
+	return mt
 }
 
 // Parse does the standard salt tile parsing of parameters - i.e., saving them for later
@@ -114,6 +111,7 @@ func (m *MacroTile) convertResults (input []byte) ([]byte, error) {
 	p = p + 4
 
 	points := make([]float32, numPoints * 2)
+	saltInfof("MACRO TILE: points array made for %d points", numPoints*2)
 	for i := 0; i < numPoints; i++ {
 		x := binary.LittleEndian.Uint32(input[p:p+4])
 		p = p + 4
@@ -126,6 +124,9 @@ func (m *MacroTile) convertResults (input []byte) ([]byte, error) {
 		// Y
 		points[i*2+1]= float32(float64(y) * binSize + halfSize)
 	}
+	saltInfof("MACRO TILE: done copying points")
 	
-	return m.Macro.Encode(points)
+	result, err := m.Macro.Encode(points)
+	saltInfof("MACRO TILE: result length=%d, err='%v'", len(result), err)
+	return result, err
 }

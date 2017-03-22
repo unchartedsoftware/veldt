@@ -24,6 +24,7 @@ type TileConverter func ([]byte) ([]byte, error)
 // TileData represents the data needed by every tile request that is backed by
 // Salt to connect to the Salt tile server
 type TileData struct {
+	tileType string
 	 // The configuration defining how we connect to the RabbitMQ server
 	rmqConfig *Configuration
 	// The parameters passed into the Parse method
@@ -107,7 +108,7 @@ func (t *TileData) Create (uri string, coord *binning.TileCoord, query veldt.Que
 
 // CreateTiles generates multiple tiles from the provided information
 func (t *TileData) CreateTiles (requests []*batch.TileRequest) {
-	saltInfof("CreateTiles: Processing %d requests", len(requests))
+	saltInfof("CreateTiles: Processing %d requests of type %s", len(requests), t.tileType)
 	// Create our connection
 	connection, err := NewConnection(t.rmqConfig)
 	if err != nil {
@@ -143,7 +144,7 @@ func (t *TileData) CreateTiles (requests []*batch.TileRequest) {
 	// Requests are all merged
 	// Now actually make our requests of the server
 	for _, request := range consolidatedRequests {
-		saltInfof("Request for %d tiles for dataset %s", len(request.tiles), request.dataset)
+		saltInfof("Request for %d tiles for dataset %s of type %s", len(request.tiles), request.dataset, t.tileType)
 		// Create our consolidated configuration
 		fullConfig := make(map[string]interface{})
 		fullConfig["tile"] = request.tileConfig
@@ -182,8 +183,9 @@ func (t *TileData) CreateTiles (requests []*batch.TileRequest) {
 				for key, channel := range responseChannels {
 					tile, ok := tiles[key]
 					if ok {
-						saltInfof("Found tile for key %s of length %d", key, len(tile))
+						saltInfof("Found tile for key %s[%s] of length %d", key, t.tileType, len(tile))
 						converted, err := t.convert(tile)
+						saltInfof("Converted tile for key %s[%s] had length %d", key, t.tileType, len(converted))
 						if nil != err {
 							channel <- batch.TileResponse{nil, err}
 						} else {

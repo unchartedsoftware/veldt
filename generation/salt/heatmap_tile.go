@@ -20,15 +20,7 @@ func NewHeatmapTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.T
 
 	return func() (veldt.Tile, error) {
 		saltInfof("New heatmap tile constructor request")
-		t := &HeatmapTile{}
-		t.rmqConfig = rmqConfig
-		t.buildConfig = func () (map[string]interface{}, error) {
-			return t.getTileConfiguration()
-		}
-		t.convert = func (input []byte) ([]byte, error) {
-			return input, nil
-		}
-		return t, nil
+		return newHeatmapTile(rmqConfig), nil
 	}
 }
 
@@ -38,16 +30,21 @@ func NewHeatmapTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) 
 
 	return func() (batch.TileFactory, error) {
 		saltInfof("New heatmap tile factory constructor request")
-		tf := &HeatmapTile{}
-		tf.rmqConfig = rmqConfig
-		tf.buildConfig = func () (map[string]interface{}, error) {
-			return tf.getTileConfiguration()
-		}
-		tf.convert = func (input []byte) ([]byte, error) {
-			return input, nil
-		}
-		return tf, nil
+		return newHeatmapTile(rmqConfig), nil
 	}
+}
+
+func newHeatmapTile (rmqConfig *Configuration) *HeatmapTile {
+	ht := &HeatmapTile{}
+	ht.tileType = "heatmap"
+	ht.rmqConfig = rmqConfig
+	ht.buildConfig = func () (map[string]interface{}, error) {
+		return ht.getTileConfiguration()
+	}
+	ht.convert = func (input []byte) ([]byte, error) {
+		return input, nil
+	}
+	return ht
 }
 
 // Parse does the standard salt tile parsing of parameters - i.e., saving them for later
@@ -86,9 +83,9 @@ func (h *HeatmapTile) getTileConfiguration () (map[string]interface{}, error) {
 	setProperty("resolution", h.Resolution, result)
 	// Bounds are ignored - salt needs the dataset bounds, not the tile bounds
 	// in visualization space
-	// setProperty("bounds.left", h.Left, result)
-	// setProperty("bounds.right", h.Right, result)
-	// setProperty("bounds.top", h.Top, result)
+	// setProperty("bounds.left",   h.Left, result)
+	// setProperty("bounds.right",  h.Right, result)
+	// setProperty("bounds.top",    h.Top, result)
 	// setProperty("bounds.bottom", h.Bottom, result)
 
 	return result, nil

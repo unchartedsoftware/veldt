@@ -76,12 +76,12 @@ func (t *tileRequestInfo) Create (uri string, coords *binning.TileCoord, query v
 	t.Query = query
 	t.ResultChannel = make(chan TileResponse, 1)
 
-	batchDebugf("Queueing up request for tile set %s, tile %v", uri, coords)
+	batchDebugf("Queueing up request for tile set %s, factory id %s, tile %v", uri, t.factoryID, coords)
 	t.enqueue()
 
-	batchInfof("Waiting for response for tile set %s, tile %v", uri, coords)
+	batchInfof("Waiting for response for tile set %s, factory id %s, tile %v", uri, t.factoryID, coords)
 	response := <- t.ResultChannel
-	batchInfof("Response received for tile set %s, tile %v - length=%d", uri, coords, len(response.Tile))
+	batchInfof("Response received for tile set %s, factory id %s, tile %v - length=%d", uri, t.factoryID, coords, len(response.Tile))
 	return response.Tile, response.Err
 }
 
