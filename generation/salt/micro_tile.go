@@ -45,7 +45,10 @@ func newMicroTile (rmqConfig *Configuration) *MicroTile {
 		return mt.getTileConfiguration()
 	}
 	mt.convert = func (input []byte) ([]byte, error) {
-		return mt.convertResults(input)
+		return mt.convertTile(input)
+	}
+	mt.buildDefault = func () ([]byte, error) {
+		return mt.buildDefaultTile()
 	}
 	return mt
 }
@@ -109,7 +112,7 @@ func (m *MicroTile) getTileConfiguration () (map[string]interface{}, error) {
 }
 
 
-func (m *MicroTile) convertResults (input []byte) ([]byte, error) {
+func (m *MicroTile) convertTile (input []byte) ([]byte, error) {
 	var rawHits []map[string]interface{}
 	err := json.Unmarshal(input, &rawHits)
 	if nil != err {
@@ -146,3 +149,6 @@ func (m *MicroTile) convertResults (input []byte) ([]byte, error) {
 	return m.Micro.Encode(hits, points)
 }
 
+func (m *MicroTile) buildDefaultTile () ([]byte, error) {
+	return m.Micro.Encode(make([]map[string]interface{}, 0), make([]float32, 0))
+}

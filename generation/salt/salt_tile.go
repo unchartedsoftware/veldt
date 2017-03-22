@@ -21,6 +21,8 @@ type ConfigurationBuilder func() (map[string]interface{}, error)
 // Veldt wants for a given tile type
 type TileConverter func ([]byte) ([]byte, error)
 
+type DefaultTileConstructor func () ([]byte, error)
+
 // TileData represents the data needed by every tile request that is backed by
 // Salt to connect to the Salt tile server
 type TileData struct {
@@ -36,6 +38,9 @@ type TileData struct {
 	// A converter that can convert the results from what Salt gives us to
 	// what Veldt wants
 	convert TileConverter
+	// A function to construct a default tile, for when Salt tells us there
+	// is no information in the requested tile
+	buildDefault DefaultTileConstructor
 }
 
 var datasets = make(map[string]string)
@@ -186,15 +191,12 @@ func (t *TileData) CreateTiles (requests []*batch.TileRequest) {
 						saltInfof("Found tile for key %s[%s] of length %d", key, t.tileType, len(tile))
 						converted, err := t.convert(tile)
 						saltInfof("Converted tile for key %s[%s] had length %d", key, t.tileType, len(converted))
-						if nil != err {
-							channel <- batch.TileResponse{nil, err}
-						} else {
-							channel <- batch.TileResponse{converted, nil}
-						}
+						channel <- batch.TileResponse{converted, err}
 					} else {
 						// No tile, but no error either
 						saltInfof("No tile found for key %s", key)
-						channel <- batch.TileResponse{nil, nil}
+						defaultTile, err := t.buildDefault()
+						channel <- batch.TileResponse{defaultTile, err}
 					}
 				}
 			}

@@ -45,7 +45,10 @@ func newCountTile (rmqConfig *Configuration) *CountTile {
 		return ct.getTileConfiguration()
 	}
 	ct.convert = func (input []byte) ([]byte, error) {
-		return ct.convertResults(input)
+		return ct.convertTile(input)
+	}
+	ct.buildDefault = func () ([]byte, error) {
+		return ct.buildDefaultTile()
 	}
 	return ct
 }
@@ -94,7 +97,11 @@ func (c *CountTile) getTileConfiguration () (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (c *CountTile) convertResults (input []byte) ([]byte, error) {
+func (c *CountTile) convertTile (input []byte) ([]byte, error) {
 	count := binary.LittleEndian.Uint32(input)
 	return []byte(fmt.Sprintf(`{"count":%d}`, count)), nil
+}
+
+func (c *CountTile) buildDefaultTile () ([]byte, error) {
+	return []byte(`{"count":0}`), nil
 }

@@ -44,7 +44,10 @@ func newMacroTile (rmqConfig *Configuration) *MacroTile {
 		return mt.getTileConfiguration()
 	}
 	mt.convert = func (input []byte) ([]byte, error) {
-		return mt.convertResults(input)
+		return mt.convertTile(input)
+	}
+	mt.buildDefault = func () ([]byte, error) {
+		return mt.buildDefaultTile()
 	}
 	return mt
 }
@@ -92,7 +95,7 @@ func (m *MacroTile) getTileConfiguration () (map[string]interface{}, error) {
 }
 
 
-func (m *MacroTile) convertResults (input []byte) ([]byte, error) {
+func (m *MacroTile) convertTile (input []byte) ([]byte, error) {
 	err := m.parseMacroParameters(*m.parameters)
 	if nil != err {
 		return nil, err
@@ -111,7 +114,6 @@ func (m *MacroTile) convertResults (input []byte) ([]byte, error) {
 	p = p + 4
 
 	points := make([]float32, numPoints * 2)
-	saltInfof("MACRO TILE: points array made for %d points", numPoints*2)
 	for i := 0; i < numPoints; i++ {
 		x := binary.LittleEndian.Uint32(input[p:p+4])
 		p = p + 4
@@ -124,9 +126,10 @@ func (m *MacroTile) convertResults (input []byte) ([]byte, error) {
 		// Y
 		points[i*2+1]= float32(float64(y) * binSize + halfSize)
 	}
-	saltInfof("MACRO TILE: done copying points")
 	
-	result, err := m.Macro.Encode(points)
-	saltInfof("MACRO TILE: result length=%d, err='%v'", len(result), err)
-	return result, err
+	return m.Macro.Encode(points)
+}
+
+func (m *MacroTile) buildDefaultTile () ([]byte, error) {
+	return m.Macro.Encode(make([]float32, 0))
 }

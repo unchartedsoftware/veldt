@@ -42,7 +42,10 @@ func newHeatmapTile (rmqConfig *Configuration) *HeatmapTile {
 		return ht.getTileConfiguration()
 	}
 	ht.convert = func (input []byte) ([]byte, error) {
-		return input, nil
+		return ht.convertTile(input)
+	}
+	ht.buildDefault = func () ([]byte, error) {
+		return ht.buildDefaultTile()
 	}
 	return ht
 }
@@ -89,4 +92,19 @@ func (h *HeatmapTile) getTileConfiguration () (map[string]interface{}, error) {
 	// setProperty("bounds.bottom", h.Bottom, result)
 
 	return result, nil
+}
+
+func (h *HeatmapTile) convertTile (input []byte) ([]byte, error) {
+	return input, nil
+}
+
+func (h *HeatmapTile) buildDefaultTile () ([]byte, error) {
+	err := h.parseHeatmapParameters(*h.parameters)
+	if nil != err {
+		return nil, err
+	}
+
+	bins := h.Resolution * h.Resolution
+	bits := make([]byte, bins*4)
+	return bits, nil
 }
