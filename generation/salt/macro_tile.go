@@ -117,7 +117,7 @@ func (m *MacroTile) convertTile (input []byte) ([]byte, error) {
 	for i := 0; i < numPoints; i++ {
 		x := binary.LittleEndian.Uint32(input[p:p+4])
 		p = p + 4
-		y := binary.LittleEndian.Uint32(input[p:p+4])
+		y := uint32(m.Resolution) - binary.LittleEndian.Uint32(input[p:p+4])
 		p = p + 4
 
 		// Convert from bin number to location

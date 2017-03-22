@@ -1,6 +1,8 @@
 package salt
 
 import (
+	"fmt"
+	
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/generation/batch"
 	"github.com/unchartedsoftware/veldt/tile"
@@ -95,7 +97,26 @@ func (h *HeatmapTile) getTileConfiguration () (map[string]interface{}, error) {
 }
 
 func (h *HeatmapTile) convertTile (input []byte) ([]byte, error) {
-	return input, nil
+	err := h.parseHeatmapParameters(*h.parameters)
+	if nil != err {
+		return nil, err
+	}
+
+	res := h.Resolution
+	numPoints := len(input) / 4
+	if res*res != numPoints {
+		return nil, fmt.Errorf("Wrong number of points returned.  Expected %d, got %d", res*res, numPoints)
+	}
+
+	// Copy to output buffer, flipping the y
+	output := make([]byte, len(input))
+	stride := res * 4
+	for y := 0; y < res; y++ {
+		// Copy lines of floats in bulk, wholesale, rather than parsing and rewriting each number
+		copy(output[(y+0)*stride:(y+1)*stride], input[(res-y-1)*stride:(res-y)*stride])
+	}
+
+	return output, nil
 }
 
 func (h *HeatmapTile) buildDefaultTile () ([]byte, error) {
