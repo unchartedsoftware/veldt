@@ -188,13 +188,13 @@ func (t *TileData) CreateTiles (requests []*batch.TileRequest) {
 				for key, channel := range responseChannels {
 					tile, ok := tiles[key]
 					if ok {
-						saltInfof("Found tile for key %s[%s] of length %d", key, t.tileType, len(tile))
+						saltDebugf("Found tile for key %s[%s] of length %d", key, t.tileType, len(tile))
 						converted, err := t.convert(tile)
-						saltInfof("Converted tile for key %s[%s] had length %d", key, t.tileType, len(converted))
+						saltDebugf("Converted tile for key %s[%s] had length %d", key, t.tileType, len(converted))
 						channel <- batch.TileResponse{converted, err}
 					} else {
 						// No tile, but no error either
-						saltInfof("No tile found for key %s", key)
+						saltDebugf("No tile found for key %s", key)
 						defaultTile, err := t.buildDefault()
 						channel <- batch.TileResponse{defaultTile, err}
 					}
@@ -285,7 +285,7 @@ func unpackTiles (saltMsg []byte) map[string][]byte {
 		size  := int(binary.BigEndian.Uint64(saltMsg[p:p+8]))
 		p = p + 8
 		key := coordToString(int(level), int(x), int(y))
-		saltInfof("Unpacking tile [%d: %d, %d] = %s, length = %d", level, x, y, key, size)
+		saltDebugf("Unpacking tile [%d: %d, %d] = %s, length = %d", level, x, y, key, size)
 		results[key] = saltMsg[p:p+size]
 		p = p + size
 	}
