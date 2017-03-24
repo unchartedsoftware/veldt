@@ -21,6 +21,7 @@ type ConfigurationBuilder func() (map[string]interface{}, error)
 // Veldt wants for a given tile type
 type TileConverter func ([]byte) ([]byte, error)
 
+// DefaultTileConstructor constructs a tile when salt doesn't return one
 type DefaultTileConstructor func () ([]byte, error)
 
 // TileData represents the data needed by every tile request that is backed by

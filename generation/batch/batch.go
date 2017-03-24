@@ -18,10 +18,16 @@ type tileRequestInfo struct {
 	// The ID under which the factory that will fulfill this tile request was
 	// registered
 	factoryID     string
+	// The time at which this request was made
+	time          time.Time
+	// A unique ID for this request
+	requestID     int
 	// How long this tile has before its request must be made, in milliseconds
 	maxWait       int64
 	// An indicator of whether this tile request is ready to be fulfilled
 	ready         bool
+	// In which batch this request made
+	batch         int
 }
 
 var (
@@ -29,10 +35,14 @@ var (
 	mutex = sync.Mutex{}
 	// Our lists of currently extant tile requests
 	requests = make(map[string][]*tileRequestInfo)
-	// A timer that will run all current requests when it is done
-	timer *time.Timer
 	// All registered tile factories
 	factories = make(map[string]TileFactoryCtor)
+	// The current queue batch
+	queueBatch = 0
+	// The next valid request ID
+	nextRequestID = 0
+	// Is our event processing loop started?
+	started = false
 )
 
 // NewBatchTile returns a tile handler for a tile request that should be
@@ -46,9 +56,13 @@ func NewBatchTile (factoryID string, factory TileFactoryCtor, maxWait int64) vel
 	// shouldn't be an issue
 	factories[factoryID] = factory
 
+	if (!started) {
+		started = true
+		go processQueue(maxWait)
+	}
+
 	// And return our tile constructor function
 	return func() (veldt.Tile, error) {
-		batchDebugf("New batched tile request")
 		t := &tileRequestInfo{}
 		t.maxWait = maxWait
 		t.factoryID = factoryID
@@ -63,6 +77,10 @@ func (t *tileRequestInfo) Parse (params map[string]interface{}) error {
 	return nil
 }
 
+func (t *tileRequestInfo) getTimeDue () time.Time {
+	return t.time.Add(time.Millisecond * time.Duration(t.maxWait))
+}
+
 // Create waits for tile requests to come in until our waiting period is done,
 // then makes any extant tile requests of their tile factory, and returns the
 // results to the caller
@@ -74,14 +92,20 @@ func (t *tileRequestInfo) Create (uri string, coords *binning.TileCoord, query v
 	t.URI = uri
 	t.Coordinates = coords
 	t.Query = query
-	t.ResultChannel = make(chan TileResponse, 1)
+	t.ResultChannel = make(chan TileResponse, 1)	
+	t.time = time.Now()
+	mutex.Lock()
+	t.requestID = nextRequestID
+	nextRequestID = nextRequestID + 1
+	mutex.Unlock()
+
 
 	batchDebugf("Queueing up request for tile set %s, factory id %s, tile %v", uri, t.factoryID, coords)
 	t.enqueue()
 
-	batchInfof("Waiting for response for tile set %s, factory id %s, tile %v", uri, t.factoryID, coords)
+	batchInfof("Request %d for tile set %s, factory id %s, tile %v enqueued at %v", t.requestID, t.URI, t.factoryID, coords, t.time)
 	response := <- t.ResultChannel
-	batchInfof("Response received for tile set %s, factory id %s, tile %v - length=%d", uri, t.factoryID, coords, len(response.Tile))
+	batchInfof("Request %d for tile set %s, factory id %s, tile %v fulfilled at %v", t.requestID, t.URI, t.factoryID, coords, time.Now())
 	return response.Tile, response.Err
 }
 
@@ -99,56 +123,88 @@ func (t *tileRequestInfo) enqueue () {
 		factoryRequests = make([]*tileRequestInfo, 0)
 	}
 	requests[t.factoryID] = append(factoryRequests, t)
+}
 
-	// If no timer is running, start one
-	// Ideally if one is running, we would make sure it will go off in time,
-	// but that's too complex for a first pass, so we'll deal with that later.
-	if nil == timer {
-		timer = time.AfterFunc(time.Millisecond * time.Duration(t.maxWait), processQueue)
+func processQueue (waitTime int64) {
+	for {
+		batchInfof("Checking for queued tiles at %v", time.Now())
+		if (isDue()) {
+			batch, batchRequests := dequeueRequests()
+			numRequests := 0
+			for _, factoryRequests := range batchRequests {
+				numRequests = numRequests + len(factoryRequests)
+			}
+			batchInfof("Beginning processing of batch %d, with %d requests in %d factories, at %v", batch, numRequests, len(batchRequests), time.Now())
+			for factoryID, factoryRequests := range batchRequests {
+				processFactoryRequests(batch, factoryID, factoryRequests)
+			}
+			batchInfof("Done processing of batch %d at %v", batch, time.Now())
+		}
+		time.Sleep(time.Millisecond * time.Duration(waitTime))
 	}
 }
 
-// processQueue processes our request queue when the timer runs out, forwarding
-// requests in bulk to the appropriate tile factory.
-func processQueue () {
+// dequeueRequests takes requests off of the queue in preparation for sending
+// them to their respective factories
+func dequeueRequests () (int, map[string][]*tileRequestInfo) {
 	// Only change the queue within a lock
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	batchInfof("Processing queue:")
-	for factoryID, factoryRequestInfos := range requests {
-		batchDebugf("\tFactory = %v", factoryID)
-		// Get our factory
-		ctor, ok := factories[factoryID]
-		if !ok {
-			batchWarnf("Unrecognized tile factory `%s`", factoryID)
-			sendError(fmt.Errorf("Unrecognized tile factory `%v`", factoryID), factoryRequestInfos)
-		} else {
-			factory, err := ctor()
-			if nil != err {
-				batchWarnf("Error constructing factory %s: %v", factoryID, err)
-				sendError(err, factoryRequestInfos)
-			} else {
-				batchDebugf("\tFactory obtained.  Requests are:")
-				// Take out our meta-request info, leaving just the simple
-				// request info for the factory
-				n := len(factoryRequestInfos)
-				factoryRequests := make([]*TileRequest, n, n)
-				for i := 0; i < n; i++ {
-					batchDebugf("\t\t%s: %v", factoryRequestInfos[i].URI, factoryRequestInfos[i].Coordinates)
-					factoryRequests[i] = &factoryRequestInfos[i].TileRequest
-				}
+	// Update our queue batch
+	queueBatch = queueBatch + 1
 
-				// Call our factory, have it create tiles
-				batchDebugf("\tCalling factory to create tiles")
-				factory.CreateTiles(factoryRequests)
-			}
+	// Retrieve our current set of requests, setting up a new collector for
+	// subsequent requests.
+	current := requests
+	requests = make(map[string][]*tileRequestInfo)
+
+	// Mark the batch number on all current requests
+	for _, requestSet := range current {
+		for _, req := range requestSet {
+			req.batch = queueBatch
 		}
 	}
-	
-	// All done - clear our queue, and remove our timer
-	requests = make(map[string][]*tileRequestInfo)
-	timer = nil
+
+	return queueBatch, current
+}
+
+// processFactoryRequess process all the requests from a given batch for a
+// given factory
+func processFactoryRequests (batch int, factoryID string, factoryRequests []*tileRequestInfo) {
+	batchDebugf("Processing %d requests for factory %s", len(factoryRequests), factoryID)
+
+	// Get our factory
+	ctor, ok := factories[factoryID]
+	if !ok {
+		err := fmt.Errorf("Unrecognized tile factory '%s'", factoryID)
+		batchWarnf(err.Error())
+		sendError(err, factoryRequests)
+	} else {
+		factory, err := ctor()
+		if nil != err {
+			err := fmt.Errorf("Error constructing factory %s: %v", factoryID, err)
+			batchWarnf(err.Error())
+			sendError(err, factoryRequests)
+		} else {
+			batchDebugf("Factory obtained.")
+
+			// Take out our meta-request info, leaving just the simple request info
+			// for the factory
+			n := len(factoryRequests)
+			simpleRequests := make([]*TileRequest, n, n)
+			for i := 0; i < n; i++ {
+				batchDebugf("request: factory=%s, batch=%d, uri=%s, coords=%v",
+					factoryID, factoryRequests[i].batch,
+					factoryRequests[i].URI, factoryRequests[i].Coordinates)
+				simpleRequests[i] = &factoryRequests[i].TileRequest
+			}
+
+			// Call our factory, have it create tiles
+			batchDebugf("\tCalling factory %s to create tiles", factoryID)
+			factory.CreateTiles(simpleRequests)
+		}
+	}
 }
 
 func sendError (err error, requestInfos []*tileRequestInfo) {
@@ -156,4 +212,19 @@ func sendError (err error, requestInfos []*tileRequestInfo) {
 	for _, requestInfo := range requestInfos {
 		requestInfo.ResultChannel <- response
 	}
+}
+
+func isDue () bool {
+	// We are reading our requests lists, therefor must operatate inside a lock
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	for _, factoryRequests := range requests {
+		for _, request := range factoryRequests {
+			if time.Now().After(request.getTimeDue()) {
+				return true
+			}
+		}
+	}
+	return false
 }
