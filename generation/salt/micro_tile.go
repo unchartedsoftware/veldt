@@ -133,7 +133,7 @@ func (m *MicroTile) convertTile (input []byte) ([]byte, error) {
 			return nil, err
 		}
 		points[2*i+0] = x
-		points[2*i+1] = y
+		points[2*i+1] = 256 - y
 
 		hitMapRaw, err := getProperty("values", hit)
 		if nil != err {
