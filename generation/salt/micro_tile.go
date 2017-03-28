@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/generation/batch"
 	"github.com/unchartedsoftware/veldt/tile"
 )
@@ -44,8 +45,8 @@ func newMicroTile (rmqConfig *Configuration) *MicroTile {
 	mt.buildConfig = func () (map[string]interface{}, error) {
 		return mt.getTileConfiguration()
 	}
-	mt.convert = func (input []byte) ([]byte, error) {
-		return mt.convertTile(input)
+	mt.convert = func (coord *binning.TileCoord, input []byte) ([]byte, error) {
+		return mt.convertTile(coord, input)
 	}
 	mt.buildDefault = func () ([]byte, error) {
 		return mt.buildDefaultTile()
@@ -112,7 +113,7 @@ func (m *MicroTile) getTileConfiguration () (map[string]interface{}, error) {
 }
 
 
-func (m *MicroTile) convertTile (input []byte) ([]byte, error) {
+func (m *MicroTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte, error) {
 	var rawHits []map[string]interface{}
 	err := json.Unmarshal(input, &rawHits)
 	if nil != err {

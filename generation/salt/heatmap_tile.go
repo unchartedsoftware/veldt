@@ -4,6 +4,7 @@ import (
 	"fmt"
 	
 	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/generation/batch"
 	"github.com/unchartedsoftware/veldt/tile"
 	"github.com/unchartedsoftware/veldt/util/json"
@@ -43,8 +44,8 @@ func newHeatmapTile (rmqConfig *Configuration) *HeatmapTile {
 	ht.buildConfig = func () (map[string]interface{}, error) {
 		return ht.getTileConfiguration()
 	}
-	ht.convert = func (input []byte) ([]byte, error) {
-		return ht.convertTile(input)
+	ht.convert = func (coord *binning.TileCoord, input []byte) ([]byte, error) {
+		return ht.convertTile(coord, input)
 	}
 	ht.buildDefault = func () ([]byte, error) {
 		return ht.buildDefaultTile()
@@ -96,7 +97,7 @@ func (h *HeatmapTile) getTileConfiguration () (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (h *HeatmapTile) convertTile (input []byte) ([]byte, error) {
+func (h *HeatmapTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte, error) {
 	err := h.parseHeatmapParameters(*h.parameters)
 	if nil != err {
 		return nil, err

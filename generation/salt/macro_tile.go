@@ -43,8 +43,8 @@ func newMacroTile (rmqConfig *Configuration) *MacroTile {
 	mt.buildConfig = func () (map[string]interface{}, error) {
 		return mt.getTileConfiguration()
 	}
-	mt.convert = func (input []byte) ([]byte, error) {
-		return mt.convertTile(input)
+	mt.convert = func (coord *binning.TileCoord, input []byte) ([]byte, error) {
+		return mt.convertTile(coord, input)
 	}
 	mt.buildDefault = func () ([]byte, error) {
 		return mt.buildDefaultTile()
@@ -95,7 +95,7 @@ func (m *MacroTile) getTileConfiguration () (map[string]interface{}, error) {
 }
 
 
-func (m *MacroTile) convertTile (input []byte) ([]byte, error) {
+func (m *MacroTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte, error) {
 	err := m.parseMacroParameters(*m.parameters)
 	if nil != err {
 		return nil, err

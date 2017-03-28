@@ -19,7 +19,7 @@ type ConfigurationBuilder func() (map[string]interface{}, error)
 
 // TileConverter converts the output of the Salt tile server into the format
 // Veldt wants for a given tile type
-type TileConverter func ([]byte) ([]byte, error)
+type TileConverter func (*binning.TileCoord, []byte) ([]byte, error)
 
 // DefaultTileConstructor constructs a tile when salt doesn't return one
 type DefaultTileConstructor func () ([]byte, error)
@@ -42,6 +42,11 @@ type TileData struct {
 	// A function to construct a default tile, for when Salt tells us there
 	// is no information in the requested tile
 	buildDefault DefaultTileConstructor
+}
+
+type tileResult struct {
+	coord *binning.TileCoord
+	data []byte
 }
 
 var datasets = make(map[string]string)
@@ -79,7 +84,8 @@ func setupConnection (rmqConfig *Configuration, datasetConfigs ...[]byte) {
 				if nil != err {
 					saltErrorf("Error registering dataset %v: %v", name, err)
 				} else {
-						datasets[name] = string(datasetConfig)
+					saltInfof("Registering dataset %s", name)
+					datasets[name] = string(datasetConfig)
 				}
 			}
 		}
@@ -189,8 +195,8 @@ func (t *TileData) CreateTiles (requests []*batch.TileRequest) {
 				for key, channel := range responseChannels {
 					tile, ok := tiles[key]
 					if ok {
-						saltDebugf("Found tile for key %s[%s] of length %d", key, t.tileType, len(tile))
-						converted, err := t.convert(tile)
+						saltDebugf("Found tile for key %s[%s] of length %d", key, t.tileType, len(tile.data))
+						converted, err := t.convert(tile.coord, tile.data)
 						saltDebugf("Converted tile for key %s[%s] had length %d", key, t.tileType, len(converted))
 						channel <- batch.TileResponse{converted, err}
 					} else {
@@ -272,10 +278,10 @@ func coordToString (level, x, y int) string {
 
 // unpackTiles unpacks the message sent to us by salt into a series of tiles,
 // keyed by the coordToString function above
-func unpackTiles (saltMsg []byte) map[string][]byte {
+func unpackTiles (saltMsg []byte) map[string]tileResult {
 	p := 0
 	maxP := len(saltMsg)
-	results := make(map[string][]byte)
+	results := make(map[string]tileResult)
 	for p < maxP {
 		level := binary.BigEndian.Uint64(saltMsg[p:p+8])
 		p = p + 8
@@ -286,8 +292,9 @@ func unpackTiles (saltMsg []byte) map[string][]byte {
 		size  := int(binary.BigEndian.Uint64(saltMsg[p:p+8]))
 		p = p + 8
 		key := coordToString(int(level), int(x), int(y))
+		coord := &binning.TileCoord{X: uint32(x), Y: uint32(y), Z: uint32(level)}
 		saltDebugf("Unpacking tile [%d: %d, %d] = %s, length = %d", level, x, y, key, size)
-		results[key] = saltMsg[p:p+size]
+		results[key] = tileResult{coord, saltMsg[p:p+size]}
 		p = p + size
 	}
 	return results

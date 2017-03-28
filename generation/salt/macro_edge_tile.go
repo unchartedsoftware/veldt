@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/tile"
 	"github.com/unchartedsoftware/veldt/generation/batch"
 )
@@ -44,8 +45,8 @@ func newEdgeTile (rmqConfig *Configuration) *MacroEdgeTile {
 	met.buildConfig = func () (map[string]interface{}, error) {
 		return met.getTileConfiguration()
 	}
-	met.convert = func (input []byte) ([]byte, error) {
-		return met.convertTile(input)
+	met.convert = func (coord *binning.TileCoord, input []byte) ([]byte, error) {
+		return met.convertTile(coord, input)
 	}
 	met.buildDefault = func () ([]byte, error) {
 		return met.buildDefaultTile()
@@ -99,19 +100,32 @@ func (m *MacroEdgeTile) getTileConfiguration () (map[string]interface{}, error) 
 	return result, nil
 }
 
-func (m *MacroEdgeTile) convertTile (input []byte) ([]byte, error) {
+func (m *MacroEdgeTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte, error) {
 	err := m.parseEdgeParameters(*m.parameters)
 	if nil != err {
 		return nil, err
 	}
 
+	// Salt returns us absolute bin coordinates; we need to convert them to
+	// values relative to the current tile
+	tileSize := uint32(256)
+	offsetX := float32(coord.X * tileSize)
+	offsetY := float32(coord.Y * tileSize)
+	
 	// Macro tiles are returned to us as a series of floating-point numbers
 	bLen := len(input)
 	fLen := bLen / 4
 	points := make([]float32, fLen)
 	for i := 0; i < fLen; i++ {
 		bits := binary.LittleEndian.Uint32(input[i*4:i*4+4])
-		points[i] = math.Float32frombits(bits)
+		base := math.Float32frombits(bits)
+		if 0 == (i % 2) {
+			// X coordinate
+			points[i] = base - offsetX
+		} else {
+			// Y coordinate
+			points[i] = base - offsetY
+		}
 	}	
 
 	return m.MacroEdge.Encode(points)

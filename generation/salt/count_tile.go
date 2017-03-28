@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 
 	"github.com/unchartedsoftware/veldt"
+	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/generation/batch"
 	"github.com/unchartedsoftware/veldt/tile"
 	"github.com/unchartedsoftware/veldt/util/json"
@@ -44,8 +45,8 @@ func newCountTile (rmqConfig *Configuration) *CountTile {
 	ct.buildConfig = func () (map[string]interface{}, error) {
 		return ct.getTileConfiguration()
 	}
-	ct.convert = func (input []byte) ([]byte, error) {
-		return ct.convertTile(input)
+	ct.convert = func (coord *binning.TileCoord, input []byte) ([]byte, error) {
+		return ct.convertTile(coord, input)
 	}
 	ct.buildDefault = func () ([]byte, error) {
 		return ct.buildDefaultTile()
@@ -97,7 +98,7 @@ func (c *CountTile) getTileConfiguration () (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (c *CountTile) convertTile (input []byte) ([]byte, error) {
+func (c *CountTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte, error) {
 	count := binary.LittleEndian.Uint32(input)
 	return []byte(fmt.Sprintf(`{"count":%d}`, count)), nil
 }
