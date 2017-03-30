@@ -54,6 +54,35 @@ func (b *Bivariate) GetAggs(coord *binning.TileCoord) map[string]elastic.Aggrega
 	}
 }
 
+// GetAggsWithNested returns the tiling aggregation with a nested child agg.
+func (b *Bivariate) GetAggsWithNested(coord *binning.TileCoord, id string, nested elastic.Aggregation) map[string]elastic.Aggregation {
+	bounds := b.TileBounds(coord)
+	// compute binning itnernal
+	intervalX := int64(math.Max(1, b.BinSizeX(coord)))
+	intervalY := int64(math.Max(1, b.BinSizeY(coord)))
+	// create the binning aggregations
+	x := elastic.NewHistogramAggregation().
+		Field(b.XField).
+		Offset(int64(bounds.MinX())).
+		Interval(intervalX).
+		MinDocCount(1)
+	y := elastic.NewHistogramAggregation().
+		Field(b.YField).
+		Offset(int64(bounds.MinY())).
+		Interval(intervalY).
+		MinDocCount(1)
+	x.SubAggregation("y", y)
+	aggs := map[string]elastic.Aggregation{
+		"x": x,
+		"y": y,
+	}
+	if nested != nil {
+		y.SubAggregation(id, nested)
+		aggs[id] = nested
+	}
+	return aggs
+}
+
 // GetBins parses the resulting histograms into bins.
 func (b *Bivariate) GetBins(coord *binning.TileCoord, aggs *elastic.Aggregations) ([]*elastic.AggregationBucketHistogramItem, error) {
 	// parse aggregations

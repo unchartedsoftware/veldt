@@ -19,7 +19,7 @@ func NewMatchesString() (veldt.Query, error) {
 
 // Get returns the appropriate elasticsearch query for the query.
 func (q *MatchesString) Get() (elastic.Query, error) {
-	query := elastic.NewQueryStringQuery(q.StringMatch)
+	query := elastic.NewQueryStringQuery(q.Match)
 	for _, f := range q.Fields {
 		query = query.Field(f)
 	}
