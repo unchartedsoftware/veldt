@@ -1,6 +1,33 @@
-hash: 75fce8e3903c5c3b2625142d837eaebf8f58f4d2710081b5d0165e19952f84f6
-updated: 2017-01-27T15:28:44.521645139-05:00
+hash: 0805d220f5f8eb34c3eceaa2105722f374d75eff61d39ad45e988ee9687064ba
+updated: 2017-03-28T13:40:05.435193878-04:00
 imports:
+- name: github.com/aws/aws-sdk-go
+  version: 7111a70b8bea15081468f11bc1450ac2fec2406b
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/defaults
+  - aws/ec2metadata
+  - aws/endpoints
+  - aws/request
+  - aws/session
+  - aws/signer/v4
+  - private/protocol
+  - private/protocol/query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - service/s3
+  - service/sts
 - name: github.com/coocood/freecache
   version: bc9053bc20ecba4f091ffe1c83040ae4b8f9e845
 - name: github.com/davecgh/go-spew
@@ -12,16 +39,44 @@ imports:
   subpackages:
   - internal
   - redis
+- name: github.com/go-ini/ini
+  version: 6f66b0e091edb3c7b380f7c4f0f884274d550b67
 - name: github.com/jackc/pgx
   version: 6c5b4703172c5a71b5fd59160188d6857b2cd579
+- name: github.com/jmespath/go-jmespath
+  version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/mattn/go-isatty
   version: 30a891c33c7cde7b02a981314b4228ec99380cca
 - name: github.com/mgutz/ansi
   version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
+- name: github.com/onsi/gomega
+  version: e85f63af4302dc0e4277c6008ecf803f1d80e4f0
+  subpackages:
+  - format
+  - internal/assertion
+  - internal/asyncassertion
+  - internal/oraclematcher
+  - internal/testingtsupport
+  - matchers
+  - matchers/support/goraph/bipartitegraph
+  - matchers/support/goraph/edge
+  - matchers/support/goraph/node
+  - matchers/support/goraph/util
+  - types
 - name: github.com/spaolacci/murmur3
   version: 0d12bf811670bf6a1a63828dfbd003eded177fce
 - name: github.com/unchartedsoftware/plog
   version: bbb4bc4151f23ea489aff06d2a27f10e1a935993
+- name: github.com/unchartedsoftware/prism
+  version: eea92e2917b3e5b528a68916eb3ed81ca6519a31
+  subpackages:
+  - binning
+  - generation/tile
+  - store
+  - util
+  - util/aws
+  - util/json
+  - util/promise
 - name: golang.org/x/sys
   version: 30237cf4eefd639b184d1f2cb77a581ea0be8947
   subpackages:
@@ -31,6 +86,8 @@ imports:
   subpackages:
   - backoff
   - uritemplates
+- name: gopkg.in/yaml.v2
+  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
 testImports:
 - name: github.com/onsi/ginkgo
   version: a23f924ce96d61f963fb6219b8ff069d8d768cc2
@@ -51,19 +108,3 @@ testImports:
   - reporters/stenographer/support/go-colorable
   - reporters/stenographer/support/go-isatty
   - types
-- name: github.com/onsi/gomega
-  version: e85f63af4302dc0e4277c6008ecf803f1d80e4f0
-  subpackages:
-  - format
-  - internal/assertion
-  - internal/asyncassertion
-  - internal/oraclematcher
-  - internal/testingtsupport
-  - matchers
-  - matchers/support/goraph/bipartitegraph
-  - matchers/support/goraph/edge
-  - matchers/support/goraph/node
-  - matchers/support/goraph/util
-  - types
-- name: gopkg.in/yaml.v2
-  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
