@@ -67,16 +67,6 @@ imports:
   version: 0d12bf811670bf6a1a63828dfbd003eded177fce
 - name: github.com/unchartedsoftware/plog
   version: bbb4bc4151f23ea489aff06d2a27f10e1a935993
-- name: github.com/unchartedsoftware/prism
-  version: eea92e2917b3e5b528a68916eb3ed81ca6519a31
-  subpackages:
-  - binning
-  - generation/tile
-  - store
-  - util
-  - util/aws
-  - util/json
-  - util/promise
 - name: golang.org/x/sys
   version: 30237cf4eefd639b184d1f2cb77a581ea0be8947
   subpackages:
