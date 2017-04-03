@@ -25,7 +25,7 @@ var _ = Describe("MatchesString", func() {
 				}`)
 			err := matchesString.Parse(params)
 			Expect(err).To(BeNil())
-			Expect(matchesString.StringMatch).To(Equal("string-query"))
+			Expect(matchesString.Match).To(Equal("string-query"))
 			Expect(matchesString.Fields[0]).To(Equal("a"))
 			Expect(matchesString.Fields[1]).To(Equal("b"))
 			Expect(matchesString.Fields[2]).To(Equal("c"))
