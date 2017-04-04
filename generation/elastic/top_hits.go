@@ -49,7 +49,6 @@ func (t *TopHits) GetTopHits(aggs *elastic.Aggregations) ([]map[string]interface
 		if err != nil {
 			return nil, err
 		}
-		// flatten the source paths
 		hits[index] = src
 	}
 	return hits, nil
