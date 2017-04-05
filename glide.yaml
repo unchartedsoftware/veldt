@@ -11,6 +11,8 @@ import:
 - package: github.com/mattn/go-isatty
 - package: github.com/unchartedsoftware/plog
 - package: gopkg.in/olivere/elastic.v3
+- package: github.com/aws/aws-sdk-go
+  version: v1.8.3
 - package: github.com/streadway/amqp
 - package: github.com/liyinhgqw/typesafe-config
 testImport:

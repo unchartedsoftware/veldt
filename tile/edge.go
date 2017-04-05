@@ -86,26 +86,26 @@ func (e *Edge) GetY(coord *binning.TileCoord, y float64) float64 {
 }
 
 // GetSrcXY given a data hit, returns the corresponding coord within the range of
-// [0 : 2^zoom * 256) for the tile.
+// [0 : 256) for the tile.
 func (e *Edge) GetSrcXY(coord *binning.TileCoord, hit map[string]interface{}) (float64, float64, bool) {
 	return e.getXY(coord, hit, e.SrcXField, e.SrcYField)
 }
 
 // GetDstXY given a data hit, returns the corresponding coord within the range of
-// [0 : 2^zoom * 256) for the tile.
+// [0 : 256) for the tile.
 func (e *Edge) GetDstXY(coord *binning.TileCoord, hit map[string]interface{}) (float64, float64, bool) {
 	return e.getXY(coord, hit, e.DstXField, e.DstYField)
 }
 
 // GetSrcXY given a data hit, returns the corresponding coord within the range of
-// [0 : 2^zoom * 256) for the tile.
+// [0 : 256) for the tile.
 func (e *Edge) getXY(coord *binning.TileCoord, hit map[string]interface{}, xField string, yField string) (float64, float64, bool) {
 	// get X / Y of the data
 	x, y, ok := e.getPixel(hit, xField, yField)
 	if !ok {
 		return 0, 0, false
 	}
-	// convert to tile pixel coords in the range [0 : 2^zoom * 256)
+	// convert to tile pixel coords in the range [0 : 256)
 	tx := e.GetX(coord, x)
 	ty := e.GetY(coord, y)
 	// return position in tile coords
