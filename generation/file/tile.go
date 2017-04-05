@@ -27,7 +27,7 @@ func NewTile() veldt.TileCtor {
 }
 
 // Parse parses the provided JSON object and populates the tiles attributes.
-func (t *Tile) Parse (params map[string]interface{}) error {
+func (t *Tile) Parse(params map[string]interface{}) error {
 	// get path
 	path, ok := json.GetString(params, "path")
 	if !ok {
