@@ -26,7 +26,7 @@ func NewFrequencyTile(host, port string) veldt.TileCtor {
 }
 
 // Parse parses the provided JSON object and populates the tiles attributes.
-func (t *FrequencyTile) Parse (params map[string]interface{}) error {
+func (t *FrequencyTile) Parse(params map[string]interface{}) error {
 	err := t.Bivariate.Parse(params)
 	if err != nil {
 		return err
