@@ -6,7 +6,9 @@ import (
 	"github.com/unchartedsoftware/plog"
 )
 
-// logging utilities for the batch package
+// logging utilities for the batch package, to provide clean and easy logging
+// with simple visual tags with which to pick batch messages out of the log as
+// a whole
 
 const (
 	// Teal "BATCH" log prefix
