@@ -41,5 +41,8 @@ All use NewConnection in salt.go to make the actual connection.  NewConnection c
 its connection for reuse, so in typical use, should return the same connection every
 time.
 
+The Salt tile server is currently in a private repository - it will be made 
+public and open-source soon.  In the mean time, apologies are extended to any 
+members of the open-source community who are looking for it.
 */
 package salt
