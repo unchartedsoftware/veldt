@@ -10,16 +10,19 @@ is as much as possible.
 
 Salt works best with early notice as to the datasets it is using, so it can cache 
 them as much as possible.  The salt tile server therefore separates out datasets 
-and queries.  Queries note the dataset against which they are querying by ID, without
-fine details.  They require that the dataset in question should first be registered.
+and queries.  Queries note the dataset against which they are querying by ID, and if 
+the dataset is recognized, the cached version will be used.  The query must include 
+the full dataset definition, in case the salt server has restarted and the data must
+be recached, but if all is going well, the full definition will be (mostly) ignored.
 
-Dataset registration must happen during a call to NewSaltTile.  Any number of datasets
-can be configured in a single call.  Since this data is simply passed to the salt 
-server, one could pass the information to set up dataset A in one call to NewSaltTile, 
-and the information to dataset B in another, and use the tile constructors returned
-indiscriminately, but obviously this would be somewhat confusing to the developer; one
-is encouraged ot use datasets only in the constructor returned by the call to 
-NewSaltTile in which they were initiated.
+For smoothest operation, dataset registration should happen during a call to 
+NewSaltTile.  Any number of datasets can be configured in a single call.  Since 
+this data is simply passed to the salt server, one could pass the information 
+to set up dataset A in one call to NewSaltTile, and the information to dataset 
+B in another, and use the tile constructors returned indiscriminately, but 
+obviously this would be somewhat confusing to the developer; one is encouraged 
+to use datasets only in the constructor returned by the call to NewSaltTile in 
+which they were initiated.
 
 There are 3 points of communications between the GO and Scala side of the Salt tile 
 system:
@@ -31,7 +34,7 @@ system:
 		Creates a constructor for salt tiles, and connects to Salt to register
 		datasets [TODO: Perhaps separate out registration portion?]
 
-	salt.Tile.Create (salt_tile.go)
+	salt.Tile.CreateTiles (salt_tile.go)
 		Connects to Salt to request a given tile or tiles
 
 All use NewConnection in salt.go to make the actual connection.  NewConnection caches
