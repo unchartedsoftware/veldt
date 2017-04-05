@@ -18,14 +18,12 @@ const (
 	defaultExt       = "bin"
 	defaultScheme    = "http"
 	defaultBaseURL   = ""
-	defaultIgnoreErr = false
 	defaultPadCoords = true
 	defaultKeyPrefix = ""
 )
 
 // Tile represents an S3 tile type
 type Tile struct {
-	ignoreErr bool
 	padCoords bool
 	ext       string
 }
@@ -39,8 +37,6 @@ func NewTile() veldt.TileCtor {
 
 // Parse parses the provided JSON object for tile attributes
 func (t *Tile) Parse(params map[string]interface{}) error {
-	// Whether to ignore error or not
-	t.ignoreErr = json.GetBoolDefault(params, defaultIgnoreErr, "ignoreErr")
 	// Get file extension
 	t.ext = json.GetStringDefault(params, defaultExt, "ext")
 	// Whether of not to padd the coordinates with leading 0s
@@ -83,10 +79,11 @@ func (t *Tile) Create(s3uri string, coord *binning.TileCoord, query veldt.Query)
 	res, err := s3Client.GetObject(params)
 	// Handle response
 	if err != nil {
-		if t.ignoreErr {
+		// don't return an error if the tile doesn't exist
+		if err.Error() == s3.ErrCodeNoSuchKey {
 			return []byte{}, nil
 		}
-		return nil, fmt.Errorf(err.Error()+" for key=%s in bucket=%s", key, bucket)
+		return nil, err
 	}
 	// read result
 	defer res.Body.Close()
