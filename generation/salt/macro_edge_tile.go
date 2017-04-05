@@ -6,8 +6,8 @@ import (
 
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
-	"github.com/unchartedsoftware/veldt/tile"
 	"github.com/unchartedsoftware/veldt/generation/batch"
+	"github.com/unchartedsoftware/veldt/tile"
 )
 
 // MacroEdgeTile represents a salt implementation of the Edge tile
@@ -19,7 +19,7 @@ type MacroEdgeTile struct {
 }
 
 // NewMacroEdgeTile instantiates and returns a new tile struct.
-func NewMacroEdgeTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
+func NewMacroEdgeTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
@@ -29,7 +29,7 @@ func NewMacroEdgeTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt
 }
 
 // NewMacroEdgeTileFactory instantiates and returns a factory for creating batched tiles.
-func NewMacroEdgeTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
+func NewMacroEdgeTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
@@ -38,24 +38,24 @@ func NewMacroEdgeTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte
 	}
 }
 
-func newEdgeTile (rmqConfig *Configuration) *MacroEdgeTile {
+func newEdgeTile(rmqConfig *Configuration) *MacroEdgeTile {
 	met := &MacroEdgeTile{}
 	met.tileType = "macro-edge"
 	met.rmqConfig = rmqConfig
-	met.buildConfig = func () (map[string]interface{}, error) {
+	met.buildConfig = func() (map[string]interface{}, error) {
 		return met.getTileConfiguration()
 	}
-	met.convert = func (coord *binning.TileCoord, input []byte) ([]byte, error) {
+	met.convert = func(coord *binning.TileCoord, input []byte) ([]byte, error) {
 		return met.convertTile(coord, input)
 	}
-	met.buildDefault = func () ([]byte, error) {
+	met.buildDefault = func() ([]byte, error) {
 		return met.buildDefaultTile()
 	}
 	return met
 }
 
 // Parse does the standard salt tile parsing of parameters - i.e., saving them for later
-func (m *MacroEdgeTile) Parse (params map[string]interface{}) error {
+func (m *MacroEdgeTile) Parse(params map[string]interface{}) error {
 	return m.TileData.Parse(params)
 }
 
@@ -82,7 +82,7 @@ func (m *MacroEdgeTile) parseEdgeParameters(params map[string]interface{}) error
 
 // GetTileConfiguration gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
-func (m *MacroEdgeTile) getTileConfiguration () (map[string]interface{}, error) {
+func (m *MacroEdgeTile) getTileConfiguration() (map[string]interface{}, error) {
 	err := m.parseEdgeParameters(*m.parameters)
 	if nil != err {
 		return nil, err
@@ -100,7 +100,7 @@ func (m *MacroEdgeTile) getTileConfiguration () (map[string]interface{}, error) 
 	return result, nil
 }
 
-func (m *MacroEdgeTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte, error) {
+func (m *MacroEdgeTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
 	err := m.parseEdgeParameters(*m.parameters)
 	if nil != err {
 		return nil, err
@@ -111,13 +111,13 @@ func (m *MacroEdgeTile) convertTile (coord *binning.TileCoord, input []byte) ([]
 	tileSize := uint32(256)
 	offsetX := float32(coord.X * tileSize)
 	offsetY := float32(coord.Y * tileSize)
-	
+
 	// Macro tiles are returned to us as a series of floating-point numbers
 	bLen := len(input)
 	fLen := bLen / 4
 	points := make([]float32, fLen)
 	for i := 0; i < fLen; i++ {
-		bits := binary.LittleEndian.Uint32(input[i*4:i*4+4])
+		bits := binary.LittleEndian.Uint32(input[i*4 : i*4+4])
 		base := math.Float32frombits(bits)
 		if 0 == (i % 2) {
 			// X coordinate
@@ -126,11 +126,11 @@ func (m *MacroEdgeTile) convertTile (coord *binning.TileCoord, input []byte) ([]
 			// Y coordinate
 			points[i] = base - offsetY
 		}
-	}	
+	}
 
 	return m.MacroEdge.Encode(points)
 }
 
-func (m *MacroEdgeTile) buildDefaultTile () ([]byte, error) {
+func (m *MacroEdgeTile) buildDefaultTile() ([]byte, error) {
 	return m.MacroEdge.Encode(make([]float32, 0))
 }

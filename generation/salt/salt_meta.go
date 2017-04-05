@@ -17,7 +17,7 @@ func NewSaltMeta(rmqConfig *Configuration) veldt.MetaCtor {
 }
 
 // Create creates a metadata request
-func (meta *Meta) Create (uri string) ([]byte, error) {
+func (meta *Meta) Create(uri string) ([]byte, error) {
 	connection, err := NewConnection(meta.rmqConfig)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,6 @@ func (meta *Meta) Create (uri string) ([]byte, error) {
 // Parse gets the arguments a metadata constructor will need to create
 // metadata requests.  Currently, there is no such information needed,
 // so this is a no-op.
-func (meta *Meta) Parse (params map[string]interface{}) error {
+func (meta *Meta) Parse(params map[string]interface{}) error {
 	return nil
 }
-

@@ -1,17 +1,13 @@
 package salt
 
-
-
 import (
 	"errors"
 )
 
-
-
 // Option is a structure that indicates a value that may or may not be defined
 type Option struct {
 	defined bool
-	value interface{}
+	value   interface{}
 }
 
 // IsDefined is true if the optional value is defined
@@ -25,7 +21,7 @@ func (opt Option) IsEmpty() bool {
 }
 
 // OrElse returns the value of the optional, or the given default value if the value is not defined.
-func (opt Option) OrElse (defaultValue interface{}) interface{} {
+func (opt Option) OrElse(defaultValue interface{}) interface{} {
 	if opt.defined {
 		return opt.value
 	}
@@ -33,7 +29,7 @@ func (opt Option) OrElse (defaultValue interface{}) interface{} {
 }
 
 // Value returns the value of the Option, or an error if the option is not defined
-func (opt Option) Value () (interface{}, error) {
+func (opt Option) Value() (interface{}, error) {
 	if opt.defined {
 		return opt.value, nil
 	}

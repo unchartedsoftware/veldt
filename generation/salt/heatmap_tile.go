@@ -2,7 +2,7 @@ package salt
 
 import (
 	"fmt"
-	
+
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/generation/batch"
@@ -18,7 +18,7 @@ type HeatmapTile struct {
 }
 
 // NewHeatmapTile instantiates and returns a new tile struct.
-func NewHeatmapTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
+func NewHeatmapTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
@@ -28,7 +28,7 @@ func NewHeatmapTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.T
 }
 
 // NewHeatmapTileFactory instantiates and returns a factory for creating batched heatmap tiles.
-func NewHeatmapTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
+func NewHeatmapTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
@@ -37,24 +37,24 @@ func NewHeatmapTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) 
 	}
 }
 
-func newHeatmapTile (rmqConfig *Configuration) *HeatmapTile {
+func newHeatmapTile(rmqConfig *Configuration) *HeatmapTile {
 	ht := &HeatmapTile{}
 	ht.tileType = "heatmap"
 	ht.rmqConfig = rmqConfig
-	ht.buildConfig = func () (map[string]interface{}, error) {
+	ht.buildConfig = func() (map[string]interface{}, error) {
 		return ht.getTileConfiguration()
 	}
-	ht.convert = func (coord *binning.TileCoord, input []byte) ([]byte, error) {
+	ht.convert = func(coord *binning.TileCoord, input []byte) ([]byte, error) {
 		return ht.convertTile(coord, input)
 	}
-	ht.buildDefault = func () ([]byte, error) {
+	ht.buildDefault = func() ([]byte, error) {
 		return ht.buildDefaultTile()
 	}
 	return ht
 }
 
 // Parse does the standard salt tile parsing of parameters - i.e., saving them for later
-func (h *HeatmapTile) Parse (params map[string]interface{}) error {
+func (h *HeatmapTile) Parse(params map[string]interface{}) error {
 	return h.TileData.Parse(params)
 }
 
@@ -72,7 +72,7 @@ func (h *HeatmapTile) parseHeatmapParameters(params map[string]interface{}) erro
 
 // GetTileConfiguration gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
-func (h *HeatmapTile) getTileConfiguration () (map[string]interface{}, error) {
+func (h *HeatmapTile) getTileConfiguration() (map[string]interface{}, error) {
 	err := h.parseHeatmapParameters(*h.parameters)
 	if nil != err {
 		return nil, err
@@ -97,7 +97,7 @@ func (h *HeatmapTile) getTileConfiguration () (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (h *HeatmapTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte, error) {
+func (h *HeatmapTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
 	err := h.parseHeatmapParameters(*h.parameters)
 	if nil != err {
 		return nil, err
@@ -120,7 +120,7 @@ func (h *HeatmapTile) convertTile (coord *binning.TileCoord, input []byte) ([]by
 	return output, nil
 }
 
-func (h *HeatmapTile) buildDefaultTile () ([]byte, error) {
+func (h *HeatmapTile) buildDefaultTile() ([]byte, error) {
 	err := h.parseHeatmapParameters(*h.parameters)
 	if nil != err {
 		return nil, err

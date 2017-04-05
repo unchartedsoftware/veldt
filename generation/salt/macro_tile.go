@@ -17,7 +17,7 @@ type MacroTile struct {
 }
 
 // NewMacroTile instantiates and returns a new tile struct.
-func NewMacroTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
+func NewMacroTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
@@ -27,7 +27,7 @@ func NewMacroTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.Til
 }
 
 // NewMacroTileFactory instantiates and returns a factory for creating batched macro tiles.
-func NewMacroTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
+func NewMacroTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
@@ -36,24 +36,24 @@ func NewMacroTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) ba
 	}
 }
 
-func newMacroTile (rmqConfig *Configuration) *MacroTile {
+func newMacroTile(rmqConfig *Configuration) *MacroTile {
 	mt := &MacroTile{}
 	mt.tileType = "macro"
 	mt.rmqConfig = rmqConfig
-	mt.buildConfig = func () (map[string]interface{}, error) {
+	mt.buildConfig = func() (map[string]interface{}, error) {
 		return mt.getTileConfiguration()
 	}
-	mt.convert = func (coord *binning.TileCoord, input []byte) ([]byte, error) {
+	mt.convert = func(coord *binning.TileCoord, input []byte) ([]byte, error) {
 		return mt.convertTile(coord, input)
 	}
-	mt.buildDefault = func () ([]byte, error) {
+	mt.buildDefault = func() ([]byte, error) {
 		return mt.buildDefaultTile()
 	}
 	return mt
 }
 
 // Parse does the standard salt tile parsing of parameters - i.e., saving them for later
-func (m *MacroTile) Parse (params map[string]interface{}) error {
+func (m *MacroTile) Parse(params map[string]interface{}) error {
 	return m.TileData.Parse(params)
 }
 
@@ -68,7 +68,7 @@ func (m *MacroTile) parseMacroParameters(params map[string]interface{}) error {
 
 // GetTileConfiguration gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
-func (m *MacroTile) getTileConfiguration () (map[string]interface{}, error) {
+func (m *MacroTile) getTileConfiguration() (map[string]interface{}, error) {
 	err := m.parseMacroParameters(*m.parameters)
 	if nil != err {
 		return nil, err
@@ -90,12 +90,11 @@ func (m *MacroTile) getTileConfiguration () (map[string]interface{}, error) {
 	// setProperty("bounds.bottom", m.Bottom, result)
 
 	// Macro properties
-	
+
 	return result, nil
 }
 
-
-func (m *MacroTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte, error) {
+func (m *MacroTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
 	err := m.parseMacroParameters(*m.parameters)
 	if nil != err {
 		return nil, err
@@ -113,23 +112,23 @@ func (m *MacroTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte
 	numPoints := int(binary.LittleEndian.Uint32(input))
 	p = p + 4
 
-	points := make([]float32, numPoints * 2)
+	points := make([]float32, numPoints*2)
 	for i := 0; i < numPoints; i++ {
-		x := binary.LittleEndian.Uint32(input[p:p+4])
+		x := binary.LittleEndian.Uint32(input[p : p+4])
 		p = p + 4
 		y := uint32(m.Resolution) - binary.LittleEndian.Uint32(input[p:p+4])
 		p = p + 4
 
 		// Convert from bin number to location
 		// X
-		points[i*2+0] = float32(float64(x) * binSize + halfSize)
+		points[i*2+0] = float32(float64(x)*binSize + halfSize)
 		// Y
-		points[i*2+1]= float32(float64(y) * binSize + halfSize)
+		points[i*2+1] = float32(float64(y)*binSize + halfSize)
 	}
-	
+
 	return m.Macro.Encode(points)
 }
 
-func (m *MacroTile) buildDefaultTile () ([]byte, error) {
+func (m *MacroTile) buildDefaultTile() ([]byte, error) {
 	return m.Macro.Encode(make([]float32, 0))
 }

@@ -1,10 +1,10 @@
 package salt
 
 import (
+	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"math"
-	"encoding/json"
-	"encoding/binary"
 
 	"github.com/liyinhgqw/typesafe-config/parse"
 
@@ -13,14 +13,10 @@ import (
 	"github.com/unchartedsoftware/veldt/generation/batch"
 )
 
-
-
 // This file contains the basic functionality of all salt tiles
 //
 // TileData is the main class herein, and is a the data needed by Salt to
 // produce a tile
-
-
 
 // We fake true class functionality by putting three function members in
 // TileData.  The following three function types define and describe those
@@ -32,16 +28,16 @@ type ConfigurationBuilder func() (map[string]interface{}, error)
 
 // TileConverter converts the output of the Salt tile server into the format
 // Veldt wants for a given tile type
-type TileConverter func (*binning.TileCoord, []byte) ([]byte, error)
+type TileConverter func(*binning.TileCoord, []byte) ([]byte, error)
 
 // DefaultTileConstructor constructs a tile when salt doesn't return one
-type DefaultTileConstructor func () ([]byte, error)
+type DefaultTileConstructor func() ([]byte, error)
 
 // TileData represents the data needed by every tile request that is backed by
 // Salt to connect to the Salt tile server
 type TileData struct {
 	tileType string
-	 // The configuration defining how we connect to the RabbitMQ server
+	// The configuration defining how we connect to the RabbitMQ server
 	rmqConfig *Configuration
 	// The parameters passed into the Parse method
 	// We just keep them around until later, so that our single-tile and batch-
@@ -59,7 +55,7 @@ type TileData struct {
 
 type tileResult struct {
 	coord *binning.TileCoord
-	data []byte
+	data  []byte
 }
 
 // datasets contains a mapping listing the configurations of all known
@@ -67,7 +63,7 @@ type tileResult struct {
 var datasets = make(map[string]string)
 
 // getDatasetName gets the name of a dataset from its raw configuration
-func getDatasetName (datasetConfigRaw []byte) (string, error) {
+func getDatasetName(datasetConfigRaw []byte) (string, error) {
 	datasetConfigMap, err := parse.Parse("dataset", string(datasetConfigRaw))
 	if err != nil {
 		return "", err
@@ -83,7 +79,7 @@ func getDatasetName (datasetConfigRaw []byte) (string, error) {
 // setupConnection is used by every Salt tile request to initialize the
 // connection with the salt server, and to initialize the dataset this request
 // requires
-func setupConnection (rmqConfig *Configuration, datasetConfigs ...[]byte) {
+func setupConnection(rmqConfig *Configuration, datasetConfigs ...[]byte) {
 	// Send any dataset configurations to salt immediately
 	// Need a connection for that
 	connection, err := NewConnection(rmqConfig)
@@ -107,9 +103,8 @@ func setupConnection (rmqConfig *Configuration, datasetConfigs ...[]byte) {
 	}
 }
 
- 
 // Parse parses the parameters for a heatmap tile
-func (t *TileData) Parse (params map[string]interface{}) error {
+func (t *TileData) Parse(params map[string]interface{}) error {
 	t.parameters = &params
 	return nil
 }
@@ -117,7 +112,7 @@ func (t *TileData) Parse (params map[string]interface{}) error {
 // Create generates a single tile from the provided URI, tile coordinate, and
 // query parameters.  It does this by wrapping the information as a multi-tile
 // request with a single tile in it, and calling CreateTiles.
-func (t *TileData) Create (uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
+func (t *TileData) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	responseChan := make(chan batch.TileResponse, 1)
 	request := &batch.TileRequest{*t.parameters, uri, coord, query, responseChan}
 	t.CreateTiles([]*batch.TileRequest{request})
@@ -136,7 +131,7 @@ func (t *TileData) Create (uri string, coord *binning.TileCoord, query veldt.Que
 }
 
 // CreateTiles generates multiple tiles from the provided information
-func (t *TileData) CreateTiles (requests []*batch.TileRequest) {
+func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
 	saltInfof("CreateTiles: Processing %d requests of type %s", len(requests), t.tileType)
 	// Create our connection
 	connection, err := NewConnection(t.rmqConfig)
@@ -150,7 +145,7 @@ func (t *TileData) CreateTiles (requests []*batch.TileRequest) {
 	// Go through every request, generating the joint (non-tile-coordinate)
 	// configuration for each.
 	//
-	// Requests with the same joint configuration are consolidated. 
+	// Requests with the same joint configuration are consolidated.
 	consolidatedRequests := make([]*jointRequest, 0)
 	for _, tileRequest := range requests {
 		request, err := t.extractJointRequest(tileRequest)
@@ -228,26 +223,25 @@ func (t *TileData) CreateTiles (requests []*batch.TileRequest) {
 	}
 }
 
-
-
 // separateTileRequest contains the portion of a tile request that is specific
 // to a single tile
 type separateTileRequest struct {
-	coord *binning.TileCoord
+	coord  *binning.TileCoord
 	sendTo chan batch.TileResponse
 }
+
 // jointRequest consolidates several joinable tile requests, keeping the
 // information they have in common separate from the information that is
 // specific to each
 type jointRequest struct {
 	tileConfig map[string]interface{}
-	query map[string]interface{}
-	dataset string
-	tiles []*separateTileRequest
+	query      map[string]interface{}
+	dataset    string
+	tiles      []*separateTileRequest
 }
 
 // canMerge indicates whether two consolidated requests can be merged together
-func canMerge (a, b *jointRequest) bool {
+func canMerge(a, b *jointRequest) bool {
 	if !propertiesEqual(a.tileConfig, b.tileConfig) {
 		return false
 	}
@@ -259,7 +253,7 @@ func canMerge (a, b *jointRequest) bool {
 
 // merge merges two consolidated requests (which must previously have been
 // determined to be mergable using canMerge)
-func (j *jointRequest) merge (from *jointRequest) {
+func (j *jointRequest) merge(from *jointRequest) {
 	for _, tile := range from.tiles {
 		j.tiles = append(j.tiles, tile)
 	}
@@ -267,7 +261,7 @@ func (j *jointRequest) merge (from *jointRequest) {
 
 // extractJointRequest takes a single batched tile request, and converts it
 // into a joinable consolidated request
-func (t *TileData) extractJointRequest (request *batch.TileRequest) (*jointRequest, error) {
+func (t *TileData) extractJointRequest(request *batch.TileRequest) (*jointRequest, error) {
 	t.Parse(request.Parameters)
 	tileConfig, err := t.buildConfig()
 	if nil != err {
@@ -287,16 +281,16 @@ func (t *TileData) extractJointRequest (request *batch.TileRequest) (*jointReque
 			return nil, err
 		}
 	}
-	
+
 	separateRequest := separateTileRequest{request.Coordinates, request.ResultChannel}
 	separateRequests := []*separateTileRequest{&separateRequest}
-	
+
 	return &jointRequest{tileConfig, queryConfig, request.URI, separateRequests}, nil
 }
 
 // Get a unique string ID for use in maps for a tile coordinate
-func coordToString (level, x, y int) string {
-    max := 1 << uint64(level)
+func coordToString(level, x, y int) string {
+	max := 1 << uint64(level)
 	digits := int64(math.Floor(math.Log10(float64(max)))) + 1
 	format := fmt.Sprintf("%%02d:%%0%dd:%%0%dd", digits, digits)
 	return fmt.Sprintf(format, level, x, y)
@@ -304,23 +298,23 @@ func coordToString (level, x, y int) string {
 
 // unpackTiles unpacks the message sent to us by salt into a series of tiles,
 // keyed by the coordToString function above
-func unpackTiles (saltMsg []byte) map[string]tileResult {
+func unpackTiles(saltMsg []byte) map[string]tileResult {
 	p := 0
 	maxP := len(saltMsg)
 	results := make(map[string]tileResult)
 	for p < maxP {
-		level := binary.BigEndian.Uint64(saltMsg[p:p+8])
+		level := binary.BigEndian.Uint64(saltMsg[p : p+8])
 		p = p + 8
-		x     := binary.BigEndian.Uint64(saltMsg[p:p+8])
+		x := binary.BigEndian.Uint64(saltMsg[p : p+8])
 		p = p + 8
-		y     := binary.BigEndian.Uint64(saltMsg[p:p+8])
+		y := binary.BigEndian.Uint64(saltMsg[p : p+8])
 		p = p + 8
-		size  := int(binary.BigEndian.Uint64(saltMsg[p:p+8]))
+		size := int(binary.BigEndian.Uint64(saltMsg[p : p+8]))
 		p = p + 8
 		key := coordToString(int(level), int(x), int(y))
 		coord := &binning.TileCoord{X: uint32(x), Y: uint32(y), Z: uint32(level)}
 		saltDebugf("Unpacking tile [%d: %d, %d] = %s, length = %d", level, x, y, key, size)
-		results[key] = tileResult{coord, saltMsg[p:p+size]}
+		results[key] = tileResult{coord, saltMsg[p : p+size]}
 		p = p + size
 	}
 	return results

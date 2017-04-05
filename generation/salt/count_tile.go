@@ -1,8 +1,8 @@
 package salt
 
 import (
-	"fmt"
 	"encoding/binary"
+	"fmt"
 
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
@@ -19,7 +19,7 @@ type CountTile struct {
 }
 
 // NewCountTile instantiates and returns a new tile struct.
-func NewCountTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
+func NewCountTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
@@ -29,7 +29,7 @@ func NewCountTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.Til
 }
 
 // NewCountTileFactory instantiates and returns a factory for creating batched count tiles.
-func NewCountTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
+func NewCountTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
@@ -38,24 +38,24 @@ func NewCountTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) ba
 	}
 }
 
-func newCountTile (rmqConfig *Configuration) *CountTile {
+func newCountTile(rmqConfig *Configuration) *CountTile {
 	ct := &CountTile{}
 	ct.tileType = "count"
 	ct.rmqConfig = rmqConfig
-	ct.buildConfig = func () (map[string]interface{}, error) {
+	ct.buildConfig = func() (map[string]interface{}, error) {
 		return ct.getTileConfiguration()
 	}
-	ct.convert = func (coord *binning.TileCoord, input []byte) ([]byte, error) {
+	ct.convert = func(coord *binning.TileCoord, input []byte) ([]byte, error) {
 		return ct.convertTile(coord, input)
 	}
-	ct.buildDefault = func () ([]byte, error) {
+	ct.buildDefault = func() ([]byte, error) {
 		return ct.buildDefaultTile()
 	}
 	return ct
 }
 
 // Parse does the standard salt tile parsing of parameters - i.e., saving them for later
-func (c *CountTile) Parse (params map[string]interface{}) error {
+func (c *CountTile) Parse(params map[string]interface{}) error {
 	return c.TileData.Parse(params)
 }
 
@@ -73,7 +73,7 @@ func (c *CountTile) parseCountParameters(params map[string]interface{}) error {
 
 // GetTileConfiguration gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
-func (c *CountTile) getTileConfiguration () (map[string]interface{}, error) {
+func (c *CountTile) getTileConfiguration() (map[string]interface{}, error) {
 	err := c.parseCountParameters(*c.parameters)
 	if nil != err {
 		return nil, err
@@ -98,11 +98,11 @@ func (c *CountTile) getTileConfiguration () (map[string]interface{}, error) {
 	return result, nil
 }
 
-func (c *CountTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte, error) {
+func (c *CountTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
 	count := binary.LittleEndian.Uint32(input)
 	return []byte(fmt.Sprintf(`{"count":%d}`, count)), nil
 }
 
-func (c *CountTile) buildDefaultTile () ([]byte, error) {
+func (c *CountTile) buildDefaultTile() ([]byte, error) {
 	return []byte(`{"count":0}`), nil
 }

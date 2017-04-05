@@ -2,13 +2,11 @@ package salt
 
 import (
 	"fmt"
+	"github.com/liyinhgqw/typesafe-config/parse"
+	"io/ioutil"
 	"sort"
 	"strings"
-	"io/ioutil"
-	"github.com/liyinhgqw/typesafe-config/parse"
 )
-
-
 
 // This file describes the configuration information needed to connect to a
 // salt tile server.  The Configuration class is the main class herein.
@@ -19,8 +17,6 @@ import (
 // ReadDatasetConfiguration.  These two functions are intended for use in the
 // main routine of an application, to read config objects from file, so they
 // can be passed into salt tile constructors.
-
-
 
 // QueueConfiguration describes how a specific queue is to be created
 type QueueConfiguration struct {
@@ -39,14 +35,15 @@ type Configuration struct {
 	serverQueue         string
 }
 
-func tOrF (b bool) string {
+func tOrF(b bool) string {
 	if b {
 		return "T"
 	}
 	return "F"
 }
+
 // Key returns a unique key that completely describes this configuration
-func (c *Configuration) Key () string {
+func (c *Configuration) Key() string {
 	qcs := make([]string, len(c.queueConfigurations))
 	i := 0
 	for k := range c.queueConfigurations {
@@ -60,42 +57,42 @@ func (c *Configuration) Key () string {
 		if first {
 			qcKey = fmt.Sprintf("%s.%s.%s%s%s%s", k, qc.queue, tOrF(qc.durable), tOrF(qc.deletable), tOrF(qc.exclusive), tOrF(qc.noWait))
 		} else {
-			qcKey = qcKey+fmt.Sprintf(":%s.%s.%s%s%s%s", k, qc.queue, tOrF(qc.durable), tOrF(qc.deletable), tOrF(qc.exclusive), tOrF(qc.noWait))
+			qcKey = qcKey + fmt.Sprintf(":%s.%s.%s%s%s%s", k, qc.queue, tOrF(qc.durable), tOrF(qc.deletable), tOrF(qc.exclusive), tOrF(qc.noWait))
 		}
 	}
-		
+
 	return fmt.Sprintf("%s:%d|%s|%s", c.host, c.port, c.serverQueue, qcKey)
 }
 
-func getConfigString (key string, config *parse.Config) Option {
+func getConfigString(key string, config *parse.Config) Option {
 	result, err := config.GetString(key)
 	if err != nil {
 		return Option{false, nil}
 	}
 	return Option{true, result}
 }
-func getConfigInt (key string, config *parse.Config) Option {
+func getConfigInt(key string, config *parse.Config) Option {
 	result, err := config.GetInt(key)
 	if err != nil {
 		return Option{false, nil}
 	}
 	return Option{true, result}
 }
-func getConfigBool (key string, config *parse.Config) Option {
+func getConfigBool(key string, config *parse.Config) Option {
 	result, err := config.GetBool(key)
 	if err != nil {
 		return Option{false, nil}
 	}
 	return Option{true, result}
 }
-func getConfigArray (key string, config *parse.Config) Option {
+func getConfigArray(key string, config *parse.Config) Option {
 	result, err := config.GetBool(key)
 	if err != nil {
 		return Option{false, nil}
 	}
 	return Option{true, result}
 }
-func getSubConfig (key string, config *parse.Config) Option {
+func getSubConfig(key string, config *parse.Config) Option {
 	result, err := config.GetValue(key)
 	if err != nil {
 		return Option{false, nil}
@@ -103,7 +100,7 @@ func getSubConfig (key string, config *parse.Config) Option {
 	return Option{true, result}
 }
 
-func stripTerminalQuotes (text string) string {
+func stripTerminalQuotes(text string) string {
 	// TrimPrefix and TrimSuffix already work conditionally - we have our outer
 	// condition here because we only want to remove the prefix and suffix if
 	// both are present at the same time.
@@ -115,7 +112,7 @@ func stripTerminalQuotes (text string) string {
 
 // getKeys gets a list of all keys found under the given node.  This really should get
 // pushed back to https://github.com/liyinhgqw/typesafe-config
-func getKeys (root parse.Node, path ...string) ([]string, error) {
+func getKeys(root parse.Node, path ...string) ([]string, error) {
 	if root.Type() != parse.NodeMap {
 		return nil, fmt.Errorf("Root node is not a map")
 	}
@@ -141,12 +138,12 @@ func getKeys (root parse.Node, path ...string) ([]string, error) {
 }
 
 // ReadDatasetConfiguration reads a file into a string, so it can be passed to Salt
-func ReadDatasetConfiguration (filename string) ([]byte, error) {
+func ReadDatasetConfiguration(filename string) ([]byte, error) {
 	return ioutil.ReadFile(filename)
 }
 
 // ReadConfiguration reads a typesafe-config configuration file that sets up our salt connection
-func ReadConfiguration (filename string) (*Configuration, error) {
+func ReadConfiguration(filename string) (*Configuration, error) {
 	// Read the config file
 	configString, err := ioutil.ReadFile(filename)
 	if err != nil {

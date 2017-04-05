@@ -1,8 +1,8 @@
 package salt
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
@@ -19,7 +19,7 @@ type MicroTile struct {
 }
 
 // NewMicroTile instantiates and returns a new tile struct.
-func NewMicroTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
+func NewMicroTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
@@ -29,7 +29,7 @@ func NewMicroTile (rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.Til
 }
 
 // NewMicroTileFactory instantiates and returns a factory for creating batched micro tiles.
-func NewMicroTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
+func NewMicroTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
@@ -38,24 +38,24 @@ func NewMicroTileFactory (rmqConfig *Configuration, datasetConfigs ...[]byte) ba
 	}
 }
 
-func newMicroTile (rmqConfig *Configuration) *MicroTile {
+func newMicroTile(rmqConfig *Configuration) *MicroTile {
 	mt := &MicroTile{}
 	mt.tileType = "micro"
 	mt.rmqConfig = rmqConfig
-	mt.buildConfig = func () (map[string]interface{}, error) {
+	mt.buildConfig = func() (map[string]interface{}, error) {
 		return mt.getTileConfiguration()
 	}
-	mt.convert = func (coord *binning.TileCoord, input []byte) ([]byte, error) {
+	mt.convert = func(coord *binning.TileCoord, input []byte) ([]byte, error) {
 		return mt.convertTile(coord, input)
 	}
-	mt.buildDefault = func () ([]byte, error) {
+	mt.buildDefault = func() ([]byte, error) {
 		return mt.buildDefaultTile()
 	}
 	return mt
 }
 
 // Parse does the standard salt tile parsing of parameters - i.e., saving them for later
-func (m *MicroTile) Parse (params map[string]interface{}) error {
+func (m *MicroTile) Parse(params map[string]interface{}) error {
 	return m.TileData.Parse(params)
 }
 
@@ -81,7 +81,7 @@ func (m *MicroTile) parseMicroParameters(params map[string]interface{}) error {
 
 // GetTileConfiguration gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
-func (m *MicroTile) getTileConfiguration () (map[string]interface{}, error) {
+func (m *MicroTile) getTileConfiguration() (map[string]interface{}, error) {
 	err := m.parseMicroParameters(*m.parameters)
 	if nil != err {
 		return nil, err
@@ -108,12 +108,11 @@ func (m *MicroTile) getTileConfiguration () (map[string]interface{}, error) {
 	setProperty("sortOrder", m.SortOrder, result)
 	setProperty("hitsCount", m.HitsCount, result)
 	setProperty("includeFields", m.IncludeFields, result)
-	
+
 	return result, nil
 }
 
-
-func (m *MicroTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte, error) {
+func (m *MicroTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
 	var rawHits []map[string]interface{}
 	err := json.Unmarshal(input, &rawHits)
 	if nil != err {
@@ -121,7 +120,7 @@ func (m *MicroTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte
 	}
 
 	numHits := len(rawHits)
-	points := make([]float32, numHits * 2)
+	points := make([]float32, numHits*2)
 	hits := make([]map[string]interface{}, numHits)
 
 	for i, hit := range rawHits {
@@ -146,10 +145,10 @@ func (m *MicroTile) convertTile (coord *binning.TileCoord, input []byte) ([]byte
 		}
 		hits[i] = hitMap
 	}
-	
+
 	return m.Micro.Encode(hits, points)
 }
 
-func (m *MicroTile) buildDefaultTile () ([]byte, error) {
+func (m *MicroTile) buildDefaultTile() ([]byte, error) {
 	return m.Micro.Encode(make([]map[string]interface{}, 0), make([]float32, 0))
 }

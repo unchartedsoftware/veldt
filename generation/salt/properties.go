@@ -84,7 +84,7 @@ func getProperty(key string, props map[string]interface{}) (interface{}, error) 
 }
 
 // getFloat32Property gets the value of the specified multi-leveld) key from the given property map, as a float32 value
-func getFloat32Property (key string, props map[string]interface{}) (float32, error) {
+func getFloat32Property(key string, props map[string]interface{}) (float32, error) {
 	rawValue, err := getProperty(key, props)
 	if nil != err {
 		return 0.0, err
@@ -121,7 +121,7 @@ func getFloat32Property (key string, props map[string]interface{}) (float32, err
 }
 
 // propertiesEqual determines if two property maps are equivalent
-func propertiesEqual (a, b map[string]interface{}) bool {
+func propertiesEqual(a, b map[string]interface{}) bool {
 	// Check keys
 	if len(a) != len(b) {
 		return false
@@ -138,7 +138,7 @@ func propertiesEqual (a, b map[string]interface{}) bool {
 	return true
 }
 
-func propertyArraysEqual (a, b []interface{}) bool {
+func propertyArraysEqual(a, b []interface{}) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -151,7 +151,7 @@ func propertyArraysEqual (a, b []interface{}) bool {
 	return true
 }
 
-func propertyElementsEqual (a, b interface{}) bool {
+func propertyElementsEqual(a, b interface{}) bool {
 	mapA, isMapA := a.(map[string]interface{})
 	mapB, isMapB := b.(map[string]interface{})
 	if isMapA && isMapB {
@@ -171,7 +171,7 @@ func propertyElementsEqual (a, b interface{}) bool {
 	return false
 }
 
-func arrayType (a interface{}) int {
+func arrayType(a interface{}) int {
 	_, isBoolArray := a.([]bool)
 	if isBoolArray {
 		return boolArray
@@ -231,7 +231,7 @@ func arrayType (a interface{}) int {
 	return notAnArray
 }
 
-func compareArrays (arrayType int, a, b interface{}) bool {
+func compareArrays(arrayType int, a, b interface{}) bool {
 	switch arrayType {
 	case boolArray:
 		aArray, _ := a.([]bool)

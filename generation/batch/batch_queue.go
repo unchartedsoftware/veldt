@@ -1,14 +1,10 @@
 package batch
 
-
-
 import (
 	"fmt"
 	"sync"
 	"time"
 )
-
-
 
 var (
 	// Our lock to make sure we don't get race conditions in our tile request list
@@ -23,11 +19,10 @@ var (
 	started = false
 )
 
-
-func processQueue (waitTime int64) {
+func processQueue(waitTime int64) {
 	for {
 		batchInfof("Checking for queued tiles at %v", time.Now())
-		if (isDue()) {
+		if isDue() {
 			batch, batchRequests := dequeueRequests()
 			numRequests := 0
 			for _, factoryRequests := range batchRequests {
@@ -45,7 +40,7 @@ func processQueue (waitTime int64) {
 
 // dequeueRequests takes requests off of the queue in preparation for sending
 // them to their respective factories
-func dequeueRequests () (int, map[string][]*tileRequestInfo) {
+func dequeueRequests() (int, map[string][]*tileRequestInfo) {
 	// Only change the queue within a lock
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -70,7 +65,7 @@ func dequeueRequests () (int, map[string][]*tileRequestInfo) {
 
 // processFactoryRequess process all the requests from a given batch for a
 // given factory
-func processFactoryRequests (batch int, factoryID string, factoryRequests []*tileRequestInfo) {
+func processFactoryRequests(batch int, factoryID string, factoryRequests []*tileRequestInfo) {
 	batchDebugf("Processing %d requests for factory %s", len(factoryRequests), factoryID)
 
 	// Get our factory
@@ -106,14 +101,14 @@ func processFactoryRequests (batch int, factoryID string, factoryRequests []*til
 	}
 }
 
-func sendError (err error, requestInfos []*tileRequestInfo) {
+func sendError(err error, requestInfos []*tileRequestInfo) {
 	response := TileResponse{nil, err}
 	for _, requestInfo := range requestInfos {
 		requestInfo.ResultChannel <- response
 	}
 }
 
-func isDue () bool {
+func isDue() bool {
 	// We are reading our requests lists, therefor must operatate inside a lock
 	mutex.Lock()
 	defer mutex.Unlock()

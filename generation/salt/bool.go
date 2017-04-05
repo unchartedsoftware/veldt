@@ -5,11 +5,7 @@ import (
 	"github.com/unchartedsoftware/veldt"
 )
 
-
-
 // This file contains general boolean query expressions
-
-
 
 // BinaryExpression is an extension of the base veldt.BinaryExpression that
 // allows salt to reconstruct the configuration, so as to send it to the salt
@@ -36,7 +32,7 @@ func NewUnaryExpression() (veldt.Query, error) {
 }
 
 // Get retrieves the configuration from a query for use by the salt server
-func (e *BinaryExpression) Get () (map[string]interface{}, error) {
+func (e *BinaryExpression) Get() (map[string]interface{}, error) {
 	left, ok := e.Left.(Query)
 	if !ok {
 		return nil, fmt.Errorf("`Left` is not of type salt.Query")
@@ -64,7 +60,7 @@ func (e *BinaryExpression) Get () (map[string]interface{}, error) {
 }
 
 // Get retrieves the configuration from a query for use by the salt server
-func (e *UnaryExpression) Get () (map[string]interface{}, error) {
+func (e *UnaryExpression) Get() (map[string]interface{}, error) {
 	q, ok := e.Query.(Query)
 	if !ok {
 		return nil, fmt.Errorf("`Operand is not of type salt.Query")
