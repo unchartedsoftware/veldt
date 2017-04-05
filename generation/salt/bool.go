@@ -6,6 +6,11 @@ import (
 )
 
 
+
+// This file contains general boolean query expressions
+
+
+
 // BinaryExpression is an extension of the base veldt.BinaryExpression that
 // allows salt to reconstruct the configuration, so as to send it to the salt
 // server.

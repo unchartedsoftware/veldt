@@ -13,6 +13,19 @@ import (
 	"github.com/unchartedsoftware/veldt/generation/batch"
 )
 
+
+
+// This file contains the basic functionality of all salt tiles
+//
+// TileData is the main class herein, and is a the data needed by Salt to
+// produce a tile
+
+
+
+// We fake true class functionality by putting three function members in
+// TileData.  The following three function types define and describe those
+// three implementation-specific functions
+
 // ConfigurationBuilder is function responsible for producing Salt tile
 // configurations
 type ConfigurationBuilder func() (map[string]interface{}, error)
@@ -49,6 +62,8 @@ type tileResult struct {
 	data []byte
 }
 
+// datasets contains a mapping listing the configurations of all known
+// datasets, indexed by dataset name.
 var datasets = make(map[string]string)
 
 // getDatasetName gets the name of a dataset from its raw configuration
@@ -99,7 +114,9 @@ func (t *TileData) Parse (params map[string]interface{}) error {
 	return nil
 }
 
-// Create generates a single tile from the provided URI, tile coordinate, and query parameters
+// Create generates a single tile from the provided URI, tile coordinate, and
+// query parameters.  It does this by wrapping the information as a multi-tile
+// request with a single tile in it, and calling CreateTiles.
 func (t *TileData) Create (uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	responseChan := make(chan batch.TileResponse, 1)
 	request := &batch.TileRequest{*t.parameters, uri, coord, query, responseChan}
@@ -213,11 +230,15 @@ func (t *TileData) CreateTiles (requests []*batch.TileRequest) {
 
 
 
-
+// separateTileRequest contains the portion of a tile request that is specific
+// to a single tile
 type separateTileRequest struct {
 	coord *binning.TileCoord
 	sendTo chan batch.TileResponse
 }
+// jointRequest consolidates several joinable tile requests, keeping the
+// information they have in common separate from the information that is
+// specific to each
 type jointRequest struct {
 	tileConfig map[string]interface{}
 	query map[string]interface{}
@@ -225,6 +246,7 @@ type jointRequest struct {
 	tiles []*separateTileRequest
 }
 
+// canMerge indicates whether two consolidated requests can be merged together
 func canMerge (a, b *jointRequest) bool {
 	if !propertiesEqual(a.tileConfig, b.tileConfig) {
 		return false
@@ -235,12 +257,16 @@ func canMerge (a, b *jointRequest) bool {
 	return a.dataset == b.dataset
 }
 
+// merge merges two consolidated requests (which must previously have been
+// determined to be mergable using canMerge)
 func (j *jointRequest) merge (from *jointRequest) {
 	for _, tile := range from.tiles {
 		j.tiles = append(j.tiles, tile)
 	}
 }
 
+// extractJointRequest takes a single batched tile request, and converts it
+// into a joinable consolidated request
 func (t *TileData) extractJointRequest (request *batch.TileRequest) (*jointRequest, error) {
 	t.Parse(request.Parameters)
 	tileConfig, err := t.buildConfig()

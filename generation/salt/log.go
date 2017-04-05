@@ -6,7 +6,9 @@ import (
 	"github.com/unchartedsoftware/plog"
 )
 
-// logging utilities for the salt package
+// logging utilities for the salt package, to provide clean and easy logging
+// with simple visual tags with which to pick salt messages out of the log as
+// a whole
 
 const (
 	// Yellow "SALT" log prefix

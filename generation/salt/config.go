@@ -8,6 +8,20 @@ import (
 	"github.com/liyinhgqw/typesafe-config/parse"
 )
 
+
+
+// This file describes the configuration information needed to connect to a
+// salt tile server.  The Configuration class is the main class herein.
+//
+// Also included are utility functions to read a configuration from a file -
+// ReadConfiguration - and to read a dataset configuration (currently just
+// stored as a string, as only the server has a real need to parse it) in
+// ReadDatasetConfiguration.  These two functions are intended for use in the
+// main routine of an application, to read config objects from file, so they
+// can be passed into salt tile constructors.
+
+
+
 // QueueConfiguration describes how a specific queue is to be created
 type QueueConfiguration struct {
 	queue     string

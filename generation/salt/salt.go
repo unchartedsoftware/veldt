@@ -8,6 +8,23 @@ import (
 	"github.com/streadway/amqp"
 )
 
+
+
+// This file contains the basic facilities for connecting to and communicating
+// with a Salt-based tile server through RabbitMQ
+//
+// Besides basic setup and configuration, users are meant to communicate with
+// the server through three functions:
+//
+//   * Dataset
+//   * QueryTiles
+//   * QueryMetadata
+//
+// Unexported functions herin (especially sendServerMessage) should be
+// considered private to this class, not just to the package.
+
+
+
 // RabbitMQConnection describes a connection to a RabbitMQ server
 type RabbitMQConnection struct {
 	connection	*amqp.Connection
