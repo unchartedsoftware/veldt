@@ -32,7 +32,7 @@ func (t *Count) Parse (params map[string]interface{}) error {
 
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
-func (t *Count)Create (uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
+func (t *Count) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	// Initialize the tile processing.
 	client, citusQuery, err := t.InitializeTile(uri, query)
 	if err != nil {
