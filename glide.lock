@@ -1,5 +1,5 @@
-hash: 0805d220f5f8eb34c3eceaa2105722f374d75eff61d39ad45e988ee9687064ba
-updated: 2017-03-28T13:40:05.435193878-04:00
+hash: 37813760a66aa84fd0ca75a30192ab38b03c1c9b35e8ba93fd9d4902d511fe1a
+updated: 2017-04-05T13:53:58.040853606-04:00
 imports:
 - name: github.com/aws/aws-sdk-go
   version: 7111a70b8bea15081468f11bc1450ac2fec2406b
@@ -29,7 +29,7 @@ imports:
   - service/s3
   - service/sts
 - name: github.com/coocood/freecache
-  version: d0d9ceb35b1ceab3a11265b4130e418fd485474d
+  version: c7b48416d80a1707d94a9aeb37b4b11125ffef7e
 - name: github.com/davecgh/go-spew
   version: 346938d642f2ec3594ed81d874461961cd0faa76
   subpackages:
@@ -40,21 +40,23 @@ imports:
   - internal
   - redis
 - name: github.com/go-ini/ini
-  version: 6f66b0e091edb3c7b380f7c4f0f884274d550b67
+  version: e7fea39b01aea8d5671f6858f0532f56e8bff3a5
 - name: github.com/jackc/pgx
-  version: 6c5b4703172c5a71b5fd59160188d6857b2cd579
+  version: b84338d7d62598f75859b2b146d830b22f1b9ec8
 - name: github.com/jmespath/go-jmespath
   version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
 - name: github.com/liyinhgqw/typesafe-config
   version: c8ba452ab033d7f2642481c62b4b67c3229bbfbb
   subpackages:
   - parse
+- name: github.com/mattn/go-colorable
+  version: 5411d3eea5978e6cdc258b30de592b60df6aba96
 - name: github.com/mattn/go-isatty
   version: 281032e84ae07510239465db46bf442aa44b953a
 - name: github.com/mgutz/ansi
-  version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
+  version: 9520e82c474b0a04dd04f8a40959027271bab992
 - name: github.com/onsi/gomega
-  version: e85f63af4302dc0e4277c6008ecf803f1d80e4f0
+  version: 334b8f472b3af5d541c5642701c1e29e2126f486
   subpackages:
   - format
   - internal/assertion
@@ -88,10 +90,10 @@ imports:
   - backoff
   - uritemplates
 - name: gopkg.in/yaml.v2
-  version: a5b47d31c556af34a302ce5d659e6fea44d90de0
+  version: a3f3340b5840cee44f372bddb5880fcbc419b46a
 testImports:
 - name: github.com/onsi/ginkgo
-  version: 67b9df7f55fe1165fd9ad49aca7754cce01a42b8
+  version: 77a8c1e5c40d6bb6c5eb4dd4bdce9763564f6298
   subpackages:
   - config
   - internal/codelocation
