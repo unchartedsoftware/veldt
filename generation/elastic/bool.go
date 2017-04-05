@@ -70,7 +70,7 @@ func (e *UnaryExpression) Get() (elastic.Query, error) {
 
 	q, ok := e.Query.(Query)
 	if !ok {
-		return nil, fmt.Errorf("Left is not of type elastic.Query")
+		return nil, fmt.Errorf("`Query` is not of type elastic.Query")
 	}
 
 	a, err := q.Get()

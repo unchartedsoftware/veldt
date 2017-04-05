@@ -21,11 +21,11 @@ func (e *BinaryExpression) Get(query *Query) (string, error) {
 
 	left, ok := e.Left.(QueryString)
 	if !ok {
-		return "", fmt.Errorf("Left is not of type citus.Query")
+		return "", fmt.Errorf("`Left` is not of type citus.Query")
 	}
 	right, ok := e.Right.(QueryString)
 	if !ok {
-		return "", fmt.Errorf("Right is not of type citus.Query")
+		return "", fmt.Errorf("`Right` is not of type citus.Query")
 	}
 
 	queryStringLeft, err := left.Get(query)
@@ -66,7 +66,7 @@ func (e *UnaryExpression) Get(query *Query) (string, error) {
 
 	q, ok := e.Query.(QueryString)
 	if !ok {
-		return "", fmt.Errorf("Left is not of type citus.Query")
+		return "", fmt.Errorf("`Query` is not of type citus.Query")
 	}
 
 	a, err := q.Get(query)
