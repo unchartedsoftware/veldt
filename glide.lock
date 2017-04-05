@@ -65,8 +65,6 @@ imports:
   - types
 - name: github.com/spaolacci/murmur3
   version: 0d12bf811670bf6a1a63828dfbd003eded177fce
-- name: github.com/unchartedsoftware/plog
-  version: bbb4bc4151f23ea489aff06d2a27f10e1a935993
 - name: golang.org/x/sys
   version: 30237cf4eefd639b184d1f2cb77a581ea0be8947
   subpackages:
