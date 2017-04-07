@@ -282,7 +282,7 @@ func (t *TileData) extractJointRequest(request *batch.TileRequest) (*jointReques
 		}
 	}
 
-	separateRequest := separateTileRequest{request.Coordinates, request.ResultChannel}
+	separateRequest := separateTileRequest{request.Coord, request.ResultChannel}
 	separateRequests := []*separateTileRequest{&separateRequest}
 
 	return &jointRequest{tileConfig, queryConfig, request.URI, separateRequests}, nil

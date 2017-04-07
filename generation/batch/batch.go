@@ -77,7 +77,7 @@ func (t *tileRequestInfo) getTimeDue() time.Time {
 // query The filter to apply to the data when creating the tile
 func (t *tileRequestInfo) Create(uri string, coords *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	t.URI = uri
-	t.Coordinates = coords
+	t.Coord = coords
 	t.Query = query
 	t.ResultChannel = make(chan TileResponse, 1)
 	t.time = time.Now()

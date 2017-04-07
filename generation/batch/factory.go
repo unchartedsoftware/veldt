@@ -23,7 +23,7 @@ type TileRequest struct {
 	// The URI to which our tile request was made
 	URI string
 	// The coordinates of the requested tile
-	Coordinates *binning.TileCoord
+	Coord *binning.TileCoord
 	// The filter to apply to the data for our tile request
 	Query veldt.Query
 	// A channel on which the tile should be returned to us by the tile factory

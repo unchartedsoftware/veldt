@@ -93,7 +93,7 @@ func processFactoryRequests(batch int, factoryID string, factoryRequests []*tile
 	for i := 0; i < n; i++ {
 		Debugf("request: factory=%s, batch=%d, uri=%s, coords=%v",
 			factoryID, factoryRequests[i].batch,
-			factoryRequests[i].URI, factoryRequests[i].Coordinates)
+			factoryRequests[i].URI, factoryRequests[i].Coord)
 		simpleRequests[i] = &factoryRequests[i].TileRequest
 	}
 
