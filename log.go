@@ -26,7 +26,6 @@ type Logger interface {
 	Errorf(format string, v ...interface{})
 }
 
-
 // SetDebugLogger sets the debug level logger.
 func SetDebugLogger(log Logger) {
 	debugLog = log
@@ -47,7 +46,7 @@ func SetErrorLogger(log Logger) {
 	errorLog = log
 }
 
-func getLogger (level int) Logger {
+func getLogger(level int) Logger {
 	if Error == level {
 		if nil == errorLog {
 			if nil == warnLog {

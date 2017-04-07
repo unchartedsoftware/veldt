@@ -22,25 +22,27 @@ const (
 	preLog = "\033[1;38;5;6mBATCH\033[0m: "
 )
 
-
 // SetDebugLogger sets the debug level logger for the batch package
-func SetDebugLogger (log veldt.Logger) {
+func SetDebugLogger(log veldt.Logger) {
 	debugLog = log
 }
+
 // SetInfoLogger sets the info level logger for the batch package
-func SetInfoLogger (log veldt.Logger) {
+func SetInfoLogger(log veldt.Logger) {
 	infoLog = log
 }
+
 // SetWarnLogger sets the info level logger for the batch package
-func SetWarnLogger (log veldt.Logger) {
+func SetWarnLogger(log veldt.Logger) {
 	warnLog = log
 }
+
 // SetErrorLogger sets the info level logger for the batch package
-func SetErrorLogger (log veldt.Logger) {
+func SetErrorLogger(log veldt.Logger) {
 	errorLog = log
 }
 
-func getLogger (level int) veldt.Logger {
+func getLogger(level int) veldt.Logger {
 	if veldt.Error == level {
 		if nil == errorLog {
 			if nil == warnLog {
@@ -75,9 +77,9 @@ func getLogger (level int) veldt.Logger {
 func Errorf(format string, args ...interface{}) {
 	logger := getLogger(veldt.Error)
 	if nil != logger {
-		logger.Errorf(preLog + format, args...)
+		logger.Errorf(preLog+format, args...)
 	} else {
-		veldt.Errorf(preLog + format, args...)
+		veldt.Errorf(preLog+format, args...)
 	}
 }
 
@@ -85,9 +87,9 @@ func Errorf(format string, args ...interface{}) {
 func Warnf(format string, args ...interface{}) {
 	logger := getLogger(veldt.Warn)
 	if nil != logger {
-		logger.Warnf(preLog + format, args...)
+		logger.Warnf(preLog+format, args...)
 	} else {
-		veldt.Warnf(preLog + format, args...)
+		veldt.Warnf(preLog+format, args...)
 	}
 }
 
@@ -95,9 +97,9 @@ func Warnf(format string, args ...interface{}) {
 func Infof(format string, args ...interface{}) {
 	logger := getLogger(veldt.Info)
 	if nil != logger {
-		logger.Infof(preLog + format, args...)
+		logger.Infof(preLog+format, args...)
 	} else {
-		veldt.Infof(preLog + format, args...)
+		veldt.Infof(preLog+format, args...)
 	}
 }
 
@@ -105,8 +107,8 @@ func Infof(format string, args ...interface{}) {
 func Debugf(format string, args ...interface{}) {
 	logger := getLogger(veldt.Debug)
 	if nil != logger {
-		logger.Debugf(preLog + format, args...)
+		logger.Debugf(preLog+format, args...)
 	} else {
-		veldt.Debugf(preLog + format, args...)
+		veldt.Debugf(preLog+format, args...)
 	}
 }

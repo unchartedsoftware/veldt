@@ -96,7 +96,7 @@ func processFactoryRequests(batch int, factoryID string, factoryRequests []*tile
 			factoryRequests[i].URI, factoryRequests[i].Coordinates)
 		simpleRequests[i] = &factoryRequests[i].TileRequest
 	}
-	
+
 	// Call our factory, have it create tiles
 	Debugf("\tCalling factory %s to create tiles", factoryID)
 	factory.CreateTiles(simpleRequests)
