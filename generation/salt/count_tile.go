@@ -59,9 +59,9 @@ func (c *CountTile) Parse(params map[string]interface{}) error {
 	return c.TileData.Parse(params)
 }
 
-// parseCountParameters actually parses the provided JSON object, and
+// parseCountParams actually parses the provided JSON object, and
 // populates the tile attributes.
-func (c *CountTile) parseCountParameters(params map[string]interface{}) error {
+func (c *CountTile) parseCountParams(params map[string]interface{}) error {
 	valueField, ok := json.GetString(params, "valueField")
 	if ok {
 		c.valueField = valueField
@@ -74,7 +74,7 @@ func (c *CountTile) parseCountParameters(params map[string]interface{}) error {
 // GetTileConfig gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
 func (c *CountTile) getTileConfig() (map[string]interface{}, error) {
-	err := c.parseCountParameters(*c.parameters)
+	err := c.parseCountParams(*c.parameters)
 	if nil != err {
 		return nil, err
 	}

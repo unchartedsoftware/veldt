@@ -60,7 +60,7 @@ func NewBatchTile(factoryID string, factory TileFactoryCtor, maxWait int64) veld
 
 // Parse records the request parameters for the factory
 func (t *tileRequestInfo) Parse(params map[string]interface{}) error {
-	t.Parameters = params
+	t.Params = params
 	return nil
 }
 

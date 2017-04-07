@@ -57,9 +57,9 @@ func (m *MacroTile) Parse(params map[string]interface{}) error {
 	return m.TileData.Parse(params)
 }
 
-// parseMacroParameters actually parses the provided JSON object, and
+// parseMacroParams actually parses the provided JSON object, and
 // populates the tile attributes.
-func (m *MacroTile) parseMacroParameters(params map[string]interface{}) error {
+func (m *MacroTile) parseMacroParams(params map[string]interface{}) error {
 	if err := m.Bivariate.Parse(params); nil != err {
 		return err
 	}
@@ -69,7 +69,7 @@ func (m *MacroTile) parseMacroParameters(params map[string]interface{}) error {
 // GetTileConfig gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
 func (m *MacroTile) getTileConfig() (map[string]interface{}, error) {
-	err := m.parseMacroParameters(*m.parameters)
+	err := m.parseMacroParams(*m.parameters)
 	if nil != err {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (m *MacroTile) getTileConfig() (map[string]interface{}, error) {
 }
 
 func (m *MacroTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
-	err := m.parseMacroParameters(*m.parameters)
+	err := m.parseMacroParams(*m.parameters)
 	if nil != err {
 		return nil, err
 	}

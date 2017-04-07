@@ -58,9 +58,9 @@ func (h *HeatmapTile) Parse(params map[string]interface{}) error {
 	return h.TileData.Parse(params)
 }
 
-// parseHeatmapParameters actually parses the provided JSON object, and
+// parseHeatmapParams actually parses the provided JSON object, and
 // populates the tile attributes.
-func (h *HeatmapTile) parseHeatmapParameters(params map[string]interface{}) error {
+func (h *HeatmapTile) parseHeatmapParams(params map[string]interface{}) error {
 	valueField, ok := json.GetString(params, "valueField")
 	if ok {
 		h.valueField = valueField
@@ -73,7 +73,7 @@ func (h *HeatmapTile) parseHeatmapParameters(params map[string]interface{}) erro
 // GetTileConfig gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
 func (h *HeatmapTile) getTileConfig() (map[string]interface{}, error) {
-	err := h.parseHeatmapParameters(*h.parameters)
+	err := h.parseHeatmapParams(*h.parameters)
 	if nil != err {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (h *HeatmapTile) getTileConfig() (map[string]interface{}, error) {
 }
 
 func (h *HeatmapTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
-	err := h.parseHeatmapParameters(*h.parameters)
+	err := h.parseHeatmapParams(*h.parameters)
 	if nil != err {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (h *HeatmapTile) convertTile(coord *binning.TileCoord, input []byte) ([]byt
 }
 
 func (h *HeatmapTile) buildDefaultTile() ([]byte, error) {
-	err := h.parseHeatmapParameters(*h.parameters)
+	err := h.parseHeatmapParams(*h.parameters)
 	if nil != err {
 		return nil, err
 	}

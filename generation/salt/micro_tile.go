@@ -59,9 +59,9 @@ func (m *MicroTile) Parse(params map[string]interface{}) error {
 	return m.TileData.Parse(params)
 }
 
-// parseMicroParameters actually parses the provided JSON object, and
+// parseMicroParams actually parses the provided JSON object, and
 // populates the tile attributes.
-func (m *MicroTile) parseMicroParameters(params map[string]interface{}) error {
+func (m *MicroTile) parseMicroParams(params map[string]interface{}) error {
 	if err := m.Bivariate.Parse(params); nil != err {
 		return err
 	}
@@ -82,7 +82,7 @@ func (m *MicroTile) parseMicroParameters(params map[string]interface{}) error {
 // GetTileConfig gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
 func (m *MicroTile) getTileConfig() (map[string]interface{}, error) {
-	err := m.parseMicroParameters(*m.parameters)
+	err := m.parseMicroParams(*m.parameters)
 	if nil != err {
 		return nil, err
 	}

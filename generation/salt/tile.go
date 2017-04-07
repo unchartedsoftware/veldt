@@ -262,7 +262,7 @@ func (j *jointRequest) merge(from *jointRequest) {
 // extractJointRequest takes a single batched tile request, and converts it
 // into a joinable consolidated request
 func (t *TileData) extractJointRequest(request *batch.TileRequest) (*jointRequest, error) {
-	t.Parse(request.Parameters)
+	t.Parse(request.Params)
 	tileConfig, err := t.buildConfig()
 	if nil != err {
 		return nil, err

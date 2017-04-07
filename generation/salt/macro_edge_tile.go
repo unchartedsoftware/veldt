@@ -59,9 +59,9 @@ func (m *MacroEdgeTile) Parse(params map[string]interface{}) error {
 	return m.TileData.Parse(params)
 }
 
-// parseEdgeParameters actually parses the provided JSON object, and
+// parseEdgeParams actually parses the provided JSON object, and
 // populates the tile attributes.
-func (m *MacroEdgeTile) parseEdgeParameters(params map[string]interface{}) error {
+func (m *MacroEdgeTile) parseEdgeParams(params map[string]interface{}) error {
 	err := m.Edge.Parse(params)
 	if nil != err {
 		return err
@@ -83,7 +83,7 @@ func (m *MacroEdgeTile) parseEdgeParameters(params map[string]interface{}) error
 // GetTileConfig gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
 func (m *MacroEdgeTile) getTileConfig() (map[string]interface{}, error) {
-	err := m.parseEdgeParameters(*m.parameters)
+	err := m.parseEdgeParams(*m.parameters)
 	if nil != err {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (m *MacroEdgeTile) getTileConfig() (map[string]interface{}, error) {
 }
 
 func (m *MacroEdgeTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
-	err := m.parseEdgeParameters(*m.parameters)
+	err := m.parseEdgeParams(*m.parameters)
 	if nil != err {
 		return nil, err
 	}

@@ -19,7 +19,7 @@ type TileResponse struct {
 // request for a single tile
 type TileRequest struct {
 	// The parameters passed to our tile request for parsing
-	Parameters map[string]interface{}
+	Params map[string]interface{}
 	// The URI to which our tile request was made
 	URI string
 	// The coordinates of the requested tile
