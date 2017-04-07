@@ -24,19 +24,19 @@ const (
 
 
 // SetDebugLogger sets the debug level logger for the batch package
-func setDebugLogger (log veldt.Logger) {
+func SetDebugLogger (log veldt.Logger) {
 	debugLog = log
 }
 // SetInfoLogger sets the info level logger for the batch package
-func setInfoLogger (log veldt.Logger) {
+func SetInfoLogger (log veldt.Logger) {
 	infoLog = log
 }
 // SetWarnLogger sets the info level logger for the batch package
-func setWarnLogger (log veldt.Logger) {
+func SetWarnLogger (log veldt.Logger) {
 	warnLog = log
 }
 // SetErrorLogger sets the info level logger for the batch package
-func setErrorLogger (log veldt.Logger) {
+func SetErrorLogger (log veldt.Logger) {
 	errorLog = log
 }
 
