@@ -86,12 +86,12 @@ func (t *tileRequestInfo) Create(uri string, coords *binning.TileCoord, query ve
 	nextRequestID = nextRequestID + 1
 	mutex.Unlock()
 
-	batchDebugf("Queueing up request for tile set %s, factory id %s, tile %v", uri, t.factoryID, coords)
+	Debugf("Queueing up request for tile set %s, factory id %s, tile %v", uri, t.factoryID, coords)
 	t.enqueue()
 
-	batchInfof("Request %d for tile set %s, factory id %s, tile %v enqueued at %v", t.requestID, t.URI, t.factoryID, coords, t.time)
+	Infof("Request %d for tile set %s, factory id %s, tile %v enqueued at %v", t.requestID, t.URI, t.factoryID, coords, t.time)
 	response := <-t.ResultChannel
-	batchInfof("Request %d for tile set %s, factory id %s, tile %v fulfilled at %v", t.requestID, t.URI, t.factoryID, coords, time.Now())
+	Infof("Request %d for tile set %s, factory id %s, tile %v fulfilled at %v", t.requestID, t.URI, t.factoryID, coords, time.Now())
 	// Done with this channel; close it.
 	close(t.ResultChannel)
 

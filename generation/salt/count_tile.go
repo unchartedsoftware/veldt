@@ -23,7 +23,7 @@ func NewCountTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.Tile
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
-		saltInfof("New count tile constructor request")
+		Infof("New count tile constructor request")
 		return newCountTile(rmqConfig), nil
 	}
 }
@@ -33,7 +33,7 @@ func NewCountTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) bat
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
-		saltInfof("New count tile factory constructor request")
+		Infof("New count tile factory constructor request")
 		return newCountTile(rmqConfig), nil
 	}
 }

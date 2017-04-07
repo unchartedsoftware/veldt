@@ -23,7 +23,7 @@ func NewMacroEdgeTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
-		saltInfof("New macro edge tile constructor request")
+		Infof("New macro edge tile constructor request")
 		return newEdgeTile(rmqConfig), nil
 	}
 }
@@ -33,7 +33,7 @@ func NewMacroEdgeTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte)
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
-		saltInfof("New macro edge tile factory constructor request")
+		Infof("New macro edge tile factory constructor request")
 		return newEdgeTile(rmqConfig), nil
 	}
 }

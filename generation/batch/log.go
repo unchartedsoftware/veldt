@@ -1,12 +1,19 @@
 package batch
 
 import (
-	"github.com/unchartedsoftware/plog"
+	"github.com/unchartedsoftware/veldt"
 )
 
 // logging utilities for the batch package, to provide clean and easy logging
 // with simple visual tags with which to pick batch messages out of the log as
 // a whole
+
+var (
+	debugLog veldt.Logger
+	infoLog  veldt.Logger
+	warnLog  veldt.Logger
+	errorLog veldt.Logger
+)
 
 const (
 	// Teal "BATCH" log prefix
@@ -15,15 +22,56 @@ const (
 	preLog = "\033[1;38;5;6mBATCH\033[0m: "
 )
 
-func batchErrorf(format string, args ...interface{}) {
-	log.Errorf(preLog+format, args...)
+
+// SetDebugLogger sets the debug level logger for the batch package
+func setDebugLogger (log veldt.Logger) {
+	debugLog = log
 }
-func batchWarnf(format string, args ...interface{}) {
-	log.Warnf(preLog+format, args...)
+// SetInfoLogger sets the info level logger for the batch package
+func setInfoLogger (log veldt.Logger) {
+	infoLog = log
 }
-func batchInfof(format string, args ...interface{}) {
-	log.Infof(preLog+format, args...)
+// SetWarnLogger sets the info level logger for the batch package
+func setWarnLogger (log veldt.Logger) {
+	warnLog = log
 }
-func batchDebugf(format string, args ...interface{}) {
-	log.Debugf(preLog+format, args...)
+// SetErrorLogger sets the info level logger for the batch package
+func setErrorLogger (log veldt.Logger) {
+	errorLog = log
+}
+
+// Errorf logs to the error log
+func Errorf(format string, args ...interface{}) {
+	if nil != errorLog {
+		errorLog.Errorf(preLog + format, args...)
+	} else {
+		veldt.Errorf(preLog + format, args...)
+	}
+}
+
+// Warnf logs to the warn log
+func Warnf(format string, args ...interface{}) {
+	if nil != warnLog {
+		warnLog.Warnf(preLog + format, args...)
+	} else {
+		veldt.Warnf(preLog + format, args...)
+	}
+}
+
+// Infof logs to the info log
+func Infof(format string, args ...interface{}) {
+	if nil != infoLog {
+		infoLog.Infof(preLog + format, args...)
+	} else {
+		veldt.Infof(preLog + format, args...)
+	}
+}
+
+// Debugf logs to the debug log
+func Debugf(format string, args ...interface{}) {
+	if nil != debugLog {
+		debugLog.Debugf(preLog + format, args...)
+	} else {
+		veldt.Debugf(preLog + format, args...)
+	}
 }

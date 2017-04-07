@@ -84,18 +84,18 @@ func setupConnection(rmqConfig *Configuration, datasetConfigs ...[]byte) {
 	// Need a connection for that
 	connection, err := NewConnection(rmqConfig)
 	if err != nil {
-		saltErrorf("Error connecting to salt server to configure datasets: %v", err)
+		Errorf("Error connecting to salt server to configure datasets: %v", err)
 	} else {
 		for _, datasetConfig := range datasetConfigs {
 			name, err := getDatasetName(datasetConfig)
 			if nil != err {
-				saltErrorf("Error registering dataset: can't find name of dataset %v", string(datasetConfig))
+				Errorf("Error registering dataset: can't find name of dataset %v", string(datasetConfig))
 			} else {
 				_, err = connection.Dataset(datasetConfig)
 				if nil != err {
-					saltErrorf("Error registering dataset %v: %v", name, err)
+					Errorf("Error registering dataset %v: %v", name, err)
 				} else {
-					saltInfof("Registering dataset %s", name)
+					Infof("Registering dataset %s", name)
 					datasets[name] = string(datasetConfig)
 				}
 			}
@@ -118,21 +118,21 @@ func (t *TileData) Create(uri string, coord *binning.TileCoord, query veldt.Quer
 	t.CreateTiles([]*batch.TileRequest{request})
 	response := <-responseChan
 	if nil != response.Tile {
-		saltDebugf("Create: Got response tile of length %d", len(response.Tile))
+		Debugf("Create: Got response tile of length %d", len(response.Tile))
 	} else {
-		saltDebugf("Create: Got nil response tile")
+		Debugf("Create: Got nil response tile")
 	}
 	if nil != response.Err {
-		saltDebugf("Create: Got non-nil error")
+		Debugf("Create: Got non-nil error")
 	} else {
-		saltDebugf("Create: no error")
+		Debugf("Create: no error")
 	}
 	return response.Tile, response.Err
 }
 
 // CreateTiles generates multiple tiles from the provided information
 func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
-	saltInfof("CreateTiles: Processing %d requests of type %s", len(requests), t.tileType)
+	Infof("CreateTiles: Processing %d requests of type %s", len(requests), t.tileType)
 	// Create our connection
 	connection, err := NewConnection(t.rmqConfig)
 	if err != nil {
@@ -168,7 +168,7 @@ func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
 	// Requests are all merged
 	// Now actually make our requests of the server
 	for _, request := range consolidatedRequests {
-		saltInfof("Request for %d tiles for dataset %s of type %s", len(request.tiles), request.dataset, t.tileType)
+		Infof("Request for %d tiles for dataset %s of type %s", len(request.tiles), request.dataset, t.tileType)
 		// Create our consolidated configuration
 		fullConfig := make(map[string]interface{})
 		fullConfig["tile"] = request.tileConfig
@@ -207,13 +207,13 @@ func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
 				for key, channel := range responseChannels {
 					tile, ok := tiles[key]
 					if ok {
-						saltDebugf("Found tile for key %s[%s] of length %d", key, t.tileType, len(tile.data))
+						Debugf("Found tile for key %s[%s] of length %d", key, t.tileType, len(tile.data))
 						converted, err := t.convert(tile.coord, tile.data)
-						saltDebugf("Converted tile for key %s[%s] had length %d", key, t.tileType, len(converted))
+						Debugf("Converted tile for key %s[%s] had length %d", key, t.tileType, len(converted))
 						channel <- batch.TileResponse{converted, err}
 					} else {
 						// No tile, but no error either
-						saltDebugf("No tile found for key %s", key)
+						Debugf("No tile found for key %s", key)
 						defaultTile, err := t.buildDefault()
 						channel <- batch.TileResponse{defaultTile, err}
 					}
@@ -313,7 +313,7 @@ func unpackTiles(saltMsg []byte) map[string]tileResult {
 		p = p + 8
 		key := coordToString(int(level), int(x), int(y))
 		coord := &binning.TileCoord{X: uint32(x), Y: uint32(y), Z: uint32(level)}
-		saltDebugf("Unpacking tile [%d: %d, %d] = %s, length = %d", level, x, y, key, size)
+		Debugf("Unpacking tile [%d: %d, %d] = %s, length = %d", level, x, y, key, size)
 		results[key] = tileResult{coord, saltMsg[p : p+size]}
 		p = p + size
 	}

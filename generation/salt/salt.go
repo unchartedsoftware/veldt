@@ -42,7 +42,7 @@ func NewConnection(config *Configuration) (*RabbitMQConnection, error) {
 	mutex.Lock()
 	rmq, contained := connections[config.Key()]
 	if !contained {
-		saltInfof("New connection request")
+		Infof("New connection request")
 
 		url := fmt.Sprintf("amqp://%s:%d", config.host, config.port)
 		var connection *amqp.Connection
@@ -86,13 +86,13 @@ func NewConnection(config *Configuration) (*RabbitMQConnection, error) {
 	mutex.Unlock()
 	runtime.Gosched()
 
-	saltInfof("connection request fulfilled: %v", rmq)
+	Infof("connection request fulfilled: %v", rmq)
 	return rmq, nil
 }
 
 // Close closes this RabbitMQ connection
 func (rmq *RabbitMQConnection) Close() {
-	saltInfof("Closing connection")
+	Infof("Closing connection")
 	rmq.channel.Close()
 	rmq.connection.Close()
 }
@@ -104,7 +104,7 @@ func (rmq *RabbitMQConnection) Declare(qName string, qc *QueueConfiguration) err
 		return err
 	}
 	rmq.queues[qName] = q
-	saltInfof("Declaring channel '%s'=(%v)", qName, q)
+	Infof("Declaring channel '%s'=(%v)", qName, q)
 	return nil
 }
 
@@ -164,7 +164,7 @@ func (rmq *RabbitMQConnection) sendServerMessage(messageType string, message []b
 	responseChannel := make(chan amqp.Delivery)
 	responseChannels[msgID] = responseChannel
 
-	saltDebugf("Publishing message \"%s%s%s\"\n\t(query queue: %s(=%s))\n\t(response queue: %s(=%s))\n\t(type: %s)",
+	Debugf("Publishing message \"%s%s%s\"\n\t(query queue: %s(=%s))\n\t(response queue: %s(=%s))\n\t(type: %s)",
 		preMsg, string(message), postMsg, rmq.serverQueue, queryQ.Name, "response", responseQ.Name, messageType)
 
 	rmq.channel.Publish("", queryQ.Name, false, false,
@@ -175,7 +175,7 @@ func (rmq *RabbitMQConnection) sendServerMessage(messageType string, message []b
 			MessageId: msgID})
 
 	response := <-responseChannel
-	saltDebugf("Response received: \"%s%s%s\"", preMsg, string(response.Body), postMsg)
+	Debugf("Response received: \"%s%s%s\"", preMsg, string(response.Body), postMsg)
 	if "error" == response.Type {
 		return nil, fmt.Errorf(string(response.Body))
 	}

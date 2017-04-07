@@ -22,7 +22,7 @@ func NewHeatmapTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.Ti
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
-		saltInfof("New heatmap tile constructor request")
+		Infof("New heatmap tile constructor request")
 		return newHeatmapTile(rmqConfig), nil
 	}
 }
@@ -32,7 +32,7 @@ func NewHeatmapTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) b
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
-		saltInfof("New heatmap tile factory constructor request")
+		Infof("New heatmap tile factory constructor request")
 		return newHeatmapTile(rmqConfig), nil
 	}
 }

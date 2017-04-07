@@ -23,7 +23,7 @@ func NewMicroTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.Tile
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
-		saltInfof("New micro tile constructor request")
+		Infof("New micro tile constructor request")
 		return newMicroTile(rmqConfig), nil
 	}
 }
@@ -33,7 +33,7 @@ func NewMicroTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) bat
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
-		saltInfof("New micro tile factory constructor request")
+		Infof("New micro tile factory constructor request")
 		return newMicroTile(rmqConfig), nil
 	}
 }

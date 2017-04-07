@@ -21,18 +21,18 @@ var (
 
 func processQueue(waitTime int64) {
 	for {
-		batchInfof("Checking for queued tiles at %v", time.Now())
+		Infof("Checking for queued tiles at %v", time.Now())
 		if isDue() {
 			batch, batchRequests := dequeueRequests()
 			numRequests := 0
 			for _, factoryRequests := range batchRequests {
 				numRequests = numRequests + len(factoryRequests)
 			}
-			batchInfof("Beginning processing of batch %d, with %d requests in %d factories, at %v", batch, numRequests, len(batchRequests), time.Now())
+			Infof("Beginning processing of batch %d, with %d requests in %d factories, at %v", batch, numRequests, len(batchRequests), time.Now())
 			for factoryID, factoryRequests := range batchRequests {
 				processFactoryRequests(batch, factoryID, factoryRequests)
 			}
-			batchInfof("Done processing of batch %d at %v", batch, time.Now())
+			Infof("Done processing of batch %d at %v", batch, time.Now())
 		}
 		time.Sleep(time.Millisecond * time.Duration(waitTime))
 	}
@@ -66,36 +66,36 @@ func dequeueRequests() (int, map[string][]*tileRequestInfo) {
 // processFactoryRequess process all the requests from a given batch for a
 // given factory
 func processFactoryRequests(batch int, factoryID string, factoryRequests []*tileRequestInfo) {
-	batchDebugf("Processing %d requests for factory %s", len(factoryRequests), factoryID)
+	Debugf("Processing %d requests for factory %s", len(factoryRequests), factoryID)
 
 	// Get our factory
 	ctor, ok := factories[factoryID]
 	if !ok {
 		err := fmt.Errorf("unrecognized tile factory '%s'", factoryID)
-		batchWarnf(err.Error())
+		Warnf(err.Error())
 		sendError(err, factoryRequests)
 	} else {
 		factory, err := ctor()
 		if nil != err {
 			err := fmt.Errorf("error constructing factory %s: %v", factoryID, err)
-			batchWarnf(err.Error())
+			Warnf(err.Error())
 			sendError(err, factoryRequests)
 		} else {
-			batchDebugf("Factory obtained.")
+			Debugf("Factory obtained.")
 
 			// Take out our meta-request info, leaving just the simple request info
 			// for the factory
 			n := len(factoryRequests)
 			simpleRequests := make([]*TileRequest, n, n)
 			for i := 0; i < n; i++ {
-				batchDebugf("request: factory=%s, batch=%d, uri=%s, coords=%v",
+				Debugf("request: factory=%s, batch=%d, uri=%s, coords=%v",
 					factoryID, factoryRequests[i].batch,
 					factoryRequests[i].URI, factoryRequests[i].Coordinates)
 				simpleRequests[i] = &factoryRequests[i].TileRequest
 			}
 
 			// Call our factory, have it create tiles
-			batchDebugf("\tCalling factory %s to create tiles", factoryID)
+			Debugf("\tCalling factory %s to create tiles", factoryID)
 			factory.CreateTiles(simpleRequests)
 		}
 	}

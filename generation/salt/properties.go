@@ -396,6 +396,6 @@ func compareArrays(arrayType int, a, b interface{}) bool {
 	}
 
 	// Should always be one of those cases
-	saltWarnf("Unrecognized array type %v", arrayType)
+	Warnf("Unrecognized array type %v", arrayType)
 	return false
 }
