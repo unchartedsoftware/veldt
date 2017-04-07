@@ -19,7 +19,7 @@ type MicroTile struct {
 }
 
 // NewMicroTile instantiates and returns a new tile struct.
-func NewMicroTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
+func NewMicroTile(rmqConfig *Config, datasetConfigs ...[]byte) veldt.TileCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
@@ -29,7 +29,7 @@ func NewMicroTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.Tile
 }
 
 // NewMicroTileFactory instantiates and returns a factory for creating batched micro tiles.
-func NewMicroTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
+func NewMicroTileFactory(rmqConfig *Config, datasetConfigs ...[]byte) batch.TileFactoryCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
@@ -38,12 +38,12 @@ func NewMicroTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) bat
 	}
 }
 
-func newMicroTile(rmqConfig *Configuration) *MicroTile {
+func newMicroTile(rmqConfig *Config) *MicroTile {
 	mt := &MicroTile{}
 	mt.tileType = "micro"
 	mt.rmqConfig = rmqConfig
 	mt.buildConfig = func() (map[string]interface{}, error) {
-		return mt.getTileConfiguration()
+		return mt.getTileConfig()
 	}
 	mt.convert = func(coord *binning.TileCoord, input []byte) ([]byte, error) {
 		return mt.convertTile(coord, input)
@@ -79,9 +79,9 @@ func (m *MicroTile) parseMicroParameters(params map[string]interface{}) error {
 	return nil
 }
 
-// GetTileConfiguration gets the configuration to send to Salt, so that it can
+// GetTileConfig gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
-func (m *MicroTile) getTileConfiguration() (map[string]interface{}, error) {
+func (m *MicroTile) getTileConfig() (map[string]interface{}, error) {
 	err := m.parseMicroParameters(*m.parameters)
 	if nil != err {
 		return nil, err

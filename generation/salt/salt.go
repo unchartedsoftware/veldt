@@ -38,7 +38,7 @@ var (
 )
 
 // NewConnection returns a connection to the Salt tile server via RabbitMQ
-func NewConnection(config *Configuration) (*RabbitMQConnection, error) {
+func NewConnection(config *Config) (*RabbitMQConnection, error) {
 	mutex.Lock()
 	rmq, contained := connections[config.Key()]
 	if !contained {
@@ -61,7 +61,7 @@ func NewConnection(config *Configuration) (*RabbitMQConnection, error) {
 		rmq = &RabbitMQConnection{connection, channel, make(map[string]amqp.Queue), config.serverQueue}
 
 		// Register our standard queues
-		for k, v := range config.queueConfigurations {
+		for k, v := range config.queueConfigs {
 			rmq.Declare(k, v)
 		}
 
@@ -98,7 +98,7 @@ func (rmq *RabbitMQConnection) Close() {
 }
 
 // Declare declares a queue using this RabbitMQ connection
-func (rmq *RabbitMQConnection) Declare(qName string, qc *QueueConfiguration) error {
+func (rmq *RabbitMQConnection) Declare(qName string, qc *QueueConfig) error {
 	q, err := rmq.channel.QueueDeclare(qc.queue, qc.durable, qc.deletable, qc.exclusive, qc.noWait, nil)
 	if err != nil {
 		return err

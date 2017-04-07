@@ -19,7 +19,7 @@ type MacroEdgeTile struct {
 }
 
 // NewMacroEdgeTile instantiates and returns a new tile struct.
-func NewMacroEdgeTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
+func NewMacroEdgeTile(rmqConfig *Config, datasetConfigs ...[]byte) veldt.TileCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
@@ -29,7 +29,7 @@ func NewMacroEdgeTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.
 }
 
 // NewMacroEdgeTileFactory instantiates and returns a factory for creating batched tiles.
-func NewMacroEdgeTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
+func NewMacroEdgeTileFactory(rmqConfig *Config, datasetConfigs ...[]byte) batch.TileFactoryCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
@@ -38,12 +38,12 @@ func NewMacroEdgeTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte)
 	}
 }
 
-func newEdgeTile(rmqConfig *Configuration) *MacroEdgeTile {
+func newEdgeTile(rmqConfig *Config) *MacroEdgeTile {
 	met := &MacroEdgeTile{}
 	met.tileType = "macro-edge"
 	met.rmqConfig = rmqConfig
 	met.buildConfig = func() (map[string]interface{}, error) {
-		return met.getTileConfiguration()
+		return met.getTileConfig()
 	}
 	met.convert = func(coord *binning.TileCoord, input []byte) ([]byte, error) {
 		return met.convertTile(coord, input)
@@ -80,9 +80,9 @@ func (m *MacroEdgeTile) parseEdgeParameters(params map[string]interface{}) error
 	return m.MacroEdge.Parse(params)
 }
 
-// GetTileConfiguration gets the configuration to send to Salt, so that it can
+// GetTileConfig gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
-func (m *MacroEdgeTile) getTileConfiguration() (map[string]interface{}, error) {
+func (m *MacroEdgeTile) getTileConfig() (map[string]interface{}, error) {
 	err := m.parseEdgeParameters(*m.parameters)
 	if nil != err {
 		return nil, err

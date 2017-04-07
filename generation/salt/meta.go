@@ -6,11 +6,11 @@ import (
 
 // Meta contains information about how to request metadata from a salt server
 type Meta struct {
-	rmqConfig *Configuration // The configuration defining how we connect to the RabbitMQ server
+	rmqConfig *Config // The configuration defining how we connect to the RabbitMQ server
 }
 
 // NewMeta instantiates and returns a pointer to a new generator.
-func NewMeta(rmqConfig *Configuration) veldt.MetaCtor {
+func NewMeta(rmqConfig *Config) veldt.MetaCtor {
 	return func() (veldt.Meta, error) {
 		return &Meta{rmqConfig}, nil
 	}

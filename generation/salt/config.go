@@ -9,17 +9,17 @@ import (
 )
 
 // This file describes the configuration information needed to connect to a
-// salt tile server.  The Configuration class is the main class herein.
+// salt tile server.  The Config class is the main class herein.
 //
 // Also included are utility functions to read a configuration from a file -
-// ReadConfiguration - and to read a dataset configuration (currently just
+// ReadConfig - and to read a dataset configuration (currently just
 // stored as a string, as only the server has a real need to parse it) in
-// ReadDatasetConfiguration.  These two functions are intended for use in the
+// ReadDatasetConfig.  These two functions are intended for use in the
 // main routine of an application, to read config objects from file, so they
 // can be passed into salt tile constructors.
 
-// QueueConfiguration describes how a specific queue is to be created
-type QueueConfiguration struct {
+// QueueConfig describes how a specific queue is to be created
+type QueueConfig struct {
 	queue     string
 	durable   bool
 	deletable bool
@@ -27,12 +27,12 @@ type QueueConfiguration struct {
 	noWait    bool
 }
 
-// Configuration describes how the salt connection is to be created
-type Configuration struct {
-	host                string
-	port                int64
-	queueConfigurations map[string]*QueueConfiguration
-	serverQueue         string
+// Config describes how the salt connection is to be created
+type Config struct {
+	host         string
+	port         int64
+	queueConfigs map[string]*QueueConfig
+	serverQueue  string
 }
 
 func tOrF(b bool) string {
@@ -43,17 +43,17 @@ func tOrF(b bool) string {
 }
 
 // Key returns a unique key that completely describes this configuration
-func (c *Configuration) Key() string {
-	qcs := make([]string, len(c.queueConfigurations))
+func (c *Config) Key() string {
+	qcs := make([]string, len(c.queueConfigs))
 	i := 0
-	for k := range c.queueConfigurations {
+	for k := range c.queueConfigs {
 		qcs[i] = k
 	}
 	sort.Strings(qcs)
 	qcKey := ""
 	first := true
 	for _, k := range qcs {
-		qc := c.queueConfigurations[k]
+		qc := c.queueConfigs[k]
 		if first {
 			qcKey = fmt.Sprintf("%s.%s.%s%s%s%s", k, qc.queue, tOrF(qc.durable), tOrF(qc.deletable), tOrF(qc.exclusive), tOrF(qc.noWait))
 		} else {
@@ -137,13 +137,13 @@ func getKeys(root parse.Node, path ...string) ([]string, error) {
 	return getKeys(elem, path[1:]...)
 }
 
-// ReadDatasetConfiguration reads a file into a string, so it can be passed to Salt
-func ReadDatasetConfiguration(filename string) ([]byte, error) {
+// ReadDatasetConfig reads a file into a string, so it can be passed to Salt
+func ReadDatasetConfig(filename string) ([]byte, error) {
 	return ioutil.ReadFile(filename)
 }
 
-// ReadConfiguration reads a typesafe-config configuration file that sets up our salt connection
-func ReadConfiguration(filename string) (*Configuration, error) {
+// ReadConfig reads a typesafe-config configuration file that sets up our salt connection
+func ReadConfig(filename string) (*Config, error) {
 	// Read the config file
 	configString, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -172,7 +172,7 @@ func ReadConfiguration(filename string) (*Configuration, error) {
 	// Get the server queue from the config
 	serverQueue := stripTerminalQuotes(getConfigString("communications.queue", config).OrElse("salt").(string))
 	// Get any queues that need to be pre-initialized
-	queues := make(map[string]*QueueConfiguration)
+	queues := make(map[string]*QueueConfig)
 	for _, queueKey := range queueKeys {
 		queueConfig := getSubConfig("rabbitmq.queues."+queueKey, config).OrElse(&parse.Config{}).(*parse.Config)
 		queueInterface, err := getConfigString("name", queueConfig).Value()
@@ -185,8 +185,8 @@ func ReadConfiguration(filename string) (*Configuration, error) {
 		exclusive := getConfigBool("exclusive", queueConfig).OrElse(false).(bool)
 		noWait := getConfigBool("no-wait", queueConfig).OrElse(false).(bool)
 
-		queues[queueKey] = &QueueConfiguration{queue, durable, autoDelete, exclusive, noWait}
+		queues[queueKey] = &QueueConfig{queue, durable, autoDelete, exclusive, noWait}
 	}
 
-	return &Configuration{host, port, queues, serverQueue}, nil
+	return &Config{host, port, queues, serverQueue}, nil
 }

@@ -18,7 +18,7 @@ type HeatmapTile struct {
 }
 
 // NewHeatmapTile instantiates and returns a new tile struct.
-func NewHeatmapTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
+func NewHeatmapTile(rmqConfig *Config, datasetConfigs ...[]byte) veldt.TileCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
@@ -28,7 +28,7 @@ func NewHeatmapTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.Ti
 }
 
 // NewHeatmapTileFactory instantiates and returns a factory for creating batched heatmap tiles.
-func NewHeatmapTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
+func NewHeatmapTileFactory(rmqConfig *Config, datasetConfigs ...[]byte) batch.TileFactoryCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
@@ -37,12 +37,12 @@ func NewHeatmapTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) b
 	}
 }
 
-func newHeatmapTile(rmqConfig *Configuration) *HeatmapTile {
+func newHeatmapTile(rmqConfig *Config) *HeatmapTile {
 	ht := &HeatmapTile{}
 	ht.tileType = "heatmap"
 	ht.rmqConfig = rmqConfig
 	ht.buildConfig = func() (map[string]interface{}, error) {
-		return ht.getTileConfiguration()
+		return ht.getTileConfig()
 	}
 	ht.convert = func(coord *binning.TileCoord, input []byte) ([]byte, error) {
 		return ht.convertTile(coord, input)
@@ -70,9 +70,9 @@ func (h *HeatmapTile) parseHeatmapParameters(params map[string]interface{}) erro
 	return h.Bivariate.Parse(params)
 }
 
-// GetTileConfiguration gets the configuration to send to Salt, so that it can
+// GetTileConfig gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
-func (h *HeatmapTile) getTileConfiguration() (map[string]interface{}, error) {
+func (h *HeatmapTile) getTileConfig() (map[string]interface{}, error) {
 	err := h.parseHeatmapParameters(*h.parameters)
 	if nil != err {
 		return nil, err

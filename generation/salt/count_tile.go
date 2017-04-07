@@ -19,7 +19,7 @@ type CountTile struct {
 }
 
 // NewCountTile instantiates and returns a new tile struct.
-func NewCountTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.TileCtor {
+func NewCountTile(rmqConfig *Config, datasetConfigs ...[]byte) veldt.TileCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (veldt.Tile, error) {
@@ -29,7 +29,7 @@ func NewCountTile(rmqConfig *Configuration, datasetConfigs ...[]byte) veldt.Tile
 }
 
 // NewCountTileFactory instantiates and returns a factory for creating batched count tiles.
-func NewCountTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) batch.TileFactoryCtor {
+func NewCountTileFactory(rmqConfig *Config, datasetConfigs ...[]byte) batch.TileFactoryCtor {
 	setupConnection(rmqConfig, datasetConfigs...)
 
 	return func() (batch.TileFactory, error) {
@@ -38,12 +38,12 @@ func NewCountTileFactory(rmqConfig *Configuration, datasetConfigs ...[]byte) bat
 	}
 }
 
-func newCountTile(rmqConfig *Configuration) *CountTile {
+func newCountTile(rmqConfig *Config) *CountTile {
 	ct := &CountTile{}
 	ct.tileType = "count"
 	ct.rmqConfig = rmqConfig
 	ct.buildConfig = func() (map[string]interface{}, error) {
-		return ct.getTileConfiguration()
+		return ct.getTileConfig()
 	}
 	ct.convert = func(coord *binning.TileCoord, input []byte) ([]byte, error) {
 		return ct.convertTile(coord, input)
@@ -71,9 +71,9 @@ func (c *CountTile) parseCountParameters(params map[string]interface{}) error {
 	return c.Bivariate.Parse(params)
 }
 
-// GetTileConfiguration gets the configuration to send to Salt, so that it can
+// GetTileConfig gets the configuration to send to Salt, so that it can
 // construct the currently requested tile
-func (c *CountTile) getTileConfiguration() (map[string]interface{}, error) {
+func (c *CountTile) getTileConfig() (map[string]interface{}, error) {
 	err := c.parseCountParameters(*c.parameters)
 	if nil != err {
 		return nil, err

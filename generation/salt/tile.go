@@ -22,9 +22,9 @@ import (
 // TileData.  The following three function types define and describe those
 // three implementation-specific functions
 
-// ConfigurationBuilder is function responsible for producing Salt tile
+// ConfigBuilder is function responsible for producing Salt tile
 // configurations
-type ConfigurationBuilder func() (map[string]interface{}, error)
+type ConfigBuilder func() (map[string]interface{}, error)
 
 // TileConverter converts the output of the Salt tile server into the format
 // Veldt wants for a given tile type
@@ -38,13 +38,13 @@ type DefaultTileConstructor func() ([]byte, error)
 type TileData struct {
 	tileType string
 	// The configuration defining how we connect to the RabbitMQ server
-	rmqConfig *Configuration
+	rmqConfig *Config
 	// The parameters passed into the Parse method
 	// We just keep them around until later, so that our single-tile and batch-
 	// tile code can work the same way.
 	parameters *map[string]interface{}
 	// A builder that can build Salt configurations for us
-	buildConfig ConfigurationBuilder
+	buildConfig ConfigBuilder
 	// A converter that can convert the results from what Salt gives us to
 	// what Veldt wants
 	convert TileConverter
@@ -79,7 +79,7 @@ func getDatasetName(datasetConfigRaw []byte) (string, error) {
 // setupConnection is used by every Salt tile request to initialize the
 // connection with the salt server, and to initialize the dataset this request
 // requires
-func setupConnection(rmqConfig *Configuration, datasetConfigs ...[]byte) {
+func setupConnection(rmqConfig *Config, datasetConfigs ...[]byte) {
 	// Send any dataset configurations to salt immediately
 	// Need a connection for that
 	connection, err := NewConnection(rmqConfig)
