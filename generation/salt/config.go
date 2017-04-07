@@ -114,7 +114,7 @@ func stripTerminalQuotes(text string) string {
 // pushed back to https://github.com/liyinhgqw/typesafe-config
 func getKeys(root parse.Node, path ...string) ([]string, error) {
 	if root.Type() != parse.NodeMap {
-		return nil, fmt.Errorf("Root node is not a map")
+		return nil, fmt.Errorf("root node is not a map")
 	}
 	mapRoot := root.(*parse.MapNode)
 
@@ -132,7 +132,7 @@ func getKeys(root parse.Node, path ...string) ([]string, error) {
 	var elem, contains = mapRoot.Nodes[path[0]]
 
 	if !contains {
-		return nil, fmt.Errorf("Node %s not found in map", path[0])
+		return nil, fmt.Errorf("node %s not found in map", path[0])
 	}
 	return getKeys(elem, path[1:]...)
 }

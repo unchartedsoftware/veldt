@@ -71,13 +71,13 @@ func processFactoryRequests(batch int, factoryID string, factoryRequests []*tile
 	// Get our factory
 	ctor, ok := factories[factoryID]
 	if !ok {
-		err := fmt.Errorf("Unrecognized tile factory '%s'", factoryID)
+		err := fmt.Errorf("unrecognized tile factory '%s'", factoryID)
 		batchWarnf(err.Error())
 		sendError(err, factoryRequests)
 	} else {
 		factory, err := ctor()
 		if nil != err {
-			err := fmt.Errorf("Error constructing factory %s: %v", factoryID, err)
+			err := fmt.Errorf("error constructing factory %s: %v", factoryID, err)
 			batchWarnf(err.Error())
 			sendError(err, factoryRequests)
 		} else {

@@ -63,7 +63,7 @@ func (e *BinaryExpression) Get() (map[string]interface{}, error) {
 func (e *UnaryExpression) Get() (map[string]interface{}, error) {
 	q, ok := e.Query.(Query)
 	if !ok {
-		return nil, fmt.Errorf("`Operand is not of type salt.Query")
+		return nil, fmt.Errorf("operand is not of type salt.Query")
 	}
 	qConfig, err := q.Get()
 	if err != nil {

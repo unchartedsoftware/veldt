@@ -28,7 +28,7 @@ const (
 // setProperty sets the specified (multi-leveled) key in the given property map
 func setProperty(key string, value interface{}, props map[string]interface{}) error {
 	if 0 == len(key) {
-		return fmt.Errorf("Null key given to SetKey")
+		return fmt.Errorf("null key given to SetKey")
 	}
 
 	subKeys := strings.Split(key, ".")
@@ -49,7 +49,7 @@ func setProperty(key string, value interface{}, props map[string]interface{}) er
 	}
 	subConfig, ok := localValue.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("Value found under key %s [%v] was not a map (full  key was %s)", localKey, localValue, key)
+		return fmt.Errorf("value found under key %s [%v] was not a map (full  key was %s)", localKey, localValue, key)
 	}
 	return setProperty(descendentKey, value, subConfig)
 }
@@ -73,11 +73,11 @@ func getProperty(key string, props map[string]interface{}) (interface{}, error) 
 
 	localValue, ok := props[localKey]
 	if !ok {
-		return nil, fmt.Errorf("No sub-properties found under key %s (full key was %s)", localKey, key)
+		return nil, fmt.Errorf("no sub-properties found under key %s (full key was %s)", localKey, key)
 	}
 	subConfig, ok := localValue.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("Value found under key %s [%v] was not a map (full key was %s)", localKey, localValue, key)
+		return nil, fmt.Errorf("value found under key %s [%v] was not a map (full key was %s)", localKey, localValue, key)
 	}
 
 	return getProperty(descendentKey, subConfig)
@@ -116,7 +116,7 @@ func getFloat32Property(key string, props map[string]interface{}) (float32, erro
 	case float64:
 		return float32(n), nil
 	default:
-		return 0.0, fmt.Errorf("Can't convert %v to float", rawValue)
+		return 0.0, fmt.Errorf("can't convert %v to float", rawValue)
 	}
 }
 

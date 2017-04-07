@@ -106,7 +106,7 @@ func (h *HeatmapTile) convertTile(coord *binning.TileCoord, input []byte) ([]byt
 	res := h.Resolution
 	numPoints := len(input) / 4
 	if res*res != numPoints {
-		return nil, fmt.Errorf("Wrong number of points returned.  Expected %d, got %d", res*res, numPoints)
+		return nil, fmt.Errorf("wrong number of points returned.  Expected %d, got %d", res*res, numPoints)
 	}
 
 	// Copy to output buffer, flipping the y

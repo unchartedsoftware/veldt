@@ -272,7 +272,7 @@ func (t *TileData) extractJointRequest(request *batch.TileRequest) (*jointReques
 	if nil != request.Query {
 		saltQuery, ok := request.Query.(Query)
 		if !ok {
-			return nil, fmt.Errorf("Query for salt tile was not a salt query")
+			return nil, fmt.Errorf("query for salt tile was not a salt query")
 		}
 
 		var err error
