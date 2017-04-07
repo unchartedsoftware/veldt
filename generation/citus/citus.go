@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx"
-	log "github.com/unchartedsoftware/plog"
 )
 
 const (
@@ -32,7 +31,6 @@ func NewClient(host string, port string) (*pgx.ConnPool, error) {
 	client, ok := clients[endpoint]
 	if !ok {
 		//TODO: Add configuration for connection parameters.
-		log.Infof("Connecting to citus `%s`", endpoint)
 		dbConfig := pgx.ConnConfig{
 			Host: host,
 			Port: uint16(portInt),

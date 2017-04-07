@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/unchartedsoftware/plog"
 	"gopkg.in/olivere/elastic.v3"
 )
 
@@ -25,7 +24,6 @@ func NewClient(host string, port string) (*elastic.Client, error) {
 	mutex.Lock()
 	client, ok := clients[endpoint]
 	if !ok {
-		log.Infof("Connecting to elasticsearch `%s`", endpoint)
 		c, err := elastic.NewClient(
 			elastic.SetHttpClient(&http.Client{
 				Timeout: timeout,

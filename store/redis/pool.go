@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	"github.com/unchartedsoftware/plog"
 )
 
 const (
@@ -24,7 +23,6 @@ func getConnection(host string, port string) redis.Conn {
 	mutex.Lock()
 	pool, ok := pools[endpoint]
 	if !ok {
-		log.Infof("Connecting to redis `tcp://%s`", endpoint)
 		pool = newPool(endpoint)
 		pools[endpoint] = pool
 	}

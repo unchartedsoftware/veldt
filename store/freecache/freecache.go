@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/coocood/freecache"
-	"github.com/unchartedsoftware/plog"
 
 	"github.com/unchartedsoftware/veldt"
 )
@@ -25,7 +24,6 @@ func getCache(byteSize int) *freecache.Cache {
 	mutex.Lock()
 	cache, ok := caches[byteSize]
 	if !ok {
-		log.Infof("Creating freecache instance of size `%d` bytes", byteSize)
 		cache = freecache.NewCache(byteSize)
 		caches[byteSize] = cache
 	}
