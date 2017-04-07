@@ -9,8 +9,8 @@ type Meta struct {
 	rmqConfig *Configuration // The configuration defining how we connect to the RabbitMQ server
 }
 
-// NewSaltMeta instantiates and returns a pointer to a new generator.
-func NewSaltMeta(rmqConfig *Configuration) veldt.MetaCtor {
+// NewMeta instantiates and returns a pointer to a new generator.
+func NewMeta(rmqConfig *Configuration) veldt.MetaCtor {
 	return func() (veldt.Meta, error) {
 		return &Meta{rmqConfig}, nil
 	}

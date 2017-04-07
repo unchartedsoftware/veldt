@@ -43,9 +43,41 @@ func setErrorLogger (log veldt.Logger) {
 	errorLog = log
 }
 
+func getLogger (level int) veldt.Logger {
+	if veldt.Error == level {
+		if nil == errorLog {
+			if nil == warnLog {
+				if nil == infoLog {
+					return debugLog
+				}
+				return infoLog
+			}
+			return warnLog
+		}
+		return errorLog
+	} else if veldt.Warn == level {
+		if nil == warnLog {
+			if nil == infoLog {
+				return debugLog
+			}
+			return infoLog
+		}
+		return warnLog
+	} else if veldt.Info == level {
+		if nil == infoLog {
+			return debugLog
+		}
+		return infoLog
+	} else if veldt.Debug == level {
+		return debugLog
+	}
+	return nil
+}
+
 // Errorf logs to the error log
 func Errorf(format string, args ...interface{}) {
-	if nil != errorLog {
+	logger := getLogger(veldt.Error)
+	if nil != logger {
 		errorLog.Errorf(preLog + format, args...)
 	} else {
 		veldt.Errorf(preLog + format, args...)
@@ -54,7 +86,8 @@ func Errorf(format string, args ...interface{}) {
 
 // Warnf logs to the warn log
 func Warnf(format string, args ...interface{}) {
-	if nil != warnLog {
+	logger := getLogger(veldt.Warn)
+	if nil != logger {
 		warnLog.Warnf(preLog + format, args...)
 	} else {
 		veldt.Warnf(preLog + format, args...)
@@ -63,7 +96,8 @@ func Warnf(format string, args ...interface{}) {
 
 // Infof logs to the info log
 func Infof(format string, args ...interface{}) {
-	if nil != infoLog {
+	logger := getLogger(veldt.Info)
+	if nil != logger {
 		infoLog.Infof(preLog + format, args...)
 	} else {
 		veldt.Infof(preLog + format, args...)
@@ -72,7 +106,8 @@ func Infof(format string, args ...interface{}) {
 
 // Debugf logs to the debug log
 func Debugf(format string, args ...interface{}) {
-	if nil != debugLog {
+	logger := getLogger(veldt.Debug)
+	if nil != logger {
 		debugLog.Debugf(preLog + format, args...)
 	} else {
 		veldt.Debugf(preLog + format, args...)

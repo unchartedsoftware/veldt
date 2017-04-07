@@ -1,5 +1,16 @@
 package veldt
 
+const (
+	// Error indicates error-level logging
+	Error int = iota
+	// Warn indicates warn-level logging
+	Warn
+	// Info indicates info-level logging
+	Info
+	// Debug indicated debug-level logging
+	Debug
+)
+
 var (
 	debugLog Logger
 	infoLog  Logger
@@ -14,6 +25,7 @@ type Logger interface {
 	Warnf(format string, v ...interface{})
 	Errorf(format string, v ...interface{})
 }
+
 
 // SetDebugLogger sets the debug level logger.
 func SetDebugLogger(log Logger) {
@@ -35,30 +47,65 @@ func SetErrorLogger(log Logger) {
 	errorLog = log
 }
 
+func getLogger (level int) Logger {
+	if Error == level {
+		if nil == errorLog {
+			if nil == warnLog {
+				if nil == infoLog {
+					return debugLog
+				}
+				return infoLog
+			}
+			return warnLog
+		}
+		return errorLog
+	} else if Warn == level {
+		if nil == warnLog {
+			if nil == infoLog {
+				return debugLog
+			}
+			return infoLog
+		}
+		return warnLog
+	} else if Info == level {
+		if nil == infoLog {
+			return debugLog
+		}
+		return infoLog
+	} else if Debug == level {
+		return debugLog
+	}
+	return nil
+}
+
 // Debugf logs to the debug log.
 func Debugf(format string, args ...interface{}) {
-	if debugLog != nil {
-		debugLog.Debugf(format, args...)
+	logger := getLogger(Debug)
+	if nil != logger {
+		logger.Debugf(format, args...)
 	}
 }
 
 // Infof logs to the info log.
 func Infof(format string, args ...interface{}) {
-	if infoLog != nil {
-		infoLog.Infof(format, args...)
+	logger := getLogger(Info)
+	if nil != logger {
+		logger.Infof(format, args...)
 	}
 }
 
 // Warnf logs to the warn log.
 func Warnf(format string, args ...interface{}) {
-	if warnLog != nil {
-		warnLog.Warnf(format, args...)
+	logger := getLogger(Warn)
+	if nil != logger {
+		logger.Warnf(format, args...)
 	}
 }
 
 // Errorf logs to the err log.
 func Errorf(format string, args ...interface{}) {
-	if errorLog != nil {
-		errorLog.Errorf(format, args...)
+	logger := getLogger(Error)
+	if nil != logger {
+		logger.Errorf(format, args...)
 	}
 }
