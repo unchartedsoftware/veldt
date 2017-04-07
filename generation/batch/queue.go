@@ -74,31 +74,32 @@ func processFactoryRequests(batch int, factoryID string, factoryRequests []*tile
 		err := fmt.Errorf("unrecognized tile factory '%s'", factoryID)
 		Warnf(err.Error())
 		sendError(err, factoryRequests)
-	} else {
-		factory, err := ctor()
-		if nil != err {
-			err := fmt.Errorf("error constructing factory %s: %v", factoryID, err)
-			Warnf(err.Error())
-			sendError(err, factoryRequests)
-		} else {
-			Debugf("Factory obtained.")
-
-			// Take out our meta-request info, leaving just the simple request info
-			// for the factory
-			n := len(factoryRequests)
-			simpleRequests := make([]*TileRequest, n, n)
-			for i := 0; i < n; i++ {
-				Debugf("request: factory=%s, batch=%d, uri=%s, coords=%v",
-					factoryID, factoryRequests[i].batch,
-					factoryRequests[i].URI, factoryRequests[i].Coordinates)
-				simpleRequests[i] = &factoryRequests[i].TileRequest
-			}
-
-			// Call our factory, have it create tiles
-			Debugf("\tCalling factory %s to create tiles", factoryID)
-			factory.CreateTiles(simpleRequests)
-		}
+		return
 	}
+
+	factory, err := ctor()
+	if nil != err {
+		err := fmt.Errorf("error constructing factory %s: %v", factoryID, err)
+		Warnf(err.Error())
+		sendError(err, factoryRequests)
+		return
+	}
+
+	Debugf("Factory obtained.")
+	// Take out our meta-request info, leaving just the simple request info
+	// for the factory
+	n := len(factoryRequests)
+	simpleRequests := make([]*TileRequest, n, n)
+	for i := 0; i < n; i++ {
+		Debugf("request: factory=%s, batch=%d, uri=%s, coords=%v",
+			factoryID, factoryRequests[i].batch,
+			factoryRequests[i].URI, factoryRequests[i].Coordinates)
+		simpleRequests[i] = &factoryRequests[i].TileRequest
+	}
+	
+	// Call our factory, have it create tiles
+	Debugf("\tCalling factory %s to create tiles", factoryID)
+	factory.CreateTiles(simpleRequests)
 }
 
 func sendError(err error, requestInfos []*tileRequestInfo) {
