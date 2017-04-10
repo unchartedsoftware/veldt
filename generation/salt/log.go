@@ -80,7 +80,7 @@ func getLogger(level int) veldt.Logger {
 func Errorf(format string, args ...interface{}) {
 	logger := getLogger(veldt.Error)
 	if nil != logger {
-		errorLog.Errorf(preLog+format, args...)
+		logger.Errorf(preLog+format, args...)
 	} else {
 		veldt.Errorf(preLog+format, args...)
 	}
@@ -90,7 +90,7 @@ func Errorf(format string, args ...interface{}) {
 func Warnf(format string, args ...interface{}) {
 	logger := getLogger(veldt.Warn)
 	if nil != logger {
-		warnLog.Warnf(preLog+format, args...)
+		logger.Warnf(preLog+format, args...)
 	} else {
 		veldt.Warnf(preLog+format, args...)
 	}
@@ -100,7 +100,7 @@ func Warnf(format string, args ...interface{}) {
 func Infof(format string, args ...interface{}) {
 	logger := getLogger(veldt.Info)
 	if nil != logger {
-		infoLog.Infof(preLog+format, args...)
+		logger.Infof(preLog+format, args...)
 	} else {
 		veldt.Infof(preLog+format, args...)
 	}
@@ -110,7 +110,7 @@ func Infof(format string, args ...interface{}) {
 func Debugf(format string, args ...interface{}) {
 	logger := getLogger(veldt.Debug)
 	if nil != logger {
-		debugLog.Debugf(preLog+format, args...)
+		logger.Debugf(preLog+format, args...)
 	} else {
 		veldt.Debugf(preLog+format, args...)
 	}
