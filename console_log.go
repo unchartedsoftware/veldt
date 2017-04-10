@@ -27,6 +27,7 @@ func logf(format string, args ...interface{}) {
 	mu.Lock()
 	defer mu.Unlock()
 	writer := bufio.NewWriter(output)
+	defer writer.Flush()
 	msg := fmt.Sprintf(format, args...)
 	writer.Write(formatMessage(msg))
 }
