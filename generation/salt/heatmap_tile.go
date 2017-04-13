@@ -74,7 +74,7 @@ func (h *HeatmapTile) parseHeatmapParams(params map[string]interface{}) error {
 // construct the currently requested tile
 func (h *HeatmapTile) getTileConfig() (map[string]interface{}, error) {
 	err := h.parseHeatmapParams(*h.parameters)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 
@@ -99,7 +99,7 @@ func (h *HeatmapTile) getTileConfig() (map[string]interface{}, error) {
 
 func (h *HeatmapTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
 	err := h.parseHeatmapParams(*h.parameters)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 
@@ -122,7 +122,7 @@ func (h *HeatmapTile) convertTile(coord *binning.TileCoord, input []byte) ([]byt
 
 func (h *HeatmapTile) buildDefaultTile() ([]byte, error) {
 	err := h.parseHeatmapParams(*h.parameters)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 

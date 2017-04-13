@@ -88,11 +88,11 @@ func setupConnection(rmqConfig *Config, datasetConfigs ...[]byte) {
 	} else {
 		for _, datasetConfig := range datasetConfigs {
 			name, err := getDatasetName(datasetConfig)
-			if nil != err {
+			if err != nil {
 				Errorf("Error registering dataset: can't find name of dataset %v", string(datasetConfig))
 			} else {
 				_, err = connection.Dataset(datasetConfig)
-				if nil != err {
+				if err != nil {
 					Errorf("Error registering dataset %v: %v", name, err)
 				} else {
 					Infof("Registering dataset %s", name)
@@ -149,7 +149,7 @@ func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
 	consolidatedRequests := make([]*jointRequest, 0)
 	for _, tileRequest := range requests {
 		request, err := t.extractJointRequest(tileRequest)
-		if nil != err {
+		if err != nil {
 			tileRequest.ResultChannel <- batch.TileResponse{nil, err}
 		} else {
 			requestMerged := false
@@ -190,14 +190,14 @@ func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
 
 		// Marshal the consolidated request into a string
 		requestBytes, err := json.Marshal(fullConfig)
-		if nil != err {
+		if err != nil {
 			for _, channel := range responseChannels {
 				channel <- batch.TileResponse{nil, err}
 			}
 		} else {
 			// Send the marshalled request to Salt, and await a response
 			result, err := connection.QueryTiles(requestBytes)
-			if nil != err {
+			if err != nil {
 				for _, channel := range responseChannels {
 					channel <- batch.TileResponse{nil, err}
 				}
@@ -264,7 +264,7 @@ func (j *jointRequest) merge(from *jointRequest) {
 func (t *TileData) extractJointRequest(request *batch.TileRequest) (*jointRequest, error) {
 	t.Parse(request.Params)
 	tileConfig, err := t.buildConfig()
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 
@@ -277,7 +277,7 @@ func (t *TileData) extractJointRequest(request *batch.TileRequest) (*jointReques
 
 		var err error
 		queryConfig, err = saltQuery.Get()
-		if nil != err {
+		if err != nil {
 			return nil, err
 		}
 	}

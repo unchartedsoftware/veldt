@@ -1,4 +1,4 @@
-package salt
+package s3
 
 import (
 	"github.com/unchartedsoftware/veldt"
@@ -10,7 +10,7 @@ var (
 )
 
 const (
-	prefix = "SALT: "
+	prefix = "S3: "
 )
 
 // Debugf logs to the debug log.

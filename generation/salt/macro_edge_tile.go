@@ -63,11 +63,11 @@ func (m *MacroEdgeTile) Parse(params map[string]interface{}) error {
 // populates the tile attributes.
 func (m *MacroEdgeTile) parseEdgeParams(params map[string]interface{}) error {
 	err := m.Edge.Parse(params)
-	if nil != err {
+	if err != nil {
 		return err
 	}
 	err = m.TopHits.Parse(params)
-	if nil != err {
+	if err != nil {
 		return err
 	}
 	// parse includes
@@ -84,7 +84,7 @@ func (m *MacroEdgeTile) parseEdgeParams(params map[string]interface{}) error {
 // construct the currently requested tile
 func (m *MacroEdgeTile) getTileConfig() (map[string]interface{}, error) {
 	err := m.parseEdgeParams(*m.parameters)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 
@@ -102,7 +102,7 @@ func (m *MacroEdgeTile) getTileConfig() (map[string]interface{}, error) {
 
 func (m *MacroEdgeTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
 	err := m.parseEdgeParams(*m.parameters)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 

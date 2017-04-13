@@ -62,13 +62,13 @@ func (m *MicroTile) Parse(params map[string]interface{}) error {
 // parseMicroParams actually parses the provided JSON object, and
 // populates the tile attributes.
 func (m *MicroTile) parseMicroParams(params map[string]interface{}) error {
-	if err := m.Bivariate.Parse(params); nil != err {
+	if err := m.Bivariate.Parse(params); err != nil {
 		return err
 	}
-	if err := m.TopHits.Parse(params); nil != err {
+	if err := m.TopHits.Parse(params); err != nil {
 		return err
 	}
-	if err := m.Micro.Parse(params); nil != err {
+	if err := m.Micro.Parse(params); err != nil {
 		return err
 	}
 	// parse includes
@@ -83,7 +83,7 @@ func (m *MicroTile) parseMicroParams(params map[string]interface{}) error {
 // construct the currently requested tile
 func (m *MicroTile) getTileConfig() (map[string]interface{}, error) {
 	err := m.parseMicroParams(*m.parameters)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 
@@ -115,7 +115,7 @@ func (m *MicroTile) getTileConfig() (map[string]interface{}, error) {
 func (m *MicroTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
 	var rawHits []map[string]interface{}
 	err := json.Unmarshal(input, &rawHits)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 
@@ -125,18 +125,18 @@ func (m *MicroTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte,
 
 	for i, hit := range rawHits {
 		x, err := getFloat32Property("x", hit)
-		if nil != err {
+		if err != nil {
 			return nil, err
 		}
 		y, err := getFloat32Property("y", hit)
-		if nil != err {
+		if err != nil {
 			return nil, err
 		}
 		points[2*i+0] = x
 		points[2*i+1] = 256 - y
 
 		hitMapRaw, err := getProperty("values", hit)
-		if nil != err {
+		if err != nil {
 			return nil, err
 		}
 		hitMap, ok := hitMapRaw.(map[string]interface{})

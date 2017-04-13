@@ -176,7 +176,7 @@ func ReadConfig(filename string) (*Config, error) {
 	for _, queueKey := range queueKeys {
 		queueConfig := getSubConfig("rabbitmq.queues."+queueKey, config).OrElse(&parse.Config{}).(*parse.Config)
 		queueInterface, err := getConfigString("name", queueConfig).Value()
-		if nil != err {
+		if err != nil {
 			return nil, err
 		}
 		queue := stripTerminalQuotes(queueInterface.(string))

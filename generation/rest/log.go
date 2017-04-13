@@ -1,4 +1,4 @@
-package salt
+package rest
 
 import (
 	"github.com/unchartedsoftware/veldt"
@@ -10,7 +10,7 @@ var (
 )
 
 const (
-	prefix = "SALT: "
+	prefix = "REST: "
 )
 
 // Debugf logs to the debug log.

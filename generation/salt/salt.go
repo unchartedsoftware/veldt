@@ -164,8 +164,8 @@ func (rmq *RabbitMQConnection) sendServerMessage(messageType string, message []b
 	responseChannel := make(chan amqp.Delivery)
 	responseChannels[msgID] = responseChannel
 
-	Debugf("Publishing message \"%s%s%s\"\n\t(query queue: %s(=%s))\n\t(response queue: %s(=%s))\n\t(type: %s)",
-		preMsg, string(message), postMsg, rmq.serverQueue, queryQ.Name, "response", responseQ.Name, messageType)
+	Debugf("Publishing message \"%s\"\n\t(query queue: %s(=%s))\n\t(response queue: %s(=%s))\n\t(type: %s)",
+		string(message), rmq.serverQueue, queryQ.Name, "response", responseQ.Name, messageType)
 
 	rmq.channel.Publish("", queryQ.Name, false, false,
 		amqp.Publishing{
@@ -175,7 +175,7 @@ func (rmq *RabbitMQConnection) sendServerMessage(messageType string, message []b
 			MessageId: msgID})
 
 	response := <-responseChannel
-	Debugf("Response received: \"%s%s%s\"", preMsg, string(response.Body), postMsg)
+	Debugf("Response received: \"%s\"", string(response.Body))
 	if "error" == response.Type {
 		return nil, fmt.Errorf(string(response.Body))
 	}

@@ -78,7 +78,7 @@ func processFactoryRequests(batch int, factoryID string, factoryRequests []*tile
 	}
 
 	factory, err := ctor()
-	if nil != err {
+	if err != nil {
 		err := fmt.Errorf("error constructing factory %s: %v", factoryID, err)
 		Warnf(err.Error())
 		sendError(err, factoryRequests)

@@ -46,6 +46,8 @@ package main
 import (
 	"encoding/json"
 
+	"github.com/unchartedsoftware/plog"
+
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/generation/elastic"
 	"github.com/unchartedsoftware/veldt/store/redis"
@@ -61,6 +63,11 @@ func JSON(str string) map[string]interface{} {
 }
 
 func main() {
+
+	// Set logger for internal warnings and errors
+	logger := log.NewLogger()
+	veldt.SetLogger(veldt.Warn, logger)
+
 	// Create pipeline
 	pipeline := veldt.NewPipeline()
 

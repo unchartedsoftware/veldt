@@ -75,7 +75,7 @@ func (c *CountTile) parseCountParams(params map[string]interface{}) error {
 // construct the currently requested tile
 func (c *CountTile) getTileConfig() (map[string]interface{}, error) {
 	err := c.parseCountParams(*c.parameters)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 

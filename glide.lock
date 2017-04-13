@@ -1,5 +1,5 @@
 hash: 5d00560ec908022e7ada4699c38685c7305ec3dc027f6b726478ff946e89abd6
-updated: 2017-04-06T20:49:13.057372058-04:00
+updated: 2017-04-13T14:50:24.014396278-04:00
 imports:
 - name: github.com/aws/aws-sdk-go
   version: 7111a70b8bea15081468f11bc1450ac2fec2406b
@@ -49,12 +49,8 @@ imports:
   version: c8ba452ab033d7f2642481c62b4b67c3229bbfbb
   subpackages:
   - parse
-- name: github.com/mattn/go-colorable
-  version: 5411d3eea5978e6cdc258b30de592b60df6aba96
 - name: github.com/mattn/go-isatty
   version: 281032e84ae07510239465db46bf442aa44b953a
-- name: github.com/mgutz/ansi
-  version: 9520e82c474b0a04dd04f8a40959027271bab992
 - name: github.com/onsi/gomega
   version: 334b8f472b3af5d541c5642701c1e29e2126f486
   subpackages:
@@ -73,8 +69,6 @@ imports:
   version: 0d12bf811670bf6a1a63828dfbd003eded177fce
 - name: github.com/streadway/amqp
   version: afe8eee29a74d213b1f3fb2586058157c397da60
-- name: github.com/unchartedsoftware/plog
-  version: e7b290aff4666be1962aedc5dabf494c2e7818c7
 - name: golang.org/x/net
   version: b4690f45fa1cafc47b1c280c2e75116efe40cc13
   subpackages:
