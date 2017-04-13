@@ -2,7 +2,7 @@
 Package salt manages provision of tiles to Veldt using Salt/Spark as a data source.
 
 Because all requests have to be transmitted to the salt/spark data server, where they
-will have to be parsed independenly anyway, there is little use for parsing and
+will have to be parsed independently anyway, there is little use for parsing and
 validation on the GO side for salt-backed tile querries.
 
 The go side of the salt tile system therefore just forwards messages over to salt as

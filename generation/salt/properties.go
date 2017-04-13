@@ -83,7 +83,7 @@ func getProperty(key string, props map[string]interface{}) (interface{}, error) 
 	return getProperty(descendentKey, subConfig)
 }
 
-// getFloat32Property gets the value of the specified multi-leveld) key from the given property map, as a float32 value
+// getFloat32Property gets the value of the specified (multi-leveled) key from the given property map, as a float32 value
 func getFloat32Property(key string, props map[string]interface{}) (float32, error) {
 	rawValue, err := getProperty(key, props)
 	if err != nil {

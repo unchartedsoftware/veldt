@@ -71,6 +71,9 @@ func NewConnection(config *Config) (*RabbitMQConnection, error) {
 			return nil, err
 		}
 		responses, err := channel.Consume(responseQ.Name, "", true, false, false, false, nil)
+		if err != nil {
+			return nil, err
+		}
 		go func() {
 			for response := range responses {
 				msgID := response.MessageId
@@ -109,7 +112,7 @@ func (rmq *RabbitMQConnection) Declare(qName string, qc *QueueConfig) error {
 }
 
 // GetQueue gets a predefined channel associated with this connnection by
-// cannonical name.  If there is no current channel with the given cannonical
+// canonical name.  If there is no current channel with the given canonical
 // name, a temporary channel is created.
 func (rmq *RabbitMQConnection) GetQueue(cannonicalName string) (amqp.Queue, error) {
 	var err error
