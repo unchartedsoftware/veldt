@@ -17,7 +17,7 @@ lint:
 	@go list ./... | grep -v /vendor/ | xargs -L1 golint
 
 test:
-	@ginkgo -r -cover
+	@ginkgo -r -cover -covermode=count
 	@rm -rf "coverage" && mkdir "coverage"
 	@find . -name "*.coverprofile" | xargs gocovmerge > "coverage/coverage.out"
 	@find . -name "*.coverprofile" -type f -delete
