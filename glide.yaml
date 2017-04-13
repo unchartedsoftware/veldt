@@ -12,6 +12,8 @@ import:
 - package: gopkg.in/olivere/elastic.v3
 - package: github.com/aws/aws-sdk-go
   version: v1.8.3
+- package: github.com/streadway/amqp
+- package: github.com/liyinhgqw/typesafe-config
 testImport:
 - package: github.com/onsi/ginkgo
 - package: github.com/onsi/gomega
