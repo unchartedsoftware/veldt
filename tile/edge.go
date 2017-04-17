@@ -18,6 +18,8 @@ type Edge struct {
 	// dst
 	DstXField string
 	DstYField string
+	// weight
+	WeightField string
 	// Bounds
 	tileBounds   *geometry.Bounds
 	globalBounds *geometry.Bounds
@@ -43,11 +45,17 @@ func (e *Edge) Parse(params map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("`dstYField` parameter missing from tile")
 	}
+	// get weight field
+	weightField, ok := json.GetString(params, "weightField")
+	if !ok {
+		return fmt.Errorf("`weightField` parameter missing from tile")
+	}
 	// set attributes
 	e.SrcXField = srcXField
 	e.SrcYField = srcYField
 	e.DstXField = dstXField
 	e.DstYField = dstYField
+	e.WeightField = weightField
 	// clear tile bounds
 	e.tileBounds = nil
 	// get the global bounds
@@ -95,6 +103,12 @@ func (e *Edge) GetSrcXY(coord *binning.TileCoord, hit map[string]interface{}) (f
 // [0 : 256) for the tile.
 func (e *Edge) GetDstXY(coord *binning.TileCoord, hit map[string]interface{}) (float64, float64, bool) {
 	return e.getXY(coord, hit, e.DstXField, e.DstYField)
+}
+
+// GetWeight given a data hit, returns the corresponding edge weight.
+func (e *Edge) GetWeight(hit map[string]interface{}) (float64, bool) {
+	weightPath := strings.Split(e.WeightField, ".")
+	return getFloat64(hit, weightPath...)
 }
 
 // GetSrcXY given a data hit, returns the corresponding coord within the range of

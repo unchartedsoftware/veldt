@@ -1,6 +1,8 @@
 package elastic
 
 import (
+	"fmt"
+
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/tile"
@@ -92,7 +94,7 @@ func (m *MicroTile) Create(uri string, coord *binning.TileCoord, query veldt.Que
 		// get hit x/y in tile coords
 		x, y, ok := m.Bivariate.GetXY(coord, hit)
 		if !ok {
-			continue
+			return nil, fmt.Errorf("could not parse position from hit: %v", hit)
 		}
 		// add to point array
 		points[i*2] = float32(x)

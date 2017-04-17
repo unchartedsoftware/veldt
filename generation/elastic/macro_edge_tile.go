@@ -1,6 +1,8 @@
 package elastic
 
 import (
+	"fmt"
+
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/tile"
@@ -40,7 +42,8 @@ func (e *MacroEdgeTile) Parse(params map[string]interface{}) error {
 		e.Edge.SrcXField,
 		e.Edge.SrcYField,
 		e.Edge.DstXField,
-		e.Edge.DstYField)
+		e.Edge.DstYField,
+		e.Edge.WeightField)
 	return e.MacroEdge.Parse(params)
 }
 
@@ -86,22 +89,28 @@ func (e *MacroEdgeTile) Create(uri string, coord *binning.TileCoord, query veldt
 	}
 
 	// convert to point array
-	points := make([]float32, len(hits)*4)
+	points := make([]float32, len(hits)*6)
 	// get hit x/y in tile coords
 	for i, hit := range hits {
 		srcX, srcY, ok := e.Edge.GetSrcXY(coord, hit)
 		if !ok {
-			continue
+			return nil, fmt.Errorf("could not parse edge source position from hit: %v", hit)
 		}
 		dstX, dstY, ok := e.Edge.GetDstXY(coord, hit)
 		if !ok {
-			continue
+			return nil, fmt.Errorf("could not parse edge destination position from hit: %v", hit)
+		}
+		weight, ok := e.Edge.GetWeight(hit)
+		if !ok {
+			return nil, fmt.Errorf("could not parse edge weight from hit: %v", hit)
 		}
 		// add to point array
-		points[i*4] = float32(srcX)
-		points[i*4+1] = float32(srcY)
-		points[i*4+2] = float32(dstX)
-		points[i*4+3] = float32(dstY)
+		points[i*6] = float32(srcX)
+		points[i*6+1] = float32(srcY)
+		points[i*6+2] = float32(weight)
+		points[i*6+3] = float32(dstX)
+		points[i*6+4] = float32(dstY)
+		points[i*6+5] = float32(weight)
 	}
 
 	// encode and return results

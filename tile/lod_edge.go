@@ -5,6 +5,10 @@ import (
 	"sort"
 )
 
+const (
+	edgeStride = 6
+)
+
 // EdgeLOD takes the input edge array and sorts it by the morton code of the
 // first point in the edge. It then generates an offset array which match the
 // byte offsets into the edge buffer for each LOD. This is used at runtime to
@@ -14,9 +18,9 @@ func EdgeLOD(data []float32, lod int) ([]float32, []int) {
 	edges := sortEdges(data)
 
 	// generate codes for the sorted edges
-	codes := make([]int, len(edges)/4)
-	for i := 0; i < len(edges); i += 4 {
-		codes[i/4] = Morton(edges[i], edges[i+1])
+	codes := make([]int, len(edges)/edgeStride)
+	for i := 0; i < len(edges); i += edgeStride {
+		codes[i/edgeStride] = Morton(edges[i], edges[i+1])
 	}
 
 	// calc number of partitions and partition stride
@@ -33,13 +37,13 @@ func EdgeLOD(data []float32, lod int) ([]float32, []int) {
 	for i := len(codes) - 1; i >= 0; i-- {
 		code := codes[i]
 		j := code / paritionStride
-		offsets[j] = i * (4 * 4)
+		offsets[j] = i * (bytesPerComponent * edgeStride)
 	}
 	// fill empty offsets up with next entries to ensure easy LOD
 	for i := len(offsets) - 1; i >= 0; i-- {
 		if offsets[i] == -1 {
 			if i == len(offsets)-1 {
-				offsets[i] = len(edges) * 4
+				offsets[i] = len(edges) * bytesPerComponent
 			} else {
 				offsets[i] = offsets[i+1]
 			}
@@ -57,28 +61,32 @@ func EncodeEdgeLOD(data []float32, lod int) []byte {
 }
 
 func sortEdges(data []float32) []float32 {
-	edges := make(edgeArray, len(data)/4)
-	for i := 0; i < len(data); i += 4 {
-		ax := data[i]
-		ay := data[i+1]
-		bx := data[i+2]
-		by := data[i+3]
-		edges[i/4] = [4]float32{ax, ay, bx, by}
+	edges := make(edgeArray, len(data)/edgeStride)
+	for i := 0; i < len(data); i += edgeStride {
+		ax := data[i]   // src x
+		ay := data[i+1] // src y
+		aw := data[i+2] // src weight
+		bx := data[i+3] // dst x
+		by := data[i+4] // dst y
+		bw := data[i+5] // dst weight
+		edges[i/edgeStride] = [edgeStride]float32{ax, ay, aw, bx, by, bw}
 	}
 	// sort the edges
 	sort.Sort(edges)
 	// convert to flat array
-	res := make([]float32, len(edges)*4)
+	res := make([]float32, len(edges)*edgeStride)
 	for i, edge := range edges {
-		res[i*4] = edge[0]
-		res[i*4+1] = edge[1]
-		res[i*4+2] = edge[2]
-		res[i*4+3] = edge[3]
+		res[i*edgeStride] = edge[0]   // src x
+		res[i*edgeStride+1] = edge[1] // src y
+		res[i*edgeStride+2] = edge[2] // src weight
+		res[i*edgeStride+3] = edge[3] // dst x
+		res[i*edgeStride+4] = edge[4] // dst y
+		res[i*edgeStride+5] = edge[5] // dst weight
 	}
 	return res
 }
 
-type edgeArray [][4]float32
+type edgeArray [][edgeStride]float32 // srcX, srcY, srcWeight, dstX, dstY, dstWeight
 
 func (e edgeArray) Len() int {
 	return len(e)

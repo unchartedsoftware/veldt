@@ -5,6 +5,11 @@ import (
 	"sort"
 )
 
+const (
+	bytesPerComponent = 4
+	pointStride       = 2
+)
+
 // LOD takes the input point array and sorts it by morton code. It then
 // generates an offset array which match the byte offsets into the point buffer
 // for each LOD. This is used at runtime to only render quadrants of the
@@ -14,8 +19,8 @@ func LOD(data []float32, lod int) ([]float32, []int) {
 	points := sortPoints(data)
 
 	// generate codes for the sorted points
-	codes := make([]int, len(points)/2)
-	for i := 0; i < len(points); i += 2 {
+	codes := make([]int, len(points)/pointStride)
+	for i := 0; i < len(points); i += pointStride {
 		codes[i/2] = Morton(points[i], points[i+1])
 	}
 
@@ -33,13 +38,13 @@ func LOD(data []float32, lod int) ([]float32, []int) {
 	for i := len(codes) - 1; i >= 0; i-- {
 		code := codes[i]
 		j := code / paritionStride
-		offsets[j] = i * (4 * 2)
+		offsets[j] = i * (bytesPerComponent * pointStride)
 	}
 	// fill empty offsets up with next entries to ensure easy LOD
 	for i := len(offsets) - 1; i >= 0; i-- {
 		if offsets[i] == -1 {
 			if i == len(offsets)-1 {
-				offsets[i] = len(points) * 4
+				offsets[i] = len(points) * bytesPerComponent
 			} else {
 				offsets[i] = offsets[i+1]
 			}
@@ -57,24 +62,24 @@ func EncodeLOD(data []float32, lod int) []byte {
 }
 
 func sortPoints(data []float32) []float32 {
-	points := make(pointArray, len(data)/2)
-	for i := 0; i < len(data); i += 2 {
+	points := make(pointArray, len(data)/pointStride)
+	for i := 0; i < len(data); i += pointStride {
 		x := data[i]
 		y := data[i+1]
-		points[i/2] = [2]float32{x, y}
+		points[i/pointStride] = [pointStride]float32{x, y}
 	}
 	// sort the points
 	sort.Sort(points)
 	// convert to flat array
-	res := make([]float32, len(points)*2)
+	res := make([]float32, len(points)*pointStride)
 	for i, point := range points {
-		res[i*2] = point[0]
-		res[i*2+1] = point[1]
+		res[i*pointStride] = point[0]
+		res[i*pointStride+1] = point[1]
 	}
 	return res
 }
 
-type pointArray [][2]float32
+type pointArray [][pointStride]float32 // x, y
 
 func (p pointArray) Len() int {
 	return len(p)

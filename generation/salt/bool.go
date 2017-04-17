@@ -2,6 +2,7 @@ package salt
 
 import (
 	"fmt"
+
 	"github.com/unchartedsoftware/veldt"
 )
 

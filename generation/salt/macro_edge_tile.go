@@ -76,7 +76,8 @@ func (m *MacroEdgeTile) parseEdgeParams(params map[string]interface{}) error {
 		m.Edge.SrcXField,
 		m.Edge.SrcYField,
 		m.Edge.DstXField,
-		m.Edge.DstYField)
+		m.Edge.DstYField,
+		m.Edge.WeightField)
 	return m.MacroEdge.Parse(params)
 }
 
@@ -94,6 +95,7 @@ func (m *MacroEdgeTile) getTileConfig() (map[string]interface{}, error) {
 	setProperty("srcYField", m.SrcYField, result)
 	setProperty("dstXField", m.DstXField, result)
 	setProperty("dstYField", m.DstYField, result)
+	setProperty("weightfield", m.WeightField, result)
 	setProperty("hitsCount", m.HitsCount, result)
 	setProperty("lengthSorted", true, result)
 
@@ -108,7 +110,7 @@ func (m *MacroEdgeTile) convertTile(coord *binning.TileCoord, input []byte) ([]b
 
 	// Salt returns us absolute bin coordinates; we need to convert them to
 	// values relative to the current tile
-	tileSize := uint32(256)
+	tileSize := uint32(binning.MaxTileResolution)
 	offsetX := float32(coord.X * tileSize)
 	offsetY := float32(coord.Y * tileSize)
 

@@ -114,15 +114,21 @@ func (t *TileData) Parse(params map[string]interface{}) error {
 // request with a single tile in it, and calling CreateTiles.
 func (t *TileData) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
 	responseChan := make(chan batch.TileResponse, 1)
-	request := &batch.TileRequest{*t.parameters, uri, coord, query, responseChan}
+	request := &batch.TileRequest{
+		Params:        *t.parameters,
+		URI:           uri,
+		Coord:         coord,
+		Query:         query,
+		ResultChannel: responseChan,
+	}
 	t.CreateTiles([]*batch.TileRequest{request})
 	response := <-responseChan
-	if nil != response.Tile {
+	if response.Tile != nil {
 		Debugf("Create: Got response tile of length %d", len(response.Tile))
 	} else {
 		Debugf("Create: Got nil response tile")
 	}
-	if nil != response.Err {
+	if response.Err != nil {
 		Debugf("Create: Got non-nil error")
 	} else {
 		Debugf("Create: no error")
@@ -137,7 +143,10 @@ func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
 	connection, err := NewConnection(t.rmqConfig)
 	if err != nil {
 		for _, request := range requests {
-			request.ResultChannel <- batch.TileResponse{nil, err}
+			request.ResultChannel <- batch.TileResponse{
+				Tile: nil,
+				Err:  err,
+			}
 		}
 		return
 	}
@@ -150,7 +159,10 @@ func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
 	for _, tileRequest := range requests {
 		request, err := t.extractJointRequest(tileRequest)
 		if err != nil {
-			tileRequest.ResultChannel <- batch.TileResponse{nil, err}
+			tileRequest.ResultChannel <- batch.TileResponse{
+				Tile: nil,
+				Err:  err,
+			}
 		} else {
 			requestMerged := false
 			for _, currentRequest := range consolidatedRequests {
@@ -192,14 +204,20 @@ func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
 		requestBytes, err := json.Marshal(fullConfig)
 		if err != nil {
 			for _, channel := range responseChannels {
-				channel <- batch.TileResponse{nil, err}
+				channel <- batch.TileResponse{
+					Tile: nil,
+					Err:  err,
+				}
 			}
 		} else {
 			// Send the marshalled request to Salt, and await a response
 			result, err := connection.QueryTiles(requestBytes)
 			if err != nil {
 				for _, channel := range responseChannels {
-					channel <- batch.TileResponse{nil, err}
+					channel <- batch.TileResponse{
+						Tile: nil,
+						Err:  err,
+					}
 				}
 			} else {
 				// Unpack the results
@@ -210,12 +228,18 @@ func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
 						Debugf("Found tile for key %s[%s] of length %d", key, t.tileType, len(tile.data))
 						converted, err := t.convert(tile.coord, tile.data)
 						Debugf("Converted tile for key %s[%s] had length %d", key, t.tileType, len(converted))
-						channel <- batch.TileResponse{converted, err}
+						channel <- batch.TileResponse{
+							Tile: converted,
+							Err:  err,
+						}
 					} else {
 						// No tile, but no error either
 						Debugf("No tile found for key %s", key)
 						defaultTile, err := t.buildDefault()
-						channel <- batch.TileResponse{defaultTile, err}
+						channel <- batch.TileResponse{
+							Tile: defaultTile,
+							Err:  err,
+						}
 					}
 				}
 			}
@@ -269,7 +293,7 @@ func (t *TileData) extractJointRequest(request *batch.TileRequest) (*jointReques
 	}
 
 	var queryConfig map[string]interface{}
-	if nil != request.Query {
+	if request.Query != nil {
 		saltQuery, ok := request.Query.(Query)
 		if !ok {
 			return nil, fmt.Errorf("query for salt tile was not a salt query")

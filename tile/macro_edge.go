@@ -19,7 +19,7 @@ func (e *MacroEdge) Parse(params map[string]interface{}) error {
 
 // ParseIncludes parses the included attributes to ensure they include the raw
 // data coordinates.
-func (e *MacroEdge) ParseIncludes(includes []string, srcXField string, srcYField string, dstXField string, dstYField string) []string {
+func (e *MacroEdge) ParseIncludes(includes []string, srcXField string, srcYField string, dstXField string, dstYField string, weightField string) []string {
 	// src includes
 	if !existsIn(srcXField, includes) {
 		includes = append(includes, srcXField)
@@ -33,6 +33,10 @@ func (e *MacroEdge) ParseIncludes(includes []string, srcXField string, srcYField
 	}
 	if !existsIn(dstYField, includes) {
 		includes = append(includes, dstYField)
+	}
+	// weight includes
+	if !existsIn(weightField, includes) {
+		includes = append(includes, weightField)
 	}
 	return includes
 }

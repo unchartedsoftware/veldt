@@ -25,6 +25,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0,
@@ -77,13 +78,27 @@ var _ = Describe("Edge", func() {
 			Expect(err).NotTo(BeNil())
 		})
 
-		It("should return an error if `left` property is not specified", func() {
+		It("should return an error if `weight` property is not specified", func() {
 			params := JSON(
 				`{
 					"srcXField": "sx",
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy"
+				}
+				`)
+			err := edge.Parse(params)
+			Expect(err).NotTo(BeNil())
+		})
+
+		It("should return an error if `left` property is not specified", func() {
+			params := JSON(
+				`{
+					"srcXField": "sx",
+					"srcYField": "sy",
+					"dstXField": "dx",
+					"dstYField": "dy",
+					"weightField": "weight"
 				}
 				`)
 			err := edge.Parse(params)
@@ -97,6 +112,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0
 				}
 				`)
@@ -111,6 +127,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0
 				}
@@ -126,6 +143,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0
@@ -144,6 +162,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0,
@@ -172,6 +191,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0,
@@ -203,6 +223,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": 1.0,
 					"right": -1.0,
 					"bottom": 1.0,
@@ -237,6 +258,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0,
@@ -268,6 +290,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": 1.0,
 					"right": -1.0,
 					"bottom": 1.0,
@@ -302,6 +325,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0,
@@ -337,6 +361,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0,
@@ -360,6 +385,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0,
@@ -383,6 +409,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0,
@@ -409,6 +436,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0,
@@ -444,6 +472,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0,
@@ -467,6 +496,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0,
@@ -490,6 +520,7 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
 					"bottom": -1.0,

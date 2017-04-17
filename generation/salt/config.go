@@ -2,10 +2,11 @@ package salt
 
 import (
 	"fmt"
-	"github.com/liyinhgqw/typesafe-config/parse"
 	"io/ioutil"
 	"sort"
 	"strings"
+
+	"github.com/liyinhgqw/typesafe-config/parse"
 )
 
 // This file describes the configuration information needed to connect to a
