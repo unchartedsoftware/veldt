@@ -11,6 +11,10 @@ import (
 	"github.com/unchartedsoftware/veldt/util/json"
 )
 
+const (
+	maxErrLength = 1024
+)
+
 // Tile represents a REST tile type.
 type Tile struct {
 	ext      string
@@ -62,6 +66,7 @@ func (t *Tile) Create(uri string, coord *binning.TileCoord, query veldt.Query) (
 		coord.X,
 		coord.Y,
 		t.ext)
+	fmt.Println(url)
 	// build http request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -82,7 +87,12 @@ func (t *Tile) Create(uri string, coord *binning.TileCoord, query veldt.Query) (
 		if err != nil {
 			return nil, err
 		}
-		return nil, fmt.Errorf(string(body))
+		// trim excessively long error responses
+		str := string(body)
+		if len(str) > maxErrLength {
+			str = str[0:maxErrLength] + "..."
+		}
+		return nil, fmt.Errorf(str)
 	}
 	return tile.Decode(t.ext, res.Body)
 }
