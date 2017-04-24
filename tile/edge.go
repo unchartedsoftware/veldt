@@ -18,6 +18,9 @@ type Edge struct {
 	// dst
 	DstXField string
 	DstYField string
+	// requirements
+	RequireSrc bool
+	RequireDst bool
 	// weight
 	WeightField string
 	// Bounds
@@ -45,6 +48,9 @@ func (e *Edge) Parse(params map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("`dstYField` parameter missing from tile")
 	}
+	requireSrc := json.GetBoolDefault(params, true, "requireSrc")
+	requireDst := json.GetBoolDefault(params, false, "requireDst")
+
 	// get weight field
 	weightField, ok := json.GetString(params, "weightField")
 	if !ok {
@@ -55,6 +61,8 @@ func (e *Edge) Parse(params map[string]interface{}) error {
 	e.SrcYField = srcYField
 	e.DstXField = dstXField
 	e.DstYField = dstYField
+	e.RequireSrc = requireSrc
+	e.RequireDst = requireDst
 	e.WeightField = weightField
 	// clear tile bounds
 	e.tileBounds = nil

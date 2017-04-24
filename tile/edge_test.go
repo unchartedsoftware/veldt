@@ -25,6 +25,8 @@ var _ = Describe("Edge", func() {
 					"srcYField": "sy",
 					"dstXField": "dx",
 					"dstYField": "dy",
+					"requireSrc": false,
+					"requireDst": true,
 					"weightField": "weight",
 					"left": -1.0,
 					"right": 1.0,
@@ -37,6 +39,8 @@ var _ = Describe("Edge", func() {
 			Expect(edge.SrcYField).To(Equal("sy"))
 			Expect(edge.DstXField).To(Equal("dx"))
 			Expect(edge.DstYField).To(Equal("dy"))
+			Expect(edge.RequireSrc).To(Equal(false))
+			Expect(edge.RequireDst).To(Equal(true))
 		})
 
 		It("should return an error if `srcXField` property is not specified", func() {
