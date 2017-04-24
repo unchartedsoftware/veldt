@@ -66,7 +66,6 @@ func (t *Tile) Create(uri string, coord *binning.TileCoord, query veldt.Query) (
 		coord.X,
 		coord.Y,
 		t.ext)
-	fmt.Println(url)
 	// build http request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
