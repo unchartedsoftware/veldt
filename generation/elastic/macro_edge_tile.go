@@ -77,7 +77,7 @@ func (e *MacroEdgeTile) Create(uri string, coord *binning.TileCoord, query veldt
 	search.Aggregation("top-hits", aggs["top-hits"])
 
 	// send query
-	res, err := search.Pretty(true).Do()
+	res, err := search.Do()
 	if err != nil {
 		return nil, err
 	}
