@@ -169,6 +169,11 @@ func (p *Pipeline) GetStore() (Store, error) {
 	return p.store()
 }
 
+// GetHash returns a unique hash for the state of the pipeline.
+func (p *Pipeline) GetHash() string {
+	return p.compression
+}
+
 // NewTileRequest instantiates and returns a tile request struct from the
 // provided JSON.
 func (p *Pipeline) NewTileRequest(args map[string]interface{}) (*TileRequest, error) {
@@ -203,7 +208,7 @@ func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, er
 
 // Generate generates data for the provided request.
 func (p *Pipeline) Generate(req Request) error {
-	// get tile hash
+	// get hash
 	hash := p.getHash(req)
 	// get store
 	store, err := p.GetStore()
@@ -211,7 +216,7 @@ func (p *Pipeline) Generate(req Request) error {
 		return err
 	}
 	defer store.Close()
-	// check if tile already exists in store
+	// check if already exists in store
 	exists, err := store.Exists(hash)
 	if err != nil {
 		return err
@@ -220,13 +225,13 @@ func (p *Pipeline) Generate(req Request) error {
 	if exists {
 		return nil
 	}
-	// otherwise, initiate the tiling job and return error
+	// otherwise, initiate the generation task and return error
 	return p.getPromise(hash, req)
 }
 
-// GetFromStore retrieves the generated data from the store.
-func (p *Pipeline) GetFromStore(req Request) ([]byte, error) {
-	// get tile hash
+// Get retrieves the generated data from the store.
+func (p *Pipeline) Get(req Request) ([]byte, error) {
+	// get hash
 	hash := p.getHash(req)
 	// get store
 	store, err := p.GetStore()
@@ -234,7 +239,39 @@ func (p *Pipeline) GetFromStore(req Request) ([]byte, error) {
 		return nil, err
 	}
 	defer store.Close()
-	// get tile data from store
+	// get data from store
+	res, err := store.Get(hash)
+	if err != nil {
+		return nil, err
+	}
+	return p.decompress(res)
+}
+
+// GenerateAndGet retrieves the generated data from the store, if it
+// does not exist, generate it before retrieval.
+func (p *Pipeline) GenerateAndGet(req Request) ([]byte, error) {
+	// get hash
+	hash := p.getHash(req)
+	// get store
+	store, err := p.GetStore()
+	if err != nil {
+		return nil, err
+	}
+	defer store.Close()
+	// check if already exists in store
+	exists, err := store.Exists(hash)
+	if err != nil {
+		return nil, err
+	}
+	// check if it exists
+	if !exists {
+		// if not, initiate the tiling job
+		err = p.getPromise(hash, req)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// get data from store
 	res, err := store.Get(hash)
 	if err != nil {
 		return nil, err
@@ -279,7 +316,7 @@ func (p *Pipeline) generateAndStore(hash string, req Request) error {
 }
 
 func (p *Pipeline) getHash(req Request) string {
-	return fmt.Sprintf("%s:%s", req.GetHash(), p.compression)
+	return fmt.Sprintf("%s:%s", req.GetHash(), p.GetHash())
 }
 
 func (p *Pipeline) compress(data []byte) ([]byte, error) {

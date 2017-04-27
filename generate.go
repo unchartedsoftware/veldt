@@ -13,9 +13,9 @@ func GenerateTile(id string, args map[string]interface{}) error {
 	return pipeline.Generate(req)
 }
 
-// GetTileFromStore retrieves a tile from the store for the provided pipeline ID
+// GetTile retrieves a tile from the store for the provided pipeline ID
 // and JSON request.
-func GetTileFromStore(id string, args map[string]interface{}) ([]byte, error) {
+func GetTile(id string, args map[string]interface{}) ([]byte, error) {
 	pipeline, err := GetPipeline(id)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,21 @@ func GetTileFromStore(id string, args map[string]interface{}) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pipeline.GetFromStore(req)
+	return pipeline.Get(req)
+}
+
+// GenerateAndGetTile generates and retrieves a tile from the store
+// for the provided pipeline ID and JSON request.
+func GenerateAndGetTile(id string, args map[string]interface{}) ([]byte, error) {
+	pipeline, err := GetPipeline(id)
+	if err != nil {
+		return nil, err
+	}
+	req, err := pipeline.NewTileRequest(args)
+	if err != nil {
+		return nil, err
+	}
+	return pipeline.GenerateAndGet(req)
 }
 
 // GenerateMeta generates meta data for the provided pipeline ID and JSON
@@ -41,9 +55,9 @@ func GenerateMeta(id string, args map[string]interface{}) error {
 	return pipeline.Generate(req)
 }
 
-// GetMetaFromStore retrieves metadata from the store for the provided pipeline
+// GetMeta retrieves metadata from the store for the provided pipeline
 // ID and JSON request.
-func GetMetaFromStore(id string, args map[string]interface{}) ([]byte, error) {
+func GetMeta(id string, args map[string]interface{}) ([]byte, error) {
 	pipeline, err := GetPipeline(id)
 	if err != nil {
 		return nil, err
@@ -52,5 +66,19 @@ func GetMetaFromStore(id string, args map[string]interface{}) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pipeline.GetFromStore(req)
+	return pipeline.Get(req)
+}
+
+// GenerateAndGetMeta generates and retrieves a metadata from the store
+// for the provided pipeline ID and JSON request.
+func GenerateAndGetMeta(id string, args map[string]interface{}) ([]byte, error) {
+	pipeline, err := GetPipeline(id)
+	if err != nil {
+		return nil, err
+	}
+	req, err := pipeline.NewMetaRequest(args)
+	if err != nil {
+		return nil, err
+	}
+	return pipeline.GenerateAndGet(req)
 }

@@ -35,44 +35,6 @@ func NewQuery() (*Query, error) {
 	}, nil
 }
 
-// GetHash returns the string hash of the query
-func (q *Query) GetHash() string {
-	numWheres := len(q.WhereClauses)
-	numGroups := len(q.GroupByClauses)
-	numFields := len(q.Fields)
-	numTables := len(q.Tables)
-	numOrders := len(q.OrderByClauses)
-	numArgs := len(q.QueryArgs)
-	hashes := make([]string, numWheres+numGroups+numFields+numTables+numOrders+numArgs)
-	for i, clause := range q.WhereClauses {
-		hashes[i] = clause
-	}
-	for i, clause := range q.GroupByClauses {
-		hashes[i+numWheres] = clause
-	}
-	for i, clause := range q.Fields {
-		hashes[i+numWheres+numGroups] = clause
-	}
-	for i, clause := range q.Tables {
-		hashes[i+numWheres+numGroups+numFields] = clause
-	}
-	for i, clause := range q.OrderByClauses {
-		hashes[i+numWheres+numGroups+numFields+numTables] = clause
-	}
-
-	// May want to revisit the query argument hashing.
-	for i, arg := range q.QueryArgs {
-		hashes[i+numWheres+numGroups+numFields+numOrders+numTables] = fmt.Sprintf("%v", arg)
-	}
-
-	hash := strings.Join(hashes, "::")
-	if q.RowLimit > 0 {
-		hash = hash + "::Limit=" + fmt.Sprint(q.RowLimit)
-	}
-
-	return hash
-}
-
 // GetQuery returns the query string.
 func (q *Query) GetQuery(nested bool) string {
 	queryString := fmt.Sprintf("SELECT %s", strings.Join(q.Fields, ", "))

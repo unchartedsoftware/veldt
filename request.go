@@ -1,13 +1,30 @@
 package veldt
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
 
 	"github.com/unchartedsoftware/veldt/binning"
 )
+
+var (
+	spewer *spew.ConfigState
+)
+
+func init() {
+	spewer = &spew.ConfigState{
+		Indent:                  "",
+		MaxDepth:                0,
+		DisableMethods:          true,
+		DisablePointerMethods:   true,
+		DisablePointerAddresses: true,
+		DisableCapacities:       true,
+		ContinueOnMethod:        false,
+		SortKeys:                true,
+		SpewKeys:                true,
+	}
+}
 
 // Request represents a basic request interface.
 type Request interface {
@@ -30,14 +47,7 @@ func (r *TileRequest) Create() ([]byte, error) {
 
 // GetHash returns a unique hash for the request.
 func (r *TileRequest) GetHash() string {
-	spew.Config.SortKeys = true
-	spew.Config.SpewKeys = true
-	spew.Config.DisablePointerAddresses = true
-	spew.Config.DisableCapacities = true
-	spew.Config.DisablePointerMethods = true
-	spew.Config.DisableMethods = true
-	hash := fmt.Sprintf("%s:%s", "tile", spew.Sdump(r))
-	return strings.Join(strings.Fields(hash), ":")
+	return strings.Join(strings.Fields(spewer.Sdump(r)), "")
 }
 
 // MetaRequest represents a meta data generation request.
@@ -53,12 +63,5 @@ func (r *MetaRequest) Create() ([]byte, error) {
 
 // GetHash returns a unique hash for the request.
 func (r *MetaRequest) GetHash() string {
-	spew.Config.SortKeys = true
-	spew.Config.SpewKeys = true
-	spew.Config.DisablePointerAddresses = true
-	spew.Config.DisableCapacities = true
-	spew.Config.DisablePointerMethods = true
-	spew.Config.DisableMethods = true
-	hash := fmt.Sprintf("%s:%s", "meta", spew.Sdump(r))
-	return strings.Join(strings.Fields(hash), ":")
+	return strings.Join(strings.Fields(spewer.Sdump(r)), "")
 }

@@ -1,5 +1,5 @@
-hash: 5d00560ec908022e7ada4699c38685c7305ec3dc027f6b726478ff946e89abd6
-updated: 2017-04-18T12:20:17.948589499-04:00
+hash: 5389f606b064223a8295e75e22dccade753a9db725cccb7c4e4551b39ae035d9
+updated: 2017-04-27T15:16:41.467513521-04:00
 imports:
 - name: github.com/aws/aws-sdk-go
   version: 7111a70b8bea15081468f11bc1450ac2fec2406b
@@ -35,7 +35,7 @@ imports:
   subpackages:
   - spew
 - name: github.com/garyburd/redigo
-  version: 0d253a66e6e1349f4581d6d2b300ee434ee2da9f
+  version: ac91d6ff49bd0d278a90201de77a4f8ad9628e25
   subpackages:
   - internal
   - redis
@@ -70,12 +70,12 @@ imports:
 - name: github.com/streadway/amqp
   version: afe8eee29a74d213b1f3fb2586058157c397da60
 - name: golang.org/x/net
-  version: 5602c733f70afc6dcec6766be0d5034d4c4f14de
+  version: da118f7b8e5954f39d0d2130ab35d4bf0e3cb344
   subpackages:
   - context
   - context/ctxhttp
 - name: golang.org/x/sys
-  version: f3918c30c5c2cb527c0b071a27c35120a6c0719a
+  version: 9ccfe848b9db8435a24c424abbc07a921adf1df5
   subpackages:
   - unix
 - name: gopkg.in/olivere/elastic.v3
@@ -87,7 +87,7 @@ imports:
   version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
 testImports:
 - name: github.com/onsi/ginkgo
-  version: f40a49d81e5c12e90400620b6242fb29a8e7c9d9
+  version: 83438ca4278f2f56757b9ab2cb15dd4f596d84e8
   subpackages:
   - config
   - internal/codelocation

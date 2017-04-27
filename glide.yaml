@@ -1,5 +1,10 @@
 package: github.com/unchartedsoftware/veldt
 import:
+- package: github.com/aws/aws-sdk-go
+  subpackages:
+  - aws
+  - aws/session
+  - service/s3
 - package: github.com/coocood/freecache
 - package: github.com/davecgh/go-spew
   subpackages:
@@ -8,12 +13,12 @@ import:
   subpackages:
   - redis
 - package: github.com/jackc/pgx
-- package: github.com/mattn/go-isatty
-- package: gopkg.in/olivere/elastic.v3
-- package: github.com/aws/aws-sdk-go
-  version: v1.8.3
-- package: github.com/streadway/amqp
 - package: github.com/liyinhgqw/typesafe-config
+  subpackages:
+  - parse
+- package: github.com/mattn/go-isatty
+- package: github.com/onsi/gomega
+- package: github.com/streadway/amqp
+- package: gopkg.in/olivere/elastic.v3
 testImport:
 - package: github.com/onsi/ginkgo
-- package: github.com/onsi/gomega
