@@ -15,7 +15,7 @@ const (
 
 // Debugf logs to the debug log.
 func Debugf(format string, args ...interface{}) {
-	if logger != nil && level >= veldt.Debug {
+	if logger != nil && level <= veldt.Debug {
 		logger.Debugf(prefix+format, args...)
 	} else {
 		veldt.Debugf(prefix+format, args...)
@@ -24,7 +24,7 @@ func Debugf(format string, args ...interface{}) {
 
 // Infof logs to the info log.
 func Infof(format string, args ...interface{}) {
-	if logger != nil && level >= veldt.Info {
+	if logger != nil && level <= veldt.Info {
 		logger.Infof(prefix+format, args...)
 	} else {
 		veldt.Infof(prefix+format, args...)
@@ -33,7 +33,7 @@ func Infof(format string, args ...interface{}) {
 
 // Warnf logs to the warn log.
 func Warnf(format string, args ...interface{}) {
-	if logger != nil && level >= veldt.Warn {
+	if logger != nil && level <= veldt.Warn {
 		logger.Warnf(prefix+format, args...)
 	} else {
 		veldt.Warnf(prefix+format, args...)
@@ -42,7 +42,7 @@ func Warnf(format string, args ...interface{}) {
 
 // Errorf logs to the err log.
 func Errorf(format string, args ...interface{}) {
-	if logger != nil && level >= veldt.Error {
+	if logger != nil && level <= veldt.Error {
 		logger.Errorf(prefix+format, args...)
 	} else {
 		veldt.Errorf(prefix+format, args...)

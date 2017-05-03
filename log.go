@@ -35,28 +35,28 @@ func SetLogger(lvl LogLevel, log Logger) {
 
 // Debugf logs to the debug log.
 func Debugf(format string, args ...interface{}) {
-	if logger != nil && level >= Debug {
+	if logger != nil && level <= Debug {
 		logger.Debugf(format, args...)
 	}
 }
 
 // Infof logs to the info log.
 func Infof(format string, args ...interface{}) {
-	if logger != nil && level >= Info {
+	if logger != nil && level <= Info {
 		logger.Infof(format, args...)
 	}
 }
 
 // Warnf logs to the warn log.
 func Warnf(format string, args ...interface{}) {
-	if logger != nil && level >= Warn {
+	if logger != nil && level <= Warn {
 		logger.Warnf(format, args...)
 	}
 }
 
 // Errorf logs to the err log.
 func Errorf(format string, args ...interface{}) {
-	if logger != nil && level >= Error {
+	if logger != nil && level <= Error {
 		logger.Errorf(format, args...)
 	}
 }
