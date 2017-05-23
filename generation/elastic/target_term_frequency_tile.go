@@ -10,10 +10,10 @@ import (
 // TargetTermFrequencyTile represents an elasticsearch implementation of the
 // target term frequency tile.
 type TargetTermFrequencyTile struct {
+	Elastic
 	Bivariate
 	TargetTerms
 	Frequency
-	Tile
 }
 
 // NewTargetTermFrequencyTile instantiates and returns a new tile struct.

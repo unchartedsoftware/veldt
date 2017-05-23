@@ -10,9 +10,9 @@ import (
 // FrequencyTile represents an elasticsearch implementation of the frequency
 // tile.
 type FrequencyTile struct {
+	Elastic
 	Bivariate
 	Frequency
-	Tile
 }
 
 // NewFrequencyTile instantiates and returns a new tile struct.

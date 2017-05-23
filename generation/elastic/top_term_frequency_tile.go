@@ -10,10 +10,10 @@ import (
 // TopTermFrequencyTile represents an elasticsearch implementation of the
 // top term frequency tile.
 type TopTermFrequencyTile struct {
+	Elastic
 	Bivariate
 	TopTerms
 	Frequency
-	Tile
 }
 
 // NewTopTermFrequencyTile instantiates and returns a new tile struct.

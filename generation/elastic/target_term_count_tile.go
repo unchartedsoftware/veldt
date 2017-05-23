@@ -10,9 +10,9 @@ import (
 // TargetTermCountTile represents an elasticsearch implementation of the
 // target term count tile.
 type TargetTermCountTile struct {
+	Elastic
 	Bivariate
 	TargetTerms
-	Tile
 }
 
 // NewTargetTermCountTile instantiates and returns a new tile struct.

@@ -10,7 +10,7 @@ import (
 
 // MacroTile represents an elasticsearch implementation of the macro tile.
 type MacroTile struct {
-	Tile
+	Elastic
 	Bivariate
 	tile.Macro
 }

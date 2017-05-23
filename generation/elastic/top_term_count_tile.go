@@ -10,9 +10,9 @@ import (
 // TopTermCountTile represents an elasticsearch implementation of the
 // top term count tile.
 type TopTermCountTile struct {
+	Elastic
 	Bivariate
 	TopTerms
-	Tile
 }
 
 // NewTopTermCountTile instantiates and returns a new tile struct.

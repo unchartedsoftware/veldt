@@ -10,9 +10,9 @@ import (
 // BinnedTopHits represents an elasticsearch implementation of the binned top
 // hits tile.
 type BinnedTopHits struct {
+	Elastic
 	Bivariate
 	TopHits
-	Tile
 }
 
 // NewBinnedTopHits instantiates and returns a new tile struct.
