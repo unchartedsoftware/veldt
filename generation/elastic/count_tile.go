@@ -9,8 +9,8 @@ import (
 
 // Count represents an elasticsearch implementation of the count tile.
 type Count struct {
+	Elastic
 	Bivariate
-	Tile
 }
 
 // NewCountTile instantiates and returns a new tile struct.

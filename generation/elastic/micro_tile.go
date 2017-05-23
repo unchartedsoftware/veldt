@@ -10,7 +10,7 @@ import (
 
 // MicroTile represents an elasticsearch implementation of the micro tile.
 type MicroTile struct {
-	Tile
+	Elastic
 	Bivariate
 	TopHits
 	tile.Micro

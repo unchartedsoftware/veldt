@@ -1,12 +1,16 @@
 package elastic
 
 import (
+	"fmt"
 	"net/http"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
 	"gopkg.in/olivere/elastic.v3"
+
+	"github.com/unchartedsoftware/veldt"
 )
 
 const (
@@ -18,9 +22,77 @@ var (
 	clients = make(map[string]*elastic.Client)
 )
 
-// NewClient instantiates and returns a new elastic.Client from a pool.
-func NewClient(host string, port string) (*elastic.Client, error) {
-	endpoint := host + ":" + port
+// Elastic represents an elasticsearch type.
+type Elastic struct {
+	Host string
+	Port string
+}
+
+// CreateSearchService creates the elasticsearch search service from the provided uri.
+func (e *Elastic) CreateSearchService(uri string) (*elastic.SearchService, error) {
+	// get client
+	client, err := e.createClient()
+	if err != nil {
+		return nil, err
+	}
+	split := strings.Split(uri, "/")
+	if len(split) < 2 {
+		index := split[0]
+		return client.Search().
+			Index(index).
+			Size(0), nil
+	}
+	index := split[0]
+	typ := split[1]
+	return client.Search().
+		Index(index).
+		Type(typ).
+		Size(0), nil
+}
+
+// CreateQuery creates the elasticsearch query from the query struct.
+func (e *Elastic) CreateQuery(query veldt.Query) (*elastic.BoolQuery, error) {
+	// create root query
+	root := elastic.NewBoolQuery()
+	// add filter query
+	if query != nil {
+		// type assert
+		esquery, ok := query.(Query)
+		if !ok {
+			return nil, fmt.Errorf("query is not elastic.Query")
+		}
+		// get underlying query
+		q, err := esquery.Get()
+		if err != nil {
+			return nil, err
+		}
+		root.Must(q)
+	}
+	return root, nil
+}
+
+// CreateMappingService creates the elasticsearch mapping service from the provided uri.
+func (e *Elastic) CreateMappingService(uri string) (*elastic.IndicesGetMappingService, error) {
+	// get client
+	client, err := e.createClient()
+	if err != nil {
+		return nil, err
+	}
+	split := strings.Split(uri, "/")
+	if len(split) < 2 {
+		index := split[0]
+		return client.GetMapping().
+			Index(index), nil
+	}
+	index := split[0]
+	typ := split[1]
+	return client.GetMapping().
+		Index(index).
+		Type(typ), nil
+}
+
+func (e *Elastic) createClient() (*elastic.Client, error) {
+	endpoint := e.Host + ":" + e.Port
 	mutex.Lock()
 	client, ok := clients[endpoint]
 	if !ok {

@@ -10,7 +10,7 @@ import (
 
 // MacroEdgeTile represents an elasticsearch implementation of the Edge tile.
 type MacroEdgeTile struct {
-	Tile
+	Elastic
 	TopHits
 	Edge
 	tile.MacroEdge

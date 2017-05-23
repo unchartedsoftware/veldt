@@ -14,33 +14,33 @@ import (
 // DefaultMeta represents a meta data generator that produces default
 // metadata with property types and extrema.
 type DefaultMeta struct {
-	Host string
-	Port string
+	Elastic
 }
 
 // NewDefaultMeta instantiates and returns a pointer to a new generator.
 func NewDefaultMeta(host string, port string) veldt.MetaCtor {
 	return func() (veldt.Meta, error) {
-		return &DefaultMeta{
-			Host: host,
-			Port: port,
-		}, nil
+		m := &DefaultMeta{}
+		m.Host = host
+		m.Port = port
+		return m, nil
 	}
 }
 
 // Parse parses the provided JSON object and populates the structs attributes.
-func (g *DefaultMeta) Parse(params map[string]interface{}) error {
+func (m *DefaultMeta) Parse(params map[string]interface{}) error {
 	return nil
 }
 
 // Create generates metadata from the provided URI.
-func (g *DefaultMeta) Create(uri string) ([]byte, error) {
-	client, err := NewClient(g.Host, g.Port)
+func (m *DefaultMeta) Create(uri string) ([]byte, error) {
+	// get the raw mappings
+	service, err := m.CreateMappingService(uri)
 	if err != nil {
 		return nil, err
 	}
 	// get the raw mappings
-	mapping, err := client.GetMapping().Index(uri).Do()
+	mapping, err := service.Do()
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (g *DefaultMeta) Create(uri string) ([]byte, error) {
 	// for each type, parse the mapping
 	meta := make(map[string]interface{})
 	for key, typ := range mappings {
-		typeMeta, err := parseType(client, uri, typ)
+		typeMeta, err := m.parseType(uri, typ)
 		if err != nil {
 			return nil, err
 		}
@@ -89,14 +89,15 @@ func isOrdinal(typ string) bool {
 		typ == "date"
 }
 
-func getExtrema(client *elastic.Client, index string, field string) (*binning.Extrema, error) {
-	// query
-	result, err := client.
-		Search(index).
-		Size(0).
-		Aggregation("min",
-			elastic.NewMinAggregation().
-				Field(field)).
+func (m *DefaultMeta) getExtrema(uri string, field string) (*binning.Extrema, error) {
+	// search
+	search, err := m.CreateSearchService(uri)
+	if err != nil {
+		return nil, err
+	}
+	result, err := search.Aggregation("min",
+		elastic.NewMinAggregation().
+			Field(field)).
 		Aggregation("max",
 			elastic.NewMaxAggregation().
 				Field(field)).
@@ -107,11 +108,11 @@ func getExtrema(client *elastic.Client, index string, field string) (*binning.Ex
 	// parse aggregations
 	min, ok := result.Aggregations.Min("min")
 	if !ok {
-		return nil, fmt.Errorf("min '%s' aggregation was not found in response for %s", field, index)
+		return nil, fmt.Errorf("min '%s' aggregation was not found in response for %s", field, uri)
 	}
 	max, ok := result.Aggregations.Max("max")
 	if !ok {
-		return nil, fmt.Errorf("max '%s' aggregation was not found in response for %s", field, index)
+		return nil, fmt.Errorf("max '%s' aggregation was not found in response for %s", field, uri)
 	}
 	// if the mapping exists, but no documents have the attribute, the min / max
 	// are null
@@ -124,22 +125,22 @@ func getExtrema(client *elastic.Client, index string, field string) (*binning.Ex
 	}, nil
 }
 
-func getPropertyMeta(client *elastic.Client, index string, field string, typ string) (*PropertyMeta, error) {
-	p := PropertyMeta{
+func (m *DefaultMeta) getPropertyMeta(uri string, field string, typ string) (*PropertyMeta, error) {
+	prop := &PropertyMeta{
 		Type: typ,
 	}
-	// if field is 'ordinal', get the extrema
+	// if field is ordinal, get the extrema
 	if isOrdinal(typ) {
-		extrema, err := getExtrema(client, index, field)
+		extrema, err := m.getExtrema(uri, field)
 		if err != nil {
 			return nil, err
 		}
-		p.Extrema = extrema
+		prop.Extrema = extrema
 	}
-	return &p, nil
+	return prop, nil
 }
 
-func parsePropertiesRecursive(meta map[string]PropertyMeta, client *elastic.Client, index string, p map[string]interface{}, path string) error {
+func (m *DefaultMeta) parsePropertiesRecursive(meta map[string]PropertyMeta, uri string, p map[string]interface{}, path string) error {
 	children, ok := jsonutil.GetChildMap(p)
 	if !ok {
 		return nil
@@ -150,19 +151,19 @@ func parsePropertiesRecursive(meta map[string]PropertyMeta, client *elastic.Clie
 		if path != "" {
 			subpath = path + "." + key
 		}
-		subprops, hasProps := jsonutil.GetChild(props, "properties")
-		if hasProps {
+		subprops, ok := jsonutil.GetChild(props, "properties")
+		if ok {
 			// recurse further
-			err := parsePropertiesRecursive(meta, client, index, subprops, subpath)
+			err := m.parsePropertiesRecursive(meta, uri, subprops, subpath)
 			if err != nil {
 				return err
 			}
 		} else {
-			typ, hasType := jsonutil.GetString(props, "type")
+			typ, ok := jsonutil.GetString(props, "type")
 			// we don't support nested types
-			if hasType && typ != "nested" {
+			if ok && typ != "nested" {
 
-				prop, err := getPropertyMeta(client, index, subpath, typ)
+				prop, err := m.getPropertyMeta(uri, subpath, typ)
 				if err != nil {
 					return err
 				}
@@ -173,7 +174,7 @@ func parsePropertiesRecursive(meta map[string]PropertyMeta, client *elastic.Clie
 				if hasFields {
 					for fieldName := range fields {
 						multiFieldPath := subpath + "." + fieldName
-						prop, err = getPropertyMeta(client, index, multiFieldPath, typ)
+						prop, err = m.getPropertyMeta(uri, multiFieldPath, typ)
 						if err != nil {
 							return err
 						}
@@ -183,27 +184,27 @@ func parsePropertiesRecursive(meta map[string]PropertyMeta, client *elastic.Clie
 			}
 		}
 	}
-
 	return nil
 }
 
-func parseProperties(client *elastic.Client, index string, props map[string]interface{}) (map[string]PropertyMeta, error) {
+func (m *DefaultMeta) parseProperties(uri string, props map[string]interface{}) (map[string]PropertyMeta, error) {
 	// create empty map
 	meta := make(map[string]PropertyMeta)
-	err := parsePropertiesRecursive(meta, client, index, props, "")
+	// parse recursively, appending to the map
+	err := m.parsePropertiesRecursive(meta, uri, props, "")
 	if err != nil {
 		return nil, err
 	}
 	return meta, nil
 }
 
-func parseType(client *elastic.Client, index string, typ map[string]interface{}) (map[string]PropertyMeta, error) {
+func (m *DefaultMeta) parseType(uri string, typ map[string]interface{}) (map[string]PropertyMeta, error) {
 	props, ok := jsonutil.GetChild(typ, "properties")
 	if !ok {
 		return nil, fmt.Errorf("Unable to parse `properties` from mappings response for type `%s` for %s",
 			typ,
-			index)
+			uri)
 	}
 	// parse json mappings into the property map
-	return parseProperties(client, index, props)
+	return m.parseProperties(uri, props)
 }

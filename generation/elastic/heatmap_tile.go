@@ -9,8 +9,8 @@ import (
 
 // HeatmapTile represents an elasticsearch implementation of the heatmap tile.
 type HeatmapTile struct {
+	Elastic
 	Bivariate
-	Tile
 }
 
 // NewHeatmapTile instantiates and returns a new tile struct.
