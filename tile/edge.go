@@ -48,9 +48,12 @@ func (e *Edge) Parse(params map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("`dstYField` parameter missing from tile")
 	}
+	// determine which points are required
 	requireSrc := json.GetBoolDefault(params, true, "requireSrc")
 	requireDst := json.GetBoolDefault(params, false, "requireDst")
-
+	if !requireSrc && !requireDst {
+		return fmt.Errorf("both `requireSrc` and `requireDst` set to false")
+	}
 	// get weight field
 	weightField, ok := json.GetString(params, "weightField")
 	if !ok {

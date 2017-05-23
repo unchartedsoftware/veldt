@@ -3,6 +3,8 @@ package tile
 import (
 	"math"
 	"sort"
+
+	"github.com/unchartedsoftware/veldt/binning"
 )
 
 const (
@@ -20,7 +22,10 @@ func EdgeLOD(data []float32, lod int) ([]float32, []int) {
 	// generate codes for the sorted edges
 	codes := make([]int, len(edges)/edgeStride)
 	for i := 0; i < len(edges); i += edgeStride {
-		codes[i/edgeStride] = Morton(edges[i], edges[i+1])
+		sx := edges[i]   // src x
+		sy := edges[i+1] // src y
+		// sort based on src point
+		codes[i/edgeStride] = Morton(sx, sy)
 	}
 
 	// calc number of partitions and partition stride
@@ -62,6 +67,7 @@ func EncodeEdgeLOD(data []float32, lod int) []byte {
 
 func sortEdges(data []float32) []float32 {
 	edges := make(edgeArray, len(data)/edgeStride)
+	maxPixel := float32(binning.MaxTileResolution)
 	for i := 0; i < len(data); i += edgeStride {
 		ax := data[i]   // src x
 		ay := data[i+1] // src y
@@ -69,7 +75,13 @@ func sortEdges(data []float32) []float32 {
 		bx := data[i+3] // dst x
 		by := data[i+4] // dst y
 		bw := data[i+5] // dst weight
-		edges[i/edgeStride] = [edgeStride]float32{ax, ay, aw, bx, by, bw}
+		// ensure first point is within the tile
+		if ax >= 0.0 && ax < maxPixel &&
+			ay >= 0.0 && ay < maxPixel {
+			edges[i/edgeStride] = [edgeStride]float32{ax, ay, aw, bx, by, bw}
+		} else {
+			edges[i/edgeStride] = [edgeStride]float32{bx, by, bw, ax, ay, aw}
+		}
 	}
 	// sort the edges
 	sort.Sort(edges)
