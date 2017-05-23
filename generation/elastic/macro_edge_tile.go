@@ -50,15 +50,11 @@ func (e *MacroEdgeTile) Parse(params map[string]interface{}) error {
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
 func (e *MacroEdgeTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
-	// get client
-	client, err := NewClient(e.Host, e.Port)
+	// create search service
+	search, err := e.CreateSearchService(uri)
 	if err != nil {
 		return nil, err
 	}
-	// create search service
-	search := client.Search().
-		Index(uri).
-		Size(0)
 
 	// create root query
 	q, err := e.CreateQuery(query)

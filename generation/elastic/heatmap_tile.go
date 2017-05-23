@@ -31,15 +31,11 @@ func (h *HeatmapTile) Parse(params map[string]interface{}) error {
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
 func (h *HeatmapTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
-	// get client
-	client, err := NewClient(h.Host, h.Port)
+	// create search service
+	search, err := h.CreateSearchService(uri)
 	if err != nil {
 		return nil, err
 	}
-	// create search service
-	search := client.Search().
-		Index(uri).
-		Size(0)
 
 	// create root query
 	q, err := h.CreateQuery(query)

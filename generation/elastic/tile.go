@@ -2,6 +2,7 @@ package elastic
 
 import (
 	"fmt"
+	"strings"
 
 	"gopkg.in/olivere/elastic.v3"
 
@@ -12,6 +13,28 @@ import (
 type Tile struct {
 	Host string
 	Port string
+}
+
+// CreateSearchService creates the elasticsearch search service from the provided uri.
+func (t *Tile) CreateSearchService(uri string) (*elastic.SearchService, error) {
+	// get client
+	client, err := NewClient(t.Host, t.Port)
+	if err != nil {
+		return nil, err
+	}
+	split := strings.Split(uri, "/")
+	if len(split) < 2 {
+		index := split[0]
+		return client.Search().
+			Index(index).
+			Size(0), nil
+	}
+	index := split[0]
+	typ := split[1]
+	return client.Search().
+		Index(index).
+		Type(typ).
+		Size(0), nil
 }
 
 // CreateQuery creates the elasticsearch query from the query struct.
