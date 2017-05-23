@@ -37,15 +37,11 @@ func (m *MacroTile) Parse(params map[string]interface{}) error {
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
 func (m *MacroTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
-	// get client
-	client, err := NewClient(m.Host, m.Port)
+	// create search service
+	search, err := m.CreateSearchService(uri)
 	if err != nil {
 		return nil, err
 	}
-	// create search service
-	search := client.Search().
-		Index(uri).
-		Size(0)
 
 	// create root query
 	q, err := m.CreateQuery(query)
