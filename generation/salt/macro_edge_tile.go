@@ -121,10 +121,10 @@ func (m *MacroEdgeTile) convertTile(coord *binning.TileCoord, input []byte) ([]b
 	points := make([]float32, edges * 6)
 	for i := 0; i < edges; i++ {
 		srcXBits :=   binary.LittleEndian.Uint32(input[i*20 +  0 : i*20 +  4])
-		srcYBits :=   binary.littleEndian.Uint32(input[i*20 +  4 : i*20 +  8])
+		srcYBits :=   binary.LittleEndian.Uint32(input[i*20 +  4 : i*20 +  8])
 		dstXBits :=   binary.LittleEndian.Uint32(input[i*20 +  8 : i*20 + 12])
-		dstYBits :=   binary.littleEndian.Uint32(input[i*20 + 12 : i*20 + 16])
-		weightBits := binary.littleEndian.Uint32(input[i*20 + 16 : i*20 + 20])
+		dstYBits :=   binary.LittleEndian.Uint32(input[i*20 + 12 : i*20 + 16])
+		weightBits := binary.LittleEndian.Uint32(input[i*20 + 16 : i*20 + 20])
 
 		srcX := math.Float32frombits(srcXBits) - offsetX
 		srcY := math.Float32frombits(srcYBits) - offsetY
