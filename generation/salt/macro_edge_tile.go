@@ -116,15 +116,15 @@ func (m *MacroEdgeTile) convertTile(coord *binning.TileCoord, input []byte) ([]b
 
 	// Macro tiles are returned to us as a series of floating-point numbers
 	bLen := len(input)
-	fLen := bLen / 4 // number of floating-pont numbers
+	fLen := bLen / 4  // number of floating-pont numbers
 	edges := fLen / 5 // number of edges
-	points := make([]float32, edges * 6)
+	points := make([]float32, edges*6)
 	for i := 0; i < edges; i++ {
-		srcXBits :=   binary.LittleEndian.Uint32(input[i*20 +  0 : i*20 +  4])
-		srcYBits :=   binary.LittleEndian.Uint32(input[i*20 +  4 : i*20 +  8])
-		dstXBits :=   binary.LittleEndian.Uint32(input[i*20 +  8 : i*20 + 12])
-		dstYBits :=   binary.LittleEndian.Uint32(input[i*20 + 12 : i*20 + 16])
-		weightBits := binary.LittleEndian.Uint32(input[i*20 + 16 : i*20 + 20])
+		srcXBits := binary.LittleEndian.Uint32(input[i*20+0 : i*20+4])
+		srcYBits := binary.LittleEndian.Uint32(input[i*20+4 : i*20+8])
+		dstXBits := binary.LittleEndian.Uint32(input[i*20+8 : i*20+12])
+		dstYBits := binary.LittleEndian.Uint32(input[i*20+12 : i*20+16])
+		weightBits := binary.LittleEndian.Uint32(input[i*20+16 : i*20+20])
 
 		srcX := math.Float32frombits(srcXBits) - offsetX
 		srcY := math.Float32frombits(srcYBits) - offsetY
@@ -132,12 +132,12 @@ func (m *MacroEdgeTile) convertTile(coord *binning.TileCoord, input []byte) ([]b
 		dstY := math.Float32frombits(dstYBits) - offsetY
 		weight := math.Float32frombits(weightBits)
 
-		points[i*6 + 0] = srcX
-		points[i*6 + 1] = srcY
-		points[i*6 + 2] = weight
-		points[i*6 + 3] = dstX
-		points[i*6 + 4] = dstY
-		points[i*6 + 5] = weight
+		points[i*6+0] = srcX
+		points[i*6+1] = srcY
+		points[i*6+2] = weight
+		points[i*6+3] = dstX
+		points[i*6+4] = dstY
+		points[i*6+5] = weight
 	}
 
 	return m.MacroEdge.Encode(points)
