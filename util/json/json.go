@@ -1,5 +1,9 @@
 package json
 
+import (
+	"encoding/json"
+)
+
 // Get returns an interface{} under the given path.
 func Get(json map[string]interface{}, path ...string) (interface{}, bool) {
 	child := json
@@ -274,4 +278,41 @@ func GetChildMap(json map[string]interface{}, path ...string) (map[string]map[st
 		}
 	}
 	return children, true
+}
+
+// Marshal marhsals JSON into a byte slice, convenience wrapper for the native
+// package so no need to import both and get a name collision.
+func Marshal(j interface{}) ([]byte, error) {
+	return json.Marshal(j)
+}
+
+// Unmarshal unmarshals JSON and returns a newly instantiated map.
+func Unmarshal(data []byte) (map[string]interface{}, error) {
+	var m map[string]interface{}
+	err := json.Unmarshal(data, &m)
+	if nil != err {
+		return nil, err
+	}
+	return m, nil
+}
+
+// UnmarshalArray unmarshals an array of JSON and returns a newly instantiated
+// array of maps.
+func UnmarshalArray(data []byte) ([]map[string]interface{}, error) {
+	var arr []map[string]interface{}
+	err := json.Unmarshal(data, &arr)
+	if nil != err {
+		return nil, err
+	}
+	return arr, nil
+}
+
+// Copy will copy the JSON data deeply by value, this process involves
+// marshalling and then unmarshalling the data.
+func Copy(j map[string]interface{}) (map[string]interface{}, error) {
+	bytes, err := Marshal(j)
+	if err != nil {
+		return nil, err
+	}
+	return Unmarshal(bytes)
 }

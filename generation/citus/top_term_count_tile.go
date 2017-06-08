@@ -1,10 +1,9 @@
 package citus
 
 import (
-	"encoding/json"
-
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // TopTermCountTile represents a citus implementation of the top term count

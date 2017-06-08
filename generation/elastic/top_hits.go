@@ -1,12 +1,12 @@
 package elastic
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/veldt/tile"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // TopHits represents an elasticsearch implementation of the top hits tile.
@@ -44,8 +44,7 @@ func (t *TopHits) GetTopHits(aggs *elastic.Aggregations) ([]map[string]interface
 	}
 	hits := make([]map[string]interface{}, len(topHits.Hits.Hits))
 	for index, hit := range topHits.Hits.Hits {
-		var src map[string]interface{}
-		err := json.Unmarshal(*hit.Source, &src)
+		src, err := json.Unmarshal(*hit.Source)
 		if err != nil {
 			return nil, err
 		}

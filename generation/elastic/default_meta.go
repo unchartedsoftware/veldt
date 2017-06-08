@@ -1,14 +1,13 @@
 package elastic
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
-	jsonutil "github.com/unchartedsoftware/veldt/util/json"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // DefaultMeta represents a meta data generator that produces default
@@ -49,13 +48,13 @@ func (m *DefaultMeta) Create(uri string) ([]byte, error) {
 	// response will be nested under the original index name. Since we are only
 	// getting the mapping of a single index at a time, we can simply get the
 	// 'first' and only node.
-	_, index, ok := jsonutil.GetRandomChild(mapping)
+	_, index, ok := json.GetRandomChild(mapping)
 	if !ok {
 		return nil, fmt.Errorf("Unable to retrieve the mappings response for %s",
 			uri)
 	}
 	// get mappings node
-	mappings, ok := jsonutil.GetChildMap(index, "mappings")
+	mappings, ok := json.GetChildMap(index, "mappings")
 	if !ok {
 		return nil, fmt.Errorf("unable to parse `mappings` from mappings response for %s",
 			uri)
@@ -141,7 +140,7 @@ func (m *DefaultMeta) getPropertyMeta(uri string, field string, typ string) (*Pr
 }
 
 func (m *DefaultMeta) parsePropertiesRecursive(meta map[string]PropertyMeta, uri string, p map[string]interface{}, path string) error {
-	children, ok := jsonutil.GetChildMap(p)
+	children, ok := json.GetChildMap(p)
 	if !ok {
 		return nil
 	}
@@ -151,7 +150,7 @@ func (m *DefaultMeta) parsePropertiesRecursive(meta map[string]PropertyMeta, uri
 		if path != "" {
 			subpath = path + "." + key
 		}
-		subprops, ok := jsonutil.GetChild(props, "properties")
+		subprops, ok := json.GetChild(props, "properties")
 		if ok {
 			// recurse further
 			err := m.parsePropertiesRecursive(meta, uri, subprops, subpath)
@@ -159,7 +158,7 @@ func (m *DefaultMeta) parsePropertiesRecursive(meta map[string]PropertyMeta, uri
 				return err
 			}
 		} else {
-			typ, ok := jsonutil.GetString(props, "type")
+			typ, ok := json.GetString(props, "type")
 			// we don't support nested types
 			if ok && typ != "nested" {
 
@@ -170,7 +169,7 @@ func (m *DefaultMeta) parsePropertiesRecursive(meta map[string]PropertyMeta, uri
 				meta[subpath] = *prop
 
 				// Parse out multi-field mapping
-				fields, hasFields := jsonutil.GetChild(props, "fields")
+				fields, hasFields := json.GetChild(props, "fields")
 				if hasFields {
 					for fieldName := range fields {
 						multiFieldPath := subpath + "." + fieldName
@@ -199,7 +198,7 @@ func (m *DefaultMeta) parseProperties(uri string, props map[string]interface{}) 
 }
 
 func (m *DefaultMeta) parseType(uri string, typ map[string]interface{}) (map[string]PropertyMeta, error) {
-	props, ok := jsonutil.GetChild(typ, "properties")
+	props, ok := json.GetChild(typ, "properties")
 	if !ok {
 		return nil, fmt.Errorf("Unable to parse `properties` from mappings response for type `%s` for %s",
 			typ,

@@ -1,10 +1,9 @@
 package elastic
 
 import (
-	"encoding/json"
-
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // TargetTermCountTile represents an elasticsearch implementation of the

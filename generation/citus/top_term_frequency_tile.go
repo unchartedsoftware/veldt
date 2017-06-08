@@ -1,11 +1,11 @@
 package citus
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // TopTermFrequencyTile represents a citus implementation of the top term

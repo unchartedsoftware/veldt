@@ -1,10 +1,9 @@
 package tile
 
 import (
-	"encoding/json"
 	"sort"
 
-	jsonutil "github.com/unchartedsoftware/veldt/util/json"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // Micro represents a tile that returns individual data points with optional
@@ -20,7 +19,7 @@ type Micro struct {
 // Parse parses the provided JSON object and populates the structs attributes.
 func (m *Micro) Parse(params map[string]interface{}) error {
 	// parse LOD
-	m.LOD = jsonutil.GetIntDefault(params, 0, "lod")
+	m.LOD = json.GetIntDefault(params, 0, "lod")
 	return nil
 }
 

@@ -1,9 +1,7 @@
 package tile
 
 import (
-	"encoding/json"
-
-	jsonutil "github.com/unchartedsoftware/veldt/util/json"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // MicroEdge represents a tile that returns individual data edges with optional
@@ -25,7 +23,7 @@ type MicroEdge struct {
 // Parse parses the provided JSON object and populates the structs attributes.
 func (e *MicroEdge) Parse(params map[string]interface{}) error {
 	// parse LOD
-	e.LOD = jsonutil.GetIntDefault(params, 0, "lod")
+	e.LOD = json.GetIntDefault(params, 0, "lod")
 	return nil
 }
 

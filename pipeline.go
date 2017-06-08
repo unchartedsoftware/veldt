@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"compress/gzip"
 	"compress/zlib"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 
+	"github.com/unchartedsoftware/veldt/util/json"
 	"github.com/unchartedsoftware/veldt/util/promise"
 	"github.com/unchartedsoftware/veldt/util/queue"
 )
@@ -178,7 +178,7 @@ func (p *Pipeline) GetHash() string {
 // provided JSON.
 func (p *Pipeline) NewTileRequest(args map[string]interface{}) (*TileRequest, error) {
 	// params are modified in place during validation, so create a copy
-	copy, err := copyJSON(args)
+	copy, err := json.Copy(args)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (p *Pipeline) NewTileRequest(args map[string]interface{}) (*TileRequest, er
 // provided JSON.
 func (p *Pipeline) NewMetaRequest(args map[string]interface{}) (*MetaRequest, error) {
 	// params are modified in place during validation, so create a copy
-	copy, err := copyJSON(args)
+	copy, err := json.Copy(args)
 	if err != nil {
 		return nil, err
 	}
@@ -381,17 +381,4 @@ func (p *Pipeline) getWriter(buffer io.Writer) (io.WriteCloser, bool) {
 	default:
 		return nil, false
 	}
-}
-
-func copyJSON(obj map[string]interface{}) (map[string]interface{}, error) {
-	bytes, err := json.Marshal(obj)
-	if err != nil {
-		return nil, err
-	}
-	var copy map[string]interface{}
-	err = json.Unmarshal(bytes, &copy)
-	if err != nil {
-		return nil, err
-	}
-	return copy, nil
 }
