@@ -181,6 +181,8 @@ func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
 	// Now actually make our requests of the server
 	for _, request := range consolidatedRequests {
 		Infof("Request for %d tiles for dataset %s of type %s", len(request.tiles), request.dataset, t.tileType)
+		// Make sure relevant parameters are available to conversion functions
+		t.Parse(request.params)
 		// Create our consolidated configuration
 		fullConfig := make(map[string]interface{})
 		fullConfig["tile"] = request.tileConfig
@@ -260,6 +262,7 @@ type separateTileRequest struct {
 type jointRequest struct {
 	tileConfig map[string]interface{}
 	query      map[string]interface{}
+	params     map[string]interface{}
 	dataset    string
 	tiles      []*separateTileRequest
 }
@@ -309,7 +312,7 @@ func (t *TileData) extractJointRequest(request *batch.TileRequest) (*jointReques
 	separateRequest := separateTileRequest{request.Coord, request.ResultChannel}
 	separateRequests := []*separateTileRequest{&separateRequest}
 
-	return &jointRequest{tileConfig, queryConfig, request.URI, separateRequests}, nil
+	return &jointRequest{tileConfig, queryConfig, request.Params, request.URI, separateRequests}, nil
 }
 
 // Get a unique string ID for use in maps for a tile coordinate
