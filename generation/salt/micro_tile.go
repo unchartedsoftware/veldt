@@ -113,8 +113,14 @@ func (m *MicroTile) getTileConfig() (map[string]interface{}, error) {
 }
 
 func (m *MicroTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
+	// Make sure our parameters are in sync with the current tile
+	err := m.parseMicroParams(*m.parameters)
+	if nil != err {
+		return nil, err
+	}
+
 	var rawHits []map[string]interface{}
-	err := json.Unmarshal(input, &rawHits)
+	err = json.Unmarshal(input, &rawHits)
 	if nil != err {
 		return nil, err
 	}
