@@ -7,10 +7,10 @@ import (
 const (
 	minLon           = -180.0
 	maxLon           = 180.0
-	minLat           = -85.05112878
-	maxLat           = 85.05112878
-	degreesToRadians = math.Pi / maxLon // Factor for changing degrees to radians
-	radiansToDegrees = maxLon / math.Pi // Factor for changing radians to degrees
+	minLat           = -85.0511287798066
+	maxLat           = 85.0511287798066
+	degreesToRadians = math.Pi / 180.0 // Factor for changing degrees to radians
+	radiansToDegrees = 180.0 / math.Pi // Factor for changing radians to degrees
 )
 
 // LonLat represents a geographic point.
