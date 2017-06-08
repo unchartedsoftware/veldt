@@ -181,37 +181,37 @@ func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
 	// Now actually make our requests of the server
 	for _, request := range consolidatedRequests {
 		Infof("Request for %d tiles for dataset %s of type %s", len(request.tiles), request.dataset, t.tileType)
-		// Create our consolidated configuration
-		fullConfig := make(map[string]interface{})
-		fullConfig["tile"] = request.tileConfig
-		fullConfig["query"] = request.query
-		fullConfig["dataset"] = datasets[request.dataset]
-		// Put in all our tile requests, recording our response channel for each as we go
-		responseChannels := make(map[string]chan batch.TileResponse)
-		tileSpecs := make([]interface{}, 0)
-		for _, tileReq := range request.tiles {
-			c := tileReq.coord
-			tileSpec := make(map[string]interface{})
-			tileSpec["level"] = int(c.Z)
-			tileSpec["x"] = int(c.X)
-			tileSpec["y"] = int(c.Y)
-			tileSpecs = append(tileSpecs, tileSpec)
-			responseChannels[coordToString(int(c.Z), int(c.X), int(c.Y))] = tileReq.sendTo
-		}
-		fullConfig["tile-specs"] = tileSpecs
-
-		// Marshal the consolidated request into a string
-		requestBytes, err := json.Marshal(fullConfig)
-		if err != nil {
-			for _, channel := range responseChannels {
-				channel <- batch.TileResponse{
+		// Make sure relevant parameters are available to conversion functions
+		err = t.Parse(request.params)
+		if nil != err {
+			for _, tileReq := range request.tiles {
+				tileReq.sendTo <- batch.TileResponse{
 					Tile: nil,
 					Err:  err,
 				}
 			}
 		} else {
-			// Send the marshalled request to Salt, and await a response
-			result, err := connection.QueryTiles(requestBytes)
+			// Create our consolidated configuration
+			fullConfig := make(map[string]interface{})
+			fullConfig["tile"] = request.tileConfig
+			fullConfig["query"] = request.query
+			fullConfig["dataset"] = datasets[request.dataset]
+			// Put in all our tile requests, recording our response channel for each as we go
+			responseChannels := make(map[string]chan batch.TileResponse)
+			tileSpecs := make([]interface{}, 0)
+			for _, tileReq := range request.tiles {
+				c := tileReq.coord
+				tileSpec := make(map[string]interface{})
+				tileSpec["level"] = int(c.Z)
+				tileSpec["x"] = int(c.X)
+				tileSpec["y"] = int(c.Y)
+				tileSpecs = append(tileSpecs, tileSpec)
+				responseChannels[coordToString(int(c.Z), int(c.X), int(c.Y))] = tileReq.sendTo
+			}
+			fullConfig["tile-specs"] = tileSpecs
+
+			// Marshal the consolidated request into a string
+			requestBytes, err := json.Marshal(fullConfig)
 			if err != nil {
 				for _, channel := range responseChannels {
 					channel <- batch.TileResponse{
@@ -220,25 +220,36 @@ func (t *TileData) CreateTiles(requests []*batch.TileRequest) {
 					}
 				}
 			} else {
-				// Unpack the results
-				tiles := unpackTiles(result)
-				for key, channel := range responseChannels {
-					tile, ok := tiles[key]
-					if ok {
-						Debugf("Found tile for key %s[%s] of length %d", key, t.tileType, len(tile.data))
-						converted, err := t.convert(tile.coord, tile.data)
-						Debugf("Converted tile for key %s[%s] had length %d", key, t.tileType, len(converted))
+				// Send the marshalled request to Salt, and await a response
+				result, err := connection.QueryTiles(requestBytes)
+				if err != nil {
+					for _, channel := range responseChannels {
 						channel <- batch.TileResponse{
-							Tile: converted,
+							Tile: nil,
 							Err:  err,
 						}
-					} else {
-						// No tile, but no error either
-						Debugf("No tile found for key %s", key)
-						defaultTile, err := t.buildDefault()
-						channel <- batch.TileResponse{
-							Tile: defaultTile,
-							Err:  err,
+					}
+				} else {
+					// Unpack the results
+					tiles := unpackTiles(result)
+					for key, channel := range responseChannels {
+						tile, ok := tiles[key]
+						if ok {
+							Debugf("Found tile for key %s[%s] of length %d", key, t.tileType, len(tile.data))
+							converted, err := t.convert(tile.coord, tile.data)
+							Debugf("Converted tile for key %s[%s] had length %d", key, t.tileType, len(converted))
+							channel <- batch.TileResponse{
+								Tile: converted,
+								Err:  err,
+							}
+						} else {
+							// No tile, but no error either
+							Debugf("No tile found for key %s", key)
+							defaultTile, err := t.buildDefault()
+							channel <- batch.TileResponse{
+								Tile: defaultTile,
+								Err:  err,
+							}
 						}
 					}
 				}
@@ -260,6 +271,7 @@ type separateTileRequest struct {
 type jointRequest struct {
 	tileConfig map[string]interface{}
 	query      map[string]interface{}
+	params     map[string]interface{}
 	dataset    string
 	tiles      []*separateTileRequest
 }
@@ -286,7 +298,10 @@ func (j *jointRequest) merge(from *jointRequest) {
 // extractJointRequest takes a single batched tile request, and converts it
 // into a joinable consolidated request
 func (t *TileData) extractJointRequest(request *batch.TileRequest) (*jointRequest, error) {
-	t.Parse(request.Params)
+	err := t.Parse(request.Params)
+	if nil != err {
+		return nil, err
+	}
 	tileConfig, err := t.buildConfig()
 	if err != nil {
 		return nil, err
@@ -309,7 +324,7 @@ func (t *TileData) extractJointRequest(request *batch.TileRequest) (*jointReques
 	separateRequest := separateTileRequest{request.Coord, request.ResultChannel}
 	separateRequests := []*separateTileRequest{&separateRequest}
 
-	return &jointRequest{tileConfig, queryConfig, request.URI, separateRequests}, nil
+	return &jointRequest{tileConfig, queryConfig, request.Params, request.URI, separateRequests}, nil
 }
 
 // Get a unique string ID for use in maps for a tile coordinate
