@@ -118,11 +118,11 @@ func (m *MicroTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte,
 	for i, hit := range rawHits {
 		x, ok := json.GetFloat(hit, "x")
 		if !ok {
-			return nil, fmt.Errorf("could not parse x from hit: %v", hit)
+			return nil, fmt.Errorf("could not parse `x` from hit: %v", hit)
 		}
 		y, ok := json.GetFloat(hit, "y")
 		if !ok {
-			return nil, fmt.Errorf("could not parse x from hit: %v", hit)
+			return nil, fmt.Errorf("could not parse `y` from hit: %v", hit)
 		}
 		points[2*i+0] = float32(x)
 		points[2*i+1] = 256 - float32(y)
