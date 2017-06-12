@@ -5,3 +5,5 @@ TODO.md
 vendor
 coverage
 *.coverprofile
+
+\.makefile\.swp
