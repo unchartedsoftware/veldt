@@ -18,9 +18,17 @@ func NewBinaryExpression() (veldt.Query, error) {
 	return &BinaryExpression{}, nil
 }
 
-// Get returns the appropriate elasticsearch query for the binary expression.
-func (e *BinaryExpression) Get() (elastic.Query, error) {
+// Parse implements parse explicitly on an elastic.BinaryExpression, so that
+// elastic.BinaryExpression will implement veldt.Query, which is necessary for
+// multi-level binary consolidation
+func (b *BinaryExpression) Parse(params map[string]interface{}) error {
+	return b.BinaryExpression.Parse(params)
+}
 
+// clauses gets the clauses of this binary expression for construction of
+// an elastic query.  It consolidates clauses across multiple levels of a
+// query so as to simplify the elastic query.
+func (e *BinaryExpression) clauses () ([]elastic.Query, error) {
 	left, ok := e.Left.(Query)
 	if !ok {
 		return nil, fmt.Errorf("`Left` is not of type elastic.Query")
@@ -30,28 +38,66 @@ func (e *BinaryExpression) Get() (elastic.Query, error) {
 		return nil, fmt.Errorf("`Right` is not of type elastic.Query")
 	}
 
-	a, err := left.Get()
-	if err != nil {
-		return nil, err
-	}
-	b, err := right.Get()
-	if err != nil {
-		return nil, err
+	clauses := make([]elastic.Query, 0, 0)
+
+	// Get left-hand clauses
+	beLeft, leftIsBool := e.Left.(*BinaryExpression)
+	if leftIsBool && beLeft.Op == e.Op {
+		aClauses, err := beLeft.clauses()
+		if err != nil {
+			return nil, err
+		}
+		clauses = append(clauses, aClauses...)
+	} else {
+		a, err := left.Get()
+		if err != nil {
+			return nil, err
+		}
+		clauses = append(clauses, a)
 	}
 
+	// Get right-hand clauses
+	beRight, rightIsBool := e.Right.(*BinaryExpression)
+	if rightIsBool && beRight.Op == e.Op {
+		bClauses, err := beRight.clauses()
+		if err != nil {
+			return nil, err
+		}
+		clauses = append(clauses, bClauses...)
+	} else {
+		b, err := right.Get()
+		if err != nil {
+			return nil, err
+		}
+		clauses = append(clauses, b)
+	}
+
+	return clauses, nil
+}
+
+// Get returns the appropriate elasticsearch query for the binary expression.
+func (e *BinaryExpression) Get() (elastic.Query, error) {
+	clauses, err := e.clauses()
+	if err != nil {
+		return nil, err
+	}
+	
 	res := elastic.NewBoolQuery()
 	switch e.Op {
 	case veldt.And:
 		// AND
-		res.Must(a)
-		res.Must(b)
+		for _, clause := range(clauses) {
+			res.Must(clause)
+		}
 	case veldt.Or:
 		// OR
-		res.Should(a)
-		res.Should(b)
+		for _, clause := range(clauses) {
+			res.Should(clause)
+		}
 	default:
-		return nil, fmt.Errorf("`%v` operator is not a valid binary operator", e.Op)
+			return nil, fmt.Errorf("`%v` operator is not a valid binary operator", e.Op)
 	}
+
 	return res, nil
 }
 
