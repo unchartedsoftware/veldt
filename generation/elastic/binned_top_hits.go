@@ -102,7 +102,6 @@ func (b *BinnedTopHits) Create(uri string, coord *binning.TileCoord, query veldt
 		}
 	}
 
-	Warnf("FUCK YOU!!!!!!!!!!!!!!!!!!")
 	//encode
 	return json.Marshal(map[string]interface{}{
 		"points": points,
