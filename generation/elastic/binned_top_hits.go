@@ -1,6 +1,8 @@
 package elastic
 
 import (
+	"math"
+
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/util/json"
@@ -83,5 +85,26 @@ func (b *BinnedTopHits) Create(uri string, coord *binning.TileCoord, query veldt
 		}
 	}
 
-	return json.Marshal(bins)
+	// bin width
+	binSize := binning.MaxTileResolution / float64(b.Resolution)
+	halfSize := float64(binSize / 2)
+
+	// convert to point array
+	points := make([]float32, len(bins)*2)
+	numPoints := 0
+	for i, bin := range bins {
+		if bin != nil {
+			x := float32(float64(i%b.Resolution)*binSize + halfSize)
+			y := float32(math.Floor(float64(i/b.Resolution))*binSize + halfSize)
+			points[numPoints*2] = x
+			points[numPoints*2+1] = y
+			numPoints++
+		}
+	}
+
+	//encode
+	return json.Marshal(map[string]interface{}{
+		"points": points,
+		"hits":   bins,
+	})
 }
