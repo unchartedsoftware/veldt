@@ -73,25 +73,14 @@ func (m *MacroTile) getTileConfig() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	result := make(map[string]interface{})
-
-	setProperty("type", "macro", result)
-
-	// Bivariate properties
-	setProperty("xField", m.XField, result)
-	setProperty("yField", m.YField, result)
-	setProperty("resolution", m.Resolution, result)
 	// Bounds are ignored - salt needs the dataset bounds, not the tile bounds
 	// in visualization space
-	// setProperty("bounds.left",   m.Left, result)
-	// setProperty("bounds.right",  m.Right, result)
-	// setProperty("bounds.top",    m.Top, result)
-	// setProperty("bounds.bottom", m.Bottom, result)
-
-	// Macro properties
-
-	return result, nil
+	return map[string]interface{}{
+		"type":       "macro",
+		"xField":     m.XField,
+		"yField":     m.YField,
+		"resolution": m.Resolution,
+	}, nil
 }
 
 func (m *MacroTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {

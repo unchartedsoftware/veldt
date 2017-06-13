@@ -2,15 +2,16 @@ package salt
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"math"
+	"reflect"
 
 	"github.com/liyinhgqw/typesafe-config/parse"
 
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/generation/batch"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // This file contains the basic functionality of all salt tiles
@@ -278,10 +279,10 @@ type jointRequest struct {
 
 // canMerge indicates whether two consolidated requests can be merged together
 func canMerge(a, b *jointRequest) bool {
-	if !propertiesEqual(a.tileConfig, b.tileConfig) {
+	if !reflect.DeepEqual(a.tileConfig, b.tileConfig) {
 		return false
 	}
-	if !propertiesEqual(a.query, b.query) {
+	if !reflect.DeepEqual(a.query, b.query) {
 		return false
 	}
 	return a.dataset == b.dataset

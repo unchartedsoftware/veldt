@@ -77,24 +77,15 @@ func (h *HeatmapTile) getTileConfig() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	result := make(map[string]interface{})
-
-	setProperty("type", "heatmap", result)
-	setProperty("xField", h.XField, result)
-	setProperty("yField", h.YField, result)
-	if 0 < len(h.valueField) {
-		setProperty("valueField", h.valueField, result)
-	}
-	setProperty("resolution", h.Resolution, result)
 	// Bounds are ignored - salt needs the dataset bounds, not the tile bounds
 	// in visualization space
-	// setProperty("bounds.left",   h.Left, result)
-	// setProperty("bounds.right",  h.Right, result)
-	// setProperty("bounds.top",    h.Top, result)
-	// setProperty("bounds.bottom", h.Bottom, result)
-
-	return result, nil
+	return map[string]interface{}{
+		"type":       "heatmap",
+		"xField":     h.XField,
+		"yField":     h.YField,
+		"valueField": h.valueField,
+		"resolution": h.Resolution,
+	}, nil
 }
 
 func (h *HeatmapTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {

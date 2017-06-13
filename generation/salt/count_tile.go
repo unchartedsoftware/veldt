@@ -78,24 +78,15 @@ func (c *CountTile) getTileConfig() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	result := make(map[string]interface{})
-
-	setProperty("type", "heatmap", result)
-	setProperty("xField", c.XField, result)
-	setProperty("yField", c.YField, result)
-	if 0 < len(c.valueField) {
-		setProperty("valueField", c.valueField, result)
-	}
-	setProperty("resolution", 1, result)
 	// Bounds are ignored - salt needs the dataset bounds, not the tile bounds
 	// in visualization space
-	// setProperty("bounds.left",   c.Left, result)
-	// setProperty("bounds.right",  c.Right, result)
-	// setProperty("bounds.top",    c.Top, result)
-	// setProperty("bounds.bottom", c.Bottom, result)
-
-	return result, nil
+	return map[string]interface{}{
+		"type":       "heatmap",
+		"xField":     c.XField,
+		"yField":     c.YField,
+		"valueField": c.valueField,
+		"resolution": 1,
+	}, nil
 }
 
 func (c *CountTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {

@@ -88,18 +88,16 @@ func (m *MacroEdgeTile) getTileConfig() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	result := make(map[string]interface{})
-	setProperty("type", "macro-edge", result)
-	setProperty("srcXField", m.SrcXField, result)
-	setProperty("srcYField", m.SrcYField, result)
-	setProperty("dstXField", m.DstXField, result)
-	setProperty("dstYField", m.DstYField, result)
-	setProperty("weightField", m.WeightField, result)
-	setProperty("hitsCount", m.HitsCount, result)
-	setProperty("lengthSorted", true, result)
-
-	return result, nil
+	return map[string]interface{}{
+		"type":         "macro-edge",
+		"srcXField":    m.SrcXField,
+		"srcYField":    m.SrcYField,
+		"dstXField":    m.DstXField,
+		"dstYField":    m.DstYField,
+		"weightField":  m.WeightField,
+		"hitsCount":    m.HitsCount,
+		"lengthSorted": true,
+	}, nil
 }
 
 func (m *MacroEdgeTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {

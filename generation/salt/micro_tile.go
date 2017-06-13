@@ -1,13 +1,13 @@
 package salt
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/unchartedsoftware/veldt"
 	"github.com/unchartedsoftware/veldt/binning"
 	"github.com/unchartedsoftware/veldt/generation/batch"
 	"github.com/unchartedsoftware/veldt/tile"
+	"github.com/unchartedsoftware/veldt/util/json"
 )
 
 // MicroTile represents a Salt implementation of the micro tile
@@ -86,30 +86,17 @@ func (m *MicroTile) getTileConfig() (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	result := make(map[string]interface{})
-
-	setProperty("type", "micro", result)
-
-	// Bivariate properties
-	setProperty("xField", m.XField, result)
-	setProperty("yField", m.YField, result)
-	// Resolution is ignored for micro, as it is irrelevant
-	// setProperty("resolution", m.Resolution, result)
 	// Bounds are ignored - salt needs the dataset bounds, not the tile bounds
 	// in visualization space
-	// setProperty("bounds.left",   m.Left, result)
-	// setProperty("bounds.right",  m.Right, result)
-	// setProperty("bounds.top",    m.Top, result)
-	// setProperty("bounds.bottom", m.Bottom, result)
-
-	// TopHits properties
-	setProperty("sortField", m.SortField, result)
-	setProperty("sortOrder", m.SortOrder, result)
-	setProperty("hitsCount", m.HitsCount, result)
-	setProperty("includeFields", m.IncludeFields, result)
-
-	return result, nil
+	return map[string]interface{}{
+		"type":          "micro",
+		"xField":        m.XField,
+		"yField":        m.YField,
+		"sortField":     m.SortField,
+		"sortOrder":     m.SortOrder,
+		"hitsCount":     m.HitsCount,
+		"includeFields": m.IncludeFields,
+	}, nil
 }
 
 func (m *MicroTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte, error) {
@@ -119,8 +106,7 @@ func (m *MicroTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte,
 		return nil, err
 	}
 
-	var rawHits []map[string]interface{}
-	err = json.Unmarshal(input, &rawHits)
+	rawHits, err := json.UnmarshalArray(input)
 	if nil != err {
 		return nil, err
 	}
@@ -130,22 +116,18 @@ func (m *MicroTile) convertTile(coord *binning.TileCoord, input []byte) ([]byte,
 	hits := make([]map[string]interface{}, numHits)
 
 	for i, hit := range rawHits {
-		x, err := getFloat32Property("x", hit)
-		if err != nil {
-			return nil, err
+		x, ok := json.GetFloat(hit, "x")
+		if !ok {
+			return nil, fmt.Errorf("could not parse `x` from hit: %v", hit)
 		}
-		y, err := getFloat32Property("y", hit)
-		if err != nil {
-			return nil, err
+		y, ok := json.GetFloat(hit, "y")
+		if !ok {
+			return nil, fmt.Errorf("could not parse `y` from hit: %v", hit)
 		}
-		points[2*i+0] = x
-		points[2*i+1] = 256 - y
+		points[2*i+0] = float32(x)
+		points[2*i+1] = 256 - float32(y)
 
-		hitMapRaw, err := getProperty("values", hit)
-		if err != nil {
-			return nil, err
-		}
-		hitMap, ok := hitMapRaw.(map[string]interface{})
+		hitMap, ok := json.GetChild(hit, "values")
 		if !ok {
 			return nil, fmt.Errorf("values didn't form a map: %v", hit)
 		}
