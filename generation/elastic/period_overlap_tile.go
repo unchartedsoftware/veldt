@@ -35,7 +35,6 @@ type PeriodOverlapTile struct {
 // NewPeriodOverlapTile instantiates and returns a new tile struct.
 func NewPeriodOverlapTile(host, port string) veldt.TileCtor {
 	return func() (veldt.Tile, error) {
-		fmt.Println("PeriodOverlapTile Tile const!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 		h := &PeriodOverlapTile{}
 		h.Host = host
 		h.Port = port
@@ -45,16 +44,14 @@ func NewPeriodOverlapTile(host, port string) veldt.TileCtor {
 
 // Parse parses the provided JSON object and populates the tiles attributes.
 func (p *PeriodOverlapTile) Parse(params map[string]interface{}) error {
-	fmt.Println("tile params", params);
 	//Need global bounds for the query creation
 	p.globalBounds = &geometry.Bounds{}
 	p.globalBounds.Parse(params)
-	period, ok := json.GetString(params, "xField")
+	period, ok := json.GetString(params, "period")
 	if !ok {
 		return fmt.Errorf("`period` parameter missing from tile")
 	}
 	p.period = period
-	fmt.Println("period", p.period);
 
 	return p.Bivariate.Parse(params)
 }
@@ -62,7 +59,6 @@ func (p *PeriodOverlapTile) Parse(params map[string]interface{}) error {
 // Create generates a tile from the provided URI, tile coordinate and query
 // parameters.
 func (p *PeriodOverlapTile) Create(uri string, coord *binning.TileCoord, query veldt.Query) ([]byte, error) {
-	fmt.Println("PeriodOverlapTile Tile create!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	// create search service
 	search, err := p.CreateSearchService(uri)
 	if err != nil {
@@ -75,25 +71,11 @@ func (p *PeriodOverlapTile) Create(uri string, coord *binning.TileCoord, query v
 		return nil, err
 	}
 
-	//Param testing
-	//bounds := p.Bivariate.TileBounds(coord)
-	//fmt.Println("tile min max", bounds.MinX(), bounds.MaxX(), bounds.MinY(), bounds.MaxY());
-	//fmt.Println("Parse", p.globalBounds.MinX(), p.globalBounds.MaxX());
-
-
-
-
-
 	// add tiling query
 	//q.Must(p.Bivariate.GetQuery(coord))	//Heatmap way
 	q.Must(p.GetQuery(coord))		//New way
 	// set the query
 	search.Query(q)
-
-	//qs1, _ := q.Source()
-	//marshalledQ1, _ := ejson.MarshalIndent(qs1, "", "  ")
-	//fmt.Println("Period overlap Query1!!!:", string(marshalledQ1))
-
 
 	// get aggs
 	aggs := p.Bivariate.GetAggs(coord)
@@ -106,15 +88,12 @@ func (p *PeriodOverlapTile) Create(uri string, coord *binning.TileCoord, query v
 		return nil, err
 	}
 
-	fmt.Println("Create tile, about to get bins")
 	// get bins
-	//bins, err := p.Bivariate.GetBins(coord, &res.Aggregations)
-	bins, err := p.getBins(coord, &res.Aggregations)
+	//bins, err := p.Bivariate.GetBins(coord, &res.Aggregations)	//Heatmap
+	bins, err := p.getBins(coord, &res.Aggregations)				//Periodicity
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("Create tile, got the bins, creating byte array")
 
 	// convert to byte array
 	bits := make([]byte, len(bins)*4)
@@ -293,7 +272,6 @@ func (p *PeriodOverlapTile) getXBinForBounds(coord *binning.TileCoord, x int64, 
 
 //TODO for monthly pick a Month that has 31 days, use that as the base month to convert all the bucket dates
 func (p *PeriodOverlapTile) getBins(coord *binning.TileCoord, aggs *elastic.Aggregations) ([]*elastic.AggregationBucketHistogramItem, error) {
-	fmt.Println("Getting bins")
 	bounds := p.Bivariate.TileBounds(coord)
 	tileMinX := int64(bounds.MinX())
 	tileMaxX := int64(bounds.MaxX())
@@ -315,18 +293,13 @@ func (p *PeriodOverlapTile) getBins(coord *binning.TileCoord, aggs *elastic.Aggr
 		return nil, fmt.Errorf("histogram aggregation `x` was not found")
 	}
 
-
 	// allocate bins buffer
 	bins := make([]*elastic.AggregationBucketHistogramItem, p.Bivariate.Resolution*p.Bivariate.Resolution)
-
-	fmt.Println("about to fill bins")
 
 	// fill bins buffer
 	for _, xBucket := range xAgg.Buckets {
 
 		xBucketKey := xBucket.Key
-
-		fmt.Println("xBucketKey", xBucketKey)
 
 		/*
 		 * Change the bucket date so it falls in our tile date range according to the period. Eg: if the tile date range is
@@ -401,8 +374,6 @@ func (p *PeriodOverlapTile) getBins(coord *binning.TileCoord, aggs *elastic.Aggr
 			}
 		}
 
-		fmt.Println("Got xKeys, getting yKeys")
-
 		for _, xKey := range xKeys {
 			var xBin int
 			if p.period == "Monthly" {
@@ -424,12 +395,10 @@ func (p *PeriodOverlapTile) getBins(coord *binning.TileCoord, aggs *elastic.Aggr
 
 				// encode count
 				//bins[index] += yBucket
-				//TODO shouldn't we be aggregatig doc count like we did in prism?
+				//TODO shouldn't we be aggregating doc count like we did in prism?
 				bins[index] = yBucket
 			}
 		}
-
-		fmt.Println("Filled bin for xKey")
 	}
 
 	return bins, nil
