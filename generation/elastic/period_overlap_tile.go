@@ -6,8 +6,6 @@ import (
 	"time"
 	"math"
 
-	//ejson "encoding/json"
-
 	"gopkg.in/olivere/elastic.v3"
 
 	"github.com/unchartedsoftware/veldt"
@@ -72,8 +70,7 @@ func (p *PeriodOverlapTile) Create(uri string, coord *binning.TileCoord, query v
 	}
 
 	// add tiling query
-	//q.Must(p.Bivariate.GetQuery(coord))	//Heatmap way
-	q.Must(p.GetQuery(coord))		//New way
+	q.Must(p.getQuery(coord))
 	// set the query
 	search.Query(q)
 
@@ -89,8 +86,7 @@ func (p *PeriodOverlapTile) Create(uri string, coord *binning.TileCoord, query v
 	}
 
 	// get bins
-	//bins, err := p.Bivariate.GetBins(coord, &res.Aggregations)	//Heatmap
-	bins, err := p.getBins(coord, &res.Aggregations)				//Periodicity
+	bins, err := p.getBins(coord, &res.Aggregations)
 	if err != nil {
 		return nil, err
 	}
@@ -98,10 +94,10 @@ func (p *PeriodOverlapTile) Create(uri string, coord *binning.TileCoord, query v
 	// convert to byte array
 	bits := make([]byte, len(bins)*4)
 	for i, bin := range bins {
-		if bin != nil {
+		if bin != 0 {
 			binary.LittleEndian.PutUint32(
 				bits[i*4:i*4+4],
-				uint32(bin.DocCount))
+				uint32(bin))
 		}
 	}
 	return bits, nil
@@ -271,7 +267,7 @@ func (p *PeriodOverlapTile) getXBinForBounds(coord *binning.TileCoord, x int64, 
 }
 
 //TODO for monthly pick a Month that has 31 days, use that as the base month to convert all the bucket dates
-func (p *PeriodOverlapTile) getBins(coord *binning.TileCoord, aggs *elastic.Aggregations) ([]*elastic.AggregationBucketHistogramItem, error) {
+func (p *PeriodOverlapTile) getBins(coord *binning.TileCoord, aggs *elastic.Aggregations) ([]float64, error) {
 	bounds := p.Bivariate.TileBounds(coord)
 	tileMinX := int64(bounds.MinX())
 	tileMaxX := int64(bounds.MaxX())
@@ -294,7 +290,7 @@ func (p *PeriodOverlapTile) getBins(coord *binning.TileCoord, aggs *elastic.Aggr
 	}
 
 	// allocate bins buffer
-	bins := make([]*elastic.AggregationBucketHistogramItem, p.Bivariate.Resolution*p.Bivariate.Resolution)
+	bins := make([]float64, p.Bivariate.Resolution*p.Bivariate.Resolution)
 
 	// fill bins buffer
 	for _, xBucket := range xAgg.Buckets {
@@ -396,7 +392,7 @@ func (p *PeriodOverlapTile) getBins(coord *binning.TileCoord, aggs *elastic.Aggr
 				// encode count
 				//bins[index] += yBucket
 				//TODO shouldn't we be aggregating doc count like we did in prism?
-				bins[index] = yBucket
+				bins[index] += float64(yBucket.DocCount)
 			}
 		}
 	}
