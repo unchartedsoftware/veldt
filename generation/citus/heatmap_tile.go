@@ -14,11 +14,10 @@ type HeatmapTile struct {
 }
 
 // NewHeatmapTile instantiates and returns a new tile struct.
-func NewHeatmapTile(host, port string) veldt.TileCtor {
+func NewHeatmapTile(cfg *Config) veldt.TileCtor {
 	return func() (veldt.Tile, error) {
 		h := &HeatmapTile{}
-		h.Host = host
-		h.Port = port
+		h.Config = cfg
 		return h, nil
 	}
 }

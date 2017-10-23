@@ -18,11 +18,10 @@ type TopTermFrequencyTile struct {
 }
 
 // NewTopTermFrequencyTile instantiates and returns a new tile struct.
-func NewTopTermFrequencyTile(host, port string) veldt.TileCtor {
+func NewTopTermFrequencyTile(cfg *Config) veldt.TileCtor {
 	return func() (veldt.Tile, error) {
 		t := &TopTermFrequencyTile{}
-		t.Host = host
-		t.Port = port
+		t.Config = cfg
 		return t, nil
 	}
 }

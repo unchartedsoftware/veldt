@@ -1,8 +1,8 @@
 package citus
 
 import (
+	"fmt"
 	"runtime"
-	"strconv"
 	"sync"
 	"time"
 
@@ -18,23 +18,27 @@ var (
 	clients = make(map[string]*pgx.ConnPool)
 )
 
+type Config struct {
+	Host     string
+	Port     uint16
+	Database string
+	User     string
+	Password string
+}
+
 // NewClient return a citus client from the pool.
-func NewClient(host string, port string) (*pgx.ConnPool, error) {
-	endpoint := host + ":" + port
-	portInt, err := strconv.Atoi(port)
-	if err != nil {
-		mutex.Unlock()
-		runtime.Gosched()
-		return nil, err
-	}
+func NewClient(cfg *Config) (*pgx.ConnPool, error) {
+	endpoint := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	mutex.Lock()
 	client, ok := clients[endpoint]
 	if !ok {
 		//TODO: Add configuration for connection parameters.
 		dbConfig := pgx.ConnConfig{
-			Host: host,
-			Port: uint16(portInt),
-			User: "postgres",
+			Host:     cfg.Host,
+			Port:     cfg.Port,
+			Database: cfg.Database,
+			User:     cfg.User,
+			Password: cfg.Password,
 		}
 
 		poolConfig := pgx.ConnPoolConfig{

@@ -18,11 +18,10 @@ type TargetTermFrequencyTile struct {
 }
 
 // NewTargetTermFrequencyTile instantiates and returns a new tile struct.
-func NewTargetTermFrequencyTile(host, port string) veldt.TileCtor {
+func NewTargetTermFrequencyTile(cfg *Config) veldt.TileCtor {
 	return func() (veldt.Tile, error) {
 		t := &TargetTermFrequencyTile{}
-		t.Host = host
-		t.Port = port
+		t.Config = cfg
 		return t, nil
 	}
 }

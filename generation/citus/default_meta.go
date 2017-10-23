@@ -118,16 +118,14 @@ func GetTimestampExtrema(connPool *pgx.ConnPool, schema string, table string, co
 // DefaultMeta represents a meta data generator that produces default
 // metadata with property types and extrema.
 type DefaultMeta struct {
-	Host string
-	Port string
+	Config *Config
 }
 
 // NewDefaultMeta instantiates and returns a pointer to a new generator.
-func NewDefaultMeta(host string, port string) veldt.MetaCtor {
+func NewDefaultMeta(cfg *Config) veldt.MetaCtor {
 	return func() (veldt.Meta, error) {
 		return &DefaultMeta{
-			Host: host,
-			Port: port,
+			Config: cfg,
 		}, nil
 	}
 }
@@ -139,7 +137,7 @@ func (g *DefaultMeta) Parse(params map[string]interface{}) error {
 
 // Create generates metadata from the provided URI.
 func (g *DefaultMeta) Create(uri string) ([]byte, error) {
-	client, err := NewClient(g.Host, g.Port)
+	client, err := NewClient(g.Config)
 	if err != nil {
 		return nil, err
 	}

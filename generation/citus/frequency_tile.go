@@ -14,11 +14,10 @@ type FrequencyTile struct {
 }
 
 // NewFrequencyTile instantiates and returns a new tile struct.
-func NewFrequencyTile(host, port string) veldt.TileCtor {
+func NewFrequencyTile(cfg *Config) veldt.TileCtor {
 	return func() (veldt.Tile, error) {
 		t := &FrequencyTile{}
-		t.Host = host
-		t.Port = port
+		t.Config = cfg
 		return t, nil
 	}
 }
