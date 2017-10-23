@@ -9,8 +9,7 @@ import (
 
 // Tile represents an citus tile type.
 type Tile struct {
-	Host string
-	Port string
+	Config *Config
 }
 
 // CreateQuery creates the underlying citus query object.
@@ -43,7 +42,7 @@ func (t *Tile) CreateQuery(query veldt.Query) (*Query, error) {
 // InitializeTile initializes the citus tile type.
 func (t *Tile) InitializeTile(uri string, query veldt.Query) (*pgx.ConnPool, *Query, error) {
 	// get client
-	client, err := NewClient(t.Host, t.Port)
+	client, err := NewClient(t.Config)
 	if err != nil {
 		return nil, nil, err
 	}

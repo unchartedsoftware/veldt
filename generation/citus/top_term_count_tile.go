@@ -15,11 +15,10 @@ type TopTermCountTile struct {
 }
 
 // NewTopTermCountTile instantiates and returns a new tile struct.
-func NewTopTermCountTile(host, port string) veldt.TileCtor {
+func NewTopTermCountTile(cfg *Config) veldt.TileCtor {
 	return func() (veldt.Tile, error) {
 		t := &TopTermCountTile{}
-		t.Host = host
-		t.Port = port
+		t.Config = cfg
 		return t, nil
 	}
 }

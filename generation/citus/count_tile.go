@@ -14,11 +14,10 @@ type Count struct {
 }
 
 // NewCountTile instantiates and returns a new tile struct.
-func NewCountTile(host, port string) veldt.TileCtor {
+func NewCountTile(cfg *Config) veldt.TileCtor {
 	return func() (veldt.Tile, error) {
 		t := &Count{}
-		t.Host = host
-		t.Port = port
+		t.Config = cfg
 		return t, nil
 	}
 }

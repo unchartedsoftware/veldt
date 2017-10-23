@@ -17,11 +17,10 @@ type MicroTile struct {
 }
 
 // NewMicroTile instantiates and returns a new tile struct.
-func NewMicroTile(host, port string) veldt.TileCtor {
+func NewMicroTile(cfg *Config) veldt.TileCtor {
 	return func() (veldt.Tile, error) {
 		m := &MicroTile{}
-		m.Host = host
-		m.Port = port
+		m.Config = cfg
 		return m, nil
 	}
 }
