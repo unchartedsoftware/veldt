@@ -18,6 +18,7 @@ var (
 	clients = make(map[string]*pgx.ConnPool)
 )
 
+// Config defines the database details required to establish a connection.
 type Config struct {
 	Host     string
 	Port     uint16
