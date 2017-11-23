@@ -2,7 +2,6 @@ package citus
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/jackc/pgx"
 
@@ -38,21 +37,22 @@ func (b *Bivariate) AddAggs(coord *binning.TileCoord, query *Query) *Query {
 	bounds := b.TileBounds(coord)
 	// bin
 	minX := int64(bounds.MinX())
+	maxX := int64(bounds.MaxX())
 	minY := int64(bounds.MinY())
-	intervalX := int64(math.Max(1, b.BinSizeX(coord)))
-	intervalY := int64(math.Max(1, b.BinSizeY(coord)))
-	// x
+	maxY := int64(bounds.MaxY())
+	// x_bucket
 	minXArg := query.AddParameter(minX)
-	intervalXArg := query.AddParameter(intervalX)
-	queryString := fmt.Sprintf("((%s - %s) / %s * %s)", b.XField, minXArg, intervalXArg, intervalXArg)
-	query.GroupBy(queryString)
-	query.Select(fmt.Sprintf("%s + %s as x", minXArg, queryString))
-	// y
+	maxXArg := query.AddParameter(maxX)
+	bucketArg := query.AddParameter(b.Resolution)
+	queryString := fmt.Sprintf("width_bucket(%s, %s, %s, %s) - 1 AS x_bucket", b.XField, minXArg, maxXArg, bucketArg)
+	query.Select(queryString);
+	// y_bucket
 	minYArg := query.AddParameter(minY)
-	intervalYArg := query.AddParameter(intervalY)
-	queryString = fmt.Sprintf("((%s - %s) / %s * %s)", b.YField, minYArg, intervalYArg, intervalYArg)
-	query.GroupBy(queryString)
-	query.Select(fmt.Sprintf("%s + %s as y", minYArg, queryString))
+	maxYArg := query.AddParameter(maxY)
+	queryString = fmt.Sprintf("width_bucket(%s, %s, %s, %s) - 1 AS y_bucket", b.YField, minYArg, maxYArg, bucketArg)
+	query.Select(queryString);
+	query.GroupBy("x_bucket");
+	query.GroupBy("y_bucket");
 	// result
 	return query
 }
@@ -72,12 +72,21 @@ func (b *Bivariate) GetBins(coord *binning.TileCoord, rows *pgx.Rows) ([]float64
 				err)
 		}
 
-		xBin := b.GetXBin(coord, float64(x))
-		yBin := b.GetYBin(coord, float64(y))
-
-		index := xBin + b.Resolution*yBin
+		index := x + int64(b.Resolution)*y
 		bins[index] += value
 	}
 
 	return bins, nil
+}
+
+// GetXBin given an x value, returns the corresponding bin.
+// This is a passthru for citus since we are binning from 0 to resolution in the query
+func (b *Bivariate) GetXBin(coord *binning.TileCoord, x float64) int {
+	return int(x)
+}
+
+// GetYBin given a y value, returns the corresponding bin.
+// This is a passthru for citus since we are binning from 0 to resolution in the query
+func (b *Bivariate) GetYBin(coord *binning.TileCoord, y float64) int {
+	return int(y)
 }

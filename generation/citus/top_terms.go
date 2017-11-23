@@ -18,7 +18,7 @@ func (t *TopTerms) AddAggs(query *Query) *Query {
 	//Assume the backing field is an array. Need to unpack that array and group by the terms.
 	query.Select(fmt.Sprintf("unnest(%s) AS term", t.TermsField))
 
-	query.GroupBy("term")
+	query.GroupBy(t.TermsField)
 	query.Select("COUNT(*) as term_count")
 	query.OrderBy("term_count desc")
 	query.Limit(uint32(t.TermsCount))

@@ -80,7 +80,7 @@ func (b *Bivariate) GetXBin(coord *binning.TileCoord, x float64) int {
 }
 
 // GetX given an x value, returns the corresponding coord within the range of
-// [0 : 256) for the tile.
+// [0 : 255) for the tile.
 func (b *Bivariate) GetX(coord *binning.TileCoord, x float64) float64 {
 	bounds := b.TileBounds(coord)
 	rang := bounds.RangeX()
