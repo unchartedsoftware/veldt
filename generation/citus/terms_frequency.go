@@ -8,14 +8,15 @@ import (
 	"github.com/unchartedsoftware/veldt/tile"
 )
 
-// TopTerms represents a citus implementation of the top terms tile.
-type TopTerms struct {
-	tile.TopTerms
+// TermsFrequency represents a citus implementation of the terms frequency tile.
+type TermsFrequency struct {
+	tile.TermsFrequency
 }
 
 // AddAggs adds the tiling aggregations to the provided query object.
-func (t *TopTerms) AddAggs(query *Query) *Query {
+func (t *TermsFrequency) AddAggs(query *Query) *Query {
 
+	//Count by term
 	if t.FieldType == "string" {
 		query.Select(fmt.Sprintf("%s AS term", t.TermsField))
 		query.Where(fmt.Sprintf("%s IS NOT NULL", t.TermsField))
@@ -27,13 +28,12 @@ func (t *TopTerms) AddAggs(query *Query) *Query {
 	query.GroupBy(t.TermsField)
 	query.Select("COUNT(*) as term_count")
 	query.OrderBy("term_count desc")
-	query.Limit(uint32(t.TermsCount))
 
 	return query
 }
 
 // GetTerms parses the result of the terms query into a map of term -> count.
-func (t *TopTerms) GetTerms(rows *pgx.Rows) (map[string]uint32, error) {
+func (t *TermsFrequency) GetTerms(rows *pgx.Rows) (map[string]uint32, error) {
 	// build map of topics and counts
 	counts := make(map[string]uint32)
 	for rows.Next() {
