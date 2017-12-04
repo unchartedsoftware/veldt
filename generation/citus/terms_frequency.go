@@ -25,7 +25,7 @@ func (t *TermsFrequency) AddAggs(query *Query) *Query {
 		query.Select(fmt.Sprintf("unnest(%s) AS term", t.TermsField))
 	}
 
-	query.GroupBy(t.TermsField)
+	query.GroupBy("term")
 	query.Select("COUNT(*) as term_count")
 	query.OrderBy("term_count desc")
 
