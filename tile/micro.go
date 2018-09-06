@@ -45,7 +45,8 @@ func (m *Micro) ParseIncludes(includes []string, xField string, yField string) [
 
 // Encode will encode the tile results based on the LOD property.
 func (m *Micro) Encode(hits []map[string]interface{}, points []float32) ([]byte, error) {
-	emptyHits := true
+	emptyHits := false
+
 	// remove any non-included fields from hits
 	if !m.xIncluded || !m.yIncluded {
 		for _, hit := range hits {
@@ -56,8 +57,8 @@ func (m *Micro) Encode(hits []map[string]interface{}, points []float32) ([]byte,
 			if !m.yIncluded {
 				delete(hit, m.yField)
 			}
-			if emptyHits && len(hit) > 0 {
-				emptyHits = false
+			if !emptyHits && len(hit) == 0 {
+				emptyHits = true
 			}
 		}
 	}

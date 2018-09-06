@@ -62,7 +62,7 @@ func (e *MicroEdge) ParseIncludes(includes []string, srcXField string, srcYField
 
 // Encode will encode the tile results
 func (e *MicroEdge) Encode(hits []map[string]interface{}, points []float32) ([]byte, error) {
-	emptyHits := true
+	emptyHits := false
 	// remove any non-included fields from hits
 	if !e.srcXIncluded || !e.srcYIncluded ||
 		!e.dstXIncluded || !e.dstYIncluded {
@@ -80,8 +80,8 @@ func (e *MicroEdge) Encode(hits []map[string]interface{}, points []float32) ([]b
 			if !e.dstYIncluded {
 				delete(hit, e.dstYField)
 			}
-			if emptyHits && len(hit) > 0 {
-				emptyHits = false
+			if !emptyHits && len(hit) == 0 {
+				emptyHits = true
 			}
 		}
 	}
