@@ -12,25 +12,11 @@ Requires the [Go](https://golang.org/) programming language binaries with the `G
 
 ## Installation
 
-### Using `go get`:
-
-If your project does not use the vendoring tool [Glide](https://glide.sh) to manage dependencies, you can install this package like you would any other:
+NOTE: Requires [Go](https://golang.org/) version 1.11+.
 
 ```bash
 go get github.com/unchartedsoftware/veldt
 ```
-
-While this is the simplest way to install the package, due to how `go get` resolves transitive dependencies it may result in version incompatibilities.
-
-### Using `glide get`:
-
-This is the recommended way to install the package and ensures all transitive dependencies are resolved to their compatible versions.
-
-```bash
-glide get github.com/unchartedsoftware/veldt
-```
-
-NOTE: Requires [Glide](https://glide.sh) along with [Go](https://golang.org/) version 1.6+.
 
 ## Usage
 
@@ -174,17 +160,17 @@ func main() {
 
 ## Development
 
-Clone the repository:
+NOTE: Requires [Go](https://golang.org/) version 1.11+.
+
+Clone the repository outside of your `$GOPATH`:
 
 ```bash
-mkdir -p $GOPATH/src/github.com/unchartedsoftware
-cd $GOPATH/src/github.com/unchartedsoftware
 git clone git@github.com:unchartedsoftware/veldt.git
+cd veldt
 ```
 
 Install dependencies:
 
 ```bash
-cd veldt
 make install
 ```
