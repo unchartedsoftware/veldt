@@ -1,5 +1,10 @@
 version=0.1.0
 
+_allpackages = $(shell go list ./...)
+# memoize allpackages, so that it's executed only once and only if used
+allpackages = $(if $(__allpackages),,$(eval __allpackages := $$(_allpackages)))$(__allpackages)
+
+
 .PHONY: all
 
 all:
@@ -13,8 +18,8 @@ all:
 	@echo "  install       - install dependencies"
 
 lint:
-	@go vet $(go list ./...)
-	@go list ./... | grep -v /vendor/ | xargs -L1 golint
+	@go vet $(allpackages)
+	@golint $(allpackages)
 
 test:
 	@ginkgo -r -cover -covermode=count
@@ -24,10 +29,10 @@ test:
 	@go tool cover -html="coverage/coverage.out" -o "coverage/coverage.html"
 
 fmt:
-	@go fmt $(go list ./...)
+	@go fmt $(allpackages)
 
 build: lint
-	@go build $(go list ./...)
+	@go build $(allpackages)
 
 install:
 	@go get -u github.com/golang/lint/golint
