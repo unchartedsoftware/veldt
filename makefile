@@ -4,7 +4,6 @@ _allpackages = $(shell go list ./...)
 # memoize allpackages, so that it's executed only once and only if used
 allpackages = $(if $(__allpackages),,$(eval __allpackages := $$(_allpackages)))$(__allpackages)
 
-
 .PHONY: all
 
 all:
