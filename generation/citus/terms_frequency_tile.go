@@ -8,7 +8,7 @@ import (
 	"github.com/unchartedsoftware/veldt/util/json"
 )
 
-// TargetTermFrequencyTile represents a citus implementation of the target term frequency tile.
+// TermsFrequencyTile represents a citus implementation of the terms frequency tile.
 type TermsFrequencyTile struct {
 	Bivariate
 	TermsFrequency
@@ -89,4 +89,3 @@ func (t *TermsFrequencyTile) Create(uri string, coord *binning.TileCoord, query 
 	// marshal results
 	return json.Marshal(result)
 }
-
